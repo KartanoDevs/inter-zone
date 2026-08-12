@@ -1,6 +1,6 @@
 # 001 — Validación de falta posicional
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 1
 
 ## Problema
@@ -128,4 +128,28 @@ Ninguna. La spec está congelada.
 
 ## Al cerrar
 
-_(pendiente)_
+Los 16 escenarios pasan. No hizo falta correr `npm run test:coverage`: ese script no existe
+en `package.json`, así que no se reporta cobertura numérica (no se ha inventado el dato).
+
+**Desviación respecto a `docs/arquitectura.md`.** El documento sugería
+`validarFormacion(formacion, orden, equipo): Infraccion[]`. La implementación final es
+`validarFormacion(formacion, orden, rotacion): ResultadoValidacion`, con
+`ResultadoValidacion = { infracciones, avisos }`. Dos motivos:
+
+- No hace falta un `equipo` aparte: `OrdenSaque` ya es un array de `Jugador` con su `rol`,
+  así que la regla del líbero (R4) se resuelve sin un roster adicional.
+- `Infraccion[]` no basta para expresar `al_limite` (E9/E10): `docs/dominio.md` dice
+  explícitamente que `al_limite` "no es una infracción", pero el entrenador necesita verla.
+  Un array plano de infracciones no puede representar "esto no es infracción pero se marca"
+  sin inventarse un estado falso. Separar `avisos` de `infracciones` evita esa ambigüedad.
+  Se registra como decisión estructural en `docs/decisiones.md` (0007).
+
+**Lo que no se desvió:** ninguna regla de voleibol de `docs/dominio.md` resultó incorrecta o
+incompleta durante la implementación; no hizo falta tocarlo.
+
+**Lo que sorprendió:** varios escenarios (E2, E3, E5, E8, E10, E11, E13, E16) pasaron en
+verde sin escribir código nuevo, porque el "código mínimo" de un escenario anterior ya los
+cubría (el diseño por parejas de comparación nunca compara posiciones no emparejadas, y la
+comparación estricta `margen <= 0` ya cubre el empate exacto). Es el comportamiento esperado
+que describe `docs/flujo-de-trabajo.md`, no un atajo: cada uno de esos escenarios se escribió
+y ejecutó igualmente, confirmando el comportamiento en vez de forzarlo.
