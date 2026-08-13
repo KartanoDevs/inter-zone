@@ -23,7 +23,7 @@ describe('etiquetaDe', () => {
     const central = jugador('j1', 'central', 2);
     const colocador = jugador('j2', 'colocador');
 
-    expect(etiquetaDe(central, CONFIGURACION_ROLES_POR_DEFECTO)).toBe('M2');
+    expect(etiquetaDe(central, CONFIGURACION_ROLES_POR_DEFECTO)).toBe('C2');
     expect(etiquetaDe(central, CONFIGURACION_ROLES_POR_DEFECTO)).not.toBe(
       etiquetaDe(colocador, CONFIGURACION_ROLES_POR_DEFECTO),
     );
@@ -50,14 +50,18 @@ describe('etiquetaDe', () => {
 });
 
 describe('validarConfiguracionRoles', () => {
-  it('E6: abreviaturas repetidas se rechazan indicando qué roles colisionan', () => {
+  it('E6: abreviaturas repetidas se rechazan cuando ambos roles llevan índice', () => {
     const configuracion = {
       ...CONFIGURACION_ROLES_POR_DEFECTO,
-      central: { nombre: 'Central', abreviatura: 'C', llevaIndice: true },
+      central: { nombre: 'Central', abreviatura: 'R', llevaIndice: true },
     };
 
     const colisiones = validarConfiguracionRoles(configuracion);
 
-    expect(colisiones).toEqual([{ abreviatura: 'C', roles: ['colocador', 'central'] }]);
+    expect(colisiones).toEqual([{ abreviatura: 'R', roles: ['receptor', 'central'] }]);
+  });
+
+  it('la configuración por defecto no colisiona aunque colocador y central compartan la letra C', () => {
+    expect(validarConfiguracionRoles(CONFIGURACION_ROLES_POR_DEFECTO)).toEqual([]);
   });
 });

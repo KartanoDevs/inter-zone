@@ -40,7 +40,7 @@ guardados.
 **E3 — El central no colisiona con el colocador**
 - Dado: un jugador con rol central e índice 2, con la configuración por defecto
 - Cuando: se pide su etiqueta
-- Entonces: se obtiene `M2`, distinta de la etiqueta de cualquier colocador
+- Entonces: se obtiene `C2`, distinta de la etiqueta de cualquier colocador (`C`, sin índice)
 
 **E4 — Líbero y opuesto**
 - Dado: sendos jugadores con rol líbero y opuesto, con la configuración por defecto
@@ -54,8 +54,9 @@ guardados.
 - Cuando: se pide la etiqueta de un receptor con índice 2
 - Entonces: se obtiene `P2`, y el jugador sigue teniendo el rol `receptor`
 
-**E6 — Abreviaturas repetidas se rechazan**
-- Dado: una configuración en la que colocador y central comparten la abreviatura `C`
+**E6 — Abreviaturas repetidas se rechazan cuando ambos roles llevan índice**
+- Dado: una configuración en la que receptor y central comparten la abreviatura `R`
+  (ambos llevan índice, así que sus etiquetas coincidirían: `R1`/`R2` en los dos)
 - Cuando: se valida la configuración
 - Entonces: se rechaza indicando qué dos roles colisionan
 

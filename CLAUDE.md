@@ -127,7 +127,9 @@ partir de una spec en `Borrador`.
 - Modelar la zona de responsabilidad como un círculo con un radio ajustable por slider.
 - Confundir **rol** (colocador, receptor…, permanente) con **posición rotacional**
   (P1..P6, cambia en cada rotación). Son cosas distintas y ambas aparecen en el modelo.
-- Dar por hecho que la abreviatura del central es "C". Es "M": la C es del colocador.
+- Dar por hecho que el central y el colocador no pueden compartir letra base. Desde el ADR
+  0009 el central usa "C" igual que el colocador; se distinguen porque el colocador nunca
+  lleva índice (`C`) y el central siempre lo lleva (`C1`/`C2`).
 - Escribir todos los tests de una spec de golpe y luego la función completa. Eso es generar
   tests, no hacer TDD.
 

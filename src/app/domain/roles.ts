@@ -3,7 +3,7 @@ import type { ColisionAbreviatura, ConfiguracionRoles, Jugador, RolId } from './
 export const CONFIGURACION_ROLES_POR_DEFECTO: ConfiguracionRoles = {
   colocador: { nombre: 'Colocador', abreviatura: 'C', llevaIndice: false },
   receptor: { nombre: 'Receptor', abreviatura: 'R', llevaIndice: true },
-  central: { nombre: 'Central', abreviatura: 'M', llevaIndice: true },
+  central: { nombre: 'Central', abreviatura: 'C', llevaIndice: true },
   opuesto: { nombre: 'Opuesto', abreviatura: 'O', llevaIndice: false },
   libero: { nombre: 'Líbero', abreviatura: 'L', llevaIndice: false },
 };
@@ -14,15 +14,14 @@ export function etiquetaDe(jugador: Jugador, configuracion: ConfiguracionRoles):
 }
 
 export function validarConfiguracionRoles(configuracion: ConfiguracionRoles): ColisionAbreviatura[] {
-  const rolesPorAbreviatura = new Map<string, RolId[]>();
+  const rolesPorEtiquetaBase = new Map<string, { abreviatura: string; roles: RolId[] }>();
   for (const rolId of Object.keys(configuracion) as RolId[]) {
-    const abreviatura = configuracion[rolId].abreviatura;
-    const roles = rolesPorAbreviatura.get(abreviatura) ?? [];
-    roles.push(rolId);
-    rolesPorAbreviatura.set(abreviatura, roles);
+    const { abreviatura, llevaIndice } = configuracion[rolId];
+    const clave = `${abreviatura}:${llevaIndice}`;
+    const grupo = rolesPorEtiquetaBase.get(clave) ?? { abreviatura, roles: [] };
+    grupo.roles.push(rolId);
+    rolesPorEtiquetaBase.set(clave, grupo);
   }
 
-  return Array.from(rolesPorAbreviatura.entries())
-    .filter(([, roles]) => roles.length > 1)
-    .map(([abreviatura, roles]) => ({ abreviatura, roles }));
+  return Array.from(rolesPorEtiquetaBase.values()).filter((grupo) => grupo.roles.length > 1);
 }

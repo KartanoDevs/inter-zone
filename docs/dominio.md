@@ -39,7 +39,7 @@ punto ganado al resto. Un central puede estar en P3, y en la rotación siguiente
 |---|---|---|---|
 | `colocador` | Colocador | C | No |
 | `receptor` | Receptor | R | Sí |
-| `central` | Central | M | Sí |
+| `central` | Central | C | Sí |
 | `opuesto` | Opuesto | O | No |
 | `libero` | Líbero | L | No |
 
@@ -47,15 +47,17 @@ punto ganado al resto. Un central puede estar en P3, y en la rotación siguiente
 "punta" en vez de receptor, "bloqueador" en vez de central. Se cambian en un único fichero
 de configuración del dominio, sin tocar lógica.
 
-**Sobre la abreviatura del central.** Colocador y Central empiezan ambos por C, y una ficha
-en pista marcada "C" sería ambigua justo entre los dos roles que más importa distinguir. Por
-defecto el central usa **M**, de "medio", que es la abreviatura habitual en castellano. Un
-equipo que prefiera CO y CE puede cambiarlo, siempre que no repita abreviatura.
+**Sobre la abreviatura del central.** Colocador y Central comparten la misma letra base, C,
+pero eso no genera ambigüedad: en pista solo hay un colocador, y el colocador nunca lleva
+índice, así que su etiqueta siempre es la letra suelta `C`. El central sí lleva índice
+siempre, así que sus etiquetas siempre son `C1` o `C2`. Una etiqueta con índice nunca puede
+coincidir textualmente con una sin índice, así que no hay ficha ambigua en la pizarra aunque
+la letra base sea la misma.
 
 ### Índice: receptores y centrales van numerados
 
 Hay dos receptores y dos centrales en pista, así que necesitan distinguirse: `R1` y `R2`,
-`M1` y `M2`.
+`C1` y `C2`.
 
 **Convención para asignar el índice:** se recorre el orden de saque en sentido de rotación
 empezando por el colocador. El primer jugador de ese rol que aparece lleva el índice **1**
@@ -69,7 +71,7 @@ etiquetas y hay que actualizar este apartado antes que el código.
 ### Etiqueta
 
 La etiqueta es lo que se pinta en la ficha: abreviatura seguida del índice si lo lleva.
-`C`, `R1`, `R2`, `M1`, `M2`, `O`, `L`. Es **siempre derivada** del rol, la configuración y
+`C`, `R1`, `R2`, `C1`, `C2`, `O`, `L`. Es **siempre derivada** del rol, la configuración y
 el índice; nunca se almacena.
 
 ### Composición válida de la plantilla en pista
@@ -127,8 +129,10 @@ cualquier rotación es **derivable**. Nunca se almacena; se calcula.
 
 ## 5. Reglas de falta posicional
 
-Se evalúan en el instante en que el contrario golpea el saque, es decir, sobre las
-posiciones de la formación.
+Estas reglas son las de la **fase de recepción**: se evalúan una única vez, en el instante en
+que el contrario golpea el saque, sobre las posiciones de la formación. Una vez el balón está
+en juego, los jugadores son libres de moverse por la pista; la falta de posición no se vuelve
+a comprobar en ataque ni en defensa.
 
 Sean `x(Pn)` e `y(Pn)` las coordenadas del jugador que ocupa la posición rotacional `Pn`.
 
@@ -200,7 +204,9 @@ Se cumplen siempre, en cualquier estado del sistema. Son candidatos naturales a 
    nunca se asigna a mano.
 5. La etiqueta de un jugador se deriva del rol, la configuración y el índice; nunca se
    almacena.
-6. Dos roles distintos no comparten abreviatura.
+6. Dos roles distintos nunca producen la misma etiqueta final. Si comparten abreviatura, se
+   distinguen porque uno lleva índice y el otro no; si ambos llevan índice, o ninguno lo
+   lleva, no pueden compartir abreviatura.
 7. Un rol que lleva índice tiene exactamente dos jugadores en pista, con índices 1 y 2.
 8. Un rol que no lleva índice no tiene índice asignado.
 9. Toda posición está dentro de los límites de la zona jugable.
