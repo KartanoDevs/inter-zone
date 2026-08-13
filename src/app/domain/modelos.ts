@@ -33,6 +33,13 @@ export interface PlantillaEquipo {
   readonly ordenSaque: OrdenSaque;
 }
 
+/** Un sistema de recepción con nombre, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
+export interface Sistema {
+  readonly nombre: string;
+  readonly plantilla: PlantillaEquipo;
+  readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
+}
+
 export interface Colocacion {
   readonly jugador: Jugador;
   readonly punto: Punto;

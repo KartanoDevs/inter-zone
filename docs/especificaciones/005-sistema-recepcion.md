@@ -1,6 +1,6 @@
 # 005 — Sistema de recepción: crear, guardar por rotación y bloquear faltas
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 2
 
 ## Problema
@@ -97,4 +97,25 @@ Ninguna. Resueltas con el usuario:
 
 ## Al cerrar
 
-_Pendiente — se rellena al cerrar la spec._
+Los 12 escenarios pasan (58 en total en `src/app/domain`). No existe `npm run test:coverage`
+en `package.json`; no se reporta cobertura numérica por el mismo motivo que en specs
+anteriores.
+
+**Diseño de `guardarFormacion`.** Una única función cubre E2, E3, E4, E7, E8 y E9: primero
+comprueba que la formación coloca exactamente a los seis jugadores de la plantilla (mismos
+`id`, sin más ni menos — cubre E8 y E9 a la vez, porque un jugador ajeno o una plaza vacía
+rompen igual la comparación de conjuntos), y solo entonces llama a `validarFormacion` y mira
+`infracciones` (nunca `avisos`, que es justo lo que hace que E4 no bloquee). Guardar
+`Sistema.formaciones` como un `Record` indexado por número de rotación hace que sobrescribir
+(E7) sea la misma operación que guardar por primera vez, sin código aparte.
+
+**Lo que sorprendió:** en cuanto `guardarFormacion` quedó escrito para E2, los escenarios E3,
+E4, E7, E8 y E9 pasaron en verde sin tocar el código — las cinco reglas ya estaban implícitas
+en esas dos comprobaciones. Fue necesario, eso sí, construir con cuidado los datos de cada
+test (una formación con infracción real, una con solo aviso, un jugador intruso, una plaza de
+menos) para que cada escenario ejercitara de verdad la rama que dice probar, en vez de
+coincidir por casualidad con otra.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta. El orden de
+implementación acordado (003 → 004 → 005) evitó cualquier ambigüedad sobre qué significaba
+`Rn` al escribir esta spec.
