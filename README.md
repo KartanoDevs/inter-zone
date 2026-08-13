@@ -12,13 +12,17 @@ sin cubrir.
 
 ## Qué hace (v1)
 
-- Definir la plantilla del equipo con sus roles y el orden de saque.
-- Colocar los 6 jugadores en media pista, en metros reales.
-- Validar en vivo la falta posicional según el orden de saque.
+- Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
+- Crear sistemas de recepción con nombre, ligados a una plantilla.
+- Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
+  numeradas por dónde está el colocador).
+- Bloquear el guardado de una rotación que cometa falta de posición.
 - Pintar sobre una rejilla la zona de responsabilidad de cada receptor.
 - Detectar huecos (nadie cubre) y conflictos (dos o más se pisan).
-- Navegar entre las 6 rotaciones.
-- Guardar en el navegador, exportar PNG y JSON.
+- Consultar un sistema guardado, rotación a rotación, en solo lectura.
+- Examinarse: colocar los jugadores y recibir una nota de perfección frente al sistema
+  guardado, además del veredicto de legalidad.
+- Guardar en el navegador; exportar e importar JSON y PNG.
 
 ## Qué NO hace (deliberadamente)
 
@@ -59,14 +63,21 @@ npm start
 
 Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de corte.
 
-1. **Dominio puro con tests.** Roles y etiquetas, rotación derivada, validación posicional.
-   Sin UI.
-2. **Pista SVG + arrastre + validación en vivo.** Primer punto en que la herramienta enseña
-   algo.
-3. **Plantilla y orden de saque configurables, navegación R1–R6.**
-4. **Rejilla pintable, huecos y conflictos.**
-5. **Persistencia, exportar PNG y JSON.**
-6. **Modo solo lectura para compartir con el equipo.**
+1. **Dominio puro con tests.** Roles y etiquetas, rotación anclada al colocador (R1–R6),
+   validación posicional, plantillas de equipo. Sin UI. Specs 001–004.
+2. **Sistema de recepción.** Crear un sistema con nombre, ligado a una plantilla, y guardar
+   una formación legal por rotación — bloqueando el guardado si comete falta. Spec 005.
+3. **Pista SVG + arrastre + validación en vivo + navegación R1–R6.** Primer punto en que la
+   herramienta enseña algo tocándola. Specs 007–008.
+4. **Persistencia en el navegador.** Guardar y recuperar sistemas y plantillas. Spec 006.
+5. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
+   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 009–010.
+6. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
+   Specs 011–012.
+7. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 013.
 
-Después de la v1: sistemas de defensa, que reutilizan el mismo modelo de pista y de rejilla
-pero añaden bloqueo y atacante rival.
+Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
+escenarios de cada una viven ahí, no aquí.
+
+Después de la v1: sistemas de defensa (V2), que reutilizan el mismo modelo de pista y de
+rejilla pero añaden bloqueo y atacante rival.

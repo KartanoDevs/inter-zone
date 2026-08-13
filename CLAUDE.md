@@ -132,6 +132,10 @@ partir de una spec en `Borrador`.
   lleva índice (`C`) y el central siempre lo lleva (`C1`/`C2`).
 - Escribir todos los tests de una spec de golpe y luego la función completa. Eso es generar
   tests, no hacer TDD.
+- Empezar a implementar una spec que toca `ui/`, `application/` o `infrastructure/` sin que
+  su sección "Fuera de alcance" lo autorice explícitamente. La regla por defecto de este
+  fichero es no tocar esas capas; una spec que sí necesita hacerlo tiene que decirlo con
+  todas las letras, o el protocolo de arranque debe pararse a preguntarlo.
 
 ## Convenciones
 
