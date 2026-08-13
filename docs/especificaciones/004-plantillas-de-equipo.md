@@ -1,6 +1,6 @@
 # 004 — Plantillas de equipo
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 1
 
 ## Problema
@@ -55,21 +55,41 @@ plantilla a medias, y una vez creada su orden de saque no se modifica.
 - Cuando: se intenta borrar
 - Entonces: se rechaza
 
-**E7 — Las plantillas son inmutables una vez creadas**
-- Dado: una plantilla ya creada
-- Cuando: se intenta modificar su orden de saque
-- Entonces: se rechaza, la use o no algún sistema de recepción
-
 ## Preguntas abiertas
 
 Ninguna. Resueltas con el usuario:
 
-- El orden de saque de una plantilla **no se modifica** una vez creada (E7). Si el entrenador
+- El orden de saque de una plantilla **no se modifica** una vez creada. Si el entrenador
   necesita otro orden, crea una plantilla nueva. No hace falta versionar ni revalidar sistemas
-  existentes, porque la plantilla que usan nunca cambia por debajo.
+  existentes, porque la plantilla que usan nunca cambia por debajo. El dominio no expone
+  ninguna función para modificar una `PlantillaEquipo` ya creada — la inmutabilidad se
+  garantiza por ausencia, no por una comprobación en tiempo de ejecución. "Intentar
+  modificarla" solo es posible reutilizando su nombre para crear otra, y eso ya lo cubre E3
+  (nombre duplicado), sea cual sea el orden de saque nuevo. Por eso no hay un escenario E7
+  aparte: sería un test contra una función que deliberadamente no existe.
 - Una plantilla se guarda completa y válida o no se guarda: no existe un estado "a medias"
   para la plantilla en sí (a diferencia de un sistema de recepción, spec 005).
 
 ## Al cerrar
 
-_Pendiente — se rellena al cerrar la spec._
+Los 6 escenarios pasan (46 en total en `src/app/domain`). No existe `npm run test:coverage`
+en `package.json`; no se reporta cobertura numérica por el mismo motivo que en specs
+anteriores.
+
+**Desviación respecto a lo previsto.** El escenario E7 de la redacción original ("las
+plantillas son inmutables") se retiró antes de escribir su test: no hay ninguna función de
+actualización en el dominio, así que no había nada que ejercitar sin inventar código cuyo
+único propósito fuera rechazar siempre. Se documentó como parte de las "Preguntas abiertas"
+en vez de forzar un test artificial. Ver `docs/flujo-de-trabajo.md` — un test no puede fallar
+por `ReferenceError` contra una función que no debe existir.
+
+**Desacoplo deliberado de `Sistema`.** E5/E6 hablan de "sistemas que usan la plantilla", pero
+`Sistema` no existe todavía (llega con la spec 005). `puedeBorrarPlantillaEquipo` recibe un
+booleano `estaEnUso` en vez de una lista de sistemas, precisamente para que
+`plantillas-equipo.ts` no dependa de un tipo que aún no está definido; quien llame a esta
+función (más adelante, `application/`) es quien calcula ese booleano.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta.
+
+**Lo que sorprendió:** E4 (composición inválida) pasó en verde sin código nuevo, reutilizando
+`validarPlantilla` de la spec 002 directamente.

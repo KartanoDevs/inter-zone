@@ -27,6 +27,12 @@ export interface ColisionAbreviatura {
 /** Los seis jugadores del equipo ordenados P1..P6 en la rotación inicial (R1). */
 export type OrdenSaque = readonly [Jugador, Jugador, Jugador, Jugador, Jugador, Jugador];
 
+/** Un equipo guardado con nombre. Inmutable: no se modifica su orden de saque una vez creada. */
+export interface PlantillaEquipo {
+  readonly nombre: string;
+  readonly ordenSaque: OrdenSaque;
+}
+
 export interface Colocacion {
   readonly jugador: Jugador;
   readonly punto: Punto;
