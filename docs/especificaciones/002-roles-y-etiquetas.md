@@ -1,6 +1,6 @@
 # 002 — Roles, etiquetas y composición de la plantilla
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 1
 
 ## Problema
@@ -119,4 +119,31 @@ Si el equipo la entiende de otra forma, se cambia la decisión y esta spec antes
 
 ## Al cerrar
 
-_(pendiente)_
+Los 15 escenarios pasan (31 en total en `src/app/domain`, sumados a los 16 de la spec 001).
+`npm run test:coverage` sigue sin existir en `package.json`; no se reporta cobertura numérica
+por el mismo motivo que en la spec 001.
+
+**Desviación respecto a `docs/arquitectura.md`.** El documento solo preveía `roles.ts` para
+"configuración de roles por defecto y `etiquetaDe()`". Los escenarios E7–E15 (consistencia de
+índice, composición de la plantilla, jugador repetido) validan algo distinto: el `OrdenSaque`
+completo, no la configuración de nombres/abreviaturas. Se creó `plantilla.ts` aparte en vez de
+meterlo en `roles.ts`, para no mezclar "cómo se llama y abrevia un rol" con "es válida esta
+plantilla de seis". Registrado en `docs/decisiones.md` (0008).
+
+**Modelo de índice.** `docs/dominio.md` no dice explícitamente si el índice de un jugador se
+almacena o se deriva. Esta spec asume que se **almacena** en `Jugador.indice` (como el rol),
+y que `asignarIndices()` es una utilidad de conveniencia que lo calcula según la convención
+para poblarlo, no la única fuente de verdad. Esto es necesario porque E7–E10 validan
+plantillas con índices ya asignados (incluidos casos inválidos a propósito), lo que no tendría
+sentido si el índice fuera siempre derivado y por tanto correcto por construcción. Si en el
+futuro se decide que el índice debe ser puramente derivado (como la posición rotacional o la
+etiqueta), habrá que revisar `validarPlantilla` y esta nota.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta.
+
+**Lo que sorprendió:** varios escenarios (E8, E10, E12, E13) volvieron a pasar en verde sin
+código nuevo, por el mismo motivo que en la spec 001 — el código mínimo de un escenario previo
+ya los cubría. E15 sí fue necesario diseñarlo con cuidado: una repetición "ingenua" del mismo
+jugador en dos huecos del mismo rol coincidía con la regla de índices duplicados (E9) y no
+ejercitaba una comprobación nueva; hubo que construir el caso con índices distintos para
+aislar de verdad la comprobación de identidad repetida.

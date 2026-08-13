@@ -18,61 +18,89 @@ Antes de escribir código: `docs/flujo-de-trabajo.md`.
 
 Cuando el usuario diga **"implementa la spec NNN"**, **"desarrolla la spec NNN"** o
 equivalente, sin más instrucciones, sigue este protocolo completo sin que haga falta
-repetirlo. No empieces a programar antes del paso 0.
+repetirlo. No escribas código antes de terminar el paso 0.
 
-### Paso 0 — Comprobaciones antes de tocar nada
+### Paso 0 — Comprobaciones previas
 
-1. Abre `docs/especificaciones/NNN-*.md`. Si su `Estado` no es `Congelada`, para y dilo:
-   no se implementa una spec en `Borrador`.
-2. Si la sección `Preguntas abiertas` de la spec no está vacía, para y dilo: hay que
-   resolverlas con el usuario antes de escribir un test.
-3. Relee `CLAUDE.md`, `docs/dominio.md` y `docs/arquitectura.md` enteros, aunque ya los
-   hayas leído antes en la conversación. Las reglas de negocio no se recuerdan de memoria,
-   se consultan.
-4. Anuncia cuántos escenarios tiene la spec y en qué fichero(s) de `domain/` van a vivir el
-   test y el código. Un escenario por commit lógico, nunca varios a la vez.
+1. Abre `docs/especificaciones/NNN-*.md`. Si su `Estado` no es `Congelada`, **para y dilo**:
+   una spec en `Borrador` no se implementa.
+2. Si su sección `Preguntas abiertas` no está vacía, **para y dilo**: hay que resolverlas con
+   el usuario antes de escribir un solo test.
+3. Lee `docs/dominio.md`, `docs/arquitectura.md` y `docs/flujo-de-trabajo.md` en esta sesión,
+   aunque creas recordarlos. Las reglas de voleibol se consultan, no se recuerdan.
+4. Anuncia, antes de tocar nada: cuántos escenarios tiene la spec, en qué ficheros de
+   `src/app/domain/` van a vivir el test y el código, y en qué orden vas a recorrer los
+   escenarios (por defecto, el de la spec; si alguno depende de otro, dilo y justifícalo).
 
-### Paso 1 a N — Un escenario cada vez, sin excepción
+### Alcance: qué NO se toca
+
+Salvo que la spec lo pida explícitamente:
+
+- No se crean componentes ni se toca `src/app/ui/`, `application/` o `infrastructure/`.
+- No se modifica `app.ts`, `app.config.ts`, `app.html` ni `angular.json`.
+- No se instalan dependencias. Si crees que hace falta una, **pregunta primero** y explica
+  por qué no se puede resolver con TypeScript a secas.
+- **No se edita la spec durante la implementación.** Está congelada. Si descubres que dice
+  algo incorrecto, para y dilo; la corrige el usuario, y solo entonces se sigue.
+
+### El ciclo, un escenario cada vez
 
 Por cada escenario, en este orden exacto:
 
-1. **Rojo.** Escribe el test de un único escenario en el `.spec.ts` correspondiente, con el
-   id del escenario en el nombre del test (`it('E4: ...')`). Ejecuta `npm test` y muestra el
-   resultado. Si falla por `ReferenceError` (la función o el tipo no existe), créala vacía o
-   con un `throw` y vuelve a ejecutar: el fallo válido es una aserción, nunca un error de
-   referencia.
-2. **Código mínimo.** Escribe solo lo necesario para que ese test pase. Prohibido adelantar
-   trabajo de escenarios futuros, añadir parámetros, ramas o casos que ningún test pida
-   todavía.
-3. **Verde.** Ejecuta `npm test` sobre la suite entera (no solo el test nuevo) y muestra que
-   todo pasa, incluidos los escenarios anteriores.
-4. **Refactor si hace falta**, con la suite en verde. Nunca se toca un test en este paso; si
-   hiciera falta cambiar uno, eso es un cambio de comportamiento, no un refactor, y hay que
-   pararse a discutirlo.
-5. **Parar y esperar confirmación explícita del usuario antes de pasar al siguiente
-   escenario.** No autoavanzar aunque el siguiente escenario parezca trivial o evidente.
+1. **Rojo.** Escribe el test de **un único** escenario en el `.spec.ts` correspondiente, con
+   el id del escenario en el nombre (`it('E4: ...')`). Ejecuta `npm test` y muestra el
+   resultado. Si falla con `ReferenceError` porque la función o el tipo no existe, créalos
+   vacíos y vuelve a ejecutar: el fallo válido es una **aserción**, nunca un error de
+   referencia. Un test que revienta porque falta la función no ha demostrado nada.
+2. **Código mínimo.** Solo lo necesario para que ese test pase. Prohibido adelantar trabajo
+   de escenarios futuros o añadir ramas que ningún test pida todavía. En los primeros
+   escenarios lo mínimo puede ser devolver una constante: **eso es correcto y esperado**, no
+   un atajo del que haya que disculparse. Serán los siguientes tests los que fuercen la
+   lógica real.
+3. **Verde.** Ejecuta `npm test` sobre la suite **entera**, no solo el test nuevo, y muestra
+   que pasan también todos los escenarios anteriores.
+4. **Refactor**, si hace falta, con la suite en verde. **Los tests no se tocan en este paso.**
+   Si para que algo pase hubiera que cambiar un test, no es un refactor: es un cambio de
+   comportamiento, y hay que parar y discutirlo.
+5. **Para y espera confirmación explícita del usuario** antes del siguiente escenario. No
+   autoavances aunque el siguiente parezca trivial.
+
+**Commits.** El repositorio está en Git. Cuando el usuario confirme un escenario y toque
+pasar al siguiente, sugiere un commit con el escenario en el mensaje, por ejemplo
+`git commit -m "E4: falta si el zaguero esta por delante de su delantero"`. No hagas el
+commit tú solo sin que el usuario lo pida o lo apruebe: proponlo, no lo ejecutes por tu
+cuenta. Un commit por escenario deja un historial que documenta el propio ciclo rojo-verde,
+que es la parte más valiosa de tener esto versionado.
+
+**Válvula de escape:** si el usuario dice explícitamente algo como "sigue hasta E8 sin
+parar" o "encadena los que queden", puedes hacerlo — pero manteniendo el ciclo
+rojo → mínimo → verde en cada escenario por separado y mostrando el resultado de cada uno.
+Lo que nunca se hace es escribir todos los tests juntos y después la función entera.
 
 ### Paso final — Cerrar la spec
 
 Cuando el último escenario esté en verde:
 
-1. Ejecuta la suite completa una vez más y confirma cobertura 100% en `domain/`.
-2. Rellena la sección `Al cerrar` de la spec: qué se desvió de lo previsto, qué sorprendió.
-   Si no hay ninguna desviación en una spec de más de cinco escenarios, dilo explícitamente
-   y pregunta al usuario si de verdad no hubo sorpresas — puede ser señal de que la spec se
-   escribió mirando ya la solución.
+1. Ejecuta la suite completa una vez más y muestra el resultado. Si existe el script
+   `test:coverage`, ejecútalo y reporta la cobertura de `src/app/domain/`; si no existe, no
+   lo inventes: dilo y sigue.
+2. Rellena la sección `Al cerrar` de la spec con lo que realmente pasó: qué se desvió de lo
+   previsto, qué te sorprendió, qué resultó más difícil de lo esperado. **No inventes
+   desviaciones para rellenar el hueco.** Si de verdad no hubo ninguna, escribe "ninguna" y
+   dilo abiertamente; es un dato útil, no un suspenso.
 3. Cambia el `Estado` de la spec a `Completada`.
-4. Si algo aprendido corrige una regla de voleibol, actualiza `docs/dominio.md` y dilo.
-5. Si algo aprendido es una decisión estructural nueva, añade entrada en `docs/decisiones.md`
-   (append-only, nunca edites una entrada existente) y dilo.
-6. No empieces la siguiente spec sin que el usuario lo pida explícitamente.
+4. Si algo aprendido corrige o precisa una regla de voleibol, actualiza `docs/dominio.md` y
+   avisa de qué has cambiado.
+5. Si algo aprendido es una decisión estructural nueva, añade una entrada al final de
+   `docs/decisiones.md` (append-only: nunca edites ni borres una entrada existente) y avisa.
+6. **No empieces la siguiente spec** sin que el usuario lo pida.
 
-### Qué hacer si el usuario solo pega una spec nueva sin pedir "implementa"
+### Si el usuario pega una spec nueva sin pedir que la implementes
 
-Si el usuario pega o escribe una especificación nueva sin decir "implementa", tu trabajo es
-**revisarla, no programarla**: comprobar que tiene escenarios con casos límite y no solo el
-camino feliz, señalar si detectas una regla de voleibol dudosa o un hueco, y esperar a que
-el usuario la congele. No escribas código a partir de una spec en `Borrador`.
+Tu trabajo es **revisarla, no programarla**: comprobar que los escenarios cubren casos límite
+y no solo el camino feliz, señalar reglas de voleibol dudosas o huecos, y proponer los
+escenarios que falten. Después espera a que el usuario la congele. No se escribe código a
+partir de una spec en `Borrador`.
 
 ---
 
@@ -95,17 +123,13 @@ el usuario la congele. No escribas código a partir de una spec en `Borrador`.
 
 ## Errores que ya se han cometido y no hay que repetir
 
-- Proponer PostgreSQL, Prisma o Express porque "un proyecto serio los lleva". No lleva.
-- Meter un patrón Adapter para el renderizado. No hay dos implementaciones ni se esperan.
-- Crear una interfaz con una única implementación por si acaso. La única excepción
-  aceptada es `SistemaRepository`, y está justificada en `docs/arquitectura.md`.
 - Tratar las seis rotaciones como seis conjuntos independientes de posiciones.
 - Modelar la zona de responsabilidad como un círculo con un radio ajustable por slider.
 - Confundir **rol** (colocador, receptor…, permanente) con **posición rotacional**
   (P1..P6, cambia en cada rotación). Son cosas distintas y ambas aparecen en el modelo.
 - Dar por hecho que la abreviatura del central es "C". Es "M": la C es del colocador.
 - Escribir todos los tests de una spec de golpe y luego la función completa. Eso es generar
-  tests, no hacer TDD. Ver el protocolo de arranque más arriba.
+  tests, no hacer TDD.
 
 ## Convenciones
 
@@ -128,6 +152,5 @@ el usuario la congele. No escribas código a partir de una spec en `Borrador`.
 - Si falta información para escribir un test correcto, preguntar en vez de suponer una
   regla de voleibol. Las reglas inventadas son el peor fallo posible en este proyecto:
   parecen razonables y enseñan cosas falsas a jugadores reales.
-- Implementar un escenario cada vez. No escribir los tests de toda una spec y luego toda
-  la función: eso es escribir tests, no TDD.
+- Implementar un escenario cada vez.
 - Preferir menos código y menos ficheros. La deuda aquí no es técnica, es de andamiaje.

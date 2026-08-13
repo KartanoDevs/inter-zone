@@ -8,6 +8,20 @@ export type RolId = 'colocador' | 'receptor' | 'central' | 'opuesto' | 'libero';
 export interface Jugador {
   readonly id: string;
   readonly rol: RolId;
+  readonly indice?: 1 | 2;
+}
+
+export interface DefinicionRol {
+  readonly nombre: string;
+  readonly abreviatura: string;
+  readonly llevaIndice: boolean;
+}
+
+export type ConfiguracionRoles = Readonly<Record<RolId, DefinicionRol>>;
+
+export interface ColisionAbreviatura {
+  readonly abreviatura: string;
+  readonly roles: readonly RolId[];
 }
 
 /** Los seis jugadores del equipo ordenados P1..P6 en la rotación inicial (R1). */
