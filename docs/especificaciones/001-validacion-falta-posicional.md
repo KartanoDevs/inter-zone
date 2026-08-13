@@ -153,3 +153,12 @@ cubría (el diseño por parejas de comparación nunca compara posiciones no empa
 comparación estricta `margen <= 0` ya cubre el empate exacto). Es el comportamiento esperado
 que describe `docs/flujo-de-trabajo.md`, no un atajo: cada uno de esos escenarios se escribió
 y ejecutó igualmente, confirmando el comportamiento en vez de forzarlo.
+
+**Corrección posterior (spec 003, decisión 0010).** El parámetro `rotacion` de
+`validarFormacion` interpretaba "0" como "el orden de saque tal cual se definió", sin mirar
+dónde estaba el colocador. La spec 003 corrigió esto: `rotacion` pasa a significar `Rn` =
+"el colocador ocupa Pn". Los escenarios E1–E15 de esta spec siguen probando las mismas
+formaciones y las mismas reglas; solo cambió qué valor de `rotacion` había que pasarles para
+seguir describiendo la misma rotación con el nuevo significado (E1–E14: de `0` a `2`; E15:
+`enR1`/`enR2` pasan a `1`/`2` respectivamente, coherentes con el nuevo nombre). Ninguna regla
+de falta posicional cambió.

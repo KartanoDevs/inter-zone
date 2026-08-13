@@ -17,7 +17,7 @@ que aparecen en el código.
 |---|---|
 | **Posición rotacional** | Uno de los seis lugares P1..P6 que ocupa un jugador en el momento del saque. No es dónde está de verdad: es su obligación reglamentaria. |
 | **Rol** | La función del jugador en el equipo: colocador, receptor, central, líbero, opuesto. No cambia al rotar. |
-| **Rotación** | Estado del equipo identificado por quién está en P1 (quien saca). R1..R6. |
+| **Rotación** | Estado del equipo identificado por en qué posición rotacional está el **colocador**. `Rn` significa "el colocador ocupa Pn". R1..R6. Solo coincide con "quién saca" (P1) en R1. |
 | **Orden de saque** | Los seis jugadores ordenados P1, P2, P3, P4, P5, P6 en la rotación inicial. Se define **una sola vez** por equipo. De él se derivan las otras cinco rotaciones. |
 | **Formación** | Dónde se coloca realmente cada jugador en el momento del saque contrario, para una rotación concreta. Es lo que diseña el entrenador. |
 | **Falta posicional** | Infracción por no respetar el orden relativo entre posiciones rotacionales en el instante del saque. |
@@ -124,6 +124,16 @@ gira en el sentido P2 → P1 → P6 → P5 → P4 → P3 → P2**.
 
 Consecuencia de diseño: dado el orden de saque, la posición rotacional de cada jugador en
 cualquier rotación es **derivable**. Nunca se almacena; se calcula.
+
+### Numeración de las rotaciones
+
+`Rn` significa siempre **"el colocador ocupa Pn"**, con independencia de cómo se definió el
+orden de saque. Es la convención habitual del sistema 5-1: R1 es la rotación en la que el
+colocador saca (zaga derecha), R3 es su posición natural de armado en la red, etc.
+
+Esto es distinto de "rotar el orden de saque tal cual se definió", que depende de dónde
+empezó el entrenador a escribir la lista. Si el orden de saque no arranca con el colocador en
+P1, ambas numeraciones divergen. Ver `docs/decisiones.md`, decisión 0010.
 
 ---
 

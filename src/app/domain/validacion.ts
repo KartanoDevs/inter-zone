@@ -8,7 +8,7 @@ import type {
   ResultadoValidacion,
   TipoComparacion,
 } from './modelos';
-import { rotar } from './rotacion';
+import { formacionEnRotacion } from './rotacion';
 
 const MARGEN_TOLERANCIA = 0.05;
 
@@ -65,7 +65,7 @@ export function validarFormacion(
   orden: OrdenSaque,
   rotacion: number,
 ): ResultadoValidacion {
-  const posiciones = rotar(orden, rotacion);
+  const posiciones = formacionEnRotacion(orden, rotacion);
   const [p1, p2, p3, p4, p5, p6] = posiciones.map((jugador) => colocacionDe(formacion, jugador));
 
   const infracciones: Infraccion[] = [];

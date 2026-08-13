@@ -1,5 +1,5 @@
 import type { ConfiguracionRoles, Jugador, OrdenSaque, RolId } from './modelos';
-import { rotar } from './rotacion';
+import { formacionEnRotacion } from './rotacion';
 
 function indicesConsistentes(orden: OrdenSaque, configuracion: ConfiguracionRoles): boolean {
   const indicesVistos = new Map<RolId, Set<1 | 2>>();
@@ -48,7 +48,7 @@ export function validarPlantilla(orden: OrdenSaque, configuracion: Configuracion
 }
 
 export function asignarIndices(orden: OrdenSaque, configuracion: ConfiguracionRoles): OrdenSaque {
-  const desdeColocador = rotar(orden, orden.findIndex((jugador) => jugador.rol === 'colocador'));
+  const desdeColocador = formacionEnRotacion(orden, 1);
 
   const indicesPorId = new Map<string, 1 | 2>();
   const contadores = new Map<RolId, number>();

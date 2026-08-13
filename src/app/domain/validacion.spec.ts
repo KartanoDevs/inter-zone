@@ -24,7 +24,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -46,7 +46,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -68,7 +68,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 7 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -90,7 +90,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([{ tipo: 'zaguero-delantero', jugadores: [p1, p2] }]);
   });
@@ -112,7 +112,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -134,7 +134,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([{ tipo: 'orden-lateral', jugadores: [p4, p3] }]);
   });
@@ -156,7 +156,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([{ tipo: 'orden-lateral', jugadores: [p6, p1] }]);
   });
@@ -178,7 +178,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 4 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([{ tipo: 'zaguero-delantero', jugadores: [p6, p3] }]);
   });
@@ -200,7 +200,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 4.03 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
     expect(resultado.avisos).toEqual([{ tipo: 'zaguero-delantero', jugadores: [p6, p3] }]);
@@ -223,7 +223,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 4.08 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
     expect(resultado.avisos).toEqual([]);
@@ -246,7 +246,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -268,7 +268,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([{ tipo: 'libero-delantero', jugadores: [p3] }]);
   });
@@ -290,7 +290,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([]);
   });
@@ -312,7 +312,7 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, orden, 0);
+    const resultado = validarFormacion(formacion, orden, 2);
 
     expect(resultado.infracciones).toEqual([
       { tipo: 'zaguero-delantero', jugadores: [p1, p2] },
@@ -337,10 +337,32 @@ describe('validarFormacion', () => {
       { jugador: p6, punto: { x: 4.5, y: 6 } },
     ];
 
-    const enR1 = validarFormacion(formacion, orden, 0);
-    const enR2 = validarFormacion(formacion, orden, 1);
+    const enR2 = validarFormacion(formacion, orden, 2);
+    const enR1 = validarFormacion(formacion, orden, 1);
 
-    expect(enR1.infracciones).toEqual([]);
-    expect(enR2.infracciones.length).toBeGreaterThan(0);
+    expect(enR2.infracciones).toEqual([]);
+    expect(enR1.infracciones.length).toBeGreaterThan(0);
+  });
+
+  it('003-E8: la rotación pedida se interpreta como Rn anclada al colocador', () => {
+    const opuesto = jugador('q1', 'opuesto');
+    const receptor1 = jugador('q2', 'receptor');
+    const colocador = jugador('q3', 'colocador');
+    const receptor2 = jugador('q4', 'receptor');
+    const central = jugador('q5', 'central');
+    const receptor3 = jugador('q6', 'receptor');
+    const orden: OrdenSaque = [opuesto, receptor1, colocador, receptor2, central, receptor3];
+    const formacion: Formacion = [
+      { jugador: opuesto, punto: { x: 8, y: 8 } },
+      { jugador: receptor1, punto: { x: 8, y: 1 } },
+      { jugador: colocador, punto: { x: 4.5, y: 1 } },
+      { jugador: receptor2, punto: { x: 1, y: 1 } },
+      { jugador: central, punto: { x: 1, y: 6 } },
+      { jugador: receptor3, punto: { x: 4.5, y: 6 } },
+    ];
+
+    const resultado = validarFormacion(formacion, orden, 3);
+
+    expect(resultado.infracciones).toEqual([]);
   });
 });
