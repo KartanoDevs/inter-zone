@@ -1,0 +1,31 @@
+<div class="app-dialogo-overlay" (click)="cancelar.emit()">
+  <div class="app-dialogo" role="dialog" aria-modal="true" [attr.aria-label]="titulo()" (click)="$event.stopPropagation()">
+    <h2 class="app-dialogo__titulo">{{ titulo() }}</h2>
+
+    <label class="app-dialogo-sistema__campo">
+      Nombre
+      <input #nombreCampo type="text" class="app-dialogo-sistema__input" [value]="nombreInicial()" autofocus />
+    </label>
+
+    @if (mostrarTipo()) {
+      <fieldset class="app-dialogo-sistema__tipo">
+        <legend>Tipo</legend>
+        <label>
+          <input type="radio" name="tipo" checked />
+          Recepción
+        </label>
+        <label class="app-dialogo-sistema__tipo-deshabilitado">
+          <input type="radio" name="tipo" disabled />
+          Defensa (próximamente)
+        </label>
+      </fieldset>
+    }
+
+    <div class="app-dialogo__acciones">
+      <button type="button" class="app-boton app-boton--terciario" (click)="cancelar.emit()">Cancelar</button>
+      <button type="button" class="app-boton app-boton--primario" (click)="emitirConfirmacion(nombreCampo.value)">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>

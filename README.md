@@ -13,10 +13,13 @@ sin cubrir.
 ## Qué hace (v1)
 
 - Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
-- Crear sistemas de recepción con nombre, ligados a una plantilla.
+- Crear, renombrar y borrar varios sistemas de recepción con nombre, cada uno ligado a una
+  plantilla, y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
   numeradas por dónde está el colocador).
 - Bloquear el guardado de una rotación que cometa falta de posición.
+- Escribir por qué se coloca así una rotación, o un jugador dentro de ella — enseñanza, no
+  solo geometría.
 - Pintar sobre una rejilla la zona de responsabilidad de cada receptor.
 - Detectar huecos (nadie cubre) y conflictos (dos o más se pisan).
 - Consultar un sistema guardado, rotación a rotación, en solo lectura.
@@ -44,7 +47,7 @@ Requiere Node 22.22.3 o superior.
 
 ```bash
 npm install
-npm test          # tests de dominio, deben pasar siempre
+npm test          # dominio, infraestructura y aplicación; deben pasar siempre
 npm start
 ```
 
@@ -67,14 +70,16 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    validación posicional, plantillas de equipo. Sin UI. Specs 001–004.
 2. **Sistema de recepción.** Crear un sistema con nombre, ligado a una plantilla, y guardar
    una formación legal por rotación — bloqueando el guardado si comete falta. Spec 005.
-3. **Pista SVG + arrastre + validación en vivo + navegación R1–R6.** Primer punto en que la
-   herramienta enseña algo tocándola. Specs 007–008.
-4. **Persistencia en el navegador.** Guardar y recuperar sistemas y plantillas. Spec 006.
-5. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
-   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 009–010.
-6. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
-   Specs 011–012.
-7. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 013.
+3. **Catálogo de sistemas, enseñanza, persistencia y pizarra interactiva.** Crear, renombrar y
+   borrar varios sistemas; explicaciones de enseñanza por rotación y por jugador; guardado en
+   el navegador con un esquema pensado para migrar a PostgreSQL + Prisma en la V2; y, sobre
+   todo eso, la pista SVG con arrastre, validación en vivo, navegación R1–R6 y selección de
+   jugador. Primer punto en que la herramienta enseña algo tocándola. Specs 006–010.
+4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
+   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 011–012.
+5. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
+   Specs 013–014.
+6. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 015.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

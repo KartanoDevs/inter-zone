@@ -1,0 +1,25 @@
+<details class="app-ensenanza" open>
+  <summary class="app-ensenanza__resumen">
+    <span class="app-ensenanza__titulo">{{ titulo() }}</span>
+    <span class="app-ensenanza__chevron" aria-hidden="true"></span>
+  </summary>
+
+  <div class="app-ensenanza__cuerpo">
+    @if (editando()) {
+      <textarea
+        class="app-ensenanza__campo"
+        rows="3"
+        [value]="borrador()"
+        (input)="borrador.set($any($event.target).value)"
+        placeholder="¿Por qué se coloca aquí?"
+      ></textarea>
+      <div class="app-ensenanza__acciones">
+        <button type="button" class="app-boton app-boton--terciario" (click)="cancelar()">Cancelar</button>
+        <button type="button" class="app-boton app-boton--primario" (click)="confirmar()">Guardar</button>
+      </div>
+    } @else {
+      <p class="app-ensenanza__texto">{{ texto() || 'Sin explicación todavía.' }}</p>
+      <button type="button" class="app-boton app-boton--terciario" (click)="iniciarEdicion()">Editar</button>
+    }
+  </div>
+</details>

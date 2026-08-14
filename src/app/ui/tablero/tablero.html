@@ -1,4 +1,13 @@
 <div class="app-tablero">
+  <app-barra-sistemas
+    [sistemas]="opcionesSistema()"
+    [sistemaActivoId]="store.sistemaActivoId()"
+    (elegir)="elegirSistema($event)"
+    (crear)="abrirCrear()"
+    (editar)="abrirEditar()"
+    (borrar)="pedirBorrado()"
+  ></app-barra-sistemas>
+
   <app-selector-rotacion
     [rotaciones]="estadosRotacion()"
     [rotacionActiva]="store.rotacionActiva()"
@@ -22,6 +31,12 @@
 
   <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
 
+  <app-panel-ensenanza
+    [titulo]="tituloEnsenanza()"
+    [texto]="store.explicacionMostrada()"
+    (guardar)="guardarExplicacion($event)"
+  ></app-panel-ensenanza>
+
   <div class="app-tablero__acciones">
     <button type="button" class="app-boton app-boton--terciario" (click)="vaciarRotacion()">Vaciar</button>
     <button type="button" class="app-boton app-boton--primario" [disabled]="!completo() || !esLegal()" (click)="guardar()">
@@ -44,6 +59,26 @@
       textoConfirmar="Descartar y continuar"
       (confirmar)="confirmarCambio()"
       (cancelar)="cancelarCambio()"
+    ></app-dialogo-confirmacion>
+  }
+
+  @if (dialogoSistema(); as modo) {
+    <app-dialogo-sistema
+      [titulo]="modo === 'crear' ? 'Nuevo sistema' : 'Renombrar sistema'"
+      [nombreInicial]="modo === 'editar' ? (store.sistemaActivo()?.nombre ?? '') : ''"
+      [mostrarTipo]="modo === 'crear'"
+      (confirmar)="confirmarDialogoSistema($event)"
+      (cancelar)="cancelarDialogoSistema()"
+    ></app-dialogo-sistema>
+  }
+
+  @if (confirmandoBorrado()) {
+    <app-dialogo-confirmacion
+      titulo="Borrar sistema"
+      [mensaje]="'¿Borrar «' + (store.sistemaActivo()?.nombre ?? '') + '»? No se puede deshacer.'"
+      textoConfirmar="Borrar"
+      (confirmar)="confirmarBorrado()"
+      (cancelar)="cancelarBorrado()"
     ></app-dialogo-confirmacion>
   }
 </div>

@@ -1,0 +1,78 @@
+:host {
+  display: block;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: var(--space-1) var(--space-2);
+}
+
+.app-ensenanza__resumen {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  list-style: none;
+}
+
+.app-ensenanza__resumen::-webkit-details-marker {
+  display: none;
+}
+
+.app-ensenanza__titulo {
+  flex: 1;
+}
+
+.app-ensenanza__chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+details[open] > .app-ensenanza__resumen .app-ensenanza__chevron {
+  transform: rotate(-135deg);
+}
+
+.app-ensenanza__cuerpo {
+  margin-top: var(--space-1);
+}
+
+.app-ensenanza__texto {
+  margin: 0 0 var(--space-1);
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.app-ensenanza__campo {
+  width: 100%;
+  margin-bottom: var(--space-1);
+  padding: 8px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 13px;
+  resize: vertical;
+}
+
+.app-ensenanza__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-ensenanza__chevron {
+    transition: none;
+  }
+}

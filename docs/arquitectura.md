@@ -26,16 +26,28 @@ implementa puertos que se **declaran** en `domain/`.
 
 Modelos y reglas. Aquí vive el voleibol.
 
-- `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `Equipo`, `OrdenSaque`,
-  `Colocacion`, `Formacion`, `Sistema`, `Infraccion`.
+- `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `OrdenSaque`, `PlantillaEquipo`,
+  `TipoSistema`, `Sistema`, `Colocacion`, `Formacion`, `Infraccion`, `Aviso`,
+  `ResultadoValidacion`.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
-- `rotacion.ts` — `rotar(orden, rotacion)`, deriva las posiciones rotacionales.
-- `validacion.ts` — `validarFormacion(formacion, orden, equipo): Infraccion[]`.
-- `rejilla.ts` — conversión entre metros y `CeldaId`, límites, pertenencia al campo.
-- `cobertura.ts` — mapa inverso, huecos, conflictos.
+- `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
+  rotacionales ancladas al colocador (ADR 0010).
+- `plantilla.ts` — `validarPlantilla`, `asignarIndices`: composición y numeración de una
+  plantilla de seis.
+- `plantillas-equipo.ts` — `puedeCrearPlantillaEquipo`, `puedeBorrarPlantillaEquipo`.
+- `plantilla-global.ts` — la única plantilla real de la v1 (dos variantes, central2/líbero).
+  Configuración por defecto, igual que `roles.ts` (ADR 0013).
+- `validacion.ts` — `validarFormacion(formacion, orden, rotacion): ResultadoValidacion`.
+- `catalogo-sistemas.ts` — `crearSistema`, `renombrarSistema`, `borrarSistema`,
+  `ordenarCatalogo`, `cambiarPlantilla` (ADR 0011).
+- `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
+  `explicarRotacion`, `explicarJugador`.
 - `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
 
-Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad.
+Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
+eso `creadoEn`/`actualizadoEn` de un sistema no viven aquí, sino en `infrastructure/` (ADR
+0012). `rejilla.ts` y `cobertura.ts` (conversión a celdas, huecos y conflictos) todavía no
+existen: llegan con las specs 013–014 de la hoja de ruta del README.
 
 **La configuración de roles vive aquí**, no en la UI ni en un fichero de entorno. Cambiar
 "Receptor" por "Punta" es cambiar el vocabulario del dominio, y el sitio donde se hace debe
@@ -43,13 +55,19 @@ ser evidente para alguien que solo lea `domain/`.
 
 ### `application/`
 
-Orquestación y estado de la aplicación con signals.
+Orquestación y estado de la aplicación con signals. Una única clase, `SistemaStore` — sin
+decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeable sin
+`TestBed` (`sistema.store.spec.ts`).
 
-- `SistemaStore`: escribibles `sistema`, `equipo`, `rotacionActiva`, `jugadorSeleccionado`,
-  `modo`.
-- Derivados con `computed`: `formacionActual`, `infracciones`, `etiquetas`, `mapaCobertura`,
-  `huecos`, `conflictos`.
-- Casos de uso: `cargarSistema`, `guardarSistema`, `moverJugador`, `pintarCeldas`.
+- Escribibles: `sistemas` (catálogo completo), `sistemaActivoId`, `rotacionActiva`,
+  `borrador` (la formación en edición, antes de guardar), `cambioPendiente` (aviso de cambios
+  sin guardar al cambiar de rotación o de sistema), `jugadorSeleccionadoId`.
+- Derivados con `computed`: `catalogo` (ordenado), `sistemaActivo`, `ordenActivo`,
+  `formacionGuardadaActiva`, `hayCambiosSinGuardar`, `resultadoValidacion`, `puedeGuardar`,
+  `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno la de la rotación).
+- Acciones: `activarSistema`, `seleccionarRotacion`, `confirmarCambio`/`cancelarCambio`,
+  `colocarOMover`, `quitar`, `vaciar`, `guardar`, `crear`, `renombrarActivo`, `borrar`,
+  `seleccionarJugador`, `guardarExplicacion`.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -57,22 +75,40 @@ Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenec
 
 Adaptadores hacia el mundo exterior.
 
-- `LocalStorageSistemaRepository implements SistemaRepository`.
-- Formato persistido: `{ "version": 1, "data": { ... } }`. La `version` está desde el
-  primer día y existe una función `migrar()` aunque hoy sea la identidad.
-- Exportadores: PNG (serializando el SVG) y JSON.
+- `LocalStorageSistemaRepository implements SistemaRepository`, sobre un `AlmacenClaveValor`
+  inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
+  Recibe también las dos variantes de plantilla por constructor: en la v1 son una constante de
+  la aplicación, no un dato de dominio (ADR 0013).
+- Formato persistido: `{ "version": 1, "data": { "sistemas": [...] } }`. Cada sistema
+  persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
+  0012), y `ocupanteCasilla` en vez de la plantilla completa.
+- Exportadores (PNG, JSON): todavía no existen, llegan con la spec 015.
 
 ### `ui/`
 
-Componentes standalone de Angular. `ChangeDetectionStrategy.OnPush`, zoneless.
+Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
+`ChangeDetectionStrategy.OnPush`, zoneless.
 
-- `PistaComponent` — el SVG, con `viewBox` en metros y `width="100%"`. El escalado responsive
-  lo hace el navegador; no hay código de `resize`.
-- `FichaJugadorComponent` — pinta la etiqueta derivada (`R1`, `M2`, `C`...).
-- `RejillaComponent`, `PanelValidacionComponent`, `SelectorRotacionComponent`.
+- `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
+  puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados).
+- `ui/rotaciones/` — `SelectorRotacion`, las pestañas R1–R6.
+- `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
+  `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable).
+- `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/borrar), `DialogoSistema`
+  (alta y edición).
+- `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
+  el borrado de un sistema.
+- `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
+  a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
+  ficha).
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
-la etiqueta de una ficha.
+la etiqueta de una ficha — con una única excepción deliberada: `Tablero` distingue un toque de
+un arrastre por la distancia en píxeles de pantalla entre agarrar y soltar (spec 010), porque
+esa distinción es de interacción, no de voleibol.
+
+`src/app/maqueta/` sigue existiendo como boceto congelado: no se borra, pero desde la spec 009
+`app.html` ya no la renderiza. Sirve de referencia visual, no se toca.
 
 ## Estructura de carpetas
 
@@ -82,20 +118,28 @@ src/app/
 │   ├── modelos.ts
 │   ├── roles.ts
 │   ├── rotacion.ts
+│   ├── plantilla.ts
+│   ├── plantillas-equipo.ts
+│   ├── plantilla-global.ts
 │   ├── validacion.ts
-│   ├── rejilla.ts
-│   ├── cobertura.ts
+│   ├── catalogo-sistemas.ts
+│   ├── sistema-recepcion.ts
 │   ├── puertos.ts
 │   └── *.spec.ts
 ├── application/
 │   ├── sistema.store.ts
-│   └── *.spec.ts
+│   └── sistema.store.spec.ts
 ├── infrastructure/
-│   └── local-storage-sistema.repository.ts
-└── ui/
-    ├── pista/
-    ├── panel/
-    └── rotaciones/
+│   ├── local-storage-sistema.repository.ts
+│   └── local-storage-sistema.repository.spec.ts
+├── ui/
+│   ├── tablero/
+│   ├── pista/
+│   ├── rotaciones/
+│   ├── panel/
+│   ├── sistemas/
+│   └── comun/
+└── maqueta/        # boceto congelado, no se renderiza ni se borra
 ```
 
 Los tests viven junto al fichero que prueban, no en una carpeta `test/` paralela.

@@ -22,6 +22,7 @@ const RADIO_M = 0.45;
     '[class.app-ficha--falta]': "estado() === 'falta'",
     '[class.app-ficha--libero]': 'esLibero()',
     '[class.app-ficha--zaguera]': "linea() === 'zaguera'",
+    '[class.app-ficha--seleccionada]': 'seleccionada()',
     '[class.app-ficha--arrastrando]': 'arrastrando()',
     '[attr.transform]': 'transform()',
     '(pointerdown)': 'agarrada.emit($event)',
@@ -34,6 +35,7 @@ export class FichaJugador {
   readonly linea = input<LineaFicha>('delantera');
   readonly esLibero = input(false);
   readonly arrastrando = input(false);
+  readonly seleccionada = input(false);
 
   readonly agarrada = output<PointerEvent>();
 

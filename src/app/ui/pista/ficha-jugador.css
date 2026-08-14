@@ -47,6 +47,16 @@
   fill: var(--neon-pink);
 }
 
+:host(.app-ficha--seleccionada) .app-ficha__circulo {
+  stroke: var(--neon-purple);
+  stroke-width: 0.09;
+  filter: drop-shadow(0 0 0.22px var(--neon-purple));
+}
+
+:host(.app-ficha--seleccionada) .app-ficha__etiqueta {
+  fill: var(--neon-purple);
+}
+
 :host(.app-ficha--arrastrando) .app-ficha__circulo {
   stroke: var(--neon-magenta);
 }

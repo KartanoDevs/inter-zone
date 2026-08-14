@@ -1,6 +1,6 @@
 # 010 — Catálogo en pantalla: selector, alta y panel de enseñanza
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 3
 
 ## Problema
@@ -99,4 +99,40 @@ Ninguna, siempre que las specs 006 a 009 estén cerradas primero.
 
 ## Al cerrar
 
-Pendiente. Se rellena cuando la spec se cierre.
+11 de los 13 escenarios se verificaron con test en `application/sistema.store.spec.ts`: E1, E2,
+E3 (ya cubierto por el mecanismo de la spec 009), E4 (ídem), E6, E7, E8, E9, E10, E11 y E13
+(dividido en dos tests, con y sin jugador seleccionado). 112 tests en total ahora
+(`domain/`, `infrastructure/`, `application/`). No existe `npm run test:coverage`; no se
+reporta cobertura numérica por el mismo motivo que en specs anteriores.
+
+**E5 y E12 no tienen test.** Son puramente de interfaz: que el radio de "defensa" aparezca
+deshabilitado en el formulario, y que un arrastre real no dispare selección. Se verificaron
+leyendo el código (`disabled` fijo en el radio de defensa; el umbral de 5px en
+`tablero.ts::iniciarArrastre` solo llama a `seleccionarJugador` si el desplazamiento entre
+agarrar y soltar queda por debajo) y con `ng build` + arranque del servidor de desarrollo, sin
+clic real — la misma limitación de verificación que ya se explicó en la spec 009.
+
+**Toque contra arrastre.** El umbral vive en `ui/tablero/tablero.ts`, no en el store: mide la
+distancia en píxeles de pantalla entre el `pointerdown` y el `pointerup` sobre una ficha ya en
+pista. Por debajo de 5px cuenta como toque y alterna la selección; por encima, es un arrastre
+normal y no toca la selección. Es una constante de UI (`UMBRAL_TOQUE_PX`), no algo que
+`SistemaStore` necesite saber.
+
+**Reutilización de la spec 009.** E3 y E4 no necesitaron código nuevo: `activarSistema` ya
+llevaba desde la 009 el mismo mecanismo de "cambios sin guardar" que usa `seleccionarRotacion`
+(compartían `cambiarContexto()` y el mismo `cambioPendiente`). Confirma la nota que la spec 009
+ya dejó escrita en su "Fuera de alcance".
+
+**Panel de enseñanza y explicaciones.** `explicacionMostrada` (en el store) decide sin que
+`ui/panel/panel-ensenanza.ts` sepa nada del dominio: si hay jugador seleccionado, la suya; si
+no, la de la rotación activa. El panel solo edita el texto que le llega y emite el nuevo texto
+al guardar; quién es su destinatario lo decide `SistemaStore::guardarExplicacion` mirando
+`jugadorSeleccionadoId` en ese momento.
+
+**Diálogos compartidos.** El `<select>` nativo del desplegable es la primera vez que el
+proyecto usa uno (no había ninguno hasta ahora). Las clases `.app-dialogo*` (overlay, tarjeta,
+título, acciones) se movieron a `src/styles.css` la spec pasada para que `dialogo-confirmacion`
+las reutilizara; `dialogo-sistema` (alta/edición) las reutiliza también, cambiando solo sus
+propios campos y dejando el borde cian por defecto en vez del rosa de alerta.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta.

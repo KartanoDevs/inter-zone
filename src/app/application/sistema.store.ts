@@ -1,9 +1,15 @@
 import { computed, signal } from '@angular/core';
-import type { Formacion, OrdenSaque, Punto, Sistema } from '../domain/modelos';
+import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
-import { ordenarCatalogo } from '../domain/catalogo-sistemas';
-import { guardarFormacion } from '../domain/sistema-recepcion';
+import {
+  borrarSistema,
+  crearSistema,
+  ordenarCatalogo,
+  renombrarSistema,
+} from '../domain/catalogo-sistemas';
+import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
 import { validarFormacion } from '../domain/validacion';
+import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
 
 export type RotacionValida = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -32,6 +38,9 @@ export class SistemaStore {
   readonly rotacionActiva = signal<RotacionValida>(1);
   readonly borrador = signal<Formacion>([]);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
+  readonly jugadorSeleccionadoId = signal<string | null>(null);
+
+  readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
 
   readonly sistemaActivo = computed(() => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null);
 
@@ -51,11 +60,27 @@ export class SistemaStore {
 
   readonly puedeGuardar = computed(() => this.resultadoValidacion()?.infracciones.length === 0);
 
+  readonly explicacionRotacionActiva = computed(
+    () => this.sistemaActivo()?.explicacionesRotacion[this.rotacionActiva()] ?? '',
+  );
+
+  readonly explicacionJugadorSeleccionado = computed(() => {
+    const id = this.jugadorSeleccionadoId();
+    if (!id) {
+      return '';
+    }
+    return this.formacionGuardadaActiva().find((c) => c.jugador.id === id)?.explicacion ?? '';
+  });
+
+  readonly explicacionMostrada = computed(() =>
+    this.jugadorSeleccionadoId() ? this.explicacionJugadorSeleccionado() : this.explicacionRotacionActiva(),
+  );
+
   constructor(private readonly repositorio: SistemaRepository) {
     const catalogo = ordenarCatalogo(repositorio.listar());
     this.sistemas.set(catalogo);
     this.sistemaActivoId.set(catalogo[0]?.id ?? null);
-    this.cargarBorrador();
+    this.cambiarContexto();
   }
 
   activarSistema(id: string): void {
@@ -68,7 +93,7 @@ export class SistemaStore {
     }
     this.sistemaActivoId.set(id);
     this.rotacionActiva.set(1);
-    this.cargarBorrador();
+    this.cambiarContexto();
   }
 
   seleccionarRotacion(rotacion: RotacionValida): void {
@@ -80,7 +105,7 @@ export class SistemaStore {
       return;
     }
     this.rotacionActiva.set(rotacion);
-    this.cargarBorrador();
+    this.cambiarContexto();
   }
 
   confirmarCambio(): void {
@@ -95,7 +120,64 @@ export class SistemaStore {
       this.sistemaActivoId.set(pendiente.valor);
       this.rotacionActiva.set(1);
     }
-    this.cargarBorrador();
+    this.cambiarContexto();
+  }
+
+  seleccionarJugador(jugadorId: string): void {
+    this.jugadorSeleccionadoId.update((actual) => (actual === jugadorId ? null : jugadorId));
+  }
+
+  crear(nombre: string, tipo: TipoSistema): boolean {
+    const id = crypto.randomUUID();
+    const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL.central2, this.sistemas());
+    if (!nuevo) {
+      return false;
+    }
+    this.sistemas.update((lista) => [...lista, nuevo]);
+    this.repositorio.guardar(this.sistemas());
+    this.sistemaActivoId.set(id);
+    this.rotacionActiva.set(1);
+    this.cambiarContexto();
+    return true;
+  }
+
+  renombrarActivo(nombre: string): boolean {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return false;
+    }
+    const actualizado = renombrarSistema(sistema, nombre, this.sistemas());
+    if (!actualizado) {
+      return false;
+    }
+    this.reemplazarSistema(actualizado);
+    return true;
+  }
+
+  borrar(id: string): void {
+    this.sistemas.update((lista) => borrarSistema(lista, id));
+    this.repositorio.guardar(this.sistemas());
+    if (this.sistemaActivoId() === id) {
+      const primero = ordenarCatalogo(this.sistemas())[0] ?? null;
+      this.sistemaActivoId.set(primero?.id ?? null);
+      this.rotacionActiva.set(1);
+      this.cambiarContexto();
+    }
+  }
+
+  guardarExplicacion(texto: string): void {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return;
+    }
+    const jugadorId = this.jugadorSeleccionadoId();
+    const actualizado = jugadorId
+      ? explicarJugador(sistema, this.rotacionActiva(), jugadorId, texto)
+      : explicarRotacion(sistema, this.rotacionActiva(), texto);
+    if (!actualizado) {
+      return;
+    }
+    this.reemplazarSistema(actualizado);
   }
 
   cancelarCambio(): void {
@@ -127,12 +209,19 @@ export class SistemaStore {
     if (!guardado) {
       return;
     }
-    this.sistemas.update((lista) => lista.map((s) => (s.id === guardado.id ? guardado : s)));
-    this.repositorio.guardar(this.sistemas());
-    this.cargarBorrador();
+    this.reemplazarSistema(guardado);
+    this.borrador.set(this.formacionGuardadaActiva());
   }
 
-  private cargarBorrador(): void {
+  /** Sustituye un sistema en el catálogo por su versión actualizada y persiste. */
+  private reemplazarSistema(actualizado: Sistema): void {
+    this.sistemas.update((lista) => lista.map((s) => (s.id === actualizado.id ? actualizado : s)));
+    this.repositorio.guardar(this.sistemas());
+  }
+
+  /** Recarga el borrador desde lo guardado y deselecciona: se llama al cambiar de rotación o de sistema. */
+  private cambiarContexto(): void {
     this.borrador.set(this.formacionGuardadaActiva());
+    this.jugadorSeleccionadoId.set(null);
   }
 }

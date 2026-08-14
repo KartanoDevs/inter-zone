@@ -10,6 +10,7 @@ export interface FichaVista {
   readonly estado: EstadoFicha;
   readonly linea: LineaFicha;
   readonly esLibero: boolean;
+  readonly seleccionada: boolean;
 }
 
 export interface FichaAgarrada {

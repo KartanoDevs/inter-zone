@@ -33,6 +33,7 @@
       [estado]="ficha.estado"
       [linea]="ficha.linea"
       [esLibero]="ficha.esLibero"
+      [seleccionada]="ficha.seleccionada"
       [arrastrando]="ficha.id === idArrastrada()"
       (agarrada)="fichaAgarrada.emit({ id: ficha.id, evento: $event })"
     ></g>

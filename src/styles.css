@@ -135,6 +135,52 @@ button {
   }
 }
 
+/* Tarjeta de diálogo modal compartida (overlay + tarjeta + título + acciones). Los diálogos
+   concretos (ui/comun/dialogo-confirmacion, ui/sistemas/dialogo-sistema) solo añaden sus
+   propios campos y, si hace falta, cambian el color del borde. */
+.app-dialogo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  background: rgba(5, 5, 10, 0.75);
+}
+
+.app-dialogo {
+  width: 100%;
+  max-width: 320px;
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.15);
+}
+
+.app-dialogo__titulo {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+}
+
+.app-dialogo__mensaje {
+  margin: 0 0 var(--space-3);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.app-dialogo__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

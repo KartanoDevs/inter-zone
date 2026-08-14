@@ -3,7 +3,10 @@ import { Pista, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
+import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
+import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
+import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
 import { formacionEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
@@ -17,6 +20,12 @@ const POSICIONES = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
 // nunca quede recortada por el borde visible (igual que en la maqueta).
 const LIMITE_X: readonly [number, number] = [-0.3, 9.3];
 const LIMITE_Y: readonly [number, number] = [-3.6, 9.3];
+
+// Por debajo de este desplazamiento en pantalla, un pointerdown+pointerup sobre una ficha
+// cuenta como un toque (selecciona) y no como un arrastre (spec 010, E9-E10 vs E12).
+const UMBRAL_TOQUE_PX = 5;
+
+type DialogoSistemaAbierto = 'crear' | 'editar' | null;
 
 interface Arrastre {
   readonly jugadorId: string;
@@ -39,6 +48,10 @@ function esLineaDelantera(posicion: string): boolean {
 
 function distancia(a: Punto, b: Punto): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function distanciaPantalla(a: { clientX: number; clientY: number }, b: { clientX: number; clientY: number }): number {
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
 
 /** Ver docs/arquitectura.md: con fichas solapadas, se busca la más cercana al punto real del toque. */
@@ -72,13 +85,23 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 }
 
 /**
- * Shell de la pizarra real (spec 009): consume `SistemaStore`, que es donde vive toda la
- * lógica. Este componente solo traduce signals a vista y gestiona el arrastre con
- * `PointerEvent`, reutilizando tal cual el diseño ya resuelto en `maqueta/tablero.ts`.
+ * Shell de la pizarra real: consume `SistemaStore`, que es donde vive toda la lógica. Este
+ * componente solo traduce signals a vista, gestiona el arrastre con `PointerEvent`
+ * (reutilizando el diseño de `maqueta/tablero.ts`) y distingue un toque de un arrastre para
+ * la selección de jugador (spec 010).
  */
 @Component({
   selector: 'app-tablero',
-  imports: [Pista, SelectorRotacion, PanelValidacion, PaletaJugadores, DialogoConfirmacion],
+  imports: [
+    Pista,
+    SelectorRotacion,
+    PanelValidacion,
+    PaletaJugadores,
+    PanelEnsenanza,
+    DialogoConfirmacion,
+    BarraSistemas,
+    DialogoSistema,
+  ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,6 +111,9 @@ export class Tablero {
 
   protected readonly arrastre = signal<Arrastre | null>(null);
   protected readonly idArrastrada = computed(() => this.arrastre()?.jugadorId ?? null);
+
+  protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
+  protected readonly confirmandoBorrado = signal(false);
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -110,6 +136,7 @@ export class Tablero {
   protected readonly fichas = computed<readonly FichaVista[]>(() => {
     const resultado = this.store.resultadoValidacion();
     const posicionPorId = this.posicionPorId();
+    const seleccionadoId = this.store.jugadorSeleccionadoId();
     return this.store.borrador().map((colocacion) => {
       const posicionRotacional = posicionPorId.get(colocacion.jugador.id) ?? '';
       return {
@@ -119,6 +146,7 @@ export class Tablero {
         estado: estadoDe(resultado, colocacion.jugador.id),
         linea: esLineaDelantera(posicionRotacional) ? 'delantera' : 'zaguera',
         esLibero: colocacion.jugador.rol === 'libero',
+        seleccionada: colocacion.jugador.id === seleccionadoId,
       };
     });
   });
@@ -147,8 +175,26 @@ export class Tablero {
     });
   });
 
+  protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
+    this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
+  );
+
+  protected readonly tituloEnsenanza = computed(() => {
+    const base = `Enseñanza · R${this.store.rotacionActiva()}`;
+    const seleccionadoId = this.store.jugadorSeleccionadoId();
+    if (!seleccionadoId) {
+      return base;
+    }
+    const jugador = this.store.borrador().find((c) => c.jugador.id === seleccionadoId)?.jugador;
+    return jugador ? `${base} · ${etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO)}` : base;
+  });
+
   protected seleccionarRotacion(rotacion: number): void {
     this.store.seleccionarRotacion(rotacion as RotacionValida);
+  }
+
+  protected elegirSistema(id: string): void {
+    this.store.activarSistema(id);
   }
 
   protected confirmarCambio(): void {
@@ -157,6 +203,51 @@ export class Tablero {
 
   protected cancelarCambio(): void {
     this.store.cancelarCambio();
+  }
+
+  protected abrirCrear(): void {
+    this.dialogoSistema.set('crear');
+  }
+
+  protected abrirEditar(): void {
+    if (this.store.sistemaActivo()) {
+      this.dialogoSistema.set('editar');
+    }
+  }
+
+  protected cancelarDialogoSistema(): void {
+    this.dialogoSistema.set(null);
+  }
+
+  protected confirmarDialogoSistema(datos: DatosSistema): void {
+    if (this.dialogoSistema() === 'crear') {
+      this.store.crear(datos.nombre, datos.tipo);
+    } else {
+      this.store.renombrarActivo(datos.nombre);
+    }
+    this.dialogoSistema.set(null);
+  }
+
+  protected pedirBorrado(): void {
+    if (this.store.sistemaActivo()) {
+      this.confirmandoBorrado.set(true);
+    }
+  }
+
+  protected cancelarBorrado(): void {
+    this.confirmandoBorrado.set(false);
+  }
+
+  protected confirmarBorrado(): void {
+    const id = this.store.sistemaActivoId();
+    this.confirmandoBorrado.set(false);
+    if (id) {
+      this.store.borrar(id);
+    }
+  }
+
+  protected guardarExplicacion(texto: string): void {
+    this.store.guardarExplicacion(texto);
   }
 
   protected onAgarrarPaleta(chip: ChipAgarrado): void {
@@ -194,7 +285,8 @@ export class Tablero {
 
   private iniciarArrastre(jugadorId: string, etiqueta: string, evento: PointerEvent, origen: 'paleta' | 'pista'): void {
     evento.preventDefault();
-    this.arrastre.set({ jugadorId, etiqueta, clientX: evento.clientX, clientY: evento.clientY });
+    const inicio = { clientX: evento.clientX, clientY: evento.clientY };
+    this.arrastre.set({ jugadorId, etiqueta, ...inicio });
     this.pistaCmp().capturarPuntero(evento);
 
     const mover = (e: PointerEvent): void => {
@@ -220,6 +312,11 @@ export class Tablero {
         this.store.quitar(jugadorId);
       }
       this.arrastre.set(null);
+      // Un desplazamiento mínimo sobre una ficha ya en pista es un toque: selecciona en vez
+      // de arrastrar (spec 010, E9/E10/E12). Sobre el banquillo no hay nada que seleccionar.
+      if (origen === 'pista' && distanciaPantalla(inicio, e) < UMBRAL_TOQUE_PX) {
+        this.store.seleccionarJugador(jugadorId);
+      }
     };
 
     const cancelar = (e: PointerEvent): void => {
