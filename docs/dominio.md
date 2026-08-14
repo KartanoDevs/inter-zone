@@ -76,13 +76,21 @@ el índice; nunca se almacena.
 
 ### Composición válida de la plantilla en pista
 
-Los seis del orden de saque deben ser: 1 colocador, 2 receptores, 2 centrales y 1 opuesto.
-El líbero sustituye a un central en zona zaguera, así que el equipo tiene 7 jugadores
-declarados aunque solo 6 estén en pista en un momento dado.
+Los seis titulares son: 1 colocador, 2 receptores, 2 centrales y 1 opuesto. El líbero es un
+séptimo jugador declarado aparte del orden de saque.
 
-En la v1 se modela la plantilla en pista, con el líbero ya sustituido si el entrenador lo
-quiere en la formación. La mecánica de la sustitución del líbero (entradas, salidas, límites)
-queda fuera de alcance.
+**El líbero puede sustituir a cualquiera de los seis titulares que esté en zona zaguera** en el
+momento del saque — no solo al central. Es la regla FIVB 19.3.1.1: *"The Libero is allowed to
+replace any player in a back row position"*. Que en el sistema 5-1 sustituya casi siempre al
+central es una decisión táctica del entrenador (suele ser el peor receptor y defensor de
+perímetro de los seis), no una obligación del reglamento. Sustituir a otro titular es igual de
+legal.
+
+Consecuencia de diseño: como la posición rotacional del titular sustituido cambia en cada
+rotación, el líbero **entra y sale**. Está en pista solo en las rotaciones donde el sustituido
+sería zaguero; en las que sería delantero, juega el titular. Por eso el líbero nunca puede
+ocupar P2, P3 ni P4 (regla R4, sección 5): no es una restricción aparte, es consecuencia directa
+de cuándo entra.
 
 ---
 
