@@ -1,11 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Tablero } from './maqueta/tablero';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [Tablero],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
-  protected readonly title = signal('interzone');
-}
+export class App {}

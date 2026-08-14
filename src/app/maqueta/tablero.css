@@ -1,0 +1,131 @@
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-dark);
+}
+
+.mqt-tablero {
+  height: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  /* La fila del campo ya no es 1fr puro: mide justo lo que pide el aspect-ratio de
+     `.mqt-tablero__campo` (el mínimo 0 del minmax dej que se encoja si alguna vez no
+     cabe, en vez de desbordar). Si sobra alto, `align-content: start` lo deja al final
+     de la tarjeta —debajo de las acciones— en vez de repartirlo como un hueco suelto
+     entre el campo y el banquillo. La pantalla sigue sin superar nunca un viewport. */
+  grid-template-rows: auto minmax(0, auto) auto auto;
+  align-content: start;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.mqt-tablero > mqt-selector-rotacion,
+.mqt-tablero > mqt-paleta-jugadores,
+.mqt-tablero > .mqt-tablero__acciones {
+  margin-inline: var(--space-2);
+}
+
+.mqt-tablero__campo-envoltorio {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  /* A propósito sin margen horizontal: el campo llega borde a borde, es lo único
+     que de verdad gana tamaño al tener más ancho (el viewBox es más alto que ancho,
+     asi que preserveAspectRatio="meet" ajusta por el ancho disponible). */
+}
+
+/* Antes `mqt-pista` estiraba a la altura completa de la fila 1fr (que casi siempre
+   sobra más de lo que el viewBox necesita a ese ancho) y "meet" rellenaba el resto
+   con barras vacías arriba/abajo, indistinguibles del negro del campo rival. Este
+   envoltorio fija el alto real vía aspect-ratio, así que solo sobra hueco (fuera del
+   recuadro, nunca dentro) en el caso raro de que la fila 1fr sea más baja de lo que
+   hace falta — ahí `max-height` corta y el propio SVG hace de red de seguridad. */
+.mqt-tablero__campo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 10.5 / 13.8;
+  max-height: 100%;
+}
+
+.mqt-tablero__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.mqt-boton {
+  --facet: 10px;
+  clip-path: polygon(
+    var(--facet) 0,
+    100% 0,
+    100% calc(100% - var(--facet)),
+    calc(100% - var(--facet)) 100%,
+    0 100%,
+    0 var(--facet)
+  );
+  padding: 8px var(--space-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    box-shadow 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.mqt-boton--primario {
+  color: var(--text-main);
+  background-image:
+    linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
+}
+
+.mqt-boton--primario:disabled {
+  color: var(--text-muted-alt);
+  background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(0deg, var(--text-muted), var(--text-muted));
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.mqt-boton--terciario {
+  background: transparent;
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.mqt-boton--terciario:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.mqt-tablero__fantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--neon-magenta);
+  border-radius: 999px;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 0 14px rgba(255, 0, 255, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mqt-boton {
+    transition: none;
+  }
+}

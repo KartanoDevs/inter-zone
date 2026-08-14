@@ -1,0 +1,71 @@
+<svg
+  #svgPista
+  class="mqt-pista"
+  viewBox="-0.75 -4.05 10.5 13.8"
+  preserveAspectRatio="xMidYMid meet"
+  role="img"
+  aria-label="Pista de voleibol con la formación de la rotación activa"
+>
+  <rect class="mqt-pista__zona-libre" x="-2.5" y="0" width="14" height="12"></rect>
+
+  <rect class="mqt-pista__rival" x="0" y="-4" width="9" height="4"></rect>
+  <line class="mqt-pista__rival-ataque" x1="0" y1="-3" x2="9" y2="-3"></line>
+  <rect class="mqt-pista__borde-rival" x="0" y="-4" width="9" height="4"></rect>
+
+  <rect class="mqt-pista__campo" x="0" y="0" width="9" height="9"></rect>
+
+  <g class="mqt-pista__rejilla">
+    @for (linea of lineasRejilla; track linea) {
+      <line class="mqt-pista__rejilla-linea" [attr.x1]="linea" y1="0" [attr.x2]="linea" y2="9"></line>
+      <line class="mqt-pista__rejilla-linea" x1="0" [attr.y1]="linea" x2="9" [attr.y2]="linea"></line>
+    }
+  </g>
+
+  <line class="mqt-pista__ataque" x1="0" y1="3" x2="9" y2="3"></line>
+  <rect class="mqt-pista__borde-campo" x="0" y="0" width="9" height="9"></rect>
+  <line class="mqt-pista__red" x1="0" y1="0" x2="9" y2="0"></line>
+
+  @for (ficha of fichas(); track ficha.id) {
+    <g
+      mqtFicha
+      [punto]="ficha.punto"
+      [etiqueta]="ficha.etiqueta"
+      [estado]="ficha.estado"
+      [linea]="ficha.linea"
+      [esLibero]="ficha.esLibero"
+      [arrastrando]="ficha.id === idArrastrada()"
+      (agarrada)="fichaAgarrada.emit({ id: ficha.id, evento: $event })"
+    ></g>
+  }
+</svg>
+
+<!-- Fuera del SVG: dentro las unidades son metros y escalan con el ancho, así que un
+     margen de 5px exactos solo se puede fijar desde HTML. Oculto con la leyenda abierta:
+     el overlay lo tapa, y si no se queda en blanco (hover/foco) asomando tras el modal. -->
+@if (!leyendaAbierta()) {
+  <button
+    type="button"
+    class="mqt-pista__leyenda-boton"
+    aria-label="Ver leyenda de etiquetas"
+    (click)="leyendaAbierta.set(true)"
+  >
+    ?
+  </button>
+}
+
+@if (leyendaAbierta()) {
+  <div class="mqt-pista__leyenda-overlay" (click)="leyendaAbierta.set(false)">
+    <div class="mqt-pista__leyenda-modal" role="dialog" aria-label="Leyenda de etiquetas" (click)="$event.stopPropagation()">
+      <h2 class="mqt-pista__leyenda-titulo">Leyenda</h2>
+      <dl class="mqt-pista__leyenda-lista">
+        @for (entrada of entradasLeyenda; track entrada.etiqueta) {
+          <div class="mqt-pista__leyenda-fila">
+            <dt>{{ entrada.etiqueta }}</dt>
+            <dd>{{ entrada.nombre }}</dd>
+          </div>
+        }
+      </dl>
+      <button type="button" class="mqt-pista__leyenda-cerrar" (click)="leyendaAbierta.set(false)">Cerrar</button>
+    </div>
+  </div>
+}

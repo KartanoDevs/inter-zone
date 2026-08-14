@@ -1,0 +1,17 @@
+<div class="mqt-selector" role="tablist" aria-label="Rotaciones">
+  @for (estado of rotaciones(); track estado.rotacion) {
+    <button
+      type="button"
+      role="tab"
+      class="mqt-selector__boton"
+      [class.mqt-selector__boton--activa]="estado.rotacion === rotacionActiva()"
+      [attr.aria-selected]="estado.rotacion === rotacionActiva()"
+      (click)="seleccionar.emit(estado.rotacion)"
+    >
+      <span class="mqt-selector__etiqueta">R{{ estado.rotacion }}</span>
+      @if (estado.tieneFalta) {
+        <span class="mqt-selector__punto" aria-hidden="true"></span>
+      }
+    </button>
+  }
+</div>

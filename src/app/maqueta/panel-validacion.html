@@ -1,0 +1,9 @@
+@if (visible()) {
+  <div class="mqt-badge" [class.mqt-badge--aviso]="hayAviso()">
+    <span class="mqt-badge__icono" aria-hidden="true">!</span>
+    <span class="mqt-badge__texto">
+      {{ hayFalta() ? 'FALTA DE POSICIÓN' : 'AL LÍMITE' }}
+      <span class="mqt-badge__jugadores">{{ etiquetas() }}</span>
+    </span>
+  </div>
+}

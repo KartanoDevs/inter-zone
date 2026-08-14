@@ -1,0 +1,29 @@
+<details class="mqt-banquillo" open>
+  <summary class="mqt-banquillo__resumen">
+    <span class="mqt-banquillo__titulo">Banquillo de jugadores</span>
+    <span class="mqt-banquillo__contador">{{ pendientes().length }}</span>
+    <span class="mqt-banquillo__chevron" aria-hidden="true"></span>
+  </summary>
+
+  <div class="mqt-banquillo__cuerpo">
+    @if (pendientes().length === 0) {
+      <p class="mqt-banquillo__vacio">Todos los jugadores están en pista.</p>
+    } @else {
+      <ul class="mqt-banquillo__lista">
+        @for (chip of pendientes(); track chip.id) {
+          <li>
+            <button
+              type="button"
+              class="mqt-chip"
+              (pointerdown)="agarrar.emit({ id: chip.id, evento: $event })"
+            >
+              {{ chip.etiqueta }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <p class="mqt-banquillo__aviso">Datos de ejemplo — no es un sistema real</p>
+  </div>
+</details>

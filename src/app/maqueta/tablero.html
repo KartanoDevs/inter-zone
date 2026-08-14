@@ -1,0 +1,35 @@
+<div class="mqt-tablero">
+  <mqt-selector-rotacion
+    [rotaciones]="estadosRotacion()"
+    [rotacionActiva]="rotacionActiva()"
+    (seleccionar)="seleccionarRotacion($event)"
+  ></mqt-selector-rotacion>
+
+  <div class="mqt-tablero__campo-envoltorio">
+    <div class="mqt-tablero__campo">
+      <mqt-pista
+        [fichas]="fichas()"
+        [idArrastrada]="idArrastrada()"
+        (fichaAgarrada)="onAgarrarFicha($event)"
+      ></mqt-pista>
+      <mqt-panel-validacion
+        [completo]="completo()"
+        [infracciones]="infracciones()"
+        [avisos]="avisos()"
+      ></mqt-panel-validacion>
+    </div>
+  </div>
+
+  <mqt-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></mqt-paleta-jugadores>
+
+  <div class="mqt-tablero__acciones">
+    <button type="button" class="mqt-boton mqt-boton--terciario" (click)="vaciarRotacion()">Vaciar</button>
+    <button type="button" class="mqt-boton mqt-boton--primario" [disabled]="!completo() || !esLegal()">
+      Guardar rotación
+    </button>
+  </div>
+
+  @if (arrastre(); as a) {
+    <div class="mqt-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">{{ a.etiqueta }}</div>
+  }
+</div>

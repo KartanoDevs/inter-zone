@@ -1,1 +1,79 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tokens de docs/voley/design-guidelines.md. Sistema de diseño, no del prototipo:
+   sobrevive a cualquier maqueta que se construya encima. */
+:root {
+  /* fondos */
+  --bg-darker: #05050a;
+  --bg-dark: #090b14;
+  --bg-card-alt: #0a0a1a;
+  --bg-card: #12162d;
+
+  /* acentos primarios */
+  --neon-cyan: #00e5ff;
+  --neon-magenta: #ff00ff;
+
+  /* acentos secundarios */
+  --neon-green: #39ff14;
+  --neon-teal: #00ffaa;
+  --neon-amber: #ffaa00;
+  --neon-purple: #aa88ff;
+  --neon-pink: #ff0055;
+
+  /* texto */
+  --text-main: #ffffff;
+  --text-secondary: #e0e6ed;
+  --text-muted: #8aa4c8;
+  --text-muted-alt: #8b9bb4;
+
+  /* fuentes */
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'Orbitron', sans-serif;
+
+  /* espaciado, múltiplos de 8 */
+  --space-unit: 8px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  color: var(--text-main);
+}
+
+button {
+  font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
