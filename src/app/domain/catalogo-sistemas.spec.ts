@@ -56,7 +56,7 @@ describe('crearSistema', () => {
   });
 
   it('006-E4: nombre duplicado dentro del mismo tipo se rechaza', () => {
-    const existente: Sistema = { id: 's1', nombre: 'Recepción 5-1', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const existente: Sistema = { id: 's1', nombre: 'Recepción 5-1', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = crearSistema('s2', 'Recepción 5-1', 'recepcion', plantilla(), [existente]);
 
@@ -64,7 +64,7 @@ describe('crearSistema', () => {
   });
 
   it('006-E5: mismo nombre en tipos distintos se acepta', () => {
-    const existente: Sistema = { id: 's1', nombre: 'Base', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const existente: Sistema = { id: 's1', nombre: 'Base', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = crearSistema('s2', 'Base', 'defensa', plantilla(), [existente]);
 
@@ -74,7 +74,7 @@ describe('crearSistema', () => {
 
 describe('renombrarSistema', () => {
   it('006-E6: renombrar a un nombre libre se acepta', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = renombrarSistema(sistema, 'Recepción B', [sistema]);
 
@@ -82,8 +82,8 @@ describe('renombrarSistema', () => {
   });
 
   it('006-E7: renombrar a un nombre ocupado por otro del mismo tipo se rechaza', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
-    const otro: Sistema = { id: 's2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const otro: Sistema = { id: 's2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = renombrarSistema(sistema, 'Recepción B', [sistema, otro]);
 
@@ -91,7 +91,7 @@ describe('renombrarSistema', () => {
   });
 
   it('006-E8: renombrar a su propio nombre actual se acepta', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = renombrarSistema(sistema, 'Recepción A', [sistema]);
 
@@ -101,8 +101,8 @@ describe('renombrarSistema', () => {
 
 describe('borrarSistema', () => {
   it('006-E9: borrar un sistema no afecta a los demás', () => {
-    const uno: Sistema = { id: 's1', nombre: 'Uno', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
-    const dos: Sistema = { id: 's2', nombre: 'Dos', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const uno: Sistema = { id: 's1', nombre: 'Uno', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const dos: Sistema = { id: 's2', nombre: 'Dos', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = borrarSistema([uno, dos], 's1');
 
@@ -112,10 +112,10 @@ describe('borrarSistema', () => {
 
 describe('ordenarCatalogo', () => {
   it('006-E10: recepción antes que defensa, alfabético dentro de cada grupo', () => {
-    const defensaB: Sistema = { id: '1', nombre: 'Defensa B', tipo: 'defensa', plantilla: plantilla(), formaciones: {} };
-    const recepcionB: Sistema = { id: '2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
-    const defensaA: Sistema = { id: '3', nombre: 'Defensa A', tipo: 'defensa', plantilla: plantilla(), formaciones: {} };
-    const recepcionA: Sistema = { id: '4', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const defensaB: Sistema = { id: '1', nombre: 'Defensa B', tipo: 'defensa', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const recepcionB: Sistema = { id: '2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const defensaA: Sistema = { id: '3', nombre: 'Defensa A', tipo: 'defensa', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const recepcionA: Sistema = { id: '4', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = ordenarCatalogo([defensaB, recepcionB, defensaA, recepcionA]);
 
@@ -125,7 +125,7 @@ describe('ordenarCatalogo', () => {
 
 describe('cambiarPlantilla', () => {
   it('006-E11: cambiar quién ocupa la sexta plaza sustituye la plantilla', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 
     const resultado = cambiarPlantilla(sistema, plantillaConLibero());
 
@@ -146,6 +146,7 @@ describe('cambiarPlantilla', () => {
           { jugador: central2, punto: { x: 4.5, y: 6 } },
         ],
       },
+      explicacionesRotacion: {},
     };
 
     const resultado = cambiarPlantilla(sistema, plantillaConLibero());

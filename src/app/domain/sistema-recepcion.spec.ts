@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
 import { formacionEnRotacion } from './rotacion';
-import { borrarRotacion, guardarFormacion, sistemaCompleto } from './sistema-recepcion';
+import { borrarRotacion, explicarJugador, explicarRotacion, guardarFormacion, sistemaCompleto } from './sistema-recepcion';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };
@@ -24,7 +24,14 @@ function plantilla(): PlantillaEquipo {
 
 /** Sistema vacío de partida. Crear un sistema es cosa de `catalogo-sistemas.ts` (spec 006). */
 function sistemaVacio(): Sistema {
-  return { id: 'sistema-1', nombre: 'Sistema', tipo: 'recepcion', plantilla: plantilla(), formaciones: {} };
+  return {
+    id: 'sistema-1',
+    nombre: 'Sistema',
+    tipo: 'recepcion',
+    plantilla: plantilla(),
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 const PUNTOS_LEGALES = [
@@ -168,5 +175,96 @@ describe('borrarRotacion', () => {
     const resultado = borrarRotacion(sistema, 3);
 
     expect(sistemaCompleto(resultado)).toBe(false);
+  });
+});
+
+describe('explicaciones de enseñanza', () => {
+  it('007-E1: un sistema recién creado no tiene ninguna explicación', () => {
+    const sistema = sistemaVacio();
+
+    expect(sistema.explicacionesRotacion).toEqual({});
+  });
+
+  it('007-E2: guardar la explicación de una rotación la asocia a ella', () => {
+    const sistema = sistemaVacio();
+    const conFormacion = guardarFormacion(sistema, 2, formacionLegalR2(sistema.plantilla.ordenSaque))!;
+
+    const resultado = explicarRotacion(conFormacion, 2, 'El colocador sube desde zaga izquierda');
+
+    expect(resultado.explicacionesRotacion[2]).toBe('El colocador sube desde zaga izquierda');
+  });
+
+  it('007-E3: guardar la explicación de un jugador la asocia a él, sin afectar a otros', () => {
+    const sistema = sistemaVacio();
+    const conFormacion = guardarFormacion(sistema, 2, formacionLegalR2(sistema.plantilla.ordenSaque))!;
+    const [colocador] = sistema.plantilla.ordenSaque;
+
+    const resultado = explicarJugador(conFormacion, 2, colocador.id, 'Se esconde tras el opuesto')!;
+
+    const delColocador = resultado.formaciones[2]?.find((c) => c.jugador.id === colocador.id);
+    const deOtro = resultado.formaciones[2]?.find((c) => c.jugador.id !== colocador.id);
+    expect(delColocador?.explicacion).toBe('Se esconde tras el opuesto');
+    expect(deOtro?.explicacion).toBeUndefined();
+  });
+
+  it('007-E4: explicar a un jugador que no está en esa rotación se rechaza', () => {
+    const sistema = sistemaVacio();
+    const conFormacion = guardarFormacion(sistema, 2, formacionLegalR2(sistema.plantilla.ordenSaque))!;
+
+    const resultado = explicarJugador(conFormacion, 2, 'intruso', 'texto');
+
+    expect(resultado).toBeNull();
+  });
+
+  it('007-E5: volver a guardar la formación conserva la explicación de quien sigue colocado', () => {
+    const sistema = sistemaVacio();
+    const primera = formacionLegalR2(sistema.plantilla.ordenSaque);
+    const conPrimera = guardarFormacion(sistema, 2, primera)!;
+    const [colocador] = sistema.plantilla.ordenSaque;
+    const conExplicacion = explicarJugador(conPrimera, 2, colocador.id, 'Se esconde tras el opuesto')!;
+
+    // Formación "fresca", como la que produce el arrastre: sin el campo `explicacion`.
+    const segunda: Formacion = primera.map((c) => ({ jugador: c.jugador, punto: { ...c.punto } }));
+    const resultado = guardarFormacion(conExplicacion, 2, segunda)!;
+
+    const delColocador = resultado.formaciones[2]?.find((c) => c.jugador.id === colocador.id);
+    expect(delColocador?.explicacion).toBe('Se esconde tras el opuesto');
+  });
+
+  it('007-E6: un texto en blanco borra la explicación existente', () => {
+    const sistema = sistemaVacio();
+    const conFormacion = guardarFormacion(sistema, 2, formacionLegalR2(sistema.plantilla.ordenSaque))!;
+    const [colocador] = sistema.plantilla.ordenSaque;
+    const conAmbas = explicarJugador(explicarRotacion(conFormacion, 2, 'Algo'), 2, colocador.id, 'Algo más')!;
+
+    const sinRotacion = explicarRotacion(conAmbas, 2, '   ');
+    const sinJugador = explicarJugador(sinRotacion, 2, colocador.id, '')!;
+
+    expect(sinRotacion.explicacionesRotacion[2]).toBeUndefined();
+    expect(sinJugador.formaciones[2]?.find((c) => c.jugador.id === colocador.id)?.explicacion).toBeUndefined();
+  });
+
+  it('007-E7: borrar una rotación borra sus explicaciones', () => {
+    const sistema = sistemaVacio();
+    const conFormacion = guardarFormacion(sistema, 2, formacionLegalR2(sistema.plantilla.ordenSaque))!;
+    const [colocador] = sistema.plantilla.ordenSaque;
+    const conAmbas = explicarJugador(explicarRotacion(conFormacion, 2, 'Rotación'), 2, colocador.id, 'Jugador')!;
+
+    const resultado = borrarRotacion(conAmbas, 2);
+
+    expect(resultado.explicacionesRotacion[2]).toBeUndefined();
+    expect(resultado.formaciones[2]).toBeUndefined();
+  });
+
+  it('007-E8: las explicaciones de una rotación no contaminan a otra', () => {
+    const sistema = sistemaVacio();
+    const [colocador] = sistema.plantilla.ordenSaque;
+    const conR1 = guardarFormacion(sistema, 1, formacionLegalPara(sistema.plantilla.ordenSaque, 1))!;
+    const conR1yR2 = guardarFormacion(conR1, 2, formacionLegalPara(sistema.plantilla.ordenSaque, 2))!;
+
+    const resultado = explicarJugador(conR1yR2, 1, colocador.id, 'Explicación en R1')!;
+
+    const enR2 = resultado.formaciones[2]?.find((c) => c.jugador.id === colocador.id);
+    expect(enR2?.explicacion).toBeUndefined();
   });
 });

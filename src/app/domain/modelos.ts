@@ -42,11 +42,15 @@ export interface Sistema {
   readonly tipo: TipoSistema;
   readonly plantilla: PlantillaEquipo;
   readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
+  /** Explicación de enseñanza de conjunto para cada rotación guardada. Voluntaria. */
+  readonly explicacionesRotacion: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>>>;
 }
 
 export interface Colocacion {
   readonly jugador: Jugador;
   readonly punto: Punto;
+  /** Explicación de enseñanza para este jugador en esta rotación. Voluntaria. */
+  readonly explicacion?: string;
 }
 
 /** Dónde se coloca cada jugador del orden de saque, para una rotación concreta. */

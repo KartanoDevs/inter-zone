@@ -1,6 +1,6 @@
 # 007 — Explicaciones de enseñanza por rotación y por jugador
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 3
 
 ## Problema
@@ -74,4 +74,33 @@ Ninguna. Se puede congelar en cuanto la revises.
 
 ## Al cerrar
 
-Pendiente. Se rellena cuando la spec se cierre.
+Los 8 escenarios pasan (76 en total en `src/app/domain`). No existe `npm run test:coverage`
+en `package.json`; no se reporta cobertura numérica por el mismo motivo que en specs
+anteriores.
+
+**Dónde vive el código.** `explicarRotacion` y `explicarJugador` se añadieron a
+`sistema-recepcion.ts`, junto a las funciones que ya gobernaban un sistema (`guardarFormacion`,
+`sistemaCompleto`, `borrarRotacion`), tal como preveía la spec. No hizo falta ningún fichero
+nuevo.
+
+**El punto delicado era E5.** `guardarFormacion` recibe formaciones "frescas" (como las que
+produce el arrastre en pantalla, sin ningún `explicacion` puesto) y tenía que reconectar, por
+`id` de jugador, la explicación que ese jugador tuviera en la formación anterior de la misma
+rotación. Una primera versión del test que reconstruía la segunda formación con spread
+(`{ ...c, punto: ... }`) habría hecho pasar el escenario sin ejercitar nada, porque el spread ya
+arrastra el campo `explicacion` consigo — no habría demostrado que `guardarFormacion` conserva
+nada. El test final construye la formación entrante sin ese campo a propósito
+(`{ jugador: c.jugador, punto: {...} }`), para forzar de verdad el camino que busca la
+explicación anterior.
+
+**Lo que sorprendió:** E6 (texto en blanco borra) y E8 (una rotación no contamina a otra)
+pasaron en verde sin tocar código: el primero porque `explicarRotacion`/`explicarJugador` ya
+trataban el texto en blanco como borrado desde su primera versión (E2/E3 lo pedían para
+cualquier texto, en blanco incluido, así que no hacía falta lógica aparte); el segundo porque
+el aislamiento entre rotaciones es una propiedad del propio `Record` indexado por número de
+rotación, no algo que haya que programar.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta. Que el
+interruptor central2/líbero se guarde por sistema y no por rotación (decidido junto al usuario
+antes de escribir código) no es una regla de voleibol, así que no le corresponde vivir en
+`docs/dominio.md`.

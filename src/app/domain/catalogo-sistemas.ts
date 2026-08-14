@@ -18,7 +18,7 @@ export function crearSistema(
   if (!nombreValido(nombre) || colisiona(existentes, null, tipo, nombre)) {
     return null;
   }
-  return { id, nombre, tipo, plantilla, formaciones: {} };
+  return { id, nombre, tipo, plantilla, formaciones: {}, explicacionesRotacion: {} };
 }
 
 export function renombrarSistema(sistema: Sistema, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
