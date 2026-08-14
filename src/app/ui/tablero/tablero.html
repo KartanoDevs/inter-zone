@@ -1,0 +1,49 @@
+<div class="app-tablero">
+  <app-selector-rotacion
+    [rotaciones]="estadosRotacion()"
+    [rotacionActiva]="store.rotacionActiva()"
+    (seleccionar)="seleccionarRotacion($event)"
+  ></app-selector-rotacion>
+
+  <div class="app-tablero__campo-envoltorio">
+    <div class="app-tablero__campo">
+      <app-pista
+        [fichas]="fichas()"
+        [idArrastrada]="idArrastrada()"
+        (fichaAgarrada)="onAgarrarFicha($event)"
+      ></app-pista>
+      <app-panel-validacion
+        [completo]="completo()"
+        [infracciones]="infracciones()"
+        [avisos]="avisos()"
+      ></app-panel-validacion>
+    </div>
+  </div>
+
+  <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+
+  <div class="app-tablero__acciones">
+    <button type="button" class="app-boton app-boton--terciario" (click)="vaciarRotacion()">Vaciar</button>
+    <button type="button" class="app-boton app-boton--primario" [disabled]="!completo() || !esLegal()" (click)="guardar()">
+      Guardar rotación
+    </button>
+  </div>
+
+  @if (arrastre(); as a) {
+    <div class="app-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">{{ a.etiqueta }}</div>
+  }
+
+  @if (store.cambioPendiente(); as pendiente) {
+    <app-dialogo-confirmacion
+      titulo="Cambios sin guardar"
+      [mensaje]="
+        pendiente.tipo === 'rotacion'
+          ? 'Esta rotación tiene cambios sin guardar. Si cambias de rotación se perderán.'
+          : 'Esta rotación tiene cambios sin guardar. Si cambias de sistema se perderán.'
+      "
+      textoConfirmar="Descartar y continuar"
+      (confirmar)="confirmarCambio()"
+      (cancelar)="cancelarCambio()"
+    ></app-dialogo-confirmacion>
+  }
+</div>

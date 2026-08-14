@@ -5,6 +5,11 @@
 /tmp
 /out-tsc
 /bazel-out
+*.tsbuildinfo
+
+# Este proyecto es TypeScript puro bajo src/: cualquier .js ahí es emisión accidental
+# de `tsc --build` sin `--noEmit` (no hay outDir configurado), nunca código fuente real.
+src/**/*.js
 
 # Node
 /node_modules

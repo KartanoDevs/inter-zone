@@ -1,0 +1,62 @@
+:host {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-2);
+  transform: translateX(-50%);
+  z-index: 10;
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+
+.app-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(18, 22, 45, 0.92);
+  border: 1px solid var(--neon-pink);
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(255, 0, 85, 0.25);
+}
+
+.app-badge--aviso {
+  border-color: var(--neon-amber);
+  box-shadow: 0 0 16px rgba(255, 170, 0, 0.2);
+}
+
+.app-badge__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--neon-pink);
+  color: var(--bg-darker);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.app-badge--aviso .app-badge__icono {
+  background: var(--neon-amber);
+}
+
+.app-badge__texto {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+}
+
+.app-badge__jugadores {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: normal;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}

@@ -1,6 +1,6 @@
 # 009 — La pizarra: pista interactiva, arrastre y guardado por rotación
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 3
 
 ## Problema
@@ -147,4 +147,43 @@ Ninguna. Resueltas con el usuario:
 
 ## Al cerrar
 
-Pendiente. Se rellena cuando la spec se cierre.
+Los 16 escenarios del store pasan (102 en total: `domain/`, `infrastructure/` y ahora
+`application/`, que `vitest.config.ts` amplió a recoger). No existe `npm run test:coverage`
+en `package.json`; no se reporta cobertura numérica por el mismo motivo que en specs
+anteriores. Lo puramente visual (colores, sensación del arrastre) no se testea, tal como fija
+`docs/flujo-de-trabajo.md`.
+
+**Cómo se verificó lo que no tiene test.** Esta spec no se pudo comprobar clicando en un
+navegador — no hay esa capacidad disponible en esta sesión. En su lugar: `ng build` compila
+la aplicación entera (incluida la comprobación de tipos de las plantillas de Angular contra
+sus componentes), y el servidor de desarrollo (MCP de Angular) arrancó y sirvió sin errores.
+Ningún recorrido de clics real sustituye a esto; queda pendiente que alguien lo abra en un
+navegador de verdad antes de darlo por bueno del todo en producción.
+
+**Aviso de proceso, no de esta spec en concreto.** `npx tsc --noEmit -p tsconfig.json`, que se
+había estado usando como comprobación de tipos en las specs 006-008, resultó ser un falso
+negativo: `tsconfig.json` no tiene `files`, solo `references` a `tsconfig.app.json` y
+`tsconfig.spec.json`, y sin `--build` no comprueba nada real. Se descubrió al ejecutar
+`ng build` para esta spec, que sí reventó — con un fallo de tipos genuino, preexistente desde
+la spec 007 (`conExplicacionesConservadas` inducía un array de tuplas mal inferido). Corregido
+aquí, sin cambiar el comportamiento. A partir de ahora, `ng build` (o `tsc --build
+tsconfig.json`) es la comprobación de tipos real; `tsc --noEmit -p tsconfig.json` no lo es.
+
+**Cableado nuevo, más allá de `application/` y `ui/`.** Para que la app arrancara de verdad
+hicieron falta tres cosas que la spec no detallaba pero que se derivan de "sustituye lo que
+hoy renderiza `app.html`": `domain/plantilla-global.ts` (la plantilla única de la v1, con sus
+dos variantes central2/líbero — no existía como dato real, solo como ejemplo en `maqueta/`);
+un proveedor de `SistemaStore` en `app.config.ts` vía `useFactory`, construyendo el
+`LocalStorageSistemaRepository` con `localStorage` real; y las clases `.app-boton*` se
+movieron a `src/styles.css` (Angular encapsula los estilos por componente, y el diálogo de
+confirmación las necesitaba tanto como el propio tablero).
+
+**`--neon-purple` tiene ahora su primer uso por nombre.** El campo rival de `pista.css` estaba
+hardcodeado como `rgba(170, 136, 255, …)`; se sustituyó por el token con `stroke-opacity`, sin
+cambiar el color resultante.
+
+**Lo que sorprendió:** en cuanto el store quedó escrito para E1 (que ya exige casi todo el
+mecanismo: catálogo ordenado, sistema activo, borrador), los quince escenarios siguientes
+pasaron en verde sin tocar código — la misma dinámica que en las specs 005 a 008.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta.

@@ -1,0 +1,27 @@
+<details class="app-banquillo" open>
+  <summary class="app-banquillo__resumen">
+    <span class="app-banquillo__titulo">Banquillo de jugadores</span>
+    <span class="app-banquillo__contador">{{ pendientes().length }}</span>
+    <span class="app-banquillo__chevron" aria-hidden="true"></span>
+  </summary>
+
+  <div class="app-banquillo__cuerpo">
+    @if (pendientes().length === 0) {
+      <p class="app-banquillo__vacio">Todos los jugadores están en pista.</p>
+    } @else {
+      <ul class="app-banquillo__lista">
+        @for (chip of pendientes(); track chip.id) {
+          <li>
+            <button
+              type="button"
+              class="app-chip"
+              (pointerdown)="agarrar.emit({ id: chip.id, evento: $event })"
+            >
+              {{ chip.etiqueta }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</details>

@@ -1,0 +1,181 @@
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-pista {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* `touch-action` solo se evalúa en el `<svg>` raíz, nunca en sus hijos. Sin esto, en
+     táctil el primer arrastre que el navegador interpreta como posible scroll dispara
+     `pointercancel` a mitad de gesto. */
+  touch-action: none;
+}
+
+.app-pista__zona-libre {
+  fill: var(--bg-card-alt);
+}
+
+.app-pista__campo {
+  fill: var(--bg-card);
+}
+
+.app-pista__rival {
+  fill: var(--bg-darker);
+  opacity: 0.75;
+}
+
+.app-pista__rival-ataque {
+  stroke: var(--neon-purple);
+  stroke-opacity: 0.35;
+  stroke-width: 0.03;
+  stroke-dasharray: 0.12 0.1;
+}
+
+.app-pista__borde-rival {
+  fill: none;
+  stroke: var(--neon-purple);
+  stroke-opacity: 0.5;
+  stroke-width: 0.05;
+}
+
+.app-pista__rejilla-linea {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.02;
+}
+
+.app-pista__ataque {
+  stroke: rgba(0, 229, 255, 0.35);
+  stroke-width: 0.03;
+  stroke-dasharray: 0.12 0.1;
+}
+
+.app-pista__borde-campo {
+  fill: none;
+  stroke: rgba(224, 230, 237, 0.4);
+  stroke-width: 0.05;
+}
+
+.app-pista__red {
+  stroke: var(--neon-cyan);
+  stroke-width: 0.06;
+}
+
+.app-pista__leyenda-boton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  color: var(--bg-darker);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.35);
+}
+
+.app-pista__leyenda-boton:hover,
+.app-pista__leyenda-boton:focus-visible {
+  background: var(--text-main);
+}
+
+.app-pista__leyenda-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  background: rgba(5, 5, 10, 0.75);
+}
+
+.app-pista__leyenda-modal {
+  width: 100%;
+  max-width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.15);
+}
+
+.app-pista__leyenda-titulo {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: var(--text-main);
+}
+
+.app-pista__leyenda-lista {
+  margin: 0 0 var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.app-pista__leyenda-fila {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.app-pista__leyenda-fila dt {
+  min-width: 28px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--neon-cyan);
+}
+
+.app-pista__leyenda-fila dd {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.app-pista__leyenda-cerrar {
+  width: 100%;
+  padding: 8px var(--space-2);
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.app-pista__leyenda-cerrar:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-pista__leyenda-cerrar {
+    transition: none;
+  }
+}

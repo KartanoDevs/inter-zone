@@ -1,0 +1,62 @@
+:host {
+  transition: transform 200ms ease;
+  cursor: grab;
+}
+
+:host(.app-ficha--arrastrando) {
+  transition: none;
+  cursor: grabbing;
+}
+
+.app-ficha__circulo {
+  fill: var(--bg-card);
+  stroke: var(--neon-cyan);
+  stroke-width: 0.05;
+  transition:
+    stroke 200ms ease,
+    stroke-width 200ms ease;
+}
+
+:host(.app-ficha--zaguera) .app-ficha__circulo {
+  stroke-width: 0.09;
+}
+
+.app-ficha__etiqueta {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.38px;
+  fill: var(--text-main);
+}
+
+:host(.app-ficha--aviso) .app-ficha__circulo {
+  stroke: var(--neon-amber);
+  stroke-width: 0.09;
+}
+
+:host(.app-ficha--aviso) .app-ficha__etiqueta {
+  fill: var(--neon-amber);
+}
+
+:host(.app-ficha--falta) .app-ficha__circulo {
+  stroke: var(--neon-pink);
+  stroke-width: 0.09;
+  filter: drop-shadow(0 0 0.22px var(--neon-pink));
+}
+
+:host(.app-ficha--falta) .app-ficha__etiqueta {
+  fill: var(--neon-pink);
+}
+
+:host(.app-ficha--arrastrando) .app-ficha__circulo {
+  stroke: var(--neon-magenta);
+}
+
+:host(.app-ficha--arrastrando) .app-ficha__etiqueta {
+  fill: var(--neon-magenta);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    transition: none;
+  }
+}

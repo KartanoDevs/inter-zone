@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { Tablero } from './maqueta/tablero';
+import { Tablero } from './ui/tablero/tablero';
 
 @Component({
   selector: 'app-root',

@@ -12,7 +12,12 @@ function conExplicacionesConservadas(formacion: Formacion, anterior: Formacion |
   if (!anterior) {
     return formacion;
   }
-  const explicacionPorId = new Map(anterior.map((c) => [c.jugador.id, c.explicacion]).filter(([, e]) => e !== undefined));
+  const explicacionPorId = new Map<string, string>();
+  for (const colocacion of anterior) {
+    if (colocacion.explicacion !== undefined) {
+      explicacionPorId.set(colocacion.jugador.id, colocacion.explicacion);
+    }
+  }
   return formacion.map((c) => {
     const explicacion = c.explicacion ?? explicacionPorId.get(c.jugador.id);
     return explicacion === undefined ? c : { ...c, explicacion };

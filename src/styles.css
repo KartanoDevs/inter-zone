@@ -67,6 +67,74 @@ button {
   font-family: inherit;
 }
 
+/* Botones compartidos entre componentes de ui/ (Angular encapsula los estilos por
+   componente, así que lo que se reutiliza literalmente igual vive aquí). Jerarquía de
+   docs/voley/design-guidelines.md §4.1. */
+.app-boton {
+  --facet: 10px;
+  clip-path: polygon(
+    var(--facet) 0,
+    100% 0,
+    100% calc(100% - var(--facet)),
+    calc(100% - var(--facet)) 100%,
+    0 100%,
+    0 var(--facet)
+  );
+  padding: 8px var(--space-2);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    box-shadow 150ms ease,
+    border-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.app-boton--primario {
+  color: var(--text-main);
+  background-image:
+    linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
+}
+
+.app-boton--primario:disabled {
+  color: var(--text-muted-alt);
+  background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(0deg, var(--text-muted), var(--text-muted));
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.app-boton--terciario {
+  background: transparent;
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.app-boton--terciario:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-secondary);
+}
+
+.app-boton--destructivo {
+  background: transparent;
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+.app-boton--destructivo:hover {
+  background: rgba(255, 0, 85, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-boton {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

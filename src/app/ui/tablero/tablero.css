@@ -1,0 +1,62 @@
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-dark);
+}
+
+.app-tablero {
+  height: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, auto) auto auto;
+  align-content: start;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.app-tablero > app-selector-rotacion,
+.app-tablero > app-paleta-jugadores,
+.app-tablero > .app-tablero__acciones {
+  margin-inline: var(--space-2);
+}
+
+.app-tablero__campo-envoltorio {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+}
+
+.app-tablero__campo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 10.5 / 13.8;
+  max-height: 100%;
+}
+
+.app-tablero__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.app-tablero__fantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--neon-magenta);
+  border-radius: 999px;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 0 14px rgba(255, 0, 255, 0.3);
+}
