@@ -15,7 +15,8 @@
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../domain/roles';
 import { asignarIndices, validarPlantilla } from '../domain/plantilla';
 import { formacionEnRotacion } from '../domain/rotacion';
-import { crearSistema, guardarFormacion } from '../domain/sistema-recepcion';
+import { crearSistema } from '../domain/catalogo-sistemas';
+import { guardarFormacion } from '../domain/sistema-recepcion';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Punto, Sistema } from '../domain/modelos';
 
 export type OcupanteCasilla = 'central2' | 'libero';
@@ -117,7 +118,7 @@ function formacionPara(rotacion: number): Formacion {
  * necesita enseñarlas— las inserta directamente cuando esa función rechaza el guardado.
  */
 function construirSistemaEjemplo(): Sistema {
-  const vacio = crearSistema('Sistema de ejemplo', PLANTILLA_EJEMPLO, []);
+  const vacio = crearSistema('sistema-ejemplo', 'Sistema de ejemplo', 'recepcion', PLANTILLA_EJEMPLO, []);
   if (!vacio) {
     throw new Error('No se pudo crear el sistema de ejemplo');
   }

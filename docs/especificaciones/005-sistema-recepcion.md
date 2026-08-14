@@ -119,3 +119,11 @@ coincidir por casualidad con otra.
 **Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta. El orden de
 implementación acordado (003 → 004 → 005) evitó cualquier ambigüedad sobre qué significaba
 `Rn` al escribir esta spec.
+
+**Nota posterior (spec 006).** Al implementar el catálogo de sistemas, `crearSistema` se
+trasladó de este fichero a `catalogo-sistemas.ts`, porque el concepto "traer un sistema nuevo
+al catálogo" pasó a tener nombre propio y un tipo (recepción/defensa) que su comprobación de
+nombre duplicado necesitaba distinguir. Los escenarios E1 y E10 de esta spec se retiraron de
+`sistema-recepcion.spec.ts`; su intención queda cubierta por 006-E1, E4 y E5. El resto de
+escenarios de esta spec (E2-E9, E11, E12) siguen intactos, solo cambió cómo construye el test
+el `Sistema` de partida. Ver decisión 0011.

@@ -33,9 +33,13 @@ export interface PlantillaEquipo {
   readonly ordenSaque: OrdenSaque;
 }
 
-/** Un sistema de recepción con nombre, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
+export type TipoSistema = 'recepcion' | 'defensa';
+
+/** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
 export interface Sistema {
+  readonly id: string;
   readonly nombre: string;
+  readonly tipo: TipoSistema;
   readonly plantilla: PlantillaEquipo;
   readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
 }

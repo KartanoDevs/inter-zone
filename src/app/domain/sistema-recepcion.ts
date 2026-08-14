@@ -1,17 +1,6 @@
 import type { Formacion, PlantillaEquipo, Sistema } from './modelos';
 import { validarFormacion } from './validacion';
 
-export function crearSistema(
-  nombre: string,
-  plantilla: PlantillaEquipo,
-  existentes: readonly Sistema[],
-): Sistema | null {
-  if (existentes.some((sistema) => sistema.nombre === nombre)) {
-    return null;
-  }
-  return { nombre, plantilla, formaciones: {} };
-}
-
 function mismosJugadores(formacion: Formacion, plantilla: PlantillaEquipo): boolean {
   const idsFormacion = formacion.map((colocacion) => colocacion.jugador.id).sort();
   const idsPlantilla = plantilla.ordenSaque.map((jugador) => jugador.id).sort();
