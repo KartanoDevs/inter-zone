@@ -2,7 +2,15 @@ import type { Colocacion, PlantillaEquipo, Sistema, TipoSistema } from '../domai
 import type { SistemaRepository } from '../domain/puertos';
 
 const CLAVE = 'interzone.sistemas';
-const VERSION_ACTUAL = 1;
+/**
+ * 2 desde la spec 011: la forma persistida de un sistema cambió (`ocupanteCasilla` ->
+ * `sustitutoLibero`) sin que las reglas del juego cambiaran, así que hubo que subir la
+ * versión aunque no exista todavía una `migrar()` real. Sin ella, cualquier versión que no
+ * sea exactamente esta se trata como no legible — igual que una versión futura (spec 008,
+ * E4) — en vez de intentar interpretarla con las reglas nuevas y arriesgarse a reventar o,
+ * peor, a leerla mal en silencio.
+ */
+const VERSION_ACTUAL = 2;
 
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
@@ -88,7 +96,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
     } catch {
       return null;
     }
-    if (!esPayloadValido(parseado) || parseado.version > VERSION_ACTUAL) {
+    if (!esPayloadValido(parseado) || parseado.version !== VERSION_ACTUAL) {
       return null;
     }
     return parseado;

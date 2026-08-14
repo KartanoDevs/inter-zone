@@ -89,6 +89,36 @@ describe('LocalStorageSistemaRepository', () => {
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
+  it('008-E4b: una versión anterior con forma incompatible tampoco se lee a ciegas', () => {
+    // Forma real de antes de la spec 011: el líbero como discriminador `ocupanteCasilla`,
+    // no como `sustitutoLibero`. Sin migración implementada, se trata como no legible —
+    // igual que una versión futura — en vez de intentar leerla con las reglas nuevas.
+    const almacen = new AlmacenEnMemoria();
+    const bruto = JSON.stringify({
+      version: 1,
+      data: {
+        sistemas: [
+          {
+            id: 's1',
+            nombre: 'De antes de la 011',
+            tipo: 'recepcion',
+            ocupanteCasilla: 'libero',
+            formaciones: {},
+            explicacionesRotacion: {},
+            creadoEn: 't1',
+            actualizadoEn: 't1',
+          },
+        ],
+      },
+    });
+    almacen.setItem('interzone.sistemas', bruto);
+    const repositorio = crearRepositorio(almacen);
+
+    expect(() => repositorio.listar()).not.toThrow();
+    expect(repositorio.listar()).toEqual([]);
+    expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
+  });
+
   it('008-E5: borrar un sistema y guardar el resto lo quita al releer', () => {
     const repositorio = crearRepositorio();
     repositorio.guardar([sistema('s1', 'Uno'), sistema('s2', 'Dos')]);
@@ -137,7 +167,7 @@ describe('LocalStorageSistemaRepository', () => {
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
 
     expect(Object.keys(guardado).sort()).toEqual(['data', 'version']);
-    expect(guardado.version).toBe(1);
+    expect(guardado.version).toBe(2);
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
   });
 
