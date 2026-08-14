@@ -1,6 +1,6 @@
 # 008 — Persistencia en el navegador
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 3
 
 ## Problema
@@ -93,4 +93,34 @@ Ninguna. Resueltas con el usuario:
 
 ## Al cerrar
 
-Pendiente. Se rellena cuando la spec se cierre.
+Los 10 escenarios pasan (86 en total en `src/app/domain` e `infrastructure`). No existe
+`npm run test:coverage` en `package.json`; no se reporta cobertura numérica por el mismo
+motivo que en specs anteriores. `vitest.config.ts` solo recogía `src/app/domain/**/*.spec.ts`;
+se amplió a incluir también `src/app/infrastructure/**/*.spec.ts`, que hasta ahora no existía.
+
+**Las fechas no viven en `Sistema`.** `docs/arquitectura.md` es explícito: `domain/` va "sin
+fechas". `creadoEn`/`actualizadoEn` son metadatos que solo conoce
+`LocalStorageSistemaRepository`, en la forma persistida (`SistemaPersistido`), nunca en el tipo
+de dominio. Por eso E9 y E10 no se pueden verificar a través del puerto `SistemaRepository`
+(`listar()` sigue devolviendo `Sistema[]` puro): inspeccionan directamente el JSON escrito en
+el almacén, que es exactamente lo que le corresponde probar a un test de infraestructura. Ver
+decisión 0012.
+
+**La plantilla global no existe todavía como constante real de la aplicación** (solo como datos
+de ejemplo en `maqueta/`), así que `LocalStorageSistemaRepository` recibe las dos variantes
+(central2/líbero) por constructor en vez de tenerlas hardcodeadas. Cableará la plantilla real la
+spec 009, cuando `application/` construya el repositorio de verdad.
+
+**Límite conocido, no cubierto por ningún escenario:** `guardar()` no comprueba la versión ya
+almacenada antes de escribir. E4 garantiza que `listar()` nunca sobrescribe una versión futura
+desconocida (nunca llama a `setItem`), pero si una aplicación leyera `[]` de un almacén con
+versión futura y acto seguido llamara a `guardar([])`, sí la sobrescribiría. Ningún escenario de
+esta spec pide ese candado, así que no se ha construido; queda anotado por si en el futuro hace
+falta.
+
+**Lo que sorprendió:** en cuanto la implementación quedó escrita para E1 (que ya exige
+serializar, deserializar, reconstruir jugadores desde la plantilla y manejar payload/versión),
+los ocho escenarios siguientes —E2 a E8— pasaron en verde sin tocar código. Solo E9 y E10
+(fechas) forzaron algo nuevo: el reloj inyectable.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta.

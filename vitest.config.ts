@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 // logica esta en la capa equivocada (ver docs/arquitectura.md).
 export default defineConfig({
   test: {
-    include: ['src/app/domain/**/*.spec.ts'],
+    include: ['src/app/domain/**/*.spec.ts', 'src/app/infrastructure/**/*.spec.ts'],
     environment: 'node',
     globals: true,
   },
