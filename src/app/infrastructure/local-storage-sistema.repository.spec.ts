@@ -29,36 +29,26 @@ function ordenConCentral2(): OrdenSaque {
   ];
 }
 
-function ordenConLibero(): OrdenSaque {
-  return [
-    jugador('colocador', 'colocador'),
-    jugador('receptor1', 'receptor', 1),
-    jugador('receptor2', 'receptor', 2),
-    jugador('central1', 'central', 1),
-    jugador('libero', 'libero'),
-    jugador('opuesto', 'opuesto'),
-  ];
-}
-
-const PLANTILLAS: Readonly<Record<'central2' | 'libero', PlantillaEquipo>> = {
-  central2: { nombre: 'Equipo A', ordenSaque: ordenConCentral2() },
-  libero: { nombre: 'Equipo A', ordenSaque: ordenConLibero() },
+const PLANTILLA: PlantillaEquipo = {
+  nombre: 'Equipo A',
+  ordenSaque: ordenConCentral2(),
+  libero: { jugador: jugador('libero', 'libero'), sustituidoId: 'central2' },
 };
 
 function sistema(id: string, nombre: string): Sistema {
-  const [colocador] = PLANTILLAS.central2.ordenSaque;
+  const [colocador] = PLANTILLA.ordenSaque;
   return {
     id,
     nombre,
     tipo: 'recepcion',
-    plantilla: PLANTILLAS.central2,
+    plantilla: PLANTILLA,
     formaciones: { 2: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
     explicacionesRotacion: {},
   };
 }
 
 function crearRepositorio(almacen: AlmacenClaveValor = new AlmacenEnMemoria()): LocalStorageSistemaRepository {
-  return new LocalStorageSistemaRepository(almacen, PLANTILLAS);
+  return new LocalStorageSistemaRepository(almacen, PLANTILLA);
 }
 
 describe('LocalStorageSistemaRepository', () => {
@@ -111,7 +101,7 @@ describe('LocalStorageSistemaRepository', () => {
 
   it('008-E6: los decimales de las coordenadas llegan exactos', () => {
     const repositorio = crearRepositorio();
-    const [colocador] = PLANTILLAS.central2.ordenSaque;
+    const [colocador] = PLANTILLA.ordenSaque;
     const conDecimales: Sistema = {
       ...sistema('s1', 'Uno'),
       formaciones: { 2: [{ jugador: colocador, punto: { x: 4.53, y: 1.8 } }] },
@@ -125,7 +115,7 @@ describe('LocalStorageSistemaRepository', () => {
 
   it('008-E7: las explicaciones de rotación y de jugador sobreviven', () => {
     const repositorio = crearRepositorio();
-    const [colocador] = PLANTILLAS.central2.ordenSaque;
+    const [colocador] = PLANTILLA.ordenSaque;
     const conExplicaciones: Sistema = {
       ...sistema('s1', 'Uno'),
       formaciones: { 2: [{ jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Explicación del jugador' }] },
@@ -154,7 +144,7 @@ describe('LocalStorageSistemaRepository', () => {
   it('008-E9: la fecha de creación se fija una sola vez', () => {
     const almacen = new AlmacenEnMemoria();
     let tiempo = 't1';
-    const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLAS, () => tiempo);
+    const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA, () => tiempo);
 
     repositorio.guardar([sistema('s1', 'Uno')]);
     tiempo = 't2';
@@ -167,7 +157,7 @@ describe('LocalStorageSistemaRepository', () => {
   it('008-E10: la fecha de modificación cambia con cada guardado', () => {
     const almacen = new AlmacenEnMemoria();
     let tiempo = 't1';
-    const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLAS, () => tiempo);
+    const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA, () => tiempo);
 
     repositorio.guardar([sistema('s1', 'Uno')]);
     tiempo = 't2';

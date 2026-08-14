@@ -136,6 +136,14 @@ partir de una spec en `Borrador`.
   su sección "Fuera de alcance" lo autorice explícitamente. La regla por defecto de este
   fichero es no tocar esas capas; una spec que sí necesita hacerlo tiene que decirlo con
   todas las letras, o el protocolo de arranque debe pararse a preguntarlo.
+- Confundir una convención táctica con una regla de reglamento. `docs/dominio.md` afirmó
+  durante las specs 002-010 que "el líbero sustituye a un central", y de ahí salió un modelo
+  (líbero con plaza fija en el orden de saque) que bloqueaba tres de cada seis rotaciones con
+  una falta que en un partido real no existe. La regla FIVB real (19.3.1.1) es que el líbero
+  sustituye a **cualquier** jugador de zaga; que en el 5-1 sea casi siempre el central es
+  decisión del entrenador, no del reglamento. Antes de escribir una regla de voleibol en
+  `docs/dominio.md`, comprobar la fuente — sobre todo si "siempre se hace así" empieza a sonar
+  a costumbre más que a reglamento.
 
 ## Convenciones
 

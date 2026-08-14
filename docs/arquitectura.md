@@ -31,15 +31,22 @@ Modelos y reglas. Aquí vive el voleibol.
   `ResultadoValidacion`.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
-  rotacionales ancladas al colocador (ADR 0010).
-- `plantilla.ts` — `validarPlantilla`, `asignarIndices`: composición y numeración de una
-  plantilla de seis.
-- `plantillas-equipo.ts` — `puedeCrearPlantillaEquipo`, `puedeBorrarPlantillaEquipo`.
-- `plantilla-global.ts` — la única plantilla real de la v1 (dos variantes, central2/líbero).
-  Configuración por defecto, igual que `roles.ts` (ADR 0013).
-- `validacion.ts` — `validarFormacion(formacion, orden, rotacion): ResultadoValidacion`.
+  rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
+  deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
+- `plantilla.ts` — `validarPlantilla`, `asignarIndices`: composición y numeración de los seis
+  titulares. El líbero nunca es uno de los seis (ADR 0014); si aparece dentro del orden de
+  saque, la composición se rechaza.
+- `plantillas-equipo.ts` — `puedeCrearPlantillaEquipo` (con líbero opcional: a quién sustituye
+  debe ser uno de los seis titulares), `puedeBorrarPlantillaEquipo`.
+- `plantilla-global.ts` — la única plantilla real de la v1: seis titulares y un líbero que
+  sustituye por defecto al segundo central. Configuración por defecto, igual que `roles.ts`.
+- `validacion.ts` — `validarFormacion(formacion, posiciones): ResultadoValidacion`. No deriva
+  las posiciones ella misma: las recibe ya resueltas de quien la llama, con
+  `formacionEnRotacion` (sin líbero) o `jugadoresEnPista` (con él) — así no necesita saber
+  nada de líberos (ADR 0014).
 - `catalogo-sistemas.ts` — `crearSistema`, `renombrarSistema`, `borrarSistema`,
-  `ordenarCatalogo`, `cambiarPlantilla` (ADR 0011).
+  `ordenarCatalogo`, `cambiarSustitutoLibero` (a quién sustituye el líbero, purgando cada
+  formación con el roster que le toca en su propia rotación — ADR 0014).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
@@ -47,7 +54,7 @@ Modelos y reglas. Aquí vive el voleibol.
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
 eso `creadoEn`/`actualizadoEn` de un sistema no viven aquí, sino en `infrastructure/` (ADR
 0012). `rejilla.ts` y `cobertura.ts` (conversión a celdas, huecos y conflictos) todavía no
-existen: llegan con las specs 013–014 de la hoja de ruta del README.
+existen: llegan con las specs 014–015 de la hoja de ruta del README.
 
 **La configuración de roles vive aquí**, no en la UI ni en un fichero de entorno. Cambiar
 "Receptor" por "Punta" es cambiar el vocabulario del dominio, y el sitio donde se hace debe
@@ -62,12 +69,13 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
 - Escribibles: `sistemas` (catálogo completo), `sistemaActivoId`, `rotacionActiva`,
   `borrador` (la formación en edición, antes de guardar), `cambioPendiente` (aviso de cambios
   sin guardar al cambiar de rotación o de sistema), `jugadorSeleccionadoId`.
-- Derivados con `computed`: `catalogo` (ordenado), `sistemaActivo`, `ordenActivo`,
+- Derivados con `computed`: `catalogo` (ordenado), `sistemaActivo`, `posicionesActivas` (quién
+  juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`),
   `formacionGuardadaActiva`, `hayCambiosSinGuardar`, `resultadoValidacion`, `puedeGuardar`,
   `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno la de la rotación).
 - Acciones: `activarSistema`, `seleccionarRotacion`, `confirmarCambio`/`cancelarCambio`,
   `colocarOMover`, `quitar`, `vaciar`, `guardar`, `crear`, `renombrarActivo`, `borrar`,
-  `seleccionarJugador`, `guardarExplicacion`.
+  `seleccionarJugador`, `guardarExplicacion`, `cambiarSustitutoLibero`.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -77,12 +85,13 @@ Adaptadores hacia el mundo exterior.
 
 - `LocalStorageSistemaRepository implements SistemaRepository`, sobre un `AlmacenClaveValor`
   inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
-  Recibe también las dos variantes de plantilla por constructor: en la v1 son una constante de
-  la aplicación, no un dato de dominio (ADR 0013).
+  Recibe también la plantilla real por constructor: en la v1 es una única constante de la
+  aplicación, no un dato de dominio (ADR 0013).
 - Formato persistido: `{ "version": 1, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
-  0012), y `ocupanteCasilla` en vez de la plantilla completa.
-- Exportadores (PNG, JSON): todavía no existen, llegan con la spec 015.
+  0012), y `sustitutoLibero?: string` (a quién sustituye el líbero, ausente si no tiene) en vez
+  de la plantilla completa (ADR 0014).
+- Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
 

@@ -1,4 +1,5 @@
 import type { PlantillaEquipo, Sistema, TipoSistema } from './modelos';
+import { jugadoresEnPista } from './rotacion';
 
 function nombreValido(nombre: string): boolean {
   return nombre.trim().length > 0;
@@ -40,14 +41,22 @@ export function ordenarCatalogo(sistemas: readonly Sistema[]): readonly Sistema[
   );
 }
 
-/** Sustituye la plantilla del sistema y retira de sus formaciones a quien ya no pertenece a ella. */
-export function cambiarPlantilla(sistema: Sistema, nuevaPlantilla: PlantillaEquipo): Sistema {
-  const idsValidos = new Set(nuevaPlantilla.ordenSaque.map((jugador) => jugador.id));
+/**
+ * Cambia a qué titular sustituye el líbero (spec 011, FIVB 19.3.1.1: puede ser cualquiera de
+ * los seis, no solo el central). Como quién está en pista depende de la rotación, purga cada
+ * formación guardada por separado, con el roster que le corresponde a esa rotación en la
+ * plantilla nueva — no un único conjunto de ids válido para las seis a la vez.
+ */
+export function cambiarSustitutoLibero(sistema: Sistema, sustituidoId: string): Sistema {
+  if (!sistema.plantilla.libero) {
+    return sistema;
+  }
+  const nuevaPlantilla = { ...sistema.plantilla, libero: { ...sistema.plantilla.libero, sustituidoId } };
   const formaciones = Object.fromEntries(
-    Object.entries(sistema.formaciones).map(([rotacion, formacion]) => [
-      rotacion,
-      (formacion ?? []).filter((colocacion) => idsValidos.has(colocacion.jugador.id)),
-    ]),
+    Object.entries(sistema.formaciones).map(([rotacion, formacion]) => {
+      const idsValidos = new Set(jugadoresEnPista(nuevaPlantilla, Number(rotacion)).map((jugador) => jugador.id));
+      return [rotacion, (formacion ?? []).filter((colocacion) => idsValidos.has(colocacion.jugador.id))];
+    }),
   ) as Sistema['formaciones'];
   return { ...sistema, plantilla: nuevaPlantilla, formaciones };
 }

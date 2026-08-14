@@ -26,6 +26,14 @@ function sistemaBase(id: string, nombre: string): Sistema {
   return { id, nombre, tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 }
 
+function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
+  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
+}
+
+function sistemaConLibero(id: string, nombre: string): Sistema {
+  return { id, nombre, tipo: 'recepcion', plantilla: plantillaConLibero('central2'), formaciones: {}, explicacionesRotacion: {} };
+}
+
 class RepositorioFake implements SistemaRepository {
   constructor(private sistemas: readonly Sistema[] = []) {}
 
@@ -340,5 +348,26 @@ describe('SistemaStore', () => {
 
     const colocacion = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === colocador.id);
     expect(colocacion?.explicacion).toBe('Explicación nueva del jugador');
+  });
+
+  it('011-E13: quién está disponible cambia con la rotación — el líbero solo cuando le toca', () => {
+    const store = new SistemaStore(new RepositorioFake([sistemaConLibero('r1', 'Uno')]));
+
+    // R1: central2 es zaguero en esta plantilla -> juega el líbero.
+    expect(store.posicionesActivas()?.some((j) => j.id === 'libero')).toBe(true);
+    expect(store.posicionesActivas()?.some((j) => j.id === 'central2')).toBe(false);
+
+    store.seleccionarRotacion(4); // R4: central2 es delantero -> juega el titular.
+
+    expect(store.posicionesActivas()?.some((j) => j.id === 'central2')).toBe(true);
+    expect(store.posicionesActivas()?.some((j) => j.id === 'libero')).toBe(false);
+  });
+
+  it('011-E14: cambiar a quién sustituye el líbero se refleja en el sistema activo', () => {
+    const store = new SistemaStore(new RepositorioFake([sistemaConLibero('r1', 'Uno')]));
+
+    store.cambiarSustitutoLibero('opuesto');
+
+    expect(store.sistemaActivo()?.plantilla.libero?.sustituidoId).toBe('opuesto');
   });
 });

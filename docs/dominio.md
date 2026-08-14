@@ -217,9 +217,11 @@ Se cumplen siempre, en cualquier estado del sistema. Son candidatos naturales a 
 
 1. Un sistema tiene exactamente 6 formaciones, una por rotación, sin repetir rotación.
 2. Cada formación coloca exactamente a 6 jugadores.
-3. Los 6 jugadores de una formación son los mismos 6 del orden de saque, sin repetidos.
+3. Los 6 jugadores de una formación son los que estén en pista en esa rotación —los seis
+   titulares, o el líbero en el sitio de a quien sustituya si le toca zaga—, sin repetidos.
 4. La posición rotacional de un jugador se deriva del orden de saque y de la rotación;
-   nunca se asigna a mano.
+   nunca se asigna a mano. Quién está en pista (titular o líbero) se deriva igual: de a quién
+   sustituye el líbero y de la rotación; nunca se asigna a mano.
 5. La etiqueta de un jugador se deriva del rol, la configuración y el índice; nunca se
    almacena.
 6. Dos roles distintos nunca producen la misma etiqueta final. Si comparten abreviatura, se

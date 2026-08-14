@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
-import { borrarSistema, cambiarPlantilla, crearSistema, ordenarCatalogo, renombrarSistema } from './catalogo-sistemas';
+import {
+  borrarSistema,
+  cambiarSustitutoLibero,
+  crearSistema,
+  ordenarCatalogo,
+  renombrarSistema,
+} from './catalogo-sistemas';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };
@@ -21,18 +27,8 @@ function plantilla(): PlantillaEquipo {
   return { nombre: 'Equipo A', ordenSaque: ordenConCentral2() };
 }
 
-function plantillaConLibero(): PlantillaEquipo {
-  return {
-    nombre: 'Equipo A',
-    ordenSaque: [
-      jugador('colocador', 'colocador'),
-      jugador('receptor1', 'receptor', 1),
-      jugador('receptor2', 'receptor', 2),
-      jugador('central1', 'central', 1),
-      jugador('libero', 'libero'),
-      jugador('opuesto', 'opuesto'),
-    ],
-  };
+function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
+  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
 }
 
 describe('crearSistema', () => {
@@ -123,36 +119,35 @@ describe('ordenarCatalogo', () => {
   });
 });
 
-describe('cambiarPlantilla', () => {
-  it('006-E11: cambiar quién ocupa la sexta plaza sustituye la plantilla', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-
-    const resultado = cambiarPlantilla(sistema, plantillaConLibero());
-
-    expect(resultado.plantilla).toEqual(plantillaConLibero());
-  });
-
-  it('006-E12: cambiar de ocupante retira al saliente de las rotaciones guardadas', () => {
-    const central2 = jugador('central2', 'central', 2);
-    const colocador = jugador('colocador', 'colocador');
+describe('cambiarSustitutoLibero', () => {
+  it('011-E11: cambiar a quién sustituye el líbero purga lo que deja de valer', () => {
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    // R1: central2 es zaguero en esta plantilla -> juega el líbero por él. Opuesto también es
+    // zaguero en R1, pero como el líbero sustituye a central2, opuesto juega de titular.
     const sistema: Sistema = {
       id: 's1',
       nombre: 'Sistema',
       tipo: 'recepcion',
-      plantilla: plantilla(),
+      plantilla: plantillaCentral2,
       formaciones: {
         1: [
           { jugador: colocador, punto: { x: 8, y: 1 } },
-          { jugador: central2, punto: { x: 4.5, y: 6 } },
+          { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: { x: 4.5, y: 6 } },
+          { jugador: opuesto, punto: { x: 8, y: 8 } },
         ],
       },
       explicacionesRotacion: {},
     };
 
-    const resultado = cambiarPlantilla(sistema, plantillaConLibero());
+    const resultado = cambiarSustitutoLibero(sistema, 'opuesto');
 
     const idsEnR1 = resultado.formaciones[1]?.map((c) => c.jugador.id);
-    expect(idsEnR1).not.toContain('central2');
-    expect(idsEnR1).toContain('colocador');
+    expect(idsEnR1).not.toContain('opuesto');
+    expect(idsEnR1).toContain('libero');
   });
 });

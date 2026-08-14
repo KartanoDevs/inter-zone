@@ -27,10 +27,24 @@ export interface ColisionAbreviatura {
 /** Los seis jugadores del equipo ordenados P1..P6 en la rotación inicial (R1). */
 export type OrdenSaque = readonly [Jugador, Jugador, Jugador, Jugador, Jugador, Jugador];
 
-/** Un equipo guardado con nombre. Inmutable: no se modifica su orden de saque una vez creada. */
+/**
+ * A quién sustituye el líbero. Un solo campo en vez de dos opcionales sueltos: no puede
+ * existir un líbero declarado sin decidir a quién sustituye (spec 011).
+ */
+export interface SustitucionLibero {
+  readonly jugador: Jugador;
+  readonly sustituidoId: string;
+}
+
+/**
+ * Un equipo guardado con nombre. Inmutable: no se modifica su orden de saque una vez creada.
+ * `ordenSaque` son siempre los seis titulares; el líbero (si lo hay) vive aparte, porque no
+ * ocupa una plaza fija — entra y sale según la rotación (spec 011, FIVB 19.3.1.1).
+ */
 export interface PlantillaEquipo {
   readonly nombre: string;
   readonly ordenSaque: OrdenSaque;
+  readonly libero?: SustitucionLibero;
 }
 
 export type TipoSistema = 'recepcion' | 'defensa';

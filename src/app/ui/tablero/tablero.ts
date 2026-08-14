@@ -8,7 +8,7 @@ import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
-import { formacionEnRotacion } from '../../domain/rotacion';
+import { jugadoresEnPista } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import type { Colocacion, Formacion, Infraccion, Punto, ResultadoValidacion } from '../../domain/modelos';
@@ -120,12 +120,12 @@ export class Tablero {
   protected readonly completo = computed(() => this.store.borrador().length === 6);
 
   private readonly posicionPorId = computed(() => {
-    const orden = this.store.ordenActivo();
+    const posiciones = this.store.posicionesActivas();
     const mapa = new Map<string, string>();
-    if (!orden) {
+    if (!posiciones) {
       return mapa;
     }
-    formacionEnRotacion(orden, this.store.rotacionActiva()).forEach((jugador, indice) => mapa.set(jugador.id, POSICIONES[indice]));
+    posiciones.forEach((jugador, indice) => mapa.set(jugador.id, POSICIONES[indice]));
     return mapa;
   });
 
@@ -152,28 +152,38 @@ export class Tablero {
   });
 
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() => {
-    const orden = this.store.ordenActivo();
-    if (!orden) {
+    const posiciones = this.store.posicionesActivas();
+    if (!posiciones) {
       return [];
     }
     const colocadosIds = new Set(this.store.borrador().map((c) => c.jugador.id));
-    return orden
+    return posiciones
       .filter((jugador) => !colocadosIds.has(jugador.id))
       .map((jugador) => ({ id: jugador.id, etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO) }));
   });
 
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
     const sistema = this.store.sistemaActivo();
-    const orden = this.store.ordenActivo();
-    if (!sistema || !orden) {
+    if (!sistema) {
       return ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false }));
     }
     return ROTACIONES.map((rotacion) => {
       const formacion = sistema.formaciones[rotacion] ?? [];
-      const tieneFalta = formacion.length === 6 && validarFormacion(formacion, orden, rotacion).infracciones.length > 0;
+      const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
+      const tieneFalta = formacion.length === 6 && validarFormacion(formacion, posiciones).infracciones.length > 0;
       return { rotacion, tieneFalta };
     });
   });
+
+  protected readonly opcionesSustitutoLibero = computed<readonly ChipJugador[]>(() => {
+    const orden = this.store.sistemaActivo()?.plantilla.ordenSaque;
+    if (!orden) {
+      return [];
+    }
+    return orden.map((jugador) => ({ id: jugador.id, etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO) }));
+  });
+
+  protected readonly sustitutoLiberoActual = computed(() => this.store.sistemaActivo()?.plantilla.libero?.sustituidoId ?? null);
 
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
     this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
@@ -251,11 +261,18 @@ export class Tablero {
   }
 
   protected onAgarrarPaleta(chip: ChipAgarrado): void {
-    const jugador = this.store.ordenActivo()?.find((j) => j.id === chip.id);
+    const jugador = this.store.posicionesActivas()?.find((j) => j.id === chip.id);
     if (!jugador) {
       return;
     }
     this.iniciarArrastre(chip.id, etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO), chip.evento, 'paleta');
+  }
+
+  protected cambiarSustitutoLibero(evento: Event): void {
+    const id = (evento.target as HTMLSelectElement).value;
+    if (id) {
+      this.store.cambiarSustitutoLibero(id);
+    }
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {

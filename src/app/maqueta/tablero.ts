@@ -136,7 +136,7 @@ export class Tablero {
   });
 
   private readonly resultadoActivo = computed<ResultadoValidacion | null>(() =>
-    this.completo() ? validarFormacion(this.formacionActiva(), this.orden(), this.rotacionActiva()) : null,
+    this.completo() ? validarFormacion(this.formacionActiva(), this.posicionesActivas()) : null,
   );
 
   protected readonly esLegal = computed(() => this.resultadoActivo()?.infracciones.length === 0);
@@ -171,7 +171,8 @@ export class Tablero {
     const orden = this.orden();
     return ROTACIONES.map((rotacion) => {
       const formacion = this.formaciones()[rotacion] ?? [];
-      const tieneFalta = formacion.length === 6 && validarFormacion(formacion, orden, rotacion).infracciones.length > 0;
+      const tieneFalta =
+        formacion.length === 6 && validarFormacion(formacion, formacionEnRotacion(orden, rotacion)).infracciones.length > 0;
       return { rotacion, tieneFalta };
     });
   });

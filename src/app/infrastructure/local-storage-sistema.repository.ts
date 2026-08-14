@@ -4,8 +4,6 @@ import type { SistemaRepository } from '../domain/puertos';
 const CLAVE = 'interzone.sistemas';
 const VERSION_ACTUAL = 1;
 
-export type OcupanteCasilla = 'central2' | 'libero';
-
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
   getItem(clave: string): string | null;
@@ -23,7 +21,8 @@ interface SistemaPersistido {
   readonly id: string;
   readonly nombre: string;
   readonly tipo: TipoSistema;
-  readonly ocupanteCasilla: OcupanteCasilla;
+  /** A quién sustituye el líbero, si el sistema tiene uno. Ausente si no tiene líbero (spec 011). */
+  readonly sustitutoLibero?: string;
   readonly formaciones: Readonly<Record<string, readonly PosicionPersistida[]>>;
   readonly explicacionesRotacion: Readonly<Record<string, string>>;
   readonly creadoEn: string;
@@ -43,23 +42,20 @@ function esPayloadValido(valor: unknown): valor is Payload {
   return typeof conVersion.version === 'number' && Array.isArray(conVersion.data?.sistemas);
 }
 
-function ocupanteDe(plantilla: PlantillaEquipo): OcupanteCasilla {
-  return plantilla.ordenSaque.some((jugador) => jugador.rol === 'libero') ? 'libero' : 'central2';
-}
-
 /**
  * Adaptador de `SistemaRepository` sobre un almacén de clave-valor (`localStorage` en producción).
  *
  * `domain/` no lleva fechas (ver `docs/arquitectura.md`), así que `creadoEn`/`actualizadoEn` no
  * existen en `Sistema`: son metadatos que solo vive aquí, en la forma persistida. Tampoco se
- * persiste la plantilla completa de cada sistema, solo cuál de las dos variantes usa
- * (`ocupanteCasilla`); las plantillas reales se inyectan por constructor porque en la v1 son una
- * constante fija de la aplicación, no un dato de dominio.
+ * persiste la plantilla completa de cada sistema: en la v1 hay una única plantilla, constante
+ * de la aplicación (`domain/plantilla-global.ts`), inyectada por constructor; solo se guarda a
+ * quién sustituye el líbero (`sustitutoLibero`), que sí puede variar de un sistema a otro
+ * (spec 011).
  */
 export class LocalStorageSistemaRepository implements SistemaRepository {
   constructor(
     private readonly almacen: AlmacenClaveValor,
-    private readonly plantillas: Readonly<Record<OcupanteCasilla, PlantillaEquipo>>,
+    private readonly plantilla: PlantillaEquipo,
     private readonly ahora: () => string = () => new Date().toISOString(),
   ) {}
 
@@ -112,7 +108,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       id: sistema.id,
       nombre: sistema.nombre,
       tipo: sistema.tipo,
-      ocupanteCasilla: ocupanteDe(sistema.plantilla),
+      sustitutoLibero: sistema.plantilla.libero?.sustituidoId,
       formaciones,
       explicacionesRotacion: { ...sistema.explicacionesRotacion },
       creadoEn,
@@ -121,8 +117,17 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
   }
 
   private aSistema(persistido: SistemaPersistido): Sistema {
-    const plantilla = this.plantillas[persistido.ocupanteCasilla];
+    const plantilla: PlantillaEquipo =
+      persistido.sustitutoLibero === undefined
+        ? { nombre: this.plantilla.nombre, ordenSaque: this.plantilla.ordenSaque }
+        : {
+            ...this.plantilla,
+            libero: { jugador: this.plantilla.libero!.jugador, sustituidoId: persistido.sustitutoLibero },
+          };
     const jugadorPorId = new Map(plantilla.ordenSaque.map((jugador) => [jugador.id, jugador]));
+    if (plantilla.libero) {
+      jugadorPorId.set(plantilla.libero.jugador.id, plantilla.libero.jugador);
+    }
     const formaciones: Record<string, readonly Colocacion[]> = {};
     for (const [rotacion, posiciones] of Object.entries(persistido.formaciones)) {
       formaciones[rotacion] = posiciones.map((p) => {

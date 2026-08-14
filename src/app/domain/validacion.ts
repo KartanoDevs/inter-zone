@@ -8,7 +8,6 @@ import type {
   ResultadoValidacion,
   TipoComparacion,
 } from './modelos';
-import { formacionEnRotacion } from './rotacion';
 
 const MARGEN_TOLERANCIA = 0.05;
 
@@ -60,12 +59,12 @@ function evaluarLateral(
   evaluarMargen(margen, 'orden-lateral', [izquierda.jugador, derecha.jugador], infracciones, avisos);
 }
 
-export function validarFormacion(
-  formacion: Formacion,
-  orden: OrdenSaque,
-  rotacion: number,
-): ResultadoValidacion {
-  const posiciones = formacionEnRotacion(orden, rotacion);
+/**
+ * `posiciones` es P1..P6 ya resueltos — quien de verdad ocupa cada uno, líbero incluido si
+ * corresponde (spec 011). Quien llama los deriva con `formacionEnRotacion` (sin líbero) o
+ * `jugadoresEnPista` (con líbero); esta función no necesita saber cuál de las dos se usó.
+ */
+export function validarFormacion(formacion: Formacion, posiciones: OrdenSaque): ResultadoValidacion {
   const [p1, p2, p3, p4, p5, p6] = posiciones.map((jugador) => colocacionDe(formacion, jugador));
 
   const infracciones: Infraccion[] = [];

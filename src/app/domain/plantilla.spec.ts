@@ -74,7 +74,7 @@ describe('validarPlantilla — composición', () => {
     expect(validarPlantilla(orden, CONFIGURACION_ROLES_POR_DEFECTO)).toBe(true);
   });
 
-  it('E13: composición con el líbero ocupando el puesto de un central es válida', () => {
+  it('011-E13 (revisa 002-E13): un líbero dentro del orden de saque ya no es válido — vive aparte', () => {
     const orden: OrdenSaque = [
       jugador('colocador', 'colocador'),
       jugador('receptor1', 'receptor', 1),
@@ -84,7 +84,7 @@ describe('validarPlantilla — composición', () => {
       jugador('opuesto', 'opuesto'),
     ];
 
-    expect(validarPlantilla(orden, CONFIGURACION_ROLES_POR_DEFECTO)).toBe(true);
+    expect(validarPlantilla(orden, CONFIGURACION_ROLES_POR_DEFECTO)).toBe(false);
   });
 
   it('E14: dos colocadores en pista es una composición inválida', () => {

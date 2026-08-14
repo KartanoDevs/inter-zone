@@ -69,6 +69,44 @@ describe('puedeCrearPlantillaEquipo', () => {
   });
 });
 
+describe('puedeCrearPlantillaEquipo con líbero', () => {
+  it('011-E1: declarar el líbero junto con a quién sustituye se acepta', () => {
+    const resultado = puedeCrearPlantillaEquipo(
+      'Equipo A',
+      ordenValidoEstandar(),
+      CONFIGURACION_ROLES_POR_DEFECTO,
+      [],
+      { jugador: jugador('libero', 'libero'), sustituidoId: 'central2' },
+    );
+
+    expect(resultado).toBe(true);
+  });
+
+  it('011-E4: el líbero puede sustituir a cualquier titular, no solo al central', () => {
+    const resultado = puedeCrearPlantillaEquipo(
+      'Equipo A',
+      ordenValidoEstandar(),
+      CONFIGURACION_ROLES_POR_DEFECTO,
+      [],
+      { jugador: jugador('libero', 'libero'), sustituidoId: 'opuesto' },
+    );
+
+    expect(resultado).toBe(true);
+  });
+
+  it('011-E12: sustituir a alguien que no es titular se rechaza', () => {
+    const resultado = puedeCrearPlantillaEquipo(
+      'Equipo A',
+      ordenValidoEstandar(),
+      CONFIGURACION_ROLES_POR_DEFECTO,
+      [],
+      { jugador: jugador('libero', 'libero'), sustituidoId: 'jugador-inexistente' },
+    );
+
+    expect(resultado).toBe(false);
+  });
+});
+
 describe('puedeBorrarPlantillaEquipo', () => {
   it('004-E5: una plantilla sin sistemas asociados se puede borrar', () => {
     expect(puedeBorrarPlantillaEquipo(false)).toBe(true);

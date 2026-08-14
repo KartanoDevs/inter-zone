@@ -17,6 +17,8 @@ sin cubrir.
   plantilla, y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
   numeradas por dónde está el colocador).
+- El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la
+  formación según le toque, como en un partido real.
 - Bloquear el guardado de una rotación que cometa falta de posición.
 - Escribir por qué se coloca así una rotación, o un jugador dentro de ella — enseñanza, no
   solo geometría.
@@ -70,16 +72,18 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    validación posicional, plantillas de equipo. Sin UI. Specs 001–004.
 2. **Sistema de recepción.** Crear un sistema con nombre, ligado a una plantilla, y guardar
    una formación legal por rotación — bloqueando el guardado si comete falta. Spec 005.
-3. **Catálogo de sistemas, enseñanza, persistencia y pizarra interactiva.** Crear, renombrar y
-   borrar varios sistemas; explicaciones de enseñanza por rotación y por jugador; guardado en
-   el navegador con un esquema pensado para migrar a PostgreSQL + Prisma en la V2; y, sobre
-   todo eso, la pista SVG con arrastre, validación en vivo, navegación R1–R6 y selección de
-   jugador. Primer punto en que la herramienta enseña algo tocándola. Specs 006–010.
+3. **Catálogo de sistemas, enseñanza, persistencia, pizarra interactiva y líbero por
+   rotación.** Crear, renombrar y borrar varios sistemas; explicaciones de enseñanza por
+   rotación y por jugador; guardado en el navegador con un esquema pensado para migrar a
+   PostgreSQL + Prisma en la V2; la pista SVG con arrastre, validación en vivo, navegación
+   R1–R6 y selección de jugador; y el líbero sustituyendo a cualquier jugador de zaga, entrando
+   y saliendo según la rotación (FIVB 19.3.1.1). Primer punto en que la herramienta enseña algo
+   tocándola. Specs 006–011.
 4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
-   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 011–012.
+   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 012–013.
 5. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
-   Specs 013–014.
-6. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 015.
+   Specs 014–015.
+6. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 016.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

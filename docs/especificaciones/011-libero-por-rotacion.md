@@ -1,6 +1,6 @@
 # 011 — El líbero entra y sale según la rotación
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 3
 
 ## Problema
@@ -133,4 +133,57 @@ Ninguna. Resueltas con el usuario:
 
 ## Al cerrar
 
-Pendiente. Se rellena cuando la spec se cierre.
+Los 14 escenarios pasan (123 tests en total en `domain/`, `infrastructure/` y `application/`).
+No existe `npm run test:coverage`; no se reporta cobertura numérica por el mismo motivo que en
+specs anteriores. E2 y E3 no necesitaron test propio: quedaron cubiertos por construcción (el
+líbero ya no puede contarse dentro de la composición porque nunca está en `ordenSaque`, y una
+plantilla sin líbero es exactamente lo que ya probaba la spec 004).
+
+**El alcance real fue mayor que el previsto en el plan.** La nota original decía
+"`validacion.ts` — sin cambios: la regla R4 se queda como red de seguridad". Era incorrecto:
+`validarFormacion` derivaba ella misma quién ocupa cada Pn a partir del orden de saque en
+crudo, así que en cuanto el líbero sustituía a un zaguero, buscaba la colocación del titular
+— que ya no estaba en la formación— y reventaba. La única forma limpia de arreglarlo era que
+`validarFormacion` dejara de calcular las posiciones y las recibiera ya resueltas de quien
+llama (`formacionEnRotacion` sin líbero, `jugadoresEnPista` con él). Descubierto al escribir
+el primer test de `guardarFormacion` con líbero (E9), no en la fase de diseño.
+
+**Cambio de firma con precedente.** `validarFormacion(formacion, orden, rotacion)` pasó a
+`validarFormacion(formacion, posiciones)`: sin el parámetro `rotacion`, que ya no usaba para
+nada una vez que el cálculo de posiciones sale de la función. Tocó los ~16 tests de la spec 001
+(`Completada`) y el E8 de la 003, todos mecánicos: casi todos construían `orden` para que ya
+coincidiera con las posiciones resueltas en la rotación pedida (un patrón de test deliberado,
+no accidental), así que la migración fue borrar el tercer argumento; solo dos sitios (`E15`, y
+`003-E8`) necesitaron anteponer `formacionEnRotacion(orden, n)` explícito porque probaban una
+rotación distinta a la de construcción. Precedente: ADR 0007 y ADR 0010 ya habían tocado esta
+misma función y su suite antes.
+
+**`cambiarPlantilla` (spec 006) se sustituye por `cambiarSustitutoLibero`.** Estaba pensada
+para intercambiar dos plantillas completas con `ordenSaque` distintos —el diseño de "central2 o
+líbero" de antes de esta spec—; con el líbero fuera del orden de saque, ese caso ya no existe:
+solo hay una plantilla, y lo único que cambia es a quién sustituye el líbero. Se retiraron sus
+dos tests (006-E11, E12) y se sustituyeron por 011-E11. También se simplificó
+`composicionValida` (spec 002, `plantilla.ts`): la rama para el líbero-como-central
+(`centralConLibero`) ya no puede darse nunca, y su test (002-E13) invirtió su aserción: un
+líbero dentro del orden de saque es ahora una composición inválida, no válida.
+
+**`infrastructure/` cambia de forma, no solo de contenido.** `LocalStorageSistemaRepository`
+pasó de recibir `Record<'central2'|'libero', PlantillaEquipo>` (dos plantillas completas
+inyectadas) a recibir una sola `PlantillaEquipo`, y de persistir un discriminador
+(`ocupanteCasilla`) a persistir directamente a quién sustituye el líbero
+(`sustitutoLibero?: string`, ausente si el sistema no tiene). Es coherente con que ahora solo
+hay una plantilla real de verdad: lo único que puede variar de un sistema a otro es esa única
+cadena.
+
+**`docs/dominio.md` se corrigió dos veces**, no una: primero el §2 (antes de escribir el primer
+test, con la regla FIVB 19.3.1.1 verificada), y aquí también el invariante 3 de la §7, que
+seguía dando por hecho que una formación coloca siempre a los seis titulares del orden de
+saque — ya no es cierto si el líbero está en pista.
+
+**Lo que sorprendió:** una vez `jugadoresEnPista` quedó escrito para E5 y E6, los escenarios
+E7 y E8 pasaron en verde sin código nuevo — son propiedades que se derivan solas de cómo se
+construyó la función, no reglas aparte que hubiera que codificar.
+
+**Lo que no se desvió:** ninguna regla de `docs/dominio.md` resultó incorrecta *después* de
+esta spec; la que sí lo era (el líbero solo sustituye al central) se corrigió como parte del
+propio trabajo, no como una sorpresa posterior.

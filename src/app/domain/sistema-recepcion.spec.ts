@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
-import { formacionEnRotacion } from './rotacion';
+import { formacionEnRotacion, jugadoresEnPista } from './rotacion';
 import { borrarRotacion, explicarJugador, explicarRotacion, guardarFormacion, sistemaCompleto } from './sistema-recepcion';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
@@ -51,6 +51,16 @@ function formacionLegalPara(orden: OrdenSaque, rotacion: number): Formacion {
 
 function formacionLegalR2(orden: OrdenSaque): Formacion {
   return formacionLegalPara(orden, 2);
+}
+
+function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
+  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
+}
+
+/** Igual que `formacionLegalPara`, pero con quien esté en pista de verdad (líbero incluido). */
+function formacionLegalEnPista(plantilla: PlantillaEquipo, rotacion: number): Formacion {
+  const posiciones = jugadoresEnPista(plantilla, rotacion);
+  return posiciones.map((j, indice) => ({ jugador: j, punto: PUNTOS_LEGALES[indice] }));
 }
 
 describe('guardarFormacion', () => {
@@ -135,6 +145,32 @@ describe('guardarFormacion', () => {
     const resultado = guardarFormacion(sistema, 2, formacionIncompleta);
 
     expect(resultado).toBeNull();
+  });
+});
+
+describe('guardarFormacion con líbero', () => {
+  it('011-E9: guardar exige a quien está en pista de verdad, no al titular fijo', () => {
+    const plantilla = plantillaConLibero('central2');
+    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+    // R1: central2 es zaguero en esta plantilla -> en pista debería estar el líbero, no central2.
+    const conElTitularEnVezDelLibero = formacionLegalPara(plantilla.ordenSaque, 1);
+
+    const resultado = guardarFormacion(sistema, 1, conElTitularEnVezDelLibero);
+
+    expect(resultado).toBeNull();
+  });
+
+  it('011-E10: un sistema con líbero guarda sus seis rotaciones sin ninguna bloqueada', () => {
+    const plantilla = plantillaConLibero('central2');
+    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+
+    for (let rotacion = 1; rotacion <= 6; rotacion++) {
+      const guardado = guardarFormacion(sistema, rotacion, formacionLegalEnPista(plantilla, rotacion));
+      expect(guardado).not.toBeNull();
+      sistema = guardado!;
+    }
+
+    expect(sistemaCompleto(sistema)).toBe(true);
   });
 });
 

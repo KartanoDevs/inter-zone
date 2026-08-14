@@ -8,6 +8,17 @@
     (borrar)="pedirBorrado()"
   ></app-barra-sistemas>
 
+  @if (sustitutoLiberoActual(); as sustituto) {
+    <label class="app-tablero__libero">
+      Líbero sustituye a
+      <select (change)="cambiarSustitutoLibero($event)">
+        @for (opcion of opcionesSustitutoLibero(); track opcion.id) {
+          <option [value]="opcion.id" [selected]="opcion.id === sustituto">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </label>
+  }
+
   <app-selector-rotacion
     [rotaciones]="estadosRotacion()"
     [rotacionActiva]="store.rotacionActiva()"

@@ -1,4 +1,4 @@
-import type { ConfiguracionRoles, OrdenSaque, PlantillaEquipo } from './modelos';
+import type { ConfiguracionRoles, OrdenSaque, PlantillaEquipo, SustitucionLibero } from './modelos';
 import { validarPlantilla } from './plantilla';
 
 export function puedeCrearPlantillaEquipo(
@@ -6,11 +6,13 @@ export function puedeCrearPlantillaEquipo(
   ordenSaque: OrdenSaque,
   configuracion: ConfiguracionRoles,
   existentes: readonly PlantillaEquipo[],
+  libero?: SustitucionLibero,
 ): boolean {
   return (
     nombre.length > 0 &&
     !existentes.some((plantilla) => plantilla.nombre === nombre) &&
-    validarPlantilla(ordenSaque, configuracion)
+    validarPlantilla(ordenSaque, configuracion) &&
+    (libero === undefined || ordenSaque.some((jugador) => jugador.id === libero.sustituidoId))
   );
 }
 

@@ -1,10 +1,11 @@
-import type { Formacion, PlantillaEquipo, Sistema } from './modelos';
+import type { Formacion, OrdenSaque, Sistema } from './modelos';
+import { jugadoresEnPista } from './rotacion';
 import { validarFormacion } from './validacion';
 
-function mismosJugadores(formacion: Formacion, plantilla: PlantillaEquipo): boolean {
+function mismosJugadores(formacion: Formacion, posiciones: OrdenSaque): boolean {
   const idsFormacion = formacion.map((colocacion) => colocacion.jugador.id).sort();
-  const idsPlantilla = plantilla.ordenSaque.map((jugador) => jugador.id).sort();
-  return JSON.stringify(idsFormacion) === JSON.stringify(idsPlantilla);
+  const idsPosiciones = posiciones.map((jugador) => jugador.id).sort();
+  return JSON.stringify(idsFormacion) === JSON.stringify(idsPosiciones);
 }
 
 /** Reaplica, por id de jugador, la explicación que tuviera en la formación anterior de esa rotación. */
@@ -25,10 +26,11 @@ function conExplicacionesConservadas(formacion: Formacion, anterior: Formacion |
 }
 
 export function guardarFormacion(sistema: Sistema, rotacion: number, formacion: Formacion): Sistema | null {
-  if (!mismosJugadores(formacion, sistema.plantilla)) {
+  const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
+  if (!mismosJugadores(formacion, posiciones)) {
     return null;
   }
-  const resultado = validarFormacion(formacion, sistema.plantilla.ordenSaque, rotacion);
+  const resultado = validarFormacion(formacion, posiciones);
   if (resultado.infracciones.length > 0) {
     return null;
   }

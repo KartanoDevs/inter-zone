@@ -3,10 +3,12 @@ import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema } from '../doma
 import type { SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
+  cambiarSustitutoLibero,
   crearSistema,
   ordenarCatalogo,
   renombrarSistema,
 } from '../domain/catalogo-sistemas';
+import { jugadoresEnPista } from '../domain/rotacion';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
 import { validarFormacion } from '../domain/validacion';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
@@ -44,7 +46,16 @@ export class SistemaStore {
 
   readonly sistemaActivo = computed(() => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null);
 
-  readonly ordenActivo = computed<OrdenSaque | null>(() => this.sistemaActivo()?.plantilla.ordenSaque ?? null);
+  /**
+   * Quién juega de verdad en la rotación activa — los seis titulares, o el líbero en su lugar
+   * donde corresponda (spec 011). Sustituye a lo que antes era `ordenActivo` (el orden de
+   * saque en crudo): colocar, validar y el banquillo necesitan siempre esto, nunca los seis
+   * titulares fijos sin más.
+   */
+  readonly posicionesActivas = computed<OrdenSaque | null>(() => {
+    const sistema = this.sistemaActivo();
+    return sistema ? jugadoresEnPista(sistema.plantilla, this.rotacionActiva()) : null;
+  });
 
   readonly formacionGuardadaActiva = computed<Formacion>(
     () => this.sistemaActivo()?.formaciones[this.rotacionActiva()] ?? [],
@@ -53,9 +64,9 @@ export class SistemaStore {
   readonly hayCambiosSinGuardar = computed(() => !formacionesIguales(this.borrador(), this.formacionGuardadaActiva()));
 
   readonly resultadoValidacion = computed(() => {
-    const orden = this.ordenActivo();
+    const posiciones = this.posicionesActivas();
     const borrador = this.borrador();
-    return orden && borrador.length === 6 ? validarFormacion(borrador, orden, this.rotacionActiva()) : null;
+    return posiciones && borrador.length === 6 ? validarFormacion(borrador, posiciones) : null;
   });
 
   readonly puedeGuardar = computed(() => this.resultadoValidacion()?.infracciones.length === 0);
@@ -129,7 +140,7 @@ export class SistemaStore {
 
   crear(nombre: string, tipo: TipoSistema): boolean {
     const id = crypto.randomUUID();
-    const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL.central2, this.sistemas());
+    const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL, this.sistemas());
     if (!nuevo) {
       return false;
     }
@@ -152,6 +163,16 @@ export class SistemaStore {
     }
     this.reemplazarSistema(actualizado);
     return true;
+  }
+
+  /** A quién sustituye el líbero del sistema activo (spec 011, E14). */
+  cambiarSustitutoLibero(sustituidoId: string): void {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return;
+    }
+    this.reemplazarSistema(cambiarSustitutoLibero(sistema, sustituidoId));
+    this.borrador.set(this.formacionGuardadaActiva());
   }
 
   borrar(id: string): void {
@@ -185,7 +206,7 @@ export class SistemaStore {
   }
 
   colocarOMover(jugadorId: string, punto: Punto): void {
-    const jugador = this.ordenActivo()?.find((j) => j.id === jugadorId);
+    const jugador = this.posicionesActivas()?.find((j) => j.id === jugadorId);
     if (!jugador) {
       return;
     }
