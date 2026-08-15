@@ -33,13 +33,15 @@ Modelos y reglas. Aquí vive el voleibol.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
   rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
   deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
-- `plantilla.ts` — `validarPlantilla`, `asignarIndices`: composición y numeración de los seis
-  titulares. El líbero nunca es uno de los seis (ADR 0014); si aparece dentro del orden de
-  saque, la composición se rechaza.
+- `plantilla.ts` — `validarPlantilla`: composición y coherencia de índices de los seis
+  titulares. El índice de cada jugador se declara en la plantilla, no se deriva (ADR 0017); no
+  hay ninguna función que lo calcule. El líbero nunca es uno de los seis (ADR 0014); si aparece
+  dentro del orden de saque, la composición se rechaza.
 - `plantillas-equipo.ts` — `puedeCrearPlantillaEquipo` (con líbero opcional: a quién sustituye
   debe ser uno de los seis titulares), `puedeBorrarPlantillaEquipo`.
-- `plantilla-global.ts` — la única plantilla real de la v1: seis titulares y un líbero que
-  sustituye por defecto al segundo central. Configuración por defecto, igual que `roles.ts`.
+- `plantilla-global.ts` — la única plantilla real de la v1: seis titulares con índice declarado
+  a mano y un líbero que sustituye, en cada rotación, al central que caiga en zaga en ella (ADR
+  0015). Configuración por defecto, igual que `roles.ts`.
 - `validacion.ts` — `validarFormacion(formacion, posiciones): ResultadoValidacion`. No deriva
   las posiciones ella misma: las recibe ya resueltas de quien la llama, con
   `formacionEnRotacion` (sin líbero) o `jugadoresEnPista` (con él) — así no necesita saber

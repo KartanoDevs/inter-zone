@@ -59,18 +59,17 @@ la letra base sea la misma.
 Hay dos receptores y dos centrales en pista, así que necesitan distinguirse: `R1` y `R2`,
 `C1` y `C2`.
 
-**Convención para asignar el índice:** se recorre el orden de saque en sentido de rotación
-empezando por el colocador — es decir, en el orden `P1, P6, P5, P4, P3, P2`, el mismo sentido
-en que gira la rotación (`P2→P1→P6→P5→P4→P3→P2`), **no** el orden en que se escribió la lista
-(`P1, P2, P3...`). El primer jugador de ese rol que aparece en ese recorrido lleva el índice
-**1** (el "cerca"); el segundo lleva el **2** (el "lejos"). Esta precisión existe porque el
-código llegó a implementar el recorrido contrario durante varias specs (corregido en la 017):
-"en sentido de rotación" es ambiguo si no se dice explícitamente cuál es la secuencia de Pn.
+**El índice se declara, no se deriva (spec 018).** No existe una regla de recorrido del orden
+de saque que lo calcule: se intentó dos veces (specs 006 y 017, ambas con un recorrido distinto)
+y las dos veces resultó incorrecto, porque la convención real del entrenador no sale de un único
+recorrido — cuenta los receptores contando hacia delante desde el colocador, y los centrales
+contando hacia atrás. Que un jugador sea `R1` o `C2` es una decisión del entrenador al declarar
+su plantilla, igual que su nombre; la app solo la guarda y la pinta. `validarPlantilla` sigue
+comprobando que los índices declarados sean coherentes (un rol con índice tiene exactamente un
+1 y un 2 en pista), pero no impone ningún orden de asignación.
 
-Esta convención es una decisión del proyecto, no una regla de la FIVB. Está escrita aquí
-porque si el equipo entiende "cerca" y "lejos" de otra forma —por ejemplo respecto a la red
-en la formación, no respecto al colocador en el orden— cambia el significado de todas las
-etiquetas y hay que actualizar este apartado antes que el código.
+Este apartado existe para que quede escrito que **no** hay que volver a intentar derivarlo: es
+la tercera vez que se prueba y la tercera que se descarta.
 
 ### Etiqueta
 

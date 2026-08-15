@@ -28,5 +28,6 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0012](0012-fechas-en-el-repositorio.md) | `creadoEn`/`actualizadoEn` viven en el repositorio, no en `Sistema` | Aceptada |
 | [0013](0013-plantilla-global-en-domain.md) | La plantilla global vive en `domain/`; el `SistemaStore` se cablea con `useFactory` | Aceptada |
 | [0014](0014-libero-fuera-del-orden-de-saque.md) | El líbero vive fuera del orden de saque; entra y sale según la rotación | Aceptada |
-| [0015](0015-sustituto-libero-por-rotacion-e-indice-de-rol.md) | El sustituto del líbero se declara por rotación; el índice de rol cuenta en sentido de rotación | Aceptada |
+| [0015](0015-sustituto-libero-por-rotacion-e-indice-de-rol.md) | El sustituto del líbero se declara por rotación; el índice de rol cuenta en sentido de rotación | Parcialmente sustituida por 0017 |
 | [0016](0016-modal-generico.md) | Un componente `Modal` genérico sustituye a las implementaciones paralelas de diálogo | Aceptada |
+| [0017](0017-indice-de-rol-declarado.md) | El índice de rol se declara, no se deriva | Aceptada |

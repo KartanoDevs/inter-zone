@@ -1,6 +1,7 @@
 # 0015 — El sustituto del líbero se declara por rotación; el índice de rol cuenta en sentido de rotación
 
-**Estado:** Aceptada
+**Estado:** Parcialmente sustituida por 0017 (la parte del índice de rol; el sustituto del
+líbero por rotación sigue vigente)
 
 **Contexto.** Usar la pizarra con un equipo real de 5-1 (tras la spec 011) reveló dos problemas
 concretos, no anticipados en el diseño. Primero: `PlantillaEquipo.libero.sustituidoId` era una
