@@ -1,6 +1,7 @@
 # 0018 — `Rn` es la rotación física número n, no "el colocador ocupa Pn"
 
-**Estado:** Aceptada
+**Estado:** Revertida por 0019 — se basaba en ejemplos de rotación que resultaron llevar la
+numeración invertida por error del usuario. El contenido de la ADR 0010 es el vigente.
 
 **Contexto.** Al cerrar la spec 018 se escribió un test que recorría las seis rotaciones de la
 plantilla global y las comparaba con seis rotaciones reales de un 5-1 aportadas por el usuario.

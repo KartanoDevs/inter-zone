@@ -31,9 +31,8 @@ Modelos y reglas. Aquí vive el voleibol.
   `ResultadoValidacion`.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
-  rotacionales. `Rn` es la rotación física número n, anclada al colocador para fijar R1 (ADR
-  0010, ADR 0018). `jugadoresEnPista(plantilla, rotacion)` deriva quién juega de verdad — el
-  líbero en vez del titular si le toca zaga (ADR 0014).
+  rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
+  deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
 - `plantilla.ts` — `validarPlantilla`: composición y coherencia de índices de los seis
   titulares. El índice de cada jugador se declara en la plantilla, no se deriva (ADR 0017); no
   hay ninguna función que lo calcule. El líbero nunca es uno de los seis (ADR 0014); si aparece
