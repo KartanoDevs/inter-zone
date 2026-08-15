@@ -16,6 +16,9 @@ import { claveOrdenRol } from '../comun/orden-roles';
 import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, RolId } from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
+// Orden cronológico de juego: el colocador recorre P1..P6 en el sentido de la rotación real
+// (spec 019/020), así que la secuencia de `Rn` que se juega en la pista es esta, no 1..6.
+const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 
 // Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
 // nunca quede recortada por el borde visible (igual que en la maqueta).
@@ -172,11 +175,12 @@ export class Tablero {
   });
 
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
+    const orden = this.store.ordenRotacionCronologico() ? ROTACIONES_ORDEN_JUEGO : ROTACIONES;
     const sistema = this.store.sistemaActivo();
     if (!sistema) {
-      return ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false }));
+      return orden.map((rotacion) => ({ rotacion, tieneFalta: false }));
     }
-    return ROTACIONES.map((rotacion) => {
+    return orden.map((rotacion) => {
       const formacion = sistema.formaciones[rotacion] ?? [];
       const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
       const tieneFalta = formacion.length === 6 && validarFormacion(formacion, posiciones).infracciones.length > 0;
@@ -318,6 +322,10 @@ export class Tablero {
 
   protected alternarAyudaPosicion(): void {
     this.store.alternarAyudaPosicion();
+  }
+
+  protected alternarOrdenRotacion(): void {
+    this.store.alternarOrdenRotacion();
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {

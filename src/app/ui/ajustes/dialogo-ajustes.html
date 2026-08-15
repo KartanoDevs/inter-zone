@@ -19,4 +19,9 @@
     <input type="checkbox" [checked]="ayudaPosicionDesactivada()" (change)="alternarAyudaPosicion.emit()" />
     Ocultar la ayuda de posición (P1-P6)
   </label>
+
+  <label class="app-ajustes__check">
+    <input type="checkbox" [checked]="ordenRotacionCronologico()" (change)="alternarOrdenRotacion.emit()" />
+    Pestañas de rotación en orden de juego (R1, R6, R5, R4, R3, R2)
+  </label>
 </app-modal>

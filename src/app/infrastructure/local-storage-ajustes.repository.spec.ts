@@ -14,19 +14,26 @@ class AlmacenEnMemoria implements AlmacenClaveValor {
   }
 }
 
+const AJUSTES_POR_DEFECTO = {
+  validacionDesactivada: false,
+  ayudaPosicionDesactivada: false,
+  ordenRotacionCronologico: false,
+};
+
 describe('LocalStorageAjustesRepository', () => {
-  it('sin nada guardado, la validación está activada y la ayuda de posición visible por defecto', () => {
+  it('sin nada guardado, todos los ajustes están en su valor por defecto', () => {
     const repositorio = new LocalStorageAjustesRepository(new AlmacenEnMemoria());
 
-    expect(repositorio.leer()).toEqual({ validacionDesactivada: false, ayudaPosicionDesactivada: false });
+    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
   it('ida y vuelta sin pérdida', () => {
     const repositorio = new LocalStorageAjustesRepository(new AlmacenEnMemoria());
+    const ajustes = { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true };
 
-    repositorio.guardar({ validacionDesactivada: true, ayudaPosicionDesactivada: true });
+    repositorio.guardar(ajustes);
 
-    expect(repositorio.leer()).toEqual({ validacionDesactivada: true, ayudaPosicionDesactivada: true });
+    expect(repositorio.leer()).toEqual(ajustes);
   });
 
   it('datos corruptos no interrumpen la lectura y devuelven el valor por defecto', () => {
@@ -35,26 +42,32 @@ describe('LocalStorageAjustesRepository', () => {
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
     expect(() => repositorio.leer()).not.toThrow();
-    expect(repositorio.leer()).toEqual({ validacionDesactivada: false, ayudaPosicionDesactivada: false });
+    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
   it('una versión desconocida se ignora y devuelve el valor por defecto', () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem(
       'interzone.ajustes',
-      JSON.stringify({ version: 999, data: { validacionDesactivada: true, ayudaPosicionDesactivada: true } }),
+      JSON.stringify({
+        version: 999,
+        data: { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true },
+      }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
-    expect(repositorio.leer()).toEqual({ validacionDesactivada: false, ayudaPosicionDesactivada: false });
+    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
-  it('una versión 1 con forma incompatible (sin ayudaPosicionDesactivada) tampoco se lee a ciegas', () => {
+  it('una versión 2 con forma incompatible (sin ordenRotacionCronologico) tampoco se lee a ciegas', () => {
     const almacen = new AlmacenEnMemoria();
-    almacen.setItem('interzone.ajustes', JSON.stringify({ version: 1, data: { validacionDesactivada: true } }));
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({ version: 2, data: { validacionDesactivada: true, ayudaPosicionDesactivada: true } }),
+    );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
     expect(() => repositorio.leer()).not.toThrow();
-    expect(repositorio.leer()).toEqual({ validacionDesactivada: false, ayudaPosicionDesactivada: false });
+    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 });

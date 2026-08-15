@@ -92,9 +92,11 @@
       [sustitutoActual]="sustitutoLiberoActual()"
       [validacionDesactivada]="store.validacionDesactivada()"
       [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
+      [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
       (cambiarSustituto)="cambiarSustitutoLibero($event)"
       (alternarValidacion)="alternarValidacion()"
       (alternarAyudaPosicion)="alternarAyudaPosicion()"
+      (alternarOrdenRotacion)="alternarOrdenRotacion()"
       (cerrar)="cerrarAjustes()"
     ></app-dialogo-ajustes>
   }

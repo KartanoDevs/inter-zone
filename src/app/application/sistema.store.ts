@@ -43,6 +43,7 @@ export class SistemaStore {
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
   readonly ayudaPosicionDesactivada = signal(false);
+  readonly ordenRotacionCronologico = signal(false);
 
   readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
 
@@ -109,6 +110,7 @@ export class SistemaStore {
     const ajustes = ajustesRepositorio?.leer();
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
+    this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
     this.cambiarContexto();
   }
 
@@ -126,10 +128,18 @@ export class SistemaStore {
     this.guardarAjustes();
   }
 
+  /** Pestañas en orden cronológico de juego (R1, R6, R5, R4, R3, R2) en vez de orden numérico. */
+  alternarOrdenRotacion(): void {
+    const valor = !this.ordenRotacionCronologico();
+    this.ordenRotacionCronologico.set(valor);
+    this.guardarAjustes();
+  }
+
   private guardarAjustes(): void {
     this.ajustesRepositorio?.guardar({
       validacionDesactivada: this.validacionDesactivada(),
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
+      ordenRotacionCronologico: this.ordenRotacionCronologico(),
     });
   }
 
