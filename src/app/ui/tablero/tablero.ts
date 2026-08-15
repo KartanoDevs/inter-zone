@@ -9,11 +9,11 @@ import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { DialogoAjustes, type OpcionLibero } from '../ajustes/dialogo-ajustes';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
-import { jugadoresEnPista } from '../../domain/rotacion';
+import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
-import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, RolId } from '../../domain/modelos';
+import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion } from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
@@ -189,36 +189,48 @@ export class Tablero {
   });
 
   /**
-   * Opciones del selector "líbero sustituye a", en el orden pedido para esta pantalla: los
-   * dos centrales primero (el caso típico del 5-1), "Ninguno", y el resto de titulares. No
-   * es el orden de saque: es una decisión de esta pantalla, no del dominio.
+   * Opciones del selector "líbero sustituye a": solo los tres zagueros de la rotación activa
+   * (el líbero no puede sustituir a un delantero, FIVB 19.3.1.1), con el central en zaga
+   * primero — el caso típico del 5-1 —, luego "Ninguno", y el resto en el orden fijo de
+   * `orden-roles.ts`. Si ninguna central cae en zaga (plantilla sin la separación habitual),
+   * no se inventa una.
    */
   protected readonly opcionesSustitutoLibero = computed<readonly OpcionLibero[]>(() => {
     const orden = this.store.sistemaActivo()?.plantilla.ordenSaque;
     if (!orden) {
       return [];
     }
-    const porRol = (rol: RolId, indice?: 1 | 2): Jugador => orden.find((j) => j.rol === rol && j.indice === indice)!;
     const opcion = (jugador: Jugador): OpcionLibero => ({
       id: jugador.id,
       etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
     });
+    const zagueros = zaguerosEnRotacion(orden, this.store.rotacionActiva());
+    const centralEnZaga = zagueros.find((j) => j.rol === 'central') ?? null;
+    const resto = zagueros
+      .filter((j) => j !== centralEnZaga)
+      .sort((a, b) => claveOrdenRol(a.rol, a.indice) - claveOrdenRol(b.rol, b.indice));
     return [
-      opcion(porRol('central', 1)),
-      opcion(porRol('central', 2)),
+      ...(centralEnZaga ? [opcion(centralEnZaga)] : []),
       { id: null, etiqueta: 'Ninguno' },
-      opcion(porRol('opuesto')),
-      opcion(porRol('receptor', 1)),
-      opcion(porRol('receptor', 2)),
-      opcion(porRol('colocador')),
+      ...resto.map(opcion),
     ];
   });
 
   protected readonly tieneLibero = computed(() => !!this.store.sistemaActivo()?.plantilla.libero);
 
+  /**
+   * Si lo guardado ya no está entre las opciones (p. ej. quedó de antes de filtrar el
+   * desplegable a solo zagueros), se ve "Ninguno" — coherente con lo que `jugadoresEnPista` ya
+   * hace con ese valor: ignorarlo. No se reescribe lo guardado, solo lo que se muestra.
+   */
   protected readonly sustitutoLiberoActual = computed(() => {
     const libero = this.store.sistemaActivo()?.plantilla.libero;
-    return libero ? libero.sustitutosPorRotacion[this.store.rotacionActiva()] : null;
+    if (!libero) {
+      return null;
+    }
+    const sustituidoId = libero.sustitutosPorRotacion[this.store.rotacionActiva()];
+    const esOpcionValida = this.opcionesSustitutoLibero().some((opcion) => opcion.id === sustituidoId);
+    return esOpcionValida ? sustituidoId : null;
   });
 
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
