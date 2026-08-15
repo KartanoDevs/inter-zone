@@ -478,4 +478,97 @@ describe('SistemaStore', () => {
       expect(store.borrador()).toEqual([]);
     });
   });
+
+  describe('zonas de responsabilidad', () => {
+    it('022-E4: pintar celdas las marca como responsabilidad del jugador', () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+
+      store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
+      store.pintarCelda(colocador.id, { columna: 2, fila: 3 });
+
+      const celdas = store.borrador().find((c) => c.jugador.id === colocador.id)?.celdas;
+      expect(celdas).toEqual([
+        { columna: 2, fila: 2 },
+        { columna: 2, fila: 3 },
+      ]);
+    });
+
+    it('022-E5: borrar una celda ya pintada por el jugador la despinta', () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
+      store.pintarCelda(colocador.id, { columna: 2, fila: 3 });
+
+      store.borrarCelda(colocador.id, { columna: 2, fila: 2 });
+
+      const celdas = store.borrador().find((c) => c.jugador.id === colocador.id)?.celdas;
+      expect(celdas).toEqual([{ columna: 2, fila: 3 }]);
+    });
+
+    it('022-E6: dos jugadores pueden compartir la misma celda', () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+      const [colocador, receptor1] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.colocarOMover(receptor1.id, { x: 2, y: 2 });
+      store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
+
+      store.pintarCelda(receptor1.id, { columna: 2, fila: 2 });
+
+      const formacion = store.borrador();
+      expect(formacion.find((c) => c.jugador.id === colocador.id)?.celdas).toEqual([{ columna: 2, fila: 2 }]);
+      expect(formacion.find((c) => c.jugador.id === receptor1.id)?.celdas).toEqual([{ columna: 2, fila: 2 }]);
+    });
+
+    it('022-E8: la zona pintada se guarda junto con la formación', () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+      const orden = plantilla().ordenSaque;
+      const puntosLegalesR1 = [
+        { x: 8, y: 8 },
+        { x: 8, y: 1 },
+        { x: 4.5, y: 1 },
+        { x: 1, y: 1 },
+        { x: 1, y: 6 },
+        { x: 4.5, y: 6 },
+      ];
+      orden.forEach((jugador, indice) => store.colocarOMover(jugador.id, puntosLegalesR1[indice]));
+      store.pintarCelda(orden[0].id, { columna: 16, fila: 16 });
+
+      store.guardar();
+
+      const guardado = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
+      expect(guardado?.celdas).toEqual([{ columna: 16, fila: 16 }]);
+    });
+
+    it('022-E9: pintar sin guardar cuenta como cambio pendiente al cambiar de rotación', () => {
+      const [colocador] = plantilla().ordenSaque;
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 } }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
+      expect(store.hayCambiosSinGuardar()).toBe(false);
+
+      store.pintarCelda(colocador.id, { columna: 0, fila: 0 });
+
+      expect(store.hayCambiosSinGuardar()).toBe(true);
+      store.seleccionarRotacion(2);
+      expect(store.cambioPendiente()).toEqual({ tipo: 'rotacion', valor: 2 });
+    });
+
+    it('022-E10: la zona se guarda igual en defensa, por rotación y vía', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const orden = plantilla().ordenSaque;
+      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+      store.pintarCelda(orden[0].id, { columna: 9, fila: 9 });
+
+      store.guardar();
+
+      const guardado = store.sistemaActivo()?.defensas?.[1]?.z4?.find((c) => c.jugador.id === orden[0].id);
+      expect(guardado?.celdas).toEqual([{ columna: 9, fila: 9 }]);
+    });
+  });
 });

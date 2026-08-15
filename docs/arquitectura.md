@@ -27,8 +27,9 @@ implementa puertos que se **declaran** en `domain/`.
 Modelos y reglas. Aquí vive el voleibol.
 
 - `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `OrdenSaque`, `PlantillaEquipo`,
-  `TipoSistema`, `ViaAtaque`, `Sistema` (con `formaciones` para recepción y `defensas` —por
-  rotación y por vía, spec 021— para defensa), `Colocacion`, `Formacion`, `Infraccion`, `Aviso`,
+  `TipoSistema`, `ViaAtaque`, `Celda`, `Sistema` (con `formaciones` para recepción y `defensas`
+  —por rotación y por vía, spec 021— para defensa), `Colocacion` (con `celdas?`, la rejilla de
+  responsabilidad de ese jugador en esa formación, spec 022), `Formacion`, `Infraccion`, `Aviso`,
   `ResultadoValidacion`.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
@@ -39,6 +40,9 @@ Modelos y reglas. Aquí vive el voleibol.
 - `defensa.ts` — `viaDeAtaque(punto): ViaAtaque`: deriva la vía de ataque (zona 4/3/2/pipe) de
   un punto del campo rival, con el espejo de zonas ya resuelto (spec 021, ver `docs/dominio.md`
   §3). Función pura, sin estado.
+- `rejilla.ts` — `TAMANO_CELDA` (0,5 m, ADR 0004), `celdaDe(punto): Celda | null` (`null` fuera
+  de las líneas del campo propio) y `centroDe(celda): Punto` (spec 022). `cobertura.ts` (huecos
+  y conflictos) sigue sin existir: llega con las specs 014–015 de la hoja de ruta.
 - `sistema-defensa.ts` — `guardarFormacionDefensa(sistema, rotacion, via, formacion)`: análogo a
   `guardarFormacion` pero keyed por rotación y vía, y **nunca** valida posición (spec 021, en
   defensa la validación no existe). Reutiliza `jugadoresEnPista` para el roster, igual que
@@ -65,8 +69,8 @@ Modelos y reglas. Aquí vive el voleibol.
 
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
 eso `creadoEn`/`actualizadoEn` de un sistema no viven aquí, sino en `infrastructure/` (ADR
-0012). `rejilla.ts` y `cobertura.ts` (conversión a celdas, huecos y conflictos) todavía no
-existen: llegan con las specs 014–015 de la hoja de ruta del README.
+0012). `cobertura.ts` (huecos y conflictos derivados de la rejilla) todavía no existe: llega
+con las specs 014–015 de la hoja de ruta del README.
 
 **La configuración de roles vive aquí**, no en la UI ni en un fichero de entorno. Cambiar
 "Receptor" por "Punta" es cambiar el vocabulario del dominio, y el sitio donde se hace debe
@@ -90,9 +94,11 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   los seis colocados), `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno
   la de la rotación).
 - Acciones: `activarSistema`, `seleccionarRotacion`, `seleccionarVia`,
-  `confirmarCambio`/`cancelarCambio`, `colocarOMover`, `quitar`, `vaciar`, `guardar` (en
-  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`,
-  `renombrarActivo`, `borrar`, `seleccionarJugador`, `guardarExplicacion`,
+  `confirmarCambio`/`cancelarCambio`, `colocarOMover`, `quitar`, `vaciar`, `pintarCelda`/
+  `borrarCelda` (marcan o quitan una celda de la rejilla de responsabilidad de un jugador en el
+  borrador, spec 022), `guardar` (en defensa llama a `guardarFormacionDefensa` en vez de
+  `guardarFormacion`), `crear`, `renombrarActivo`, `borrar`, `seleccionarJugador`,
+  `guardarExplicacion`,
   `cambiarSustitutoLibero`.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
@@ -123,23 +129,30 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
-  defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020).
+  defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020). Pinta las
+  celdas del jugador seleccionado (`celdasPintadas`, spec 022) y expone un `pointerdown` de
+  fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la ficha rival paran
+  la propagación de su propio `pointerdown` para no disparar los dos gestos a la vez.
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6) y `SelectorVia` (pestañas de vía,
   solo en defensa, spec 021).
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
   `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable).
 - `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/borrar), `DialogoSistema`
-  (alta y edición).
+  (alta y edición, con el tipo de sistema seleccionable — spec 021).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
   el borrado de un sistema.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
-  ficha).
+  ficha). El modo pintar (spec 022) es un segundo gestor de `PointerEvent` en paralelo al de
+  arrastre: con un jugador seleccionado, arrastrar sobre el fondo de la pista pinta o borra
+  celdas en vez de mover fichas — el primer punto tocado decide si el trazo entero pinta o
+  borra, según si esa celda ya era del jugador.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
-la etiqueta de una ficha — con una única excepción deliberada: `Tablero` distingue un toque de
-un arrastre por la distancia en píxeles de pantalla entre agarrar y soltar (spec 010), porque
-esa distinción es de interacción, no de voleibol.
+la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un
+arrastre por la distancia en píxeles de pantalla entre agarrar y soltar (spec 010), y decide si
+un trazo de pintado pinta o borra por el mismo motivo — son distinciones de interacción, no de
+voleibol.
 
 `src/app/maqueta/` sigue existiendo como boceto congelado: no se borra, pero desde la spec 009
 `app.html` ya no la renderiza. Sirve de referencia visual, no se toca.
@@ -157,6 +170,7 @@ src/app/
 │   ├── plantilla-global.ts
 │   ├── validacion.ts
 │   ├── defensa.ts
+│   ├── rejilla.ts
 │   ├── catalogo-sistemas.ts
 │   ├── sistema-recepcion.ts
 │   ├── sistema-defensa.ts

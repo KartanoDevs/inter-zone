@@ -25,7 +25,7 @@ const RADIO_M = 0.45;
     '[class.app-ficha--seleccionada]': 'seleccionada()',
     '[class.app-ficha--arrastrando]': 'arrastrando()',
     '[attr.transform]': 'transform()',
-    '(pointerdown)': 'agarrada.emit($event)',
+    '(pointerdown)': 'onPointerDown($event)',
   },
 })
 export class FichaJugador {
@@ -48,5 +48,12 @@ export class FichaJugador {
   protected transform(): string {
     const { x, y } = this.punto();
     return `translate(${x} ${y})`;
+  }
+
+  /** No propaga: el fondo de la pista tiene su propio `pointerdown` para el modo pintar (spec
+   * 022), y una ficha encima nunca debe disparar los dos gestos a la vez. */
+  protected onPointerDown(evento: PointerEvent): void {
+    evento.stopPropagation();
+    this.agarrada.emit(evento);
   }
 }

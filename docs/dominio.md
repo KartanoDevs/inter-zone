@@ -231,16 +231,18 @@ legal por tres centímetros es exactamente lo que hay que enseñarle.
 Se modelan como una **rejilla de celdas cuadradas de 0,5 m**, no como círculos ni polígonos.
 Motivo en `docs/decisiones/0004-rejilla-de-responsabilidad.md`.
 
-- La rejilla cubre la zona jugable, incluida la zona libre.
+- La rejilla cubre el campo propio, 9×9 m (spec 022; la zona libre queda fuera por ahora — ver
+  Preguntas abiertas de la spec 022 sobre si se amplía más adelante).
 - Cada celda puede estar asignada a cero, uno o varios jugadores.
-- Solo los jugadores que reciben tienen asignación de celdas.
+- **Cualquiera de los seis puede tener celdas asignadas**, no solo quien recibe (spec 022): en
+  defensa, los seis defienden zona; en recepción, nada impide que un entrenador quiera marcar
+  la cobertura de cualquiera de los seis, no solo de quien recibe.
 - **Hueco:** celda dentro de las líneas del campo con cero jugadores asignados.
 - **Conflicto:** celda con dos o más jugadores asignados.
 
-Las celdas de la zona libre no cuentan como hueco. Nadie tiene la obligación de cubrir
-fuera del campo, aunque una recepción pueda producirse ahí.
-
-Huecos y conflictos son **siempre derivados** de la asignación. No se almacenan.
+Huecos y conflictos son **siempre derivados** de la asignación. No se almacenan. **Todavía no
+se calculan** (specs 014-015 de la hoja de ruta, sin escribir): hoy la rejilla solo se pinta y
+se guarda, sin ningún análisis derivado.
 
 ---
 
@@ -263,5 +265,6 @@ Se cumplen siempre, en cualquier estado del sistema. Son candidatos naturales a 
 7. Un rol que lleva índice tiene exactamente dos jugadores en pista, con índices 1 y 2.
 8. Un rol que no lleva índice no tiene índice asignado.
 9. Toda posición está dentro de los límites de la zona jugable.
-10. Un jugador que no recibe no tiene celdas asignadas.
+10. Las celdas asignadas a un jugador están siempre dentro del campo propio (9×9 m); nunca
+    fuera de sus líneas (spec 022).
 11. Rotar seis veces devuelve el equipo al orden de partida.

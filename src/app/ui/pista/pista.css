@@ -60,6 +60,14 @@
   fill: var(--neon-pink);
 }
 
+.app-pista__celda-pintada {
+  fill: var(--neon-purple);
+  fill-opacity: 0.3;
+  stroke: var(--neon-purple);
+  stroke-width: 0.02;
+  pointer-events: none;
+}
+
 .app-pista__rejilla-linea {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 0.02;

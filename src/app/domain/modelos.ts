@@ -69,11 +69,21 @@ export interface Sistema {
   readonly defensas?: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Readonly<Partial<Record<ViaAtaque, Formacion>>>>>>;
 }
 
+/** Una celda de la rejilla de responsabilidad, de `TAMANO_CELDA` metros de lado (`rejilla.ts`,
+ * ADR 0004). */
+export interface Celda {
+  readonly columna: number;
+  readonly fila: number;
+}
+
 export interface Colocacion {
   readonly jugador: Jugador;
   readonly punto: Punto;
   /** Explicación de enseñanza para este jugador en esta rotación. Voluntaria. */
   readonly explicacion?: string;
+  /** Celdas de la rejilla de responsabilidad que este jugador cubre (spec 022). Voluntaria: sin
+   * celdas pintadas, ausente. */
+  readonly celdas?: readonly Celda[];
 }
 
 /** Dónde se coloca cada jugador del orden de saque, para una rotación concreta. */

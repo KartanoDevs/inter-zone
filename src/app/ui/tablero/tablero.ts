@@ -13,9 +13,19 @@ import { SistemaStore, type RotacionValida } from '../../application/sistema.sto
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { viaDeAtaque } from '../../domain/defensa';
+import { celdaDe } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
-import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, ViaAtaque } from '../../domain/modelos';
+import type {
+  Celda,
+  Colocacion,
+  Formacion,
+  Infraccion,
+  Jugador,
+  Punto,
+  ResultadoValidacion,
+  ViaAtaque,
+} from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
@@ -171,6 +181,15 @@ export class Tablero {
         seleccionada: colocacion.jugador.id === seleccionadoId,
       };
     });
+  });
+
+  /** Celdas del jugador seleccionado (spec 022): es a quien pinta el modo pintar. */
+  protected readonly celdasJugadorSeleccionado = computed<readonly Celda[]>(() => {
+    const id = this.store.jugadorSeleccionadoId();
+    if (!id) {
+      return [];
+    }
+    return this.store.borrador().find((c) => c.jugador.id === id)?.celdas ?? [];
   });
 
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() => {
@@ -412,6 +431,63 @@ export class Tablero {
     window.addEventListener('pointermove', mover);
     window.addEventListener('pointerup', soltar);
     window.addEventListener('pointercancel', cancelar);
+  }
+
+  /**
+   * Modo pintar (spec 022): con un jugador seleccionado, arrastrar por el fondo de la pista
+   * pinta o borra celdas para él en vez de mover fichas. El primer punto tocado decide el
+   * modo del trazo entero — pintar si esa celda no era suya, borrar si ya lo era — para que un
+   * arrastre no alterne entre pintar y borrar celda a celda. Sin jugador seleccionado, no hace
+   * nada: el fondo se queda inerte, como hoy.
+   */
+  protected iniciarPintado(evento: PointerEvent): void {
+    const jugadorId = this.store.jugadorSeleccionadoId();
+    if (!jugadorId) {
+      return;
+    }
+    evento.preventDefault();
+    this.pistaCmp().capturarPuntero(evento);
+
+    let modo: 'pintar' | 'borrar' | null = null;
+    const tocadas = new Set<string>();
+
+    const procesar = (e: PointerEvent): void => {
+      const celda = celdaDe(this.pistaCmp().puntoDesde(e));
+      if (!celda) {
+        return;
+      }
+      const clave = `${celda.columna},${celda.fila}`;
+      if (tocadas.has(clave)) {
+        return;
+      }
+      tocadas.add(clave);
+      if (modo === null) {
+        const yaPintada = this.celdasJugadorSeleccionado().some((c) => c.columna === celda.columna && c.fila === celda.fila);
+        modo = yaPintada ? 'borrar' : 'pintar';
+      }
+      if (modo === 'pintar') {
+        this.store.pintarCelda(jugadorId, celda);
+      } else {
+        this.store.borrarCelda(jugadorId, celda);
+      }
+    };
+
+    procesar(evento);
+
+    const mover = (e: PointerEvent): void => procesar(e);
+
+    const limpiar = (e: PointerEvent): void => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', soltar);
+      this.pistaCmp().liberarPuntero(e);
+    };
+
+    const soltar = (e: PointerEvent): void => limpiar(e);
+
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
   }
 
   protected vaciarRotacion(): void {

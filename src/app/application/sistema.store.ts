@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
+import type { Celda, Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
 import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
@@ -21,14 +21,27 @@ type CambioPendiente =
   | { readonly tipo: 'sistema'; readonly valor: string }
   | { readonly tipo: 'via'; readonly valor: ViaAtaque };
 
+function coincide(a: Celda, b: Celda): boolean {
+  return a.columna === b.columna && a.fila === b.fila;
+}
+
+function celdasIguales(a: readonly Celda[] = [], b: readonly Celda[] = []): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((celda) => b.some((otra) => coincide(celda, otra)));
+}
+
 function formacionesIguales(a: Formacion, b: Formacion): boolean {
   if (a.length !== b.length) {
     return false;
   }
-  const puntoPorId = new Map(b.map((c) => [c.jugador.id, c.punto]));
+  const colocacionPorId = new Map(b.map((c) => [c.jugador.id, c]));
   return a.every((c) => {
-    const punto = puntoPorId.get(c.jugador.id);
-    return punto !== undefined && punto.x === c.punto.x && punto.y === c.punto.y;
+    const otra = colocacionPorId.get(c.jugador.id);
+    return (
+      otra !== undefined && otra.punto.x === c.punto.x && otra.punto.y === c.punto.y && celdasIguales(c.celdas, otra.celdas)
+    );
   });
 }
 
@@ -306,6 +319,28 @@ export class SistemaStore {
 
   quitar(jugadorId: string): void {
     this.borrador.update((formacion) => formacion.filter((c) => c.jugador.id !== jugadorId));
+  }
+
+  /** Marca `celda` como responsabilidad de `jugadorId` (spec 022). Idempotente: pintar una
+   * celda ya suya no la duplica — para despintarla, ver `borrarCelda`. */
+  pintarCelda(jugadorId: string, celda: Celda): void {
+    this.borrador.update((formacion) =>
+      formacion.map((c) => {
+        if (c.jugador.id !== jugadorId || c.celdas?.some((existente) => coincide(existente, celda))) {
+          return c;
+        }
+        return { ...c, celdas: [...(c.celdas ?? []), celda] };
+      }),
+    );
+  }
+
+  /** Quita `celda` de la responsabilidad de `jugadorId` (spec 022). Idempotente. */
+  borrarCelda(jugadorId: string, celda: Celda): void {
+    this.borrador.update((formacion) =>
+      formacion.map((c) =>
+        c.jugador.id === jugadorId ? { ...c, celdas: c.celdas?.filter((existente) => !coincide(existente, celda)) } : c,
+      ),
+    );
   }
 
   vaciar(): void {

@@ -27,8 +27,10 @@
         [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
         [mostrarRival]="esDefensa()"
         [viaActiva]="store.viaActiva()"
+        [celdasPintadas]="celdasJugadorSeleccionado()"
         (fichaAgarrada)="onAgarrarFicha($event)"
         (rivalAgarrado)="onAgarrarRival($event)"
+        (fondoAgarrado)="iniciarPintado($event)"
         (abrirAjustes)="abrirAjustes()"
       ></app-pista>
       <app-panel-validacion

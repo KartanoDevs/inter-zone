@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import type { ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
+import type { Celda, ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
+import { TAMANO_CELDA } from '../../domain/rejilla';
 import { Modal } from '../comun/modal';
 import { ORDEN_ROLES } from '../comun/orden-roles';
 import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador';
@@ -78,15 +79,20 @@ export class Pista {
   /** Si el sistema activo es de defensa: pinta la ficha rival en la vía activa (spec 021). */
   readonly mostrarRival = input(false);
   readonly viaActiva = input<ViaAtaque | null>(null);
+  /** Celdas de la rejilla de responsabilidad del jugador seleccionado (spec 022). */
+  readonly celdasPintadas = input<readonly Celda[]>([]);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
+  /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
+  readonly fondoAgarrado = output<PointerEvent>();
   readonly abrirAjustes = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
   protected readonly entradasLeyenda = ENTRADAS_LEYENDA;
   protected readonly leyendaAbierta = signal(false);
+  protected readonly tamanoCelda = TAMANO_CELDA;
 
   protected readonly puntoRival = computed<Punto | null>(() => {
     const via = this.viaActiva();
@@ -131,5 +137,12 @@ export class Pista {
       evento.clientY >= rect.top &&
       evento.clientY <= rect.bottom
     );
+  }
+
+  /** No propaga: si llegara al fondo, dispararía también el modo pintar (spec 022) a la vez
+   * que el arrastre del rival. */
+  protected onRivalPointerDown(evento: PointerEvent): void {
+    evento.stopPropagation();
+    this.rivalAgarrado.emit(evento);
   }
 }
