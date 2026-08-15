@@ -68,6 +68,13 @@
   pointer-events: none;
 }
 
+.app-pista__celda-conjunto {
+  fill-opacity: 0.55;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 0.015;
+  pointer-events: none;
+}
+
 .app-pista__rejilla-linea {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 0.02;
@@ -152,6 +159,66 @@
 .app-pista__ajustes-boton:focus-visible {
   background: var(--bg-card-alt);
   color: var(--text-main);
+}
+
+.app-pista__conjunto-boton {
+  position: absolute;
+  top: 73px;
+  right: 5px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--neon-purple);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--neon-purple);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.app-pista__conjunto-boton:hover,
+.app-pista__conjunto-boton:focus-visible {
+  background: var(--bg-card-alt);
+  color: var(--text-main);
+}
+
+.app-pista__conjunto-boton--activo {
+  background: var(--neon-purple);
+  color: var(--bg-darker);
+}
+
+.app-pista__leyenda-colores {
+  position: absolute;
+  top: 107px;
+  right: 5px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.app-pista__leyenda-colores-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-pista__leyenda-colores-muestra {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .app-pista__leyenda-lista {

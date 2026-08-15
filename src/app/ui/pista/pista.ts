@@ -15,6 +15,36 @@ const PUNTO_POR_VIA: Readonly<Record<ViaAtaque, Punto>> = {
   pipe: { x: 4.5, y: -3.5 },
 };
 
+/** Paleta de la vista de conjunto (spec 023), en el mismo orden que `CLAVES_ORDEN_COLOR` de
+ * `Tablero`: colocador, receptor1, receptor2, central1, central2, opuesto, líbero. */
+const PALETA_COLORES = [
+  '--neon-cyan',
+  '--neon-green',
+  '--neon-teal',
+  '--neon-magenta',
+  '--neon-amber',
+  '--neon-purple',
+  '--neon-pink',
+] as const;
+
+const LADO_PATRON = 0.28;
+
+export interface CeldaConjunto {
+  readonly columna: number;
+  readonly fila: number;
+  readonly indicesColor: readonly number[];
+}
+
+export interface EntradaLeyendaColor {
+  readonly etiqueta: string;
+  readonly indiceColor: number;
+}
+
+interface PatronFranjas {
+  readonly id: string;
+  readonly colores: readonly string[];
+}
+
 export interface FichaVista {
   readonly id: string;
   readonly punto: Punto;
@@ -81,23 +111,54 @@ export class Pista {
   readonly viaActiva = input<ViaAtaque | null>(null);
   /** Celdas de la rejilla de responsabilidad del jugador seleccionado (spec 022). */
   readonly celdasPintadas = input<readonly Celda[]>([]);
+  /** Vista de conjunto (spec 023): todas las celdas pintadas a la vez, con su color. */
+  readonly vistaConjunto = input(false);
+  readonly celdasVistaConjunto = input<readonly CeldaConjunto[]>([]);
+  readonly leyendaVistaConjunto = input<readonly EntradaLeyendaColor[]>([]);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
   /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
   readonly fondoAgarrado = output<PointerEvent>();
   readonly abrirAjustes = output<void>();
+  readonly alternarVistaConjunto = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
   protected readonly entradasLeyenda = ENTRADAS_LEYENDA;
   protected readonly leyendaAbierta = signal(false);
   protected readonly tamanoCelda = TAMANO_CELDA;
+  protected readonly ladoPatron = LADO_PATRON;
+  protected readonly paleta = PALETA_COLORES;
 
   protected readonly puntoRival = computed<Punto | null>(() => {
     const via = this.viaActiva();
     return via ? PUNTO_POR_VIA[via] : null;
   });
+
+  /** Un patrón de franjas diagonales por cada combinación de colores que comparte alguna
+   * celda (spec 023, E3) — una celda de un solo jugador no necesita patrón, solo su color. */
+  protected readonly patronesFranjas = computed<readonly PatronFranjas[]>(() => {
+    const combos = new Map<string, readonly number[]>();
+    for (const celda of this.celdasVistaConjunto()) {
+      if (celda.indicesColor.length > 1) {
+        const ordenados = [...new Set(celda.indicesColor)].sort((a, b) => a - b);
+        combos.set(ordenados.join('-'), ordenados);
+      }
+    }
+    return [...combos.entries()].map(([id, indices]) => ({
+      id,
+      colores: indices.map((indice) => `var(${PALETA_COLORES[indice]})`),
+    }));
+  });
+
+  protected rellenoDe(celda: CeldaConjunto): string {
+    if (celda.indicesColor.length <= 1) {
+      return `var(${PALETA_COLORES[celda.indicesColor[0]]})`;
+    }
+    const ordenados = [...new Set(celda.indicesColor)].sort((a, b) => a - b);
+    return `url(#app-pista__franjas-${ordenados.join('-')})`;
+  }
 
   private readonly svgRef = viewChild.required<ElementRef<SVGSVGElement>>('svgPista');
 

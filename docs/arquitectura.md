@@ -132,7 +132,10 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020). Pinta las
   celdas del jugador seleccionado (`celdasPintadas`, spec 022) y expone un `pointerdown` de
   fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la ficha rival paran
-  la propagación de su propio `pointerdown` para no disparar los dos gestos a la vez.
+  la propagación de su propio `pointerdown` para no disparar los dos gestos a la vez. En la
+  vista de conjunto (spec 023), pinta las celdas de todos con una paleta fija de 7 colores
+  (`PALETA_COLORES`) y una leyenda; una celda compartida se pinta con un patrón SVG de franjas
+  diagonales, uno por cada combinación de colores que aparece.
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6) y `SelectorVia` (pestañas de vía,
   solo en defensa, spec 021).
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
@@ -146,7 +149,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   ficha). El modo pintar (spec 022) es un segundo gestor de `PointerEvent` en paralelo al de
   arrastre: con un jugador seleccionado, arrastrar sobre el fondo de la pista pinta o borra
   celdas en vez de mover fichas — el primer punto tocado decide si el trazo entero pinta o
-  borra, según si esa celda ya era del jugador.
+  borra, según si esa celda ya era del jugador. El índice de color de cada jugador para la
+  vista de conjunto (spec 023, `indiceColorDe`) se deriva del mismo orden fijo de roles que ya
+  usan el banquillo y la leyenda de etiquetas (`claveOrdenRol`) — nunca se declara ni se
+  guarda. El interruptor de la vista de conjunto (`vistaConjunto`) es una signal efímera de
+  `Tablero`, igual que `ajustesAbierto`: no persiste entre sesiones.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
 la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un

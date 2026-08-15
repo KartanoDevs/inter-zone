@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { Pista, type FichaAgarrada, type FichaVista } from '../pista/pista';
+import { Pista, type CeldaConjunto, type EntradaLeyendaColor, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorVia } from '../rotaciones/selector-via';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
@@ -41,6 +41,23 @@ const LIMITE_Y: readonly [number, number] = [-3.6, 9.3];
 // `viaDeAtaque` deriva la vía, y no tiene sentido soltarla fuera de él.
 const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
 const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
+
+// El índice de color de la vista de conjunto (spec 023) se deriva del mismo orden fijo de
+// roles que ya usan el banquillo y la leyenda de etiquetas — nunca se declara a mano, así que
+// dos jugadores con el mismo rol e índice comparten color aunque sean de plantillas distintas.
+const CLAVES_ORDEN_COLOR = [
+  claveOrdenRol('colocador'),
+  claveOrdenRol('receptor', 1),
+  claveOrdenRol('receptor', 2),
+  claveOrdenRol('central', 1),
+  claveOrdenRol('central', 2),
+  claveOrdenRol('opuesto'),
+  claveOrdenRol('libero'),
+];
+
+function indiceColorDe(jugador: Jugador): number {
+  return CLAVES_ORDEN_COLOR.indexOf(claveOrdenRol(jugador.rol, jugador.indice));
+}
 
 // El arrastre no se arma al primer píxel: hace falta superar este desplazamiento en pantalla
 // o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está armado, un
@@ -146,6 +163,8 @@ export class Tablero {
   protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
   protected readonly confirmandoBorrado = signal(false);
   protected readonly ajustesAbierto = signal(false);
+  /** Vista de conjunto (spec 023): efímera, nunca persiste — cada carga empieza en modo pintar. */
+  protected readonly vistaConjunto = signal(false);
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -191,6 +210,33 @@ export class Tablero {
     }
     return this.store.borrador().find((c) => c.jugador.id === id)?.celdas ?? [];
   });
+
+  /** Todas las celdas pintadas de la formación activa, con el índice de color de cada jugador
+   * que la cubre (spec 023, E1); varios índices en la misma celda si la comparten (E3). */
+  protected readonly celdasVistaConjunto = computed<readonly CeldaConjunto[]>(() => {
+    const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
+    for (const colocacion of this.store.borrador()) {
+      const indice = indiceColorDe(colocacion.jugador);
+      for (const celda of colocacion.celdas ?? []) {
+        const clave = `${celda.columna},${celda.fila}`;
+        const existente = porClave.get(clave);
+        if (existente) {
+          existente.indices.push(indice);
+        } else {
+          porClave.set(clave, { columna: celda.columna, fila: celda.fila, indices: [indice] });
+        }
+      }
+    }
+    return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
+  });
+
+  /** Leyenda de la vista de conjunto: los seis, con o sin zona pintada (spec 023, E2). */
+  protected readonly leyendaVistaConjunto = computed<readonly EntradaLeyendaColor[]>(() =>
+    this.store.borrador().map((colocacion) => ({
+      etiqueta: etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      indiceColor: indiceColorDe(colocacion.jugador),
+    })),
+  );
 
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() => {
     const posiciones = this.store.posicionesActivas();
@@ -360,6 +406,10 @@ export class Tablero {
     this.ajustesAbierto.set(false);
   }
 
+  protected alternarVistaConjunto(): void {
+    this.vistaConjunto.update((actual) => !actual);
+  }
+
   protected cambiarSustitutoLibero(sustituidoId: string | null): void {
     this.store.cambiarSustitutoLibero(this.store.rotacionActiva(), sustituidoId);
   }
@@ -442,7 +492,7 @@ export class Tablero {
    */
   protected iniciarPintado(evento: PointerEvent): void {
     const jugadorId = this.store.jugadorSeleccionadoId();
-    if (!jugadorId) {
+    if (!jugadorId || this.vistaConjunto()) {
       return;
     }
     evento.preventDefault();
