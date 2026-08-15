@@ -1,6 +1,4 @@
 import type { Jugador, OrdenSaque, PlantillaEquipo } from './modelos';
-import { asignarIndices } from './plantilla';
-import { CONFIGURACION_ROLES_POR_DEFECTO } from './roles';
 import { sustitutosLiberoPorDefecto } from './rotacion';
 
 /**
@@ -12,21 +10,25 @@ import { sustitutosLiberoPorDefecto } from './rotacion';
  * de esta constante, no una regla del dominio: `cambiarSustitutoLibero` puede cambiarlo por
  * sistema, rotación a rotación.
  */
-function jugador(id: string, rol: Jugador['rol']): Jugador {
-  return { id, rol };
+function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
+  return indice === undefined ? { id, rol } : { id, rol, indice };
 }
 
-const ORDEN_TITULARES: OrdenSaque = asignarIndices(
-  [
-    jugador('colocador', 'colocador'),
-    jugador('receptor1', 'receptor'),
-    jugador('central1', 'central'),
-    jugador('opuesto', 'opuesto'),
-    jugador('receptor2', 'receptor'),
-    jugador('central2', 'central'),
-  ],
-  CONFIGURACION_ROLES_POR_DEFECTO,
-);
+/**
+ * El índice de receptor/central se declara aquí, no se deriva (spec 018): la convención real
+ * del entrenador no sale de un único recorrido del orden de saque (cuenta los receptores
+ * hacia delante desde el colocador y los centrales hacia atrás), así que `plantilla.ts` ya no
+ * tiene una función que lo calcule. Ojo: el sufijo numérico del *id* (`central1`) es solo un
+ * identificador interno y no coincide con la etiqueta (`central1` se pinta `C2`).
+ */
+const ORDEN_TITULARES: OrdenSaque = [
+  jugador('colocador', 'colocador'), // P1 en R1 -> C
+  jugador('receptor1', 'receptor', 1), // P2 -> R1
+  jugador('central1', 'central', 2), // P3 -> C2
+  jugador('opuesto', 'opuesto'), // P4 -> O
+  jugador('receptor2', 'receptor', 2), // P5 -> R2
+  jugador('central2', 'central', 1), // P6 -> C1
+];
 
 export const PLANTILLA_GLOBAL: PlantillaEquipo = {
   nombre: 'Equipo',

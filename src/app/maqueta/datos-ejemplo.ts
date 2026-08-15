@@ -2,8 +2,8 @@
  * Datos de ejemplo para la maqueta visual. NO es un sistema real: solo sirve para
  * mostrar en pantalla los estados que ya calcula el dominio (legal / al límite /
  * falta). Se construye con las mismas funciones que usará la UI de verdad
- * (`asignarIndices`, `crearSistema`, `guardarFormacion`, `formacionEnRotacion`),
- * nunca a mano.
+ * (`crearSistema`, `guardarFormacion`, `formacionEnRotacion`), nunca a mano — salvo
+ * el índice de rol, que se declara (spec 018: ya no hay una función que lo derive).
  *
  * Roster de 7 con casilla intercambiable (docs/dominio.md §2: "el líbero sustituye a
  * un central en zona zaguera, así que el equipo tiene 7 jugadores declarados aunque
@@ -13,7 +13,7 @@
  * dos variantes están verificadas con `validarPlantilla` antes de darlas por buenas.
  */
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../domain/roles';
-import { asignarIndices, validarPlantilla } from '../domain/plantilla';
+import { validarPlantilla } from '../domain/plantilla';
 import { formacionEnRotacion } from '../domain/rotacion';
 import { crearSistema } from '../domain/catalogo-sistemas';
 import { guardarFormacion } from '../domain/sistema-recepcion';
@@ -21,33 +21,27 @@ import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Punto, Sistema } 
 
 export type OcupanteCasilla = 'central2' | 'libero';
 
-function jugador(id: string, rol: Jugador['rol']): Jugador {
-  return { id, rol };
+function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
+  return indice === undefined ? { id, rol } : { id, rol, indice };
 }
 
-const ORDEN_CON_LIBERO: OrdenSaque = asignarIndices(
-  [
-    jugador('colocador', 'colocador'),
-    jugador('receptor1', 'receptor'),
-    jugador('central1', 'central'),
-    jugador('opuesto', 'opuesto'),
-    jugador('receptor2', 'receptor'),
-    jugador('libero', 'libero'),
-  ],
-  CONFIGURACION_ROLES_POR_DEFECTO,
-);
+const ORDEN_CON_LIBERO: OrdenSaque = [
+  jugador('colocador', 'colocador'),
+  jugador('receptor1', 'receptor', 1),
+  jugador('central1', 'central', 1),
+  jugador('opuesto', 'opuesto'),
+  jugador('receptor2', 'receptor', 2),
+  jugador('libero', 'libero'),
+];
 
-const ORDEN_CON_CENTRAL2: OrdenSaque = asignarIndices(
-  [
-    jugador('colocador', 'colocador'),
-    jugador('receptor1', 'receptor'),
-    jugador('central1', 'central'),
-    jugador('opuesto', 'opuesto'),
-    jugador('receptor2', 'receptor'),
-    jugador('central2', 'central'),
-  ],
-  CONFIGURACION_ROLES_POR_DEFECTO,
-);
+const ORDEN_CON_CENTRAL2: OrdenSaque = [
+  jugador('colocador', 'colocador'),
+  jugador('receptor1', 'receptor', 1),
+  jugador('central1', 'central', 1),
+  jugador('opuesto', 'opuesto'),
+  jugador('receptor2', 'receptor', 2),
+  jugador('central2', 'central', 2),
+];
 
 for (const [nombre, orden] of [
   ['ORDEN_CON_LIBERO', ORDEN_CON_LIBERO],
