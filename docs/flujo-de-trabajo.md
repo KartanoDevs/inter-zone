@@ -83,7 +83,8 @@ que pase, no es refactor, es un cambio de comportamiento y necesita volver al pa
 
 Estado a `Completada`. Si durante el desarrollo se aprendió algo que contradice la spec, se
 corrige la spec antes de cerrarla, y si la lección afecta a las reglas del voleibol, se
-actualiza `docs/dominio.md`. Si fue una decisión estructural, se añade a `docs/decisiones.md`.
+actualiza `docs/dominio.md`. Si fue una decisión estructural, se añade un fichero nuevo en
+`docs/decisiones/`.
 
 ## La trampa a vigilar
 

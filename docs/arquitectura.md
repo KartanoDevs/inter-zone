@@ -166,7 +166,7 @@ unos manejadores de `pointer` con captura. Canvas y Fabric.js resuelven un probl
 proyecto no tiene: un lienzo de dibujo libre con rotaciones, capas y texto editable.
 
 Si algún día el entrenador tiene que dibujar flechas a mano alzada, se reevalúa. Ver
-`docs/decisiones.md`, decisión 0003.
+`docs/decisiones/0003-svg-en-lugar-de-canvas.md`.
 
 ## Sobre las abstracciones
 

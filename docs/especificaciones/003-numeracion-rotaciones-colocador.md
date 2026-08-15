@@ -82,7 +82,7 @@ Ninguna. Resueltas con el usuario:
 
 - Esta spec **corrige** la interpretación de `rotacion` en `validarFormacion` (spec 001).
   Al cerrar esta spec hay que: anotar la desviación en el "Al cerrar" de la spec 001, y añadir
-  una entrada en `docs/decisiones.md` que precise la 0005 (append-only, sin editarla).
+  un fichero nuevo en `docs/decisiones/` que precise la 0005 (append-only, sin editarla).
 - La numeración de `Rn` reutiliza el mismo mecanismo de "rotar desde el colocador" que ya usa
   `plantilla.ts::asignarIndices` (decisión 0008), en vez de una derivación independiente.
 

@@ -115,8 +115,9 @@ guardados.
 Ninguna. La spec está congelada.
 
 Nota: la convención de índice (cerca y lejos respecto al colocador en el orden de saque) es
-una decisión del proyecto, no una regla FIVB. Está registrada en `docs/decisiones.md`, 0006.
-Si el equipo la entiende de otra forma, se cambia la decisión y esta spec antes que el código.
+una decisión del proyecto, no una regla FIVB. Está registrada en
+`docs/decisiones/0006-roles-configurables-etiqueta-derivada.md`. Si el equipo la entiende de
+otra forma, se cambia la decisión y esta spec antes que el código.
 
 ## Al cerrar
 
@@ -129,7 +130,7 @@ por el mismo motivo que en la spec 001.
 índice, composición de la plantilla, jugador repetido) validan algo distinto: el `OrdenSaque`
 completo, no la configuración de nombres/abreviaturas. Se creó `plantilla.ts` aparte en vez de
 meterlo en `roles.ts`, para no mezclar "cómo se llama y abrevia un rol" con "es válida esta
-plantilla de seis". Registrado en `docs/decisiones.md` (0008).
+plantilla de seis". Registrado en `docs/decisiones/0008-plantilla-ts-aparte-de-roles-ts.md`.
 
 **Modelo de índice.** `docs/dominio.md` no dice explícitamente si el índice de un jugador se
 almacena o se deriva. Esta spec asume que se **almacena** en `Jugador.indice` (como el rol),

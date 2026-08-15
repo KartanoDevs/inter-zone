@@ -152,7 +152,7 @@ colocador saca (zaga derecha), R3 es su posición natural de armado en la red, e
 
 Esto es distinto de "rotar el orden de saque tal cual se definió", que depende de dónde
 empezó el entrenador a escribir la lista. Si el orden de saque no arranca con el colocador en
-P1, ambas numeraciones divergen. Ver `docs/decisiones.md`, decisión 0010.
+P1, ambas numeraciones divergen. Ver `docs/decisiones/0010-rn-anclada-al-colocador.md`.
 
 ---
 
@@ -207,7 +207,7 @@ legal por tres centímetros es exactamente lo que hay que enseñarle.
 ## 6. Zonas de responsabilidad
 
 Se modelan como una **rejilla de celdas cuadradas de 0,5 m**, no como círculos ni polígonos.
-Motivo en `docs/decisiones.md`, decisión 0004.
+Motivo en `docs/decisiones/0004-rejilla-de-responsabilidad.md`.
 
 - La rejilla cubre la zona jugable, incluida la zona libre.
 - Cada celda puede estar asignada a cero, uno o varios jugadores.

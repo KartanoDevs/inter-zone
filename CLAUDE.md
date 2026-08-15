@@ -91,8 +91,10 @@ Cuando el último escenario esté en verde:
 3. Cambia el `Estado` de la spec a `Completada`.
 4. Si algo aprendido corrige o precisa una regla de voleibol, actualiza `docs/dominio.md` y
    avisa de qué has cambiado.
-5. Si algo aprendido es una decisión estructural nueva, añade una entrada al final de
-   `docs/decisiones.md` (append-only: nunca edites ni borres una entrada existente) y avisa.
+5. Si algo aprendido es una decisión estructural nueva, añade un fichero nuevo en
+   `docs/decisiones/` con el siguiente número (`NNNN-slug.md`) y su entrada en
+   `docs/decisiones/README.md` (append-only: nunca edites ni borres una decisión existente) y
+   avisa.
 6. **No empieces la siguiente spec** sin que el usuario lo pida.
 
 ### Si el usuario pega una spec nueva sin pedir que la implementes
@@ -162,7 +164,7 @@ partir de una spec en `Borrador`.
 
 ## Cómo ayudar bien aquí
 
-- Si una petición choca con una decisión de `docs/decisiones.md`, decirlo antes de hacerla.
+- Si una petición choca con una decisión de `docs/decisiones/`, decirlo antes de hacerla.
 - Si falta información para escribir un test correcto, preguntar en vez de suponer una
   regla de voleibol. Las reglas inventadas son el peor fallo posible en este proyecto:
   parecen razonables y enseñan cosas falsas a jugadores reales.

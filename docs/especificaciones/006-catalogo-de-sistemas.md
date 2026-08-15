@@ -105,7 +105,7 @@ retiraron de `sistema-recepcion.spec.ts` y su intención pasa a estar cubierta p
 006-E4/E5, con la comprobación de duplicado ahora sí distinguiendo tipo. El resto de tests de
 la 005 solo cambiaron su forma de construir el `Sistema` de partida (un literal en vez de
 llamar a `crearSistema`), sin tocar ninguna aserción. Anotado también en el "Al cerrar" de la
-spec 005. Ver decisión 0011 en `docs/decisiones.md`.
+spec 005. Ver `docs/decisiones/0011-crearsistema-en-catalogo-sistemas.md`.
 
 **Diseño de `cambiarPlantilla`.** Se mantiene genérica a propósito: no sabe nada de "central2"
 ni "líbero", solo sustituye la plantilla de un sistema y filtra de sus formaciones a quien ya

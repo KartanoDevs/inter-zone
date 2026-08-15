@@ -33,7 +33,7 @@ sin cubrir.
 
 Sin backend, sin base de datos, sin login, sin roles de usuario, sin PWA offline. Todo eso
 entra cuando el equipo haya usado la herramienta en entrenamientos reales y pida algo
-concreto. Ver `docs/decisiones.md`, decisión 0001.
+concreto. Ver `docs/decisiones/0001-sin-backend-en-la-v1.md`.
 
 ## Stack
 
@@ -60,7 +60,7 @@ npm start
 | `docs/dominio.md` | Las reglas del voleibol y el vocabulario del proyecto. La fuente de verdad. |
 | `docs/arquitectura.md` | Capas, dependencias permitidas, estructura de carpetas. |
 | `docs/flujo-de-trabajo.md` | Cómo se trabaja aquí: ciclo SDD + TDD. |
-| `docs/decisiones.md` | Registro de decisiones tomadas y su motivo. Solo se añade. |
+| `docs/decisiones/` | Registro de decisiones tomadas y su motivo, una por fichero. Solo se añade. |
 | `docs/especificaciones/` | Una spec por porción de trabajo. Se cierran al terminarse. |
 | `CLAUDE.md` | Contexto e invariantes para asistentes de IA. |
 

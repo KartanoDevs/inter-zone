@@ -142,7 +142,8 @@ en `package.json`, así que no se reporta cobertura numérica (no se ha inventad
   explícitamente que `al_limite` "no es una infracción", pero el entrenador necesita verla.
   Un array plano de infracciones no puede representar "esto no es infracción pero se marca"
   sin inventarse un estado falso. Separar `avisos` de `infracciones` evita esa ambigüedad.
-  Se registra como decisión estructural en `docs/decisiones.md` (0007).
+  Se registra como decisión estructural en
+  `docs/decisiones/0007-validarformacion-infracciones-y-avisos.md`.
 
 **Lo que no se desvió:** ninguna regla de voleibol de `docs/dominio.md` resultó incorrecta o
 incompleta durante la implementación; no hizo falta tocarlo.

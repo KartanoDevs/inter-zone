@@ -36,5 +36,5 @@ Lo que no se sabe todavía. Si hay alguna, la spec no puede pasar a `Congelada`.
 ## Al cerrar
 
 Desviaciones respecto a lo especificado y lección aprendida. Si afecta a las reglas del
-juego, actualizar `docs/dominio.md`. Si fue estructural, añadir entrada en
-`docs/decisiones.md`.
+juego, actualizar `docs/dominio.md`. Si fue estructural, añadir un fichero nuevo en
+`docs/decisiones/`.
