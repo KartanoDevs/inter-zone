@@ -87,10 +87,14 @@ Adaptadores hacia el mundo exterior.
   inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
   Recibe también la plantilla real por constructor: en la v1 es una única constante de la
   aplicación, no un dato de dominio (ADR 0013).
-- Formato persistido: `{ "version": 1, "data": { "sistemas": [...] } }`. Cada sistema
+- Formato persistido: `{ "version": 3, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
-  0012), y `sustitutoLibero?: string` (a quién sustituye el líbero, ausente si no tiene) en vez
-  de la plantilla completa (ADR 0014).
+  0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
+  cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
+  rotación desde la ADR 0015).
+- `LocalStorageAjustesRepository implements AjustesRepository`, mismo patrón (versión + data)
+  pero bajo su propia clave: los ajustes (por ahora, si la validación de posiciones está
+  desactivada) son globales a la app, no de un sistema concreto (ADR 0015).
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`

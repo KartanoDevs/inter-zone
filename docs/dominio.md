@@ -60,8 +60,12 @@ Hay dos receptores y dos centrales en pista, así que necesitan distinguirse: `R
 `C1` y `C2`.
 
 **Convención para asignar el índice:** se recorre el orden de saque en sentido de rotación
-empezando por el colocador. El primer jugador de ese rol que aparece lleva el índice **1**
-(el "cerca"); el segundo lleva el **2** (el "lejos").
+empezando por el colocador — es decir, en el orden `P1, P6, P5, P4, P3, P2`, el mismo sentido
+en que gira la rotación (`P2→P1→P6→P5→P4→P3→P2`), **no** el orden en que se escribió la lista
+(`P1, P2, P3...`). El primer jugador de ese rol que aparece en ese recorrido lleva el índice
+**1** (el "cerca"); el segundo lleva el **2** (el "lejos"). Esta precisión existe porque el
+código llegó a implementar el recorrido contrario durante varias specs (corregido en la 017):
+"en sentido de rotación" es ambiguo si no se dice explícitamente cuál es la secuencia de Pn.
 
 Esta convención es una decisión del proyecto, no una regla de la FIVB. Está escrita aquí
 porque si el equipo entiende "cerca" y "lejos" de otra forma —por ejemplo respecto a la red
@@ -91,6 +95,13 @@ rotación, el líbero **entra y sale**. Está en pista solo en las rotaciones do
 sería zaguero; en las que sería delantero, juega el titular. Por eso el líbero nunca puede
 ocupar P2, P3 ni P4 (regla R4, sección 5): no es una restricción aparte, es consecuencia directa
 de cuándo entra.
+
+**A quién sustituye se declara rotación a rotación, no una sola vez para las seis (spec 017).**
+No hace falta que sea el mismo titular siempre: el caso típico del 5-1 es que en cada rotación
+sustituya al central que esté en zaga en ella, y como los dos centrales se alternan entre zaga y
+delantera según la rotación, ese defecto hace que el líbero juegue las seis rotaciones — no solo
+las tres en las que un único titular fijo estaría en zaga (que era el comportamiento, incompleto,
+de la spec 011).
 
 ---
 
