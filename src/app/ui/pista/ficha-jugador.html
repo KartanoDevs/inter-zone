@@ -1,5 +1,7 @@
 <svg:circle class="app-ficha__circulo" [attr.r]="radio"></svg:circle>
 <svg:text class="app-ficha__etiqueta" text-anchor="middle" dominant-baseline="central">{{ etiqueta() }}</svg:text>
-<svg:text class="app-ficha__posicion" x="0" y="0.55" text-anchor="middle" dominant-baseline="hanging">
-  <svg:tspan class="app-ficha__posicion-letra">P</svg:tspan><svg:tspan class="app-ficha__posicion-numero">{{ posicion() }}</svg:tspan>
-</svg:text>
+@if (mostrarPosicion()) {
+  <svg:text class="app-ficha__posicion" x="0" y="0.55" text-anchor="middle" dominant-baseline="hanging">
+    <svg:tspan class="app-ficha__posicion-letra">P</svg:tspan><svg:tspan class="app-ficha__posicion-numero">{{ posicion() }}</svg:tspan>
+  </svg:text>
+}

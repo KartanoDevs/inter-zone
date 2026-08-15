@@ -5,10 +5,12 @@ export interface SistemaRepository {
   guardar(sistemas: readonly Sistema[]): void;
 }
 
-/** Ajustes globales de la app (no de un sistema concreto), spec 017: hoy solo si la
- * validación de posiciones está desactivada. */
+/** Ajustes globales de la app (no de un sistema concreto): si la validación de posiciones
+ * está desactivada (spec 017) y si se oculta la ayuda de posición rotacional (P1..P6) bajo
+ * cada ficha. */
 export interface Ajustes {
   readonly validacionDesactivada: boolean;
+  readonly ayudaPosicionDesactivada: boolean;
 }
 
 export interface AjustesRepository {

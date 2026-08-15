@@ -62,6 +62,8 @@ const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
 export class Pista {
   readonly fichas = input.required<readonly FichaVista[]>();
   readonly idArrastrada = input<string | null>(null);
+  /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo cada ficha. */
+  readonly mostrarPosicion = input(true);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly abrirAjustes = output<void>();

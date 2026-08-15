@@ -33,6 +33,8 @@ export class FichaJugador {
   readonly etiqueta = input.required<string>();
   /** Posición rotacional 1..6 (P1..P6) que ocupa el jugador en la rotación activa. */
   readonly posicion = input.required<number>();
+  /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo la etiqueta de rol. */
+  readonly mostrarPosicion = input(true);
   readonly estado = input<EstadoFicha>('normal');
   readonly linea = input<LineaFicha>('delantera');
   readonly esLibero = input(false);

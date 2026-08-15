@@ -14,4 +14,9 @@
     <input type="checkbox" [checked]="validacionDesactivada()" (change)="alternarValidacion.emit()" />
     Desactivar validación de posiciones
   </label>
+
+  <label class="app-ajustes__check">
+    <input type="checkbox" [checked]="ayudaPosicionDesactivada()" (change)="alternarAyudaPosicion.emit()" />
+    Ocultar la ayuda de posición (P1-P6)
+  </label>
 </app-modal>

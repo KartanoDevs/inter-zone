@@ -19,6 +19,7 @@
       <app-pista
         [fichas]="fichas()"
         [idArrastrada]="idArrastrada()"
+        [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
         (fichaAgarrada)="onAgarrarFicha($event)"
         (abrirAjustes)="abrirAjustes()"
       ></app-pista>
@@ -90,8 +91,10 @@
       [opcionesLibero]="opcionesSustitutoLibero()"
       [sustitutoActual]="sustitutoLiberoActual()"
       [validacionDesactivada]="store.validacionDesactivada()"
+      [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
       (cambiarSustituto)="cambiarSustitutoLibero($event)"
       (alternarValidacion)="alternarValidacion()"
+      (alternarAyudaPosicion)="alternarAyudaPosicion()"
       (cerrar)="cerrarAjustes()"
     ></app-dialogo-ajustes>
   }

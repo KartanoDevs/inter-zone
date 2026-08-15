@@ -320,6 +320,10 @@ export class Tablero {
     this.store.alternarValidacion();
   }
 
+  protected alternarAyudaPosicion(): void {
+    this.store.alternarAyudaPosicion();
+  }
+
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
     const borrador = this.store.borrador();
     const punto = this.pistaCmp().puntoDesde(agarrada.evento);

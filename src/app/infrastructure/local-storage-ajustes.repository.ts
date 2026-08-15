@@ -2,21 +2,28 @@ import type { Ajustes, AjustesRepository } from '../domain/puertos';
 import type { AlmacenClaveValor } from './local-storage-sistema.repository';
 
 const CLAVE = 'interzone.ajustes';
-const VERSION_ACTUAL = 1;
+/** 2: se añadió `ayudaPosicionDesactivada` a la forma persistida. Sin `migrar()` real, un
+ * payload de la versión 1 (sin ese campo) se trata como no legible, mismo patrón que
+ * `LocalStorageSistemaRepository`. */
+const VERSION_ACTUAL = 2;
 
 interface Payload {
   readonly version: number;
   readonly data: Ajustes;
 }
 
-const AJUSTES_POR_DEFECTO: Ajustes = { validacionDesactivada: false };
+const AJUSTES_POR_DEFECTO: Ajustes = { validacionDesactivada: false, ayudaPosicionDesactivada: false };
 
 function esPayloadValido(valor: unknown): valor is Payload {
   if (typeof valor !== 'object' || valor === null) {
     return false;
   }
-  const conVersion = valor as { version?: unknown; data?: { validacionDesactivada?: unknown } };
-  return typeof conVersion.version === 'number' && typeof conVersion.data?.validacionDesactivada === 'boolean';
+  const conVersion = valor as { version?: unknown; data?: { validacionDesactivada?: unknown; ayudaPosicionDesactivada?: unknown } };
+  return (
+    typeof conVersion.version === 'number' &&
+    typeof conVersion.data?.validacionDesactivada === 'boolean' &&
+    typeof conVersion.data?.ayudaPosicionDesactivada === 'boolean'
+  );
 }
 
 /**

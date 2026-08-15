@@ -22,7 +22,12 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: var(--space-1);
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
+}
+
+.app-ajustes__check:last-child {
+  margin-bottom: 0;
 }

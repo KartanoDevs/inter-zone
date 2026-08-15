@@ -8,8 +8,9 @@ export interface OpcionLibero {
 
 /**
  * Ajustes de la rotación activa y de la app: a quién sustituye el líbero en esta rotación
- * (spec 017) y si la validación de posiciones está desactivada. Pensado para crecer: cada
- * ajuste nuevo añade una sección a este popup, no un componente aparte.
+ * (spec 017), si la validación de posiciones está desactivada, y si se oculta la ayuda de
+ * posición (P1..P6) bajo cada ficha. Pensado para crecer: cada ajuste nuevo añade una sección
+ * a este popup, no un componente aparte.
  */
 @Component({
   selector: 'app-dialogo-ajustes',
@@ -24,9 +25,11 @@ export class DialogoAjustes {
   readonly opcionesLibero = input.required<readonly OpcionLibero[]>();
   readonly sustitutoActual = input.required<string | null>();
   readonly validacionDesactivada = input.required<boolean>();
+  readonly ayudaPosicionDesactivada = input.required<boolean>();
 
   readonly cambiarSustituto = output<string | null>();
   readonly alternarValidacion = output<void>();
+  readonly alternarAyudaPosicion = output<void>();
   readonly cerrar = output<void>();
 
   protected onCambiarSustituto(evento: Event): void {

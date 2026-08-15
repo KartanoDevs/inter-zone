@@ -42,6 +42,7 @@ export class SistemaStore {
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
+  readonly ayudaPosicionDesactivada = signal(false);
 
   readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
 
@@ -105,7 +106,9 @@ export class SistemaStore {
     const catalogo = ordenarCatalogo(repositorio.listar());
     this.sistemas.set(catalogo);
     this.sistemaActivoId.set(catalogo[0]?.id ?? null);
-    this.validacionDesactivada.set(ajustesRepositorio?.leer().validacionDesactivada ?? false);
+    const ajustes = ajustesRepositorio?.leer();
+    this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
+    this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
     this.cambiarContexto();
   }
 
@@ -113,7 +116,21 @@ export class SistemaStore {
   alternarValidacion(): void {
     const valor = !this.validacionDesactivada();
     this.validacionDesactivada.set(valor);
-    this.ajustesRepositorio?.guardar({ validacionDesactivada: valor });
+    this.guardarAjustes();
+  }
+
+  /** Ver/ocultar la ayuda de posición rotacional (P1..P6) bajo cada ficha. */
+  alternarAyudaPosicion(): void {
+    const valor = !this.ayudaPosicionDesactivada();
+    this.ayudaPosicionDesactivada.set(valor);
+    this.guardarAjustes();
+  }
+
+  private guardarAjustes(): void {
+    this.ajustesRepositorio?.guardar({
+      validacionDesactivada: this.validacionDesactivada(),
+      ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
+    });
   }
 
   activarSistema(id: string): void {
