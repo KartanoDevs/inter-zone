@@ -25,13 +25,18 @@ function conExplicacionesConservadas(formacion: Formacion, anterior: Formacion |
   });
 }
 
-export function guardarFormacion(sistema: Sistema, rotacion: number, formacion: Formacion): Sistema | null {
+/**
+ * `validar = false` (spec 017) salta la comprobación de falta posicional, para guardar una
+ * formación a propósito ilegal (enseñar un error, anotar una jugada real). El roster —que los
+ * seis colocados sean exactamente quienes están en pista en esa rotación— nunca se salta: no
+ * tendría sentido guardar con un jugador que no juega esa rotación, se valide o no la postura.
+ */
+export function guardarFormacion(sistema: Sistema, rotacion: number, formacion: Formacion, validar = true): Sistema | null {
   const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
   if (!mismosJugadores(formacion, posiciones)) {
     return null;
   }
-  const resultado = validarFormacion(formacion, posiciones);
-  if (resultado.infracciones.length > 0) {
+  if (validar && validarFormacion(formacion, posiciones).infracciones.length > 0) {
     return null;
   }
   const anterior = sistema.formaciones[rotacion as 1 | 2 | 3 | 4 | 5 | 6];

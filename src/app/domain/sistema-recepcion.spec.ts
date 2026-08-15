@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
-import { formacionEnRotacion, jugadoresEnPista } from './rotacion';
+import { formacionEnRotacion, jugadoresEnPista, sustitutosLiberoPorDefecto } from './rotacion';
 import { borrarRotacion, explicarJugador, explicarRotacion, guardarFormacion, sistemaCompleto } from './sistema-recepcion';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
@@ -54,7 +54,8 @@ function formacionLegalR2(orden: OrdenSaque): Formacion {
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
+  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
+  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
 /** Igual que `formacionLegalPara`, pero con quien esté en pista de verdad (líbero incluido). */
@@ -146,6 +147,59 @@ describe('guardarFormacion', () => {
 
     expect(resultado).toBeNull();
   });
+
+  it('017-E11: guardar con la validación desactivada acepta una formación con falta posicional', () => {
+    const sistema = sistemaVacio();
+    const [colocador, receptor1, receptor2, central1, central2, opuesto] = sistema.plantilla.ordenSaque;
+    const formacionConFalta: Formacion = [
+      { jugador: opuesto, punto: { x: 8, y: 0.5 } },
+      { jugador: colocador, punto: { x: 8, y: 1 } },
+      { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+      { jugador: receptor2, punto: { x: 1, y: 1 } },
+      { jugador: central1, punto: { x: 1, y: 6 } },
+      { jugador: central2, punto: { x: 4.5, y: 6 } },
+    ];
+
+    const resultado = guardarFormacion(sistema, 2, formacionConFalta, false);
+
+    expect(resultado).not.toBeNull();
+    expect(resultado?.formaciones[2]).toEqual(formacionConFalta);
+  });
+
+  it('017-E12: desactivar la validación no permite guardar a un jugador ajeno al roster de la rotación', () => {
+    const sistema = sistemaVacio();
+    const [colocador, receptor1, receptor2, central1, central2] = sistema.plantilla.ordenSaque;
+    const intruso = jugador('intruso', 'opuesto');
+    const formacion: Formacion = [
+      { jugador: intruso, punto: { x: 8, y: 8 } },
+      { jugador: colocador, punto: { x: 8, y: 1 } },
+      { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+      { jugador: receptor2, punto: { x: 1, y: 1 } },
+      { jugador: central1, punto: { x: 1, y: 6 } },
+      { jugador: central2, punto: { x: 4.5, y: 6 } },
+    ];
+
+    const resultado = guardarFormacion(sistema, 2, formacion, false);
+
+    expect(resultado).toBeNull();
+  });
+
+  it('017-E13: con la validación activada, nada cambia respecto a hoy', () => {
+    const sistema = sistemaVacio();
+    const [colocador, receptor1, receptor2, central1, central2, opuesto] = sistema.plantilla.ordenSaque;
+    const formacionConFalta: Formacion = [
+      { jugador: opuesto, punto: { x: 8, y: 0.5 } },
+      { jugador: colocador, punto: { x: 8, y: 1 } },
+      { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+      { jugador: receptor2, punto: { x: 1, y: 1 } },
+      { jugador: central1, punto: { x: 1, y: 6 } },
+      { jugador: central2, punto: { x: 4.5, y: 6 } },
+    ];
+
+    const resultado = guardarFormacion(sistema, 2, formacionConFalta, true);
+
+    expect(resultado).toBeNull();
+  });
 });
 
 describe('guardarFormacion con líbero', () => {
@@ -171,6 +225,38 @@ describe('guardarFormacion con líbero', () => {
     }
 
     expect(sistemaCompleto(sistema)).toBe(true);
+  });
+
+  it('017-E10: con el sustituto por defecto (rotación a rotación), un sistema con líbero guarda sus seis rotaciones y el líbero juega las seis', () => {
+    // Los dos centrales separados 3 posiciones (como en un 5-1 real, PLANTILLA_GLOBAL):
+    // en cada rotación hay siempre exactamente un central en zaga y otro en delantera.
+    // `ordenValidoEstandar()` no sirve aquí porque sus centrales van adyacentes.
+    const orden: OrdenSaque = [
+      jugador('colocador', 'colocador'),
+      jugador('receptor1', 'receptor'),
+      jugador('central1', 'central'),
+      jugador('opuesto', 'opuesto'),
+      jugador('receptor2', 'receptor'),
+      jugador('central2', 'central'),
+    ];
+    const plantilla: PlantillaEquipo = {
+      nombre: 'Equipo A',
+      ordenSaque: orden,
+      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: sustitutosLiberoPorDefecto(orden) },
+    };
+    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+
+    for (let rotacion = 1; rotacion <= 6; rotacion++) {
+      const guardado = guardarFormacion(sistema, rotacion, formacionLegalEnPista(plantilla, rotacion));
+      expect(guardado).not.toBeNull();
+      sistema = guardado!;
+    }
+
+    expect(sistemaCompleto(sistema)).toBe(true);
+    for (let rotacion = 1; rotacion <= 6; rotacion++) {
+      const idsEnRotacion = sistema.formaciones[rotacion as 1 | 2 | 3 | 4 | 5 | 6]?.map((c) => c.jugador.id);
+      expect(idsEnRotacion).toContain('libero');
+    }
   });
 });
 
