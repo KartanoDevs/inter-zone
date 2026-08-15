@@ -28,6 +28,20 @@
   fill: var(--text-main);
 }
 
+.app-ficha__posicion {
+  font-family: var(--font-display);
+  font-weight: 700;
+  fill: var(--text-muted);
+}
+
+.app-ficha__posicion-letra {
+  font-size: 0.18px;
+}
+
+.app-ficha__posicion-numero {
+  font-size: 0.28px;
+}
+
 :host(.app-ficha--aviso) .app-ficha__circulo {
   stroke: var(--neon-amber);
   stroke-width: 0.09;

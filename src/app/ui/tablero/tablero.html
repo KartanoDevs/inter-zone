@@ -8,17 +8,6 @@
     (borrar)="pedirBorrado()"
   ></app-barra-sistemas>
 
-  @if (sustitutoLiberoActual(); as sustituto) {
-    <label class="app-tablero__libero">
-      Líbero sustituye a
-      <select (change)="cambiarSustitutoLibero($event)">
-        @for (opcion of opcionesSustitutoLibero(); track opcion.id) {
-          <option [value]="opcion.id" [selected]="opcion.id === sustituto">{{ opcion.etiqueta }}</option>
-        }
-      </select>
-    </label>
-  }
-
   <app-selector-rotacion
     [rotaciones]="estadosRotacion()"
     [rotacionActiva]="store.rotacionActiva()"
@@ -31,6 +20,7 @@
         [fichas]="fichas()"
         [idArrastrada]="idArrastrada()"
         (fichaAgarrada)="onAgarrarFicha($event)"
+        (abrirAjustes)="abrirAjustes()"
       ></app-pista>
       <app-panel-validacion
         [completo]="completo()"
@@ -49,7 +39,7 @@
   ></app-panel-ensenanza>
 
   <div class="app-tablero__acciones">
-    <button type="button" class="app-boton app-boton--terciario" (click)="vaciarRotacion()">Vaciar</button>
+    <button type="button" class="app-boton app-boton--secundario" (click)="vaciarRotacion()">Vaciar</button>
     <button type="button" class="app-boton app-boton--primario" [disabled]="!completo() || !esLegal()" (click)="guardar()">
       Guardar rotación
     </button>
@@ -91,5 +81,18 @@
       (confirmar)="confirmarBorrado()"
       (cancelar)="cancelarBorrado()"
     ></app-dialogo-confirmacion>
+  }
+
+  @if (ajustesAbierto()) {
+    <app-dialogo-ajustes
+      [rotacion]="store.rotacionActiva()"
+      [tieneLibero]="tieneLibero()"
+      [opcionesLibero]="opcionesSustitutoLibero()"
+      [sustitutoActual]="sustitutoLiberoActual()"
+      [validacionDesactivada]="store.validacionDesactivada()"
+      (cambiarSustituto)="cambiarSustitutoLibero($event)"
+      (alternarValidacion)="alternarValidacion()"
+      (cerrar)="cerrarAjustes()"
+    ></app-dialogo-ajustes>
   }
 </div>

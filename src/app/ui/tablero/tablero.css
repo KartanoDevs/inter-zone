@@ -18,30 +18,11 @@
 }
 
 .app-tablero > app-barra-sistemas,
-.app-tablero > .app-tablero__libero,
 .app-tablero > app-selector-rotacion,
 .app-tablero > app-paleta-jugadores,
 .app-tablero > app-panel-ensenanza,
 .app-tablero > .app-tablero__acciones {
   margin-inline: var(--space-2);
-}
-
-.app-tablero__libero {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.app-tablero__libero select {
-  padding: 6px var(--space-1);
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-main);
-  font-family: var(--font-body);
-  font-size: 13px;
 }
 
 .app-tablero__campo-envoltorio {

@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Modal } from '../comun/modal';
 
 @Component({
   selector: 'app-dialogo-confirmacion',
-  imports: [],
+  imports: [Modal],
   templateUrl: './dialogo-confirmacion.html',
   styleUrl: './dialogo-confirmacion.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

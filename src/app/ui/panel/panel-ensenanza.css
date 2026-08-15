@@ -54,7 +54,6 @@ details[open] > .app-ensenanza__resumen .app-ensenanza__chevron {
 
 .app-ensenanza__campo {
   width: 100%;
-  margin-bottom: var(--space-1);
   padding: 8px;
   background: var(--bg-card-alt);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -63,12 +62,6 @@ details[open] > .app-ensenanza__resumen .app-ensenanza__chevron {
   font-family: var(--font-body);
   font-size: 13px;
   resize: vertical;
-}
-
-.app-ensenanza__acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-1);
 }
 
 @media (prefers-reduced-motion: reduce) {

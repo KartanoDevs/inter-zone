@@ -93,40 +93,35 @@
   background: var(--text-main);
 }
 
-.app-pista__leyenda-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+.app-pista__ajustes-boton {
+  position: absolute;
+  top: 39px;
+  right: 5px;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2);
-  background: rgba(5, 5, 10, 0.75);
-}
-
-.app-pista__leyenda-modal {
-  width: 100%;
-  max-width: 300px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: var(--space-3);
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
   background: var(--bg-card);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  border-radius: 8px;
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.15);
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.app-pista__leyenda-titulo {
-  margin: 0 0 var(--space-2);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.04em;
+.app-pista__ajustes-boton:hover,
+.app-pista__ajustes-boton:focus-visible {
+  background: var(--bg-card-alt);
   color: var(--text-main);
 }
 
 .app-pista__leyenda-lista {
-  margin: 0 0 var(--space-3);
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -153,29 +148,3 @@
   color: var(--text-secondary);
 }
 
-.app-pista__leyenda-cerrar {
-  width: 100%;
-  padding: 8px var(--space-2);
-  background: transparent;
-  border: 1px solid var(--text-muted);
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition:
-    color 150ms ease,
-    border-color 150ms ease;
-}
-
-.app-pista__leyenda-cerrar:hover {
-  color: var(--text-secondary);
-  border-color: var(--text-secondary);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-pista__leyenda-cerrar {
-    transition: none;
-  }
-}

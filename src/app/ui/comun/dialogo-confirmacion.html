@@ -1,14 +1,11 @@
-<div class="app-dialogo-overlay" (click)="cancelar.emit()">
-  <div class="app-dialogo" role="alertdialog" aria-modal="true" [attr.aria-label]="titulo()" (click)="$event.stopPropagation()">
-    <h2 class="app-dialogo__titulo">{{ titulo() }}</h2>
-    <p class="app-dialogo__mensaje">{{ mensaje() }}</p>
-    <div class="app-dialogo__acciones">
-      <button type="button" class="app-boton app-boton--terciario" (click)="cancelar.emit()">
-        {{ textoCancelar() }}
-      </button>
-      <button type="button" class="app-boton app-boton--destructivo" (click)="confirmar.emit()">
-        {{ textoConfirmar() }}
-      </button>
-    </div>
-  </div>
-</div>
+<app-modal [titulo]="titulo()" variante="alerta" rol="alertdialog" (cerrar)="cancelar.emit()">
+  <p class="app-dialogo-confirmacion__mensaje">{{ mensaje() }}</p>
+  <ng-container acciones>
+    <button type="button" class="app-boton app-boton--secundario" (click)="cancelar.emit()">
+      {{ textoCancelar() }}
+    </button>
+    <button type="button" class="app-boton app-boton--destructivo" (click)="confirmar.emit()">
+      {{ textoConfirmar() }}
+    </button>
+  </ng-container>
+</app-modal>

@@ -1,0 +1,17 @@
+<app-modal [titulo]="'Ajustes · R' + rotacion()" (cerrar)="cerrar.emit()">
+  @if (tieneLibero()) {
+    <label class="app-ajustes__campo">
+      Líbero sustituye a
+      <select (change)="onCambiarSustituto($event)">
+        @for (opcion of opcionesLibero(); track opcion.id ?? '') {
+          <option [value]="opcion.id ?? ''" [selected]="opcion.id === sustitutoActual()">{{ opcion.etiqueta }}</option>
+        }
+      </select>
+    </label>
+  }
+
+  <label class="app-ajustes__check">
+    <input type="checkbox" [checked]="validacionDesactivada()" (change)="alternarValidacion.emit()" />
+    Desactivar validación de posiciones
+  </label>
+</app-modal>

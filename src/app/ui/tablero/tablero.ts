@@ -7,23 +7,28 @@ import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
+import { DialogoAjustes, type OpcionLibero } from '../ajustes/dialogo-ajustes';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
-import type { Colocacion, Formacion, Infraccion, Punto, ResultadoValidacion } from '../../domain/modelos';
+import { claveOrdenRol } from '../comun/orden-roles';
+import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, RolId } from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
-const POSICIONES = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const;
 
 // Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
 // nunca quede recortada por el borde visible (igual que en la maqueta).
 const LIMITE_X: readonly [number, number] = [-0.3, 9.3];
 const LIMITE_Y: readonly [number, number] = [-3.6, 9.3];
 
-// Por debajo de este desplazamiento en pantalla, un pointerdown+pointerup sobre una ficha
-// cuenta como un toque (selecciona) y no como un arrastre (spec 010, E9-E10 vs E12).
-const UMBRAL_TOQUE_PX = 5;
+// El arrastre no se arma al primer píxel: hace falta superar este desplazamiento en pantalla
+// o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está armado, un
+// pointerdown+pointerup sobre una ficha ya en pista cuenta como un toque y selecciona en vez
+// de arrastrar (spec 010, E9-E10 vs E12) — el retardo es lo que hace ese toque marcable sin
+// que arrastrar la ficha por error.
+const RETARDO_ARRASTRE_MS = 150;
+const UMBRAL_ARRASTRE_PX = 8;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | null;
 
@@ -42,8 +47,8 @@ function acotarPunto(punto: Punto): Punto {
   return { x: acotar(punto.x, LIMITE_X), y: acotar(punto.y, LIMITE_Y) };
 }
 
-function esLineaDelantera(posicion: string): boolean {
-  return posicion === 'P2' || posicion === 'P3' || posicion === 'P4';
+function esLineaDelantera(posicion: number): boolean {
+  return posicion === 2 || posicion === 3 || posicion === 4;
 }
 
 function distancia(a: Punto, b: Punto): number {
@@ -101,6 +106,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     DialogoConfirmacion,
     BarraSistemas,
     DialogoSistema,
+    DialogoAjustes,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',
@@ -114,6 +120,7 @@ export class Tablero {
 
   protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
   protected readonly confirmandoBorrado = signal(false);
+  protected readonly ajustesAbierto = signal(false);
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -121,11 +128,11 @@ export class Tablero {
 
   private readonly posicionPorId = computed(() => {
     const posiciones = this.store.posicionesActivas();
-    const mapa = new Map<string, string>();
+    const mapa = new Map<string, number>();
     if (!posiciones) {
       return mapa;
     }
-    posiciones.forEach((jugador, indice) => mapa.set(jugador.id, POSICIONES[indice]));
+    posiciones.forEach((jugador, indice) => mapa.set(jugador.id, indice + 1));
     return mapa;
   });
 
@@ -138,11 +145,12 @@ export class Tablero {
     const posicionPorId = this.posicionPorId();
     const seleccionadoId = this.store.jugadorSeleccionadoId();
     return this.store.borrador().map((colocacion) => {
-      const posicionRotacional = posicionPorId.get(colocacion.jugador.id) ?? '';
+      const posicionRotacional = posicionPorId.get(colocacion.jugador.id) ?? 0;
       return {
         id: colocacion.jugador.id,
         punto: colocacion.punto,
         etiqueta: etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+        posicion: posicionRotacional,
         estado: estadoDe(resultado, colocacion.jugador.id),
         linea: esLineaDelantera(posicionRotacional) ? 'delantera' : 'zaguera',
         esLibero: colocacion.jugador.rol === 'libero',
@@ -159,6 +167,7 @@ export class Tablero {
     const colocadosIds = new Set(this.store.borrador().map((c) => c.jugador.id));
     return posiciones
       .filter((jugador) => !colocadosIds.has(jugador.id))
+      .sort((a, b) => claveOrdenRol(a.rol, a.indice) - claveOrdenRol(b.rol, b.indice))
       .map((jugador) => ({ id: jugador.id, etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO) }));
   });
 
@@ -175,15 +184,38 @@ export class Tablero {
     });
   });
 
-  protected readonly opcionesSustitutoLibero = computed<readonly ChipJugador[]>(() => {
+  /**
+   * Opciones del selector "líbero sustituye a", en el orden pedido para esta pantalla: los
+   * dos centrales primero (el caso típico del 5-1), "Ninguno", y el resto de titulares. No
+   * es el orden de saque: es una decisión de esta pantalla, no del dominio.
+   */
+  protected readonly opcionesSustitutoLibero = computed<readonly OpcionLibero[]>(() => {
     const orden = this.store.sistemaActivo()?.plantilla.ordenSaque;
     if (!orden) {
       return [];
     }
-    return orden.map((jugador) => ({ id: jugador.id, etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO) }));
+    const porRol = (rol: RolId, indice?: 1 | 2): Jugador => orden.find((j) => j.rol === rol && j.indice === indice)!;
+    const opcion = (jugador: Jugador): OpcionLibero => ({
+      id: jugador.id,
+      etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+    });
+    return [
+      opcion(porRol('central', 1)),
+      opcion(porRol('central', 2)),
+      { id: null, etiqueta: 'Ninguno' },
+      opcion(porRol('opuesto')),
+      opcion(porRol('receptor', 1)),
+      opcion(porRol('receptor', 2)),
+      opcion(porRol('colocador')),
+    ];
   });
 
-  protected readonly sustitutoLiberoActual = computed(() => this.store.sistemaActivo()?.plantilla.libero?.sustituidoId ?? null);
+  protected readonly tieneLibero = computed(() => !!this.store.sistemaActivo()?.plantilla.libero);
+
+  protected readonly sustitutoLiberoActual = computed(() => {
+    const libero = this.store.sistemaActivo()?.plantilla.libero;
+    return libero ? libero.sustitutosPorRotacion[this.store.rotacionActiva()] : null;
+  });
 
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
     this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
@@ -268,11 +300,20 @@ export class Tablero {
     this.iniciarArrastre(chip.id, etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO), chip.evento, 'paleta');
   }
 
-  protected cambiarSustitutoLibero(evento: Event): void {
-    const id = (evento.target as HTMLSelectElement).value;
-    if (id) {
-      this.store.cambiarSustitutoLibero(id);
-    }
+  protected abrirAjustes(): void {
+    this.ajustesAbierto.set(true);
+  }
+
+  protected cerrarAjustes(): void {
+    this.ajustesAbierto.set(false);
+  }
+
+  protected cambiarSustitutoLibero(sustituidoId: string | null): void {
+    this.store.cambiarSustitutoLibero(this.store.rotacionActiva(), sustituidoId);
+  }
+
+  protected alternarValidacion(): void {
+    this.store.alternarValidacion();
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
@@ -288,8 +329,6 @@ export class Tablero {
       agarrada.evento,
       'pista',
     );
-    // Trae la ficha al frente del DOM (colocarOMover reordena al final) sin moverla.
-    this.store.colocarOMover(colocacion.jugador.id, colocacion.punto);
   }
 
   protected vaciarRotacion(): void {
@@ -303,10 +342,36 @@ export class Tablero {
   private iniciarArrastre(jugadorId: string, etiqueta: string, evento: PointerEvent, origen: 'paleta' | 'pista'): void {
     evento.preventDefault();
     const inicio = { clientX: evento.clientX, clientY: evento.clientY };
-    this.arrastre.set({ jugadorId, etiqueta, ...inicio });
     this.pistaCmp().capturarPuntero(evento);
 
+    let armado = false;
+
+    // Engancha la ficha al puntero: a partir de aquí se ve el fantasma y, si viene de pista,
+    // la ficha se trae al frente del DOM sin moverla (colocarOMover reordena al final).
+    const armar = (clientX: number, clientY: number): void => {
+      if (armado) {
+        return;
+      }
+      armado = true;
+      window.clearTimeout(temporizador);
+      this.arrastre.set({ jugadorId, etiqueta, clientX, clientY });
+      if (origen === 'pista') {
+        const colocacion = this.store.borrador().find((c) => c.jugador.id === jugadorId);
+        if (colocacion) {
+          this.store.colocarOMover(jugadorId, colocacion.punto);
+        }
+      }
+    };
+
+    const temporizador = window.setTimeout(() => armar(inicio.clientX, inicio.clientY), RETARDO_ARRASTRE_MS);
+
     const mover = (e: PointerEvent): void => {
+      if (!armado && distanciaPantalla(inicio, e) > UMBRAL_ARRASTRE_PX) {
+        armar(e.clientX, e.clientY);
+      }
+      if (!armado) {
+        return;
+      }
       this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
       if (origen === 'pista' && this.pistaCmp().contiene(e)) {
         this.store.colocarOMover(jugadorId, acotarPunto(this.pistaCmp().puntoDesde(e)));
@@ -314,6 +379,7 @@ export class Tablero {
     };
 
     const limpiar = (e: PointerEvent): void => {
+      window.clearTimeout(temporizador);
       window.removeEventListener('pointermove', mover);
       window.removeEventListener('pointerup', soltar);
       window.removeEventListener('pointercancel', cancelar);
@@ -322,16 +388,18 @@ export class Tablero {
 
     const soltar = (e: PointerEvent): void => {
       limpiar(e);
-      const pista = this.pistaCmp();
-      if (pista.contiene(e)) {
-        this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
-      } else if (origen === 'pista') {
-        this.store.quitar(jugadorId);
+      if (armado) {
+        const pista = this.pistaCmp();
+        if (pista.contiene(e)) {
+          this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
+        } else if (origen === 'pista') {
+          this.store.quitar(jugadorId);
+        }
       }
       this.arrastre.set(null);
-      // Un desplazamiento mínimo sobre una ficha ya en pista es un toque: selecciona en vez
-      // de arrastrar (spec 010, E9/E10/E12). Sobre el banquillo no hay nada que seleccionar.
-      if (origen === 'pista' && distanciaPantalla(inicio, e) < UMBRAL_TOQUE_PX) {
+      // Nunca se armó: es un toque, no un arrastre. Sobre el banquillo no hay nada que
+      // seleccionar (spec 010, E9/E10/E12).
+      if (origen === 'pista' && !armado) {
         this.store.seleccionarJugador(jugadorId);
       }
     };

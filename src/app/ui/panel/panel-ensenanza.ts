@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Modal } from '../comun/modal';
 
 /**
  * Explicación de enseñanza de la rotación activa, o del jugador seleccionado si lo hay.
  * No decide de quién es la explicación que muestra: eso lo calcula `SistemaStore`
- * (`explicacionMostrada`); este componente solo la enseña y permite editarla.
+ * (`explicacionMostrada`); este componente solo la enseña y permite editarla en un popup.
  */
 @Component({
   selector: 'app-panel-ensenanza',
-  imports: [],
+  imports: [Modal],
   templateUrl: './panel-ensenanza.html',
   styleUrl: './panel-ensenanza.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

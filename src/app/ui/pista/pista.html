@@ -30,6 +30,7 @@
       appFicha
       [punto]="ficha.punto"
       [etiqueta]="ficha.etiqueta"
+      [posicion]="ficha.posicion"
       [estado]="ficha.estado"
       [linea]="ficha.linea"
       [esLibero]="ficha.esLibero"
@@ -51,19 +52,20 @@
   </button>
 }
 
+<button type="button" class="app-pista__ajustes-boton" aria-label="Ajustes" (click)="abrirAjustes.emit()">⚙</button>
+
 @if (leyendaAbierta()) {
-  <div class="app-pista__leyenda-overlay" (click)="leyendaAbierta.set(false)">
-    <div class="app-pista__leyenda-modal" role="dialog" aria-label="Leyenda de etiquetas" (click)="$event.stopPropagation()">
-      <h2 class="app-pista__leyenda-titulo">Leyenda</h2>
-      <dl class="app-pista__leyenda-lista">
-        @for (entrada of entradasLeyenda; track entrada.etiqueta) {
-          <div class="app-pista__leyenda-fila">
-            <dt>{{ entrada.etiqueta }}</dt>
-            <dd>{{ entrada.nombre }}</dd>
-          </div>
-        }
-      </dl>
-      <button type="button" class="app-pista__leyenda-cerrar" (click)="leyendaAbierta.set(false)">Cerrar</button>
-    </div>
-  </div>
+  <app-modal titulo="Leyenda" (cerrar)="leyendaAbierta.set(false)">
+    <dl class="app-pista__leyenda-lista">
+      @for (entrada of entradasLeyenda; track entrada.etiqueta) {
+        <div class="app-pista__leyenda-fila">
+          <dt>{{ entrada.etiqueta }}</dt>
+          <dd>{{ entrada.nombre }}</dd>
+        </div>
+      }
+    </dl>
+    <ng-container acciones>
+      <button type="button" class="app-boton app-boton--secundario" (click)="leyendaAbierta.set(false)">Cerrar</button>
+    </ng-container>
+  </app-modal>
 }

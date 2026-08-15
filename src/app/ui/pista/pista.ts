@@ -1,12 +1,16 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
-import type { ConfiguracionRoles, Punto, RolId } from '../../domain/modelos';
+import type { ConfiguracionRoles, Punto } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
+import { Modal } from '../comun/modal';
+import { ORDEN_ROLES } from '../comun/orden-roles';
 import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador';
 
 export interface FichaVista {
   readonly id: string;
   readonly punto: Punto;
   readonly etiqueta: string;
+  /** Posición rotacional 1..6 (P1..P6) que ocupa el jugador en la rotación activa. */
+  readonly posicion: number;
   readonly estado: EstadoFicha;
   readonly linea: LineaFicha;
   readonly esLibero: boolean;
@@ -23,11 +27,9 @@ interface EntradaLeyenda {
   readonly nombre: string;
 }
 
-const ORDEN_ROLES_LEYENDA: readonly RolId[] = ['colocador', 'receptor', 'central', 'opuesto', 'libero'];
-
 /** Deriva la leyenda (misma lógica de índice que `etiquetaDe`, docs/dominio.md §2: 1 = cercano, 2 = lejano). */
 function entradasLeyendaDe(configuracion: ConfiguracionRoles): readonly EntradaLeyenda[] {
-  return ORDEN_ROLES_LEYENDA.flatMap((rol): EntradaLeyenda[] => {
+  return ORDEN_ROLES.flatMap((rol): EntradaLeyenda[] => {
     const definicion = configuracion[rol];
     if (!definicion.llevaIndice) {
       return [{ etiqueta: definicion.abreviatura, nombre: definicion.nombre }];
@@ -52,7 +54,7 @@ const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
  */
 @Component({
   selector: 'app-pista',
-  imports: [FichaJugador],
+  imports: [FichaJugador, Modal],
   templateUrl: './pista.html',
   styleUrl: './pista.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +64,7 @@ export class Pista {
   readonly idArrastrada = input<string | null>(null);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
+  readonly abrirAjustes = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly entradasLeyenda = ENTRADAS_LEYENDA;

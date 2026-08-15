@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { TipoSistema } from '../../domain/modelos';
+import { Modal } from '../comun/modal';
 
 export interface DatosSistema {
   readonly nombre: string;
@@ -13,7 +14,7 @@ export interface DatosSistema {
  */
 @Component({
   selector: 'app-dialogo-sistema',
-  imports: [],
+  imports: [Modal],
   templateUrl: './dialogo-sistema.html',
   styleUrl: './dialogo-sistema.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

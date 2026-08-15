@@ -69,9 +69,28 @@ button {
 
 /* Botones compartidos entre componentes de ui/ (Angular encapsula los estilos por
    componente, así que lo que se reutiliza literalmente igual vive aquí). Jerarquía de
-   docs/voley/design-guidelines.md §4.1. */
+   docs/voley/design-guidelines.md §4.1.
+
+   El borde no es un `border`: con `clip-path` recortando esquinas facetadas, un `border`
+   normal se corta en las dos diagonales y deja el borde abierto ahí (ver
+   docs/voley/Ejemplo botones.png). En su lugar, el propio fondo del botón ES el color del
+   borde, y `::before` pinta el relleno 1px hacia dentro con la misma faceta reducida — el
+   "borde" es la franja de 1px que queda entre los dos, y como los dos están recortados con
+   el mismo `clip-path`, la franja rodea el botón entero, diagonales incluidas. */
 .app-boton {
   --facet: 10px;
+  --boton-fondo: var(--bg-dark);
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  padding: 8px var(--space-2);
+  background: var(--text-muted);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border: 0;
+  cursor: pointer;
   clip-path: polygon(
     var(--facet) 0,
     100% 0,
@@ -80,57 +99,73 @@ button {
     0 100%,
     0 var(--facet)
   );
-  padding: 8px var(--space-2);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid transparent;
-  cursor: pointer;
   transition:
     box-shadow 150ms ease,
-    border-color 150ms ease,
+    background 150ms ease,
     opacity 150ms ease;
 }
 
+.app-boton::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--boton-fondo);
+  clip-path: polygon(
+    calc(var(--facet) - 1.4px) 0,
+    100% 0,
+    100% calc(100% - var(--facet) + 1.4px),
+    calc(100% - var(--facet) + 1.4px) 100%,
+    0 100%,
+    0 calc(var(--facet) - 1.4px)
+  );
+  transition: background 150ms ease;
+}
+
 .app-boton--primario {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
   color: var(--text-main);
-  background-image:
-    linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
+  --boton-fondo: var(--bg-card);
   box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
 }
 
 .app-boton--primario:disabled {
+  background: var(--text-muted);
   color: var(--text-muted-alt);
-  background-image: linear-gradient(var(--bg-card), var(--bg-card)), linear-gradient(0deg, var(--text-muted), var(--text-muted));
   box-shadow: none;
   cursor: not-allowed;
 }
 
-.app-boton--terciario {
-  background: transparent;
-  border-color: var(--text-muted);
+.app-boton--secundario {
+  background: var(--text-muted);
   color: var(--text-muted);
+  --boton-fondo: var(--bg-dark);
 }
 
-.app-boton--terciario:hover {
+.app-boton--secundario:hover {
+  background: var(--text-secondary);
   color: var(--text-secondary);
-  border-color: var(--text-secondary);
 }
 
 .app-boton--destructivo {
-  background: transparent;
-  border-color: var(--neon-pink);
+  background: var(--neon-pink);
   color: var(--neon-pink);
+  --boton-fondo: var(--bg-dark);
 }
 
 .app-boton--destructivo:hover {
-  background: rgba(255, 0, 85, 0.1);
+  --boton-fondo: rgba(255, 0, 85, 0.1);
+}
+
+.app-boton--secundario:disabled,
+.app-boton--destructivo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-boton {
+  .app-boton,
+  .app-boton::before {
     transition: none;
   }
 }

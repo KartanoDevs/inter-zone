@@ -31,6 +31,8 @@ const RADIO_M = 0.45;
 export class FichaJugador {
   readonly punto = input.required<Punto>();
   readonly etiqueta = input.required<string>();
+  /** Posición rotacional 1..6 (P1..P6) que ocupa el jugador en la rotación activa. */
+  readonly posicion = input.required<number>();
   readonly estado = input<EstadoFicha>('normal');
   readonly linea = input<LineaFicha>('delantera');
   readonly esLibero = input(false);
