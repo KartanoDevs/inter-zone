@@ -20,21 +20,18 @@ function indiceColocador(orden: OrdenSaque): number {
 }
 
 /**
- * La formación de la rotación física número `rotacion` (spec 019): R1 es la formación de
- * partida (colocador en P1), y cada Rn+1 es exactamente un paso de rotación real más que Rn,
- * en el sentido ya documentado (P2→P1→P6→P5→P4→P3→P2). El colocador recorre, en orden, P1,
- * P6, P5, P4, P3, P2 para R1..R6 — **no** P1..P6, que era la ADR 0010 (corregida por la ADR
- * 0018): esa lectura solo coincidía con la rotación física en R1 y R4.
+ * La formación en la que el colocador ocupa Pn (Rn), sea cual sea el orden de saque (ADR 0010,
+ * revertida a esta forma por la ADR 0019 tras la spec 020: la 018 la había cambiado con
+ * ejemplos de rotación que resultaron llevar la numeración invertida).
  */
 export function formacionEnRotacion(orden: OrdenSaque, rotacion: number): OrdenSaque {
-  const desplazamiento = (indiceColocador(orden) + (rotacion - 1)) % 6;
+  const desplazamiento = (indiceColocador(orden) - (rotacion - 1) + 6) % 6;
   return rotar(orden, desplazamiento);
 }
 
-/** El número de rotación (Rn) al que pertenece una formación ya colocada en P1..P6. Inversa
- * exacta de `formacionEnRotacion`. */
+/** El número de rotación (Rn) al que pertenece una formación ya colocada en P1..P6. */
 export function rotacionDe(orden: OrdenSaque): number {
-  return ((6 - indiceColocador(orden)) % 6) + 1;
+  return indiceColocador(orden) + 1;
 }
 
 /**

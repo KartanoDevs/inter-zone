@@ -74,7 +74,7 @@ describe('formacionEnRotacion', () => {
     expect(resultado[0]).toBe(colocador);
   });
 
-  it('003-E3 (revisa 019): pedir R3 coloca al colocador en P5, no en P3', () => {
+  it('003-E3 (revierte 019 por 020): pedir R3 coloca al colocador en P3', () => {
     const p1 = jugador('p1', 'receptor');
     const p2 = jugador('p2', 'central');
     const colocador = jugador('p3', 'colocador');
@@ -85,8 +85,7 @@ describe('formacionEnRotacion', () => {
 
     const resultado = formacionEnRotacion(orden, 3);
 
-    // R3 es dos rotaciones físicas después de R1 (P1→P6→P5), no "colocador en P3".
-    expect(resultado[4]).toBe(colocador);
+    expect(resultado[2]).toBe(colocador);
   });
 
   it('003-E4: las seis rotaciones cubren las seis posiciones del colocador sin repetir', () => {
@@ -144,37 +143,7 @@ describe('formacionEnRotacion', () => {
     expect(rotacionDe(r4)).toBe(4);
   });
 
-  it('019-E1: la rotación física siguiente a R1 es R2, y el colocador queda en P6, no en P2', () => {
-    const colocador = jugador('p1', 'colocador');
-    const p2 = jugador('p2', 'opuesto');
-    const p3 = jugador('p3', 'central');
-    const p4 = jugador('p4', 'receptor');
-    const p5 = jugador('p5', 'central');
-    const p6 = jugador('p6', 'receptor');
-    const orden: OrdenSaque = [colocador, p2, p3, p4, p5, p6];
-
-    const resultado = formacionEnRotacion(orden, 2);
-
-    expect(resultado[5]).toBe(colocador); // P6, no P2
-  });
-
-  it('019-E2: el colocador recorre P1, P6, P5, P4, P3, P2 para R1..R6, en ese orden', () => {
-    const colocador = jugador('p1', 'colocador');
-    const p2 = jugador('p2', 'opuesto');
-    const p3 = jugador('p3', 'central');
-    const p4 = jugador('p4', 'receptor');
-    const p5 = jugador('p5', 'central');
-    const p6 = jugador('p6', 'receptor');
-    const orden: OrdenSaque = [colocador, p2, p3, p4, p5, p6];
-
-    const posicionesDelColocador = [1, 2, 3, 4, 5, 6].map(
-      (rotacion) => formacionEnRotacion(orden, rotacion).indexOf(colocador) + 1,
-    );
-
-    expect(posicionesDelColocador).toEqual([1, 6, 5, 4, 3, 2]);
-  });
-
-  it('019-E3: rotacionDe es la inversa exacta de formacionEnRotacion, para las seis', () => {
+  it('020-E1: rotacionDe es la inversa exacta de formacionEnRotacion, para las seis', () => {
     const colocador = jugador('p1', 'colocador');
     const p2 = jugador('p2', 'opuesto');
     const p3 = jugador('p3', 'central');
