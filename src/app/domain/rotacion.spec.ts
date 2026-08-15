@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Jugador, OrdenSaque, PlantillaEquipo } from './modelos';
-import { formacionEnRotacion, jugadoresEnPista, rotacionDe, rotar, sustitutosLiberoPorDefecto } from './rotacion';
+import { PLANTILLA_GLOBAL } from './plantilla-global';
+import {
+  formacionEnRotacion,
+  jugadoresEnPista,
+  rotacionDe,
+  rotar,
+  sustitutosLiberoPorDefecto,
+  zaguerosEnRotacion,
+} from './rotacion';
 
 function jugador(id: string, rol: Jugador['rol']): Jugador {
   return { id, rol };
@@ -265,6 +273,36 @@ describe('jugadoresEnPista', () => {
 
     expect(enR1.some((j) => j.id === 'libero')).toBe(false);
     expect(enR1.some((j) => j.id === 'central1')).toBe(true);
+  });
+});
+
+describe('zaguerosEnRotacion', () => {
+  it('los zagueros de una rotación son quienes ocupan P1, P5 y P6', () => {
+    const colocador = jugador('p1', 'colocador');
+    const p2 = jugador('p2', 'opuesto');
+    const p3 = jugador('p3', 'central');
+    const p4 = jugador('p4', 'receptor');
+    const p5 = jugador('p5', 'central');
+    const p6 = jugador('p6', 'receptor');
+    const orden: OrdenSaque = [colocador, p2, p3, p4, p5, p6];
+
+    const zagueros = zaguerosEnRotacion(orden, 1);
+
+    expect(zagueros).toEqual([colocador, p5, p6]);
+  });
+
+  it('en las seis rotaciones, los zagueros son los de la tabla de referencia', () => {
+    const orden = PLANTILLA_GLOBAL.ordenSaque;
+    const idsPorRotacion = [1, 2, 3, 4, 5, 6].map(
+      (rotacion) => new Set(zaguerosEnRotacion(orden, rotacion).map((j) => j.id)),
+    );
+
+    expect(idsPorRotacion[0]).toEqual(new Set(['colocador', 'receptor2', 'central2']));
+    expect(idsPorRotacion[1]).toEqual(new Set(['central2', 'opuesto', 'receptor2']));
+    expect(idsPorRotacion[2]).toEqual(new Set(['receptor2', 'central1', 'opuesto']));
+    expect(idsPorRotacion[3]).toEqual(new Set(['opuesto', 'receptor1', 'central1']));
+    expect(idsPorRotacion[4]).toEqual(new Set(['central1', 'colocador', 'receptor1']));
+    expect(idsPorRotacion[5]).toEqual(new Set(['receptor1', 'central2', 'colocador']));
   });
 });
 

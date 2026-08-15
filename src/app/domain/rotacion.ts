@@ -1,4 +1,4 @@
-import type { OrdenSaque, PlantillaEquipo } from './modelos';
+import type { Jugador, OrdenSaque, PlantillaEquipo } from './modelos';
 
 const INDICES_ZAGA = new Set([0, 4, 5]); // P1, P5, P6
 
@@ -32,6 +32,12 @@ export function formacionEnRotacion(orden: OrdenSaque, rotacion: number): OrdenS
 /** El número de rotación (Rn) al que pertenece una formación ya colocada en P1..P6. */
 export function rotacionDe(orden: OrdenSaque): number {
   return indiceColocador(orden) + 1;
+}
+
+/** Quiénes son zagueros (P1, P5, P6) en una rotación dada. */
+export function zaguerosEnRotacion(orden: OrdenSaque, rotacion: number): readonly Jugador[] {
+  const posiciones = formacionEnRotacion(orden, rotacion);
+  return [...INDICES_ZAGA].map((indice) => posiciones[indice]);
 }
 
 /**
@@ -69,8 +75,7 @@ export function jugadoresEnPista(plantilla: PlantillaEquipo, rotacion: number): 
 export function sustitutosLiberoPorDefecto(orden: OrdenSaque): Record<1 | 2 | 3 | 4 | 5 | 6, string | null> {
   const resultado = {} as Record<1 | 2 | 3 | 4 | 5 | 6, string | null>;
   for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
-    const posiciones = formacionEnRotacion(orden, rotacion);
-    const centralEnZaga = [...INDICES_ZAGA].map((indice) => posiciones[indice]).find((j) => j.rol === 'central');
+    const centralEnZaga = zaguerosEnRotacion(orden, rotacion).find((j) => j.rol === 'central');
     resultado[rotacion] = centralEnZaga?.id ?? null;
   }
   return resultado;
