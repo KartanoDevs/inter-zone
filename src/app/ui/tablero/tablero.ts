@@ -15,11 +15,7 @@ import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles'
 import { claveOrdenRol } from '../comun/orden-roles';
 import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, RolId } from '../../domain/modelos';
 
-// Orden de las pestañas, no de numeración: R1, R6, R5, R4, R3, R2 es el orden en que el
-// colocador recorre P1, P2, P3, P4, P5, P6 (spec 019) — más intuitivo en pantalla que el
-// orden cronológico de rotación (R1, R2, R3...), que salta de posición en posición sin
-// seguir la red de izquierda a derecha.
-const ROTACIONES: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
+const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 
 // Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
 // nunca quede recortada por el borde visible (igual que en la maqueta).
