@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { Pista, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
+import { SelectorVia } from '../rotaciones/selector-via';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
@@ -11,9 +12,10 @@ import { DialogoAjustes, type OpcionLibero } from '../ajustes/dialogo-ajustes';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
+import { viaDeAtaque } from '../../domain/defensa';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
-import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion } from '../../domain/modelos';
+import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, ViaAtaque } from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
@@ -24,6 +26,11 @@ const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 // nunca quede recortada por el borde visible (igual que en la maqueta).
 const LIMITE_X: readonly [number, number] = [-0.3, 9.3];
 const LIMITE_Y: readonly [number, number] = [-3.6, 9.3];
+
+// La ficha rival solo se mueve dentro de su propio campo (spec 021): ahí es de donde
+// `viaDeAtaque` deriva la vía, y no tiene sentido soltarla fuera de él.
+const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
+const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
 
 // El arrastre no se arma al primer píxel: hace falta superar este desplazamiento en pantalla
 // o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está armado, un
@@ -48,6 +55,10 @@ function acotar(valor: number, [min, max]: readonly [number, number]): number {
 
 function acotarPunto(punto: Punto): Punto {
   return { x: acotar(punto.x, LIMITE_X), y: acotar(punto.y, LIMITE_Y) };
+}
+
+function acotarPuntoRival(punto: Punto): Punto {
+  return { x: acotar(punto.x, LIMITE_X_RIVAL), y: acotar(punto.y, LIMITE_Y_RIVAL) };
 }
 
 function esLineaDelantera(posicion: number): boolean {
@@ -103,6 +114,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
   imports: [
     Pista,
     SelectorRotacion,
+    SelectorVia,
     PanelValidacion,
     PaletaJugadores,
     PanelEnsenanza,
@@ -139,7 +151,6 @@ export class Tablero {
     return mapa;
   });
 
-  protected readonly esLegal = computed(() => this.store.resultadoValidacion()?.infracciones.length === 0);
   protected readonly infracciones = computed(() => itemsDe(this.store.resultadoValidacion()?.infracciones ?? []));
   protected readonly avisos = computed(() => itemsDe(this.store.resultadoValidacion()?.avisos ?? []));
 
@@ -218,6 +229,8 @@ export class Tablero {
 
   protected readonly tieneLibero = computed(() => !!this.store.sistemaActivo()?.plantilla.libero);
 
+  protected readonly esDefensa = computed(() => this.store.sistemaActivo()?.tipo === 'defensa');
+
   /**
    * Si lo guardado ya no está entre las opciones (p. ej. quedó de antes de filtrar el
    * desplegable a solo zagueros), se ve "Ninguno" — coherente con lo que `jugadoresEnPista` ya
@@ -249,6 +262,10 @@ export class Tablero {
 
   protected seleccionarRotacion(rotacion: number): void {
     this.store.seleccionarRotacion(rotacion as RotacionValida);
+  }
+
+  protected seleccionarVia(via: ViaAtaque): void {
+    this.store.seleccionarVia(via);
   }
 
   protected elegirSistema(id: string): void {
@@ -357,6 +374,44 @@ export class Tablero {
       agarrada.evento,
       'pista',
     );
+  }
+
+  /**
+   * Arrastre de la ficha rival (spec 021): mucho más simple que `iniciarArrastre` porque no
+   * hay tap-vs-drag que distinguir (la ficha no se selecciona) ni jugador que colocar — solo
+   * un fantasma que sigue al puntero y, al soltar, deriva la vía del punto de caída.
+   */
+  protected onAgarrarRival(evento: PointerEvent): void {
+    evento.preventDefault();
+    this.pistaCmp().capturarPuntero(evento);
+    this.arrastre.set({ jugadorId: '__rival__', etiqueta: 'Rival', clientX: evento.clientX, clientY: evento.clientY });
+
+    const mover = (e: PointerEvent): void => {
+      this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
+    };
+
+    const limpiar = (e: PointerEvent): void => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', cancelar);
+      this.pistaCmp().liberarPuntero(e);
+    };
+
+    const soltar = (e: PointerEvent): void => {
+      limpiar(e);
+      const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
+      this.arrastre.set(null);
+      this.store.seleccionarVia(viaDeAtaque(punto));
+    };
+
+    const cancelar = (e: PointerEvent): void => {
+      limpiar(e);
+      this.arrastre.set(null);
+    };
+
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', cancelar);
   }
 
   protected vaciarRotacion(): void {

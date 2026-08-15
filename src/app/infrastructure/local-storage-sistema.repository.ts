@@ -1,17 +1,15 @@
-import type { Colocacion, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
+import type { Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
 
 const CLAVE = 'interzone.sistemas';
 /**
- * 3 desde la spec 017: la forma persistida del líbero cambió otra vez —`sustitutoLibero`
- * (una cadena única para las seis rotaciones, spec 011) pasa a `sustitutosLibero` (un valor
- * por rotación, spec 017)— sin que las reglas del juego cambiaran de nuevo. Mismo motivo que
- * la subida de la 011 (de 1 a 2): sin `migrar()` real, cualquier versión que no sea
- * exactamente esta se trata como no legible — igual que una versión futura (spec 008, E4) —
- * en vez de intentar interpretarla con las reglas nuevas y arriesgarse a reventar o, peor, a
- * leerla mal en silencio.
+ * 4 desde la spec 021: se añade `defensas` (formaciones de defensa, por rotación y por vía de
+ * ataque) a la forma persistida. Mismo motivo que las subidas anteriores: sin `migrar()` real,
+ * cualquier versión que no sea exactamente esta se trata como no legible — igual que una
+ * versión futura (spec 008, E4) — en vez de intentar interpretarla con las reglas nuevas y
+ * arriesgarse a reventar o, peor, a leerla mal en silencio.
  */
-const VERSION_ACTUAL = 3;
+const VERSION_ACTUAL = 4;
 
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
@@ -34,6 +32,9 @@ interface SistemaPersistido {
    * tiene líbero; `null` en las rotaciones donde no sustituye a nadie (spec 017). */
   readonly sustitutosLibero?: Readonly<Record<string, string | null>>;
   readonly formaciones: Readonly<Record<string, readonly PosicionPersistida[]>>;
+  /** Formaciones de defensa, por rotación y por vía de ataque. Ausente en un sistema de
+   * recepción, o mientras no se haya guardado ninguna defensa todavía (spec 021). */
+  readonly defensas?: Readonly<Record<string, Readonly<Record<string, readonly PosicionPersistida[]>>>>;
   readonly explicacionesRotacion: Readonly<Record<string, string>>;
   readonly creadoEn: string;
   readonly actualizadoEn: string;
@@ -107,12 +108,18 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
   private aPersistido(sistema: Sistema, creadoEn: string, actualizadoEn: string): SistemaPersistido {
     const formaciones: Record<string, readonly PosicionPersistida[]> = {};
     for (const [rotacion, formacion] of Object.entries(sistema.formaciones)) {
-      formaciones[rotacion] = (formacion ?? []).map((c) => ({
-        jugadorId: c.jugador.id,
-        x: c.punto.x,
-        y: c.punto.y,
-        explicacion: c.explicacion,
-      }));
+      formaciones[rotacion] = posicionesPersistidasDe(formacion ?? []);
+    }
+    let defensas: Record<string, Record<string, readonly PosicionPersistida[]>> | undefined;
+    if (sistema.defensas) {
+      defensas = {};
+      for (const [rotacion, porVia] of Object.entries(sistema.defensas)) {
+        const viaPersistida: Record<string, readonly PosicionPersistida[]> = {};
+        for (const [via, formacion] of Object.entries(porVia ?? {})) {
+          viaPersistida[via] = posicionesPersistidasDe(formacion ?? []);
+        }
+        defensas[rotacion] = viaPersistida;
+      }
     }
     return {
       id: sistema.id,
@@ -120,6 +127,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       tipo: sistema.tipo,
       sustitutosLibero: sistema.plantilla.libero?.sustitutosPorRotacion,
       formaciones,
+      defensas,
       explicacionesRotacion: { ...sistema.explicacionesRotacion },
       creadoEn,
       actualizadoEn,
@@ -148,16 +156,20 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
     if (plantilla.libero) {
       jugadorPorId.set(plantilla.libero.jugador.id, plantilla.libero.jugador);
     }
-    const formaciones: Record<string, readonly Colocacion[]> = {};
+    const formaciones: Record<string, Formacion> = {};
     for (const [rotacion, posiciones] of Object.entries(persistido.formaciones)) {
-      formaciones[rotacion] = posiciones.map((p) => {
-        const jugador = jugadorPorId.get(p.jugadorId);
-        if (!jugador) {
-          throw new Error(`Jugador desconocido en los datos guardados: ${p.jugadorId}`);
+      formaciones[rotacion] = formacionDe(posiciones, jugadorPorId);
+    }
+    let defensas: Record<string, Record<string, Formacion>> | undefined;
+    if (persistido.defensas) {
+      defensas = {};
+      for (const [rotacion, porVia] of Object.entries(persistido.defensas)) {
+        const viaFormaciones: Record<string, Formacion> = {};
+        for (const [via, posiciones] of Object.entries(porVia)) {
+          viaFormaciones[via] = formacionDe(posiciones, jugadorPorId);
         }
-        const colocacion: Colocacion = { jugador, punto: { x: p.x, y: p.y } };
-        return p.explicacion === undefined ? colocacion : { ...colocacion, explicacion: p.explicacion };
-      });
+        defensas[rotacion] = viaFormaciones;
+      }
     }
     return {
       id: persistido.id,
@@ -165,7 +177,28 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       tipo: persistido.tipo,
       plantilla,
       formaciones,
+      defensas,
       explicacionesRotacion: { ...persistido.explicacionesRotacion },
     };
   }
+}
+
+function posicionesPersistidasDe(formacion: Formacion): readonly PosicionPersistida[] {
+  return formacion.map((c) => ({
+    jugadorId: c.jugador.id,
+    x: c.punto.x,
+    y: c.punto.y,
+    explicacion: c.explicacion,
+  }));
+}
+
+function formacionDe(posiciones: readonly PosicionPersistida[], jugadorPorId: ReadonlyMap<string, Jugador>): Formacion {
+  return posiciones.map((p) => {
+    const jugador = jugadorPorId.get(p.jugadorId);
+    if (!jugador) {
+      throw new Error(`Jugador desconocido en los datos guardados: ${p.jugadorId}`);
+    }
+    const colocacion: Colocacion = { jugador, punto: { x: p.x, y: p.y } };
+    return p.explicacion === undefined ? colocacion : { ...colocacion, explicacion: p.explicacion };
+  });
 }

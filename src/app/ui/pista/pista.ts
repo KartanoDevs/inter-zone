@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
-import type { ConfiguracionRoles, Punto } from '../../domain/modelos';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
+import type { ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { Modal } from '../comun/modal';
 import { ORDEN_ROLES } from '../comun/orden-roles';
 import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador';
+
+/** Punto fijo donde se pinta al rival para cada vía (spec 021): la ficha no guarda una posición
+ * exacta, solo la vía ya derivada — cada pestaña la muestra siempre en el mismo sitio. */
+const PUNTO_POR_VIA: Readonly<Record<ViaAtaque, Punto>> = {
+  z2: { x: 1.5, y: -1.5 },
+  z3: { x: 4.5, y: -1.5 },
+  z4: { x: 7.5, y: -1.5 },
+  pipe: { x: 4.5, y: -3.5 },
+};
 
 export interface FichaVista {
   readonly id: string;
@@ -66,14 +75,23 @@ export class Pista {
   readonly mostrarPosicion = input(true);
   /** Ajuste global: si se pintan los números de metros a la izquierda de la rejilla. */
   readonly mostrarNumerosMetros = input(false);
+  /** Si el sistema activo es de defensa: pinta la ficha rival en la vía activa (spec 021). */
+  readonly mostrarRival = input(false);
+  readonly viaActiva = input<ViaAtaque | null>(null);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
+  readonly rivalAgarrado = output<PointerEvent>();
   readonly abrirAjustes = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
   protected readonly entradasLeyenda = ENTRADAS_LEYENDA;
   protected readonly leyendaAbierta = signal(false);
+
+  protected readonly puntoRival = computed<Punto | null>(() => {
+    const via = this.viaActiva();
+    return via ? PUNTO_POR_VIA[via] : null;
+  });
 
   private readonly svgRef = viewChild.required<ElementRef<SVGSVGElement>>('svgPista');
 

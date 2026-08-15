@@ -51,6 +51,10 @@ export interface PlantillaEquipo {
 
 export type TipoSistema = 'recepcion' | 'defensa';
 
+/** Por dónde ataca el rival: los tres tercios de la línea delantera, o el pipe por el centro
+ * de zaga (spec 021). Se deriva de dónde se suelta la ficha rival; nunca se declara a mano. */
+export type ViaAtaque = 'z4' | 'z3' | 'z2' | 'pipe';
+
 /** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
 export interface Sistema {
   readonly id: string;
@@ -60,6 +64,9 @@ export interface Sistema {
   readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
   /** Explicación de enseñanza de conjunto para cada rotación guardada. Voluntaria. */
   readonly explicacionesRotacion: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>>>;
+  /** Formaciones de defensa, por rotación y por vía de ataque (spec 021). Ausente en un sistema
+   * de recepción, o mientras no se haya guardado ninguna defensa todavía. */
+  readonly defensas?: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Readonly<Partial<Record<ViaAtaque, Formacion>>>>>>;
 }
 
 export interface Colocacion {

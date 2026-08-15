@@ -12,6 +12,17 @@
   <line class="app-pista__rival-ataque" x1="0" y1="-3" x2="9" y2="-3"></line>
   <rect class="app-pista__borde-rival" x="0" y="-4" width="9" height="4"></rect>
 
+  @if (mostrarRival() && puntoRival(); as punto) {
+    <g
+      class="app-pista__rival-ficha"
+      [attr.transform]="'translate(' + punto.x + ',' + punto.y + ')'"
+      (pointerdown)="rivalAgarrado.emit($event)"
+    >
+      <circle class="app-pista__rival-circulo" r="0.35"></circle>
+      <text class="app-pista__rival-etiqueta" text-anchor="middle" dominant-baseline="central">R</text>
+    </g>
+  }
+
   <rect class="app-pista__campo" x="0" y="0" width="9" height="9"></rect>
 
   <g class="app-pista__rejilla">

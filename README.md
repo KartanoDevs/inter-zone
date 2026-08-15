@@ -20,6 +20,8 @@ sin cubrir.
 - El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la
   formación según le toque, como en un partido real.
 - Bloquear el guardado de una rotación que cometa falta de posición.
+- Crear sistemas de defensa: colocar a los seis defensores por rotación y por vía de ataque
+  del rival (zona 4, zona 3, zona 2, pipe), sin validación de posición.
 - Escribir por qué se coloca así una rotación, o un jugador dentro de ella — enseñanza, no
   solo geometría.
 - Pintar sobre una rejilla la zona de responsabilidad de cada receptor.
@@ -84,6 +86,12 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
 5. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
    Specs 014–015.
 6. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 016.
+7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por rotación y por vía de
+   ataque del rival (zona 4, zona 3, zona 2, pipe): se marca la vía soltando una ficha rival
+   genérica en su campo, se colocan los seis defensores (mismo roster que en recepción, líbero
+   incluido) y se guarda sin validación de posición — en defensa esa regla no existe. Spec 021.
+   La rejilla pintable del paso 5 se generaliza para activarse también aquí: pintar la zona de
+   cada defensor y verlas todas a la vez son las specs 022–023.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.
@@ -93,5 +101,6 @@ validación del paso 3 tras usar la pizarra en la práctica (el líbero pasa de 
 mismo titular a declararse rotación a rotación, y se puede desactivar la validación al enseñar
 una excepción). Se numera después de las specs ya reservadas (012–016) para no reordenarlas.
 
-Después de la v1: sistemas de defensa (V2), que reutilizan el mismo modelo de pista y de
-rejilla pero añaden bloqueo y atacante rival.
+**Specs 018–020** tampoco encajan en ningún paso: corrigen, en dos vaivenes, la numeración de
+las rotaciones tras usar la pizarra con un equipo real — ver `docs/decisiones/0018-…md` y
+`0019-…md`. No añaden funcionalidad nueva, solo corrigen una regla mal aplicada.

@@ -371,4 +371,111 @@ describe('SistemaStore', () => {
 
     expect(store.sistemaActivo()?.plantilla.libero?.sustitutosPorRotacion[1]).toBe('opuesto');
   });
+
+  describe('sistemas de defensa', () => {
+    it('021-E7: cambiar de vía sin cambios pendientes carga lo guardado en esa vía', () => {
+      const [colocador] = plantilla().ordenSaque;
+      const sistemaDefensa: Sistema = {
+        ...sistemaBase('d1', 'Defensa'),
+        tipo: 'defensa',
+        defensas: { 1: { z3: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+
+      store.seleccionarVia('z3');
+
+      expect(store.borrador()).toEqual(sistemaDefensa.defensas![1]!.z3);
+    });
+
+    it('021-E8: cambiar de vía con cambios sin guardar pide confirmar', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+
+      store.seleccionarVia('z3');
+
+      expect(store.viaActiva()).toBe('z4');
+      expect(store.cambioPendiente()).toEqual({ tipo: 'via', valor: 'z3' });
+    });
+
+    it('021-E11: en defensa nunca hay falta ni aviso, aunque los seis estén amontonados', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const orden = plantilla().ordenSaque;
+
+      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+
+      expect(store.resultadoValidacion()).toBeNull();
+    });
+
+    it('021-E10: colocar, mover y quitar un defensor funciona igual que en recepción', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      expect(store.borrador()).toEqual([{ jugador: colocador, punto: { x: 1, y: 1 } }]);
+
+      store.colocarOMover(colocador.id, { x: 2, y: 2 });
+      expect(store.borrador()).toEqual([{ jugador: colocador, punto: { x: 2, y: 2 } }]);
+
+      store.quitar(colocador.id);
+      expect(store.borrador()).toEqual([]);
+    });
+
+    it('021-E14: vaciar la vía activa la deja sin ningún defensor, sin afectar a otras', () => {
+      const [colocador] = plantilla().ordenSaque;
+      const sistemaDefensa: Sistema = {
+        ...sistemaBase('d1', 'Defensa'),
+        tipo: 'defensa',
+        defensas: { 1: { z3: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      store.seleccionarVia('z3');
+
+      store.vaciar();
+
+      expect(store.borrador()).toEqual([]);
+      expect(store.hayCambiosSinGuardar()).toBe(true);
+    });
+
+    it('021-E12 (store): con los seis colocados se puede guardar, aunque estén amontonados', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const orden = plantilla().ordenSaque;
+
+      expect(store.puedeGuardar()).toBe(false);
+
+      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+
+      expect(store.puedeGuardar()).toBe(true);
+    });
+
+    it('021-E13 (store): guardar asocia la defensa a la rotación y la vía activas', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const orden = plantilla().ordenSaque;
+      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+
+      store.guardar();
+
+      expect(store.sistemaActivo()?.defensas?.[1]?.z4).toEqual(store.borrador());
+      expect(store.hayCambiosSinGuardar()).toBe(false);
+    });
+
+    it('021-E8b: confirmar el aviso descarta los cambios y cambia de vía', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarVia('z3');
+
+      store.confirmarCambio();
+
+      expect(store.viaActiva()).toBe('z3');
+      expect(store.cambioPendiente()).toBeNull();
+      expect(store.borrador()).toEqual([]);
+    });
+  });
 });

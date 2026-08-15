@@ -33,3 +33,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0017](0017-indice-de-rol-declarado.md) | El índice de rol se declara, no se deriva | Aceptada |
 | [0018](0018-rn-es-la-rotacion-fisica.md) | `Rn` es la rotación física número n, no "el colocador ocupa Pn" | Revertida por 0019 |
 | [0019](0019-revierte-0018-rn-anclada-al-colocador.md) | Se revierte la ADR 0018: `Rn` sí es "el colocador ocupa Pn" | Aceptada |
+| [0020](0020-via-de-ataque-sin-posicion-persistida.md) | La vía de ataque se persiste como valor derivado, no como posición del rival | Aceptada |

@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema } from '../domain/modelos';
+import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
 import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
@@ -10,12 +10,16 @@ import {
 } from '../domain/catalogo-sistemas';
 import { jugadoresEnPista } from '../domain/rotacion';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
+import { guardarFormacionDefensa } from '../domain/sistema-defensa';
 import { validarFormacion } from '../domain/validacion';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
 
 export type RotacionValida = 1 | 2 | 3 | 4 | 5 | 6;
 
-type CambioPendiente = { readonly tipo: 'rotacion'; readonly valor: RotacionValida } | { readonly tipo: 'sistema'; readonly valor: string };
+type CambioPendiente =
+  | { readonly tipo: 'rotacion'; readonly valor: RotacionValida }
+  | { readonly tipo: 'sistema'; readonly valor: string }
+  | { readonly tipo: 'via'; readonly valor: ViaAtaque };
 
 function formacionesIguales(a: Formacion, b: Formacion): boolean {
   if (a.length !== b.length) {
@@ -38,6 +42,7 @@ export class SistemaStore {
   readonly sistemas = signal<readonly Sistema[]>([]);
   readonly sistemaActivoId = signal<string | null>(null);
   readonly rotacionActiva = signal<RotacionValida>(1);
+  readonly viaActiva = signal<ViaAtaque>('z4');
   readonly borrador = signal<Formacion>([]);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
@@ -61,19 +66,29 @@ export class SistemaStore {
     return sistema ? jugadoresEnPista(sistema.plantilla, this.rotacionActiva()) : null;
   });
 
-  readonly formacionGuardadaActiva = computed<Formacion>(
-    () => this.sistemaActivo()?.formaciones[this.rotacionActiva()] ?? [],
-  );
+  /** Recepción lee `sistema.formaciones[rotacion]`; defensa lee `sistema.defensas[rotacion][vía]`
+   * (spec 021) — son dos claves de guardado distintas para el mismo borrador en edición. */
+  readonly formacionGuardadaActiva = computed<Formacion>(() => {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return [];
+    }
+    if (sistema.tipo === 'defensa') {
+      return sistema.defensas?.[this.rotacionActiva()]?.[this.viaActiva()] ?? [];
+    }
+    return sistema.formaciones[this.rotacionActiva()] ?? [];
+  });
 
   readonly hayCambiosSinGuardar = computed(() => !formacionesIguales(this.borrador(), this.formacionGuardadaActiva()));
 
   /**
-   * `null` tanto si falta completar el borrador como si la validación está desactivada
-   * (spec 017): en ambos casos la UI no tiene faltas/avisos que pintar. `puedeGuardar` no
-   * depende de este resultado para el caso desactivado — ver más abajo.
+   * `null` si falta completar el borrador, si la validación está desactivada (spec 017), o si
+   * el sistema activo es de defensa: ahí la validación posicional no existe, no es un ajuste que
+   * se pueda desactivar (spec 021). `puedeGuardar` no depende de este resultado para esos casos
+   * — ver más abajo.
    */
   readonly resultadoValidacion = computed(() => {
-    if (this.validacionDesactivada()) {
+    if (this.validacionDesactivada() || this.sistemaActivo()?.tipo === 'defensa') {
       return null;
     }
     const posiciones = this.posicionesActivas();
@@ -81,9 +96,12 @@ export class SistemaStore {
     return posiciones && borrador.length === 6 ? validarFormacion(borrador, posiciones) : null;
   });
 
-  readonly puedeGuardar = computed(() =>
-    this.validacionDesactivada() ? this.borrador().length === 6 : this.resultadoValidacion()?.infracciones.length === 0,
-  );
+  readonly puedeGuardar = computed(() => {
+    if (this.sistemaActivo()?.tipo === 'defensa' || this.validacionDesactivada()) {
+      return this.borrador().length === 6;
+    }
+    return this.resultadoValidacion()?.infracciones.length === 0;
+  });
 
   readonly explicacionRotacionActiva = computed(
     () => this.sistemaActivo()?.explicacionesRotacion[this.rotacionActiva()] ?? '',
@@ -166,6 +184,18 @@ export class SistemaStore {
     this.cambiarContexto();
   }
 
+  seleccionarVia(via: ViaAtaque): void {
+    if (via === this.viaActiva()) {
+      return;
+    }
+    if (this.hayCambiosSinGuardar()) {
+      this.cambioPendiente.set({ tipo: 'via', valor: via });
+      return;
+    }
+    this.viaActiva.set(via);
+    this.cambiarContexto();
+  }
+
   seleccionarRotacion(rotacion: RotacionValida): void {
     if (rotacion === this.rotacionActiva()) {
       return;
@@ -186,6 +216,8 @@ export class SistemaStore {
     this.cambioPendiente.set(null);
     if (pendiente.tipo === 'rotacion') {
       this.rotacionActiva.set(pendiente.valor);
+    } else if (pendiente.tipo === 'via') {
+      this.viaActiva.set(pendiente.valor);
     } else {
       this.sistemaActivoId.set(pendiente.valor);
       this.rotacionActiva.set(1);
@@ -285,7 +317,10 @@ export class SistemaStore {
     if (!sistema || !this.puedeGuardar()) {
       return;
     }
-    const guardado = guardarFormacion(sistema, this.rotacionActiva(), this.borrador(), !this.validacionDesactivada());
+    const guardado =
+      sistema.tipo === 'defensa'
+        ? guardarFormacionDefensa(sistema, this.rotacionActiva(), this.viaActiva(), this.borrador())
+        : guardarFormacion(sistema, this.rotacionActiva(), this.borrador(), !this.validacionDesactivada());
     if (!guardado) {
       return;
     }

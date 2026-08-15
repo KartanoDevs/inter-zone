@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import type { TipoSistema } from '../../domain/modelos';
 import { Modal } from '../comun/modal';
 
@@ -8,9 +8,9 @@ export interface DatosSistema {
 }
 
 /**
- * Formulario de alta (crear) y edición (renombrar) de un sistema. La defensa se ve pero no
- * se puede elegir: es fase 2 del proyecto (spec 010, E5). Al renombrar, `mostrarTipo` se pone
- * a `false` porque el tipo no cambia una vez creado.
+ * Formulario de alta (crear) y edición (renombrar) de un sistema (spec 021: la defensa ya se
+ * puede elegir, no solo recepción). Al renombrar, `mostrarTipo` se pone a `false` porque el
+ * tipo no cambia una vez creado.
  */
 @Component({
   selector: 'app-dialogo-sistema',
@@ -27,7 +27,9 @@ export class DialogoSistema {
   readonly confirmar = output<DatosSistema>();
   readonly cancelar = output<void>();
 
+  protected readonly tipoSeleccionado = signal<TipoSistema>('recepcion');
+
   protected emitirConfirmacion(nombre: string): void {
-    this.confirmar.emit({ nombre, tipo: 'recepcion' });
+    this.confirmar.emit({ nombre, tipo: this.tipoSeleccionado() });
   }
 }

@@ -50,6 +50,19 @@ function sistema(id: string, nombre: string): Sistema {
   };
 }
 
+function sistemaDefensa(id: string, nombre: string): Sistema {
+  const [colocador] = PLANTILLA.ordenSaque;
+  return {
+    id,
+    nombre,
+    tipo: 'defensa',
+    plantilla: PLANTILLA,
+    formaciones: {},
+    explicacionesRotacion: {},
+    defensas: { 1: { z4: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } },
+  };
+}
+
 function crearRepositorio(almacen: AlmacenClaveValor = new AlmacenEnMemoria()): LocalStorageSistemaRepository {
   return new LocalStorageSistemaRepository(almacen, PLANTILLA);
 }
@@ -170,7 +183,7 @@ describe('LocalStorageSistemaRepository', () => {
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
 
     expect(Object.keys(guardado).sort()).toEqual(['data', 'version']);
-    expect(guardado.version).toBe(3);
+    expect(guardado.version).toBe(4);
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
   });
 
@@ -229,5 +242,15 @@ describe('LocalStorageSistemaRepository', () => {
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
     expect(guardado.data.sistemas[0].actualizadoEn).toBe('t2');
     expect(guardado.data.sistemas[0].creadoEn).toBe('t1');
+  });
+
+  it('021-E13 (persistencia): la defensa guardada, por rotación y vía, sobrevive a recargar', () => {
+    const repositorio = crearRepositorio();
+    const original = [sistemaDefensa('d1', 'Defensa')];
+
+    repositorio.guardar(original);
+    const resultado = repositorio.listar();
+
+    expect(resultado).toEqual(original);
   });
 });

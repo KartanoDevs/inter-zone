@@ -43,6 +43,23 @@
   stroke-width: 0.05;
 }
 
+.app-pista__rival-ficha {
+  cursor: grab;
+}
+
+.app-pista__rival-circulo {
+  fill: var(--bg-card);
+  stroke: var(--neon-pink);
+  stroke-width: 0.05;
+}
+
+.app-pista__rival-etiqueta {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.38px;
+  fill: var(--neon-pink);
+}
+
 .app-pista__rejilla-linea {
   stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 0.02;

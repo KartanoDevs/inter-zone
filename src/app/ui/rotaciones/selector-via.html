@@ -1,0 +1,14 @@
+<div class="app-selector" role="tablist" aria-label="Vía de ataque">
+  @for (via of vias; track via) {
+    <button
+      type="button"
+      role="tab"
+      class="app-selector__boton"
+      [class.app-selector__boton--activa]="via === viaActiva()"
+      [attr.aria-selected]="via === viaActiva()"
+      (click)="seleccionar.emit(via)"
+    >
+      {{ etiquetas[via] }}
+    </button>
+  }
+</div>

@@ -115,13 +115,36 @@ Con ese punto de vista, P4 queda a la izquierda y P2 a la derecha.
 - **Unidad: metros.** Siempre. Nunca píxeles en el modelo.
 - **Zona libre:** se admite `-2.5 ≤ x ≤ 11.5` y `0 ≤ y ≤ 12`. Un jugador puede estar
   fuera de las líneas en el momento del saque; es legal.
-- **Campo rival:** `y < 0`. No se usa en la v1, se reserva para los sistemas de defensa.
+- **Campo rival:** `y < 0`. Usado por los sistemas de defensa (spec 021) para marcar por dónde
+  ataca el rival.
 
 Referencias útiles: línea de ataque en `y = 3`. Centro del campo propio en `(4.5, 4.5)`.
+En el campo rival, su línea de ataque (equivalente a la propia) está en `y = -3`.
 
 Un jugador se representa por **un solo punto**. La regla real habla del pie más adelantado
 de cada jugador; para el propósito didáctico de esta herramienta, un punto por jugador es
 suficiente y evita un modelo mucho más complicado sin ganancia pedagógica.
+
+### Vía de ataque (sistemas de defensa)
+
+El rival mira la red desde el lado contrario, así que sus zonas salen **en espejo** respecto a
+las propias: su zona 4 (su ala izquierda) cae, vista desde nuestro fondo, a nuestra
+**derecha** — `x` alto — y su zona 2 a nuestra izquierda.
+
+| Vía | Condición | Lectura |
+|---|---|---|
+| `z2` | `y > -3` y `x < 3` | delantera rival, nuestro tercio izquierdo |
+| `z3` | `y > -3` y `3 ≤ x < 6` | delantera rival, tercio central |
+| `z4` | `y > -3` y `x ≥ 6` | delantera rival, nuestro tercio derecho |
+| `pipe` | `y ≤ -3` | zaga rival, cualquier `x` |
+
+La vía se **deriva** de dónde se coloca al rival en su campo; no se declara a mano y no se
+persiste una posición exacta — solo la vía ya resuelta (ver
+`docs/decisiones/0020-via-de-ataque-sin-posicion-persistida.md`). En defensa, el roster de cada
+rotación (titulares o líbero según toque) es el mismo que en recepción, y **no existe la
+validación de posición**: no es un ajuste desactivable, es que la falta posicional solo tiene
+sentido en el instante de la recepción del saque (§5), no en la defensa de un ataque ya en
+juego.
 
 ---
 

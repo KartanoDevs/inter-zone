@@ -8,12 +8,22 @@
     <fieldset class="app-dialogo-sistema__tipo">
       <legend>Tipo</legend>
       <label>
-        <input type="radio" name="tipo" checked />
+        <input
+          type="radio"
+          name="tipo"
+          [checked]="tipoSeleccionado() === 'recepcion'"
+          (change)="tipoSeleccionado.set('recepcion')"
+        />
         Recepción
       </label>
-      <label class="app-dialogo-sistema__tipo-deshabilitado">
-        <input type="radio" name="tipo" disabled />
-        Defensa (próximamente)
+      <label>
+        <input
+          type="radio"
+          name="tipo"
+          [checked]="tipoSeleccionado() === 'defensa'"
+          (change)="tipoSeleccionado.set('defensa')"
+        />
+        Defensa
       </label>
     </fieldset>
   }
