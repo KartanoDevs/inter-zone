@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import type { Formacion, OrdenSaque, Punto, Sistema, TipoSistema } from '../domain/modelos';
-import type { SistemaRepository } from '../domain/puertos';
+import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
@@ -41,6 +41,7 @@ export class SistemaStore {
   readonly borrador = signal<Formacion>([]);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
+  readonly validacionDesactivada = signal(false);
 
   readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
 
@@ -63,13 +64,23 @@ export class SistemaStore {
 
   readonly hayCambiosSinGuardar = computed(() => !formacionesIguales(this.borrador(), this.formacionGuardadaActiva()));
 
+  /**
+   * `null` tanto si falta completar el borrador como si la validación está desactivada
+   * (spec 017): en ambos casos la UI no tiene faltas/avisos que pintar. `puedeGuardar` no
+   * depende de este resultado para el caso desactivado — ver más abajo.
+   */
   readonly resultadoValidacion = computed(() => {
+    if (this.validacionDesactivada()) {
+      return null;
+    }
     const posiciones = this.posicionesActivas();
     const borrador = this.borrador();
     return posiciones && borrador.length === 6 ? validarFormacion(borrador, posiciones) : null;
   });
 
-  readonly puedeGuardar = computed(() => this.resultadoValidacion()?.infracciones.length === 0);
+  readonly puedeGuardar = computed(() =>
+    this.validacionDesactivada() ? this.borrador().length === 6 : this.resultadoValidacion()?.infracciones.length === 0,
+  );
 
   readonly explicacionRotacionActiva = computed(
     () => this.sistemaActivo()?.explicacionesRotacion[this.rotacionActiva()] ?? '',
@@ -87,11 +98,22 @@ export class SistemaStore {
     this.jugadorSeleccionadoId() ? this.explicacionJugadorSeleccionado() : this.explicacionRotacionActiva(),
   );
 
-  constructor(private readonly repositorio: SistemaRepository) {
+  constructor(
+    private readonly repositorio: SistemaRepository,
+    private readonly ajustesRepositorio?: AjustesRepository,
+  ) {
     const catalogo = ordenarCatalogo(repositorio.listar());
     this.sistemas.set(catalogo);
     this.sistemaActivoId.set(catalogo[0]?.id ?? null);
+    this.validacionDesactivada.set(ajustesRepositorio?.leer().validacionDesactivada ?? false);
     this.cambiarContexto();
+  }
+
+  /** Ver/ocultar faltas y avisos: desactivarla permite guardar cualquier formación completa (spec 017). */
+  alternarValidacion(): void {
+    const valor = !this.validacionDesactivada();
+    this.validacionDesactivada.set(valor);
+    this.ajustesRepositorio?.guardar({ validacionDesactivada: valor });
   }
 
   activarSistema(id: string): void {
@@ -165,13 +187,13 @@ export class SistemaStore {
     return true;
   }
 
-  /** A quién sustituye el líbero del sistema activo (spec 011, E14). */
-  cambiarSustitutoLibero(sustituidoId: string): void {
+  /** A quién sustituye el líbero del sistema activo, en una rotación concreta (spec 017). */
+  cambiarSustitutoLibero(rotacion: RotacionValida, sustituidoId: string | null): void {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return;
     }
-    this.reemplazarSistema(cambiarSustitutoLibero(sistema, sustituidoId));
+    this.reemplazarSistema(cambiarSustitutoLibero(sistema, rotacion, sustituidoId));
     this.borrador.set(this.formacionGuardadaActiva());
   }
 
@@ -226,7 +248,7 @@ export class SistemaStore {
     if (!sistema || !this.puedeGuardar()) {
       return;
     }
-    const guardado = guardarFormacion(sistema, this.rotacionActiva(), this.borrador());
+    const guardado = guardarFormacion(sistema, this.rotacionActiva(), this.borrador(), !this.validacionDesactivada());
     if (!guardado) {
       return;
     }

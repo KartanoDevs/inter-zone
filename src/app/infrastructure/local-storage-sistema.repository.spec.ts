@@ -32,7 +32,10 @@ function ordenConCentral2(): OrdenSaque {
 const PLANTILLA: PlantillaEquipo = {
   nombre: 'Equipo A',
   ordenSaque: ordenConCentral2(),
-  libero: { jugador: jugador('libero', 'libero'), sustituidoId: 'central2' },
+  libero: {
+    jugador: jugador('libero', 'libero'),
+    sustitutosPorRotacion: { 1: 'central2', 2: 'central2', 3: null, 4: null, 5: null, 6: 'central2' },
+  },
 };
 
 function sistema(id: string, nombre: string): Sistema {
@@ -167,8 +170,38 @@ describe('LocalStorageSistemaRepository', () => {
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
 
     expect(Object.keys(guardado).sort()).toEqual(['data', 'version']);
-    expect(guardado.version).toBe(2);
+    expect(guardado.version).toBe(3);
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
+  });
+
+  it('008-E4c (añadido en 017): una versión 2 con forma incompatible (sustitutoLibero único) tampoco se lee a ciegas', () => {
+    // Forma real de la spec 011: un único `sustitutoLibero` para las seis rotaciones, no
+    // `sustitutosLibero` por rotación (spec 017). Mismo motivo que 008-E4b: sin migración
+    // real, se trata como no legible en vez de interpretarla con las reglas nuevas.
+    const almacen = new AlmacenEnMemoria();
+    const bruto = JSON.stringify({
+      version: 2,
+      data: {
+        sistemas: [
+          {
+            id: 's1',
+            nombre: 'De la spec 011',
+            tipo: 'recepcion',
+            sustitutoLibero: 'central2',
+            formaciones: {},
+            explicacionesRotacion: {},
+            creadoEn: 't1',
+            actualizadoEn: 't1',
+          },
+        ],
+      },
+    });
+    almacen.setItem('interzone.sistemas', bruto);
+    const repositorio = crearRepositorio(almacen);
+
+    expect(() => repositorio.listar()).not.toThrow();
+    expect(repositorio.listar()).toEqual([]);
+    expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
   it('008-E9: la fecha de creación se fija una sola vez', () => {

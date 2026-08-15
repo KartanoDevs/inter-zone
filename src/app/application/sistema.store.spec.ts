@@ -27,7 +27,8 @@ function sistemaBase(id: string, nombre: string): Sistema {
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
+  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
+  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
 function sistemaConLibero(id: string, nombre: string): Sistema {
@@ -363,11 +364,11 @@ describe('SistemaStore', () => {
     expect(store.posicionesActivas()?.some((j) => j.id === 'libero')).toBe(false);
   });
 
-  it('011-E14: cambiar a quién sustituye el líbero se refleja en el sistema activo', () => {
+  it('011-E14 (revisa firma por rotación): cambiar a quién sustituye el líbero en R1 se refleja en el sistema activo', () => {
     const store = new SistemaStore(new RepositorioFake([sistemaConLibero('r1', 'Uno')]));
 
-    store.cambiarSustitutoLibero('opuesto');
+    store.cambiarSustitutoLibero(1, 'opuesto');
 
-    expect(store.sistemaActivo()?.plantilla.libero?.sustituidoId).toBe('opuesto');
+    expect(store.sistemaActivo()?.plantilla.libero?.sustitutosPorRotacion[1]).toBe('opuesto');
   });
 });

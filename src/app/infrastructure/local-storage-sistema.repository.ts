@@ -3,14 +3,15 @@ import type { SistemaRepository } from '../domain/puertos';
 
 const CLAVE = 'interzone.sistemas';
 /**
- * 2 desde la spec 011: la forma persistida de un sistema cambió (`ocupanteCasilla` ->
- * `sustitutoLibero`) sin que las reglas del juego cambiaran, así que hubo que subir la
- * versión aunque no exista todavía una `migrar()` real. Sin ella, cualquier versión que no
- * sea exactamente esta se trata como no legible — igual que una versión futura (spec 008,
- * E4) — en vez de intentar interpretarla con las reglas nuevas y arriesgarse a reventar o,
- * peor, a leerla mal en silencio.
+ * 3 desde la spec 017: la forma persistida del líbero cambió otra vez —`sustitutoLibero`
+ * (una cadena única para las seis rotaciones, spec 011) pasa a `sustitutosLibero` (un valor
+ * por rotación, spec 017)— sin que las reglas del juego cambiaran de nuevo. Mismo motivo que
+ * la subida de la 011 (de 1 a 2): sin `migrar()` real, cualquier versión que no sea
+ * exactamente esta se trata como no legible — igual que una versión futura (spec 008, E4) —
+ * en vez de intentar interpretarla con las reglas nuevas y arriesgarse a reventar o, peor, a
+ * leerla mal en silencio.
  */
-const VERSION_ACTUAL = 2;
+const VERSION_ACTUAL = 3;
 
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
@@ -29,8 +30,9 @@ interface SistemaPersistido {
   readonly id: string;
   readonly nombre: string;
   readonly tipo: TipoSistema;
-  /** A quién sustituye el líbero, si el sistema tiene uno. Ausente si no tiene líbero (spec 011). */
-  readonly sustitutoLibero?: string;
+  /** A quién sustituye el líbero en cada rotación, si el sistema tiene uno. Ausente si no
+   * tiene líbero; `null` en las rotaciones donde no sustituye a nadie (spec 017). */
+  readonly sustitutosLibero?: Readonly<Record<string, string | null>>;
   readonly formaciones: Readonly<Record<string, readonly PosicionPersistida[]>>;
   readonly explicacionesRotacion: Readonly<Record<string, string>>;
   readonly creadoEn: string;
@@ -116,7 +118,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       id: sistema.id,
       nombre: sistema.nombre,
       tipo: sistema.tipo,
-      sustitutoLibero: sistema.plantilla.libero?.sustituidoId,
+      sustitutosLibero: sistema.plantilla.libero?.sustitutosPorRotacion,
       formaciones,
       explicacionesRotacion: { ...sistema.explicacionesRotacion },
       creadoEn,
@@ -126,11 +128,21 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
 
   private aSistema(persistido: SistemaPersistido): Sistema {
     const plantilla: PlantillaEquipo =
-      persistido.sustitutoLibero === undefined
+      persistido.sustitutosLibero === undefined
         ? { nombre: this.plantilla.nombre, ordenSaque: this.plantilla.ordenSaque }
         : {
             ...this.plantilla,
-            libero: { jugador: this.plantilla.libero!.jugador, sustituidoId: persistido.sustitutoLibero },
+            libero: {
+              jugador: this.plantilla.libero!.jugador,
+              sustitutosPorRotacion: {
+                1: persistido.sustitutosLibero['1'] ?? null,
+                2: persistido.sustitutosLibero['2'] ?? null,
+                3: persistido.sustitutosLibero['3'] ?? null,
+                4: persistido.sustitutosLibero['4'] ?? null,
+                5: persistido.sustitutosLibero['5'] ?? null,
+                6: persistido.sustitutosLibero['6'] ?? null,
+              },
+            },
           };
     const jugadorPorId = new Map(plantilla.ordenSaque.map((jugador) => [jugador.id, jugador]));
     if (plantilla.libero) {
