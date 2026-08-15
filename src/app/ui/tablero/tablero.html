@@ -20,6 +20,7 @@
         [fichas]="fichas()"
         [idArrastrada]="idArrastrada()"
         [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
+        [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
         (fichaAgarrada)="onAgarrarFicha($event)"
         (abrirAjustes)="abrirAjustes()"
       ></app-pista>
@@ -93,10 +94,12 @@
       [validacionDesactivada]="store.validacionDesactivada()"
       [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
       [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
+      [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
       (cambiarSustituto)="cambiarSustitutoLibero($event)"
       (alternarValidacion)="alternarValidacion()"
       (alternarAyudaPosicion)="alternarAyudaPosicion()"
       (alternarOrdenRotacion)="alternarOrdenRotacion()"
+      (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
       (cerrar)="cerrarAjustes()"
     ></app-dialogo-ajustes>
   }

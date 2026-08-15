@@ -65,6 +65,15 @@
   stroke-width: 0.06;
 }
 
+.app-pista__numero-metro {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.3px;
+  fill: var(--text-muted);
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
 .app-pista__leyenda-boton {
   position: absolute;
   top: 5px;

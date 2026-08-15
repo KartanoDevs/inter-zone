@@ -2,10 +2,10 @@ import type { Ajustes, AjustesRepository } from '../domain/puertos';
 import type { AlmacenClaveValor } from './local-storage-sistema.repository';
 
 const CLAVE = 'interzone.ajustes';
-/** 3: se añadió `ordenRotacionCronologico` a la forma persistida. Sin `migrar()` real, un
+/** 4: se añadió `mostrarNumerosMetros` a la forma persistida. Sin `migrar()` real, un
  * payload de una versión anterior (sin ese campo) se trata como no legible, mismo patrón que
  * `LocalStorageSistemaRepository`. */
-const VERSION_ACTUAL = 3;
+const VERSION_ACTUAL = 4;
 
 interface Payload {
   readonly version: number;
@@ -16,6 +16,7 @@ const AJUSTES_POR_DEFECTO: Ajustes = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
+  mostrarNumerosMetros: false,
 };
 
 function esPayloadValido(valor: unknown): valor is Payload {
@@ -24,13 +25,19 @@ function esPayloadValido(valor: unknown): valor is Payload {
   }
   const conVersion = valor as {
     version?: unknown;
-    data?: { validacionDesactivada?: unknown; ayudaPosicionDesactivada?: unknown; ordenRotacionCronologico?: unknown };
+    data?: {
+      validacionDesactivada?: unknown;
+      ayudaPosicionDesactivada?: unknown;
+      ordenRotacionCronologico?: unknown;
+      mostrarNumerosMetros?: unknown;
+    };
   };
   return (
     typeof conVersion.version === 'number' &&
     typeof conVersion.data?.validacionDesactivada === 'boolean' &&
     typeof conVersion.data?.ayudaPosicionDesactivada === 'boolean' &&
-    typeof conVersion.data?.ordenRotacionCronologico === 'boolean'
+    typeof conVersion.data?.ordenRotacionCronologico === 'boolean' &&
+    typeof conVersion.data?.mostrarNumerosMetros === 'boolean'
   );
 }
 

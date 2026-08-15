@@ -44,6 +44,7 @@ export class SistemaStore {
   readonly validacionDesactivada = signal(false);
   readonly ayudaPosicionDesactivada = signal(false);
   readonly ordenRotacionCronologico = signal(false);
+  readonly mostrarNumerosMetros = signal(false);
 
   readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
 
@@ -111,6 +112,7 @@ export class SistemaStore {
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
     this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
+    this.mostrarNumerosMetros.set(ajustes?.mostrarNumerosMetros ?? false);
     this.cambiarContexto();
   }
 
@@ -135,11 +137,19 @@ export class SistemaStore {
     this.guardarAjustes();
   }
 
+  /** Ver/ocultar los números de metros a la izquierda de la rejilla. */
+  alternarMostrarNumerosMetros(): void {
+    const valor = !this.mostrarNumerosMetros();
+    this.mostrarNumerosMetros.set(valor);
+    this.guardarAjustes();
+  }
+
   private guardarAjustes(): void {
     this.ajustesRepositorio?.guardar({
       validacionDesactivada: this.validacionDesactivada(),
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
       ordenRotacionCronologico: this.ordenRotacionCronologico(),
+      mostrarNumerosMetros: this.mostrarNumerosMetros(),
     });
   }
 

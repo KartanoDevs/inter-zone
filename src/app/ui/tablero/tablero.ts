@@ -16,8 +16,8 @@ import { claveOrdenRol } from '../comun/orden-roles';
 import type { Colocacion, Formacion, Infraccion, Jugador, Punto, ResultadoValidacion, RolId } from '../../domain/modelos';
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
-// Orden cronológico de juego: el colocador recorre P1..P6 en el sentido de la rotación real
-// (spec 019/020), así que la secuencia de `Rn` que se juega en la pista es esta, no 1..6.
+// Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
+// al orden numérico simple — ajuste del usuario, ver DialogoAjustes.
 const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 
 // Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
@@ -326,6 +326,10 @@ export class Tablero {
 
   protected alternarOrdenRotacion(): void {
     this.store.alternarOrdenRotacion();
+  }
+
+  protected alternarMostrarNumerosMetros(): void {
+    this.store.alternarMostrarNumerosMetros();
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {

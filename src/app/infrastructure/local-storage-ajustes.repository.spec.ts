@@ -18,6 +18,7 @@ const AJUSTES_POR_DEFECTO = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
+  mostrarNumerosMetros: false,
 };
 
 describe('LocalStorageAjustesRepository', () => {
@@ -29,7 +30,12 @@ describe('LocalStorageAjustesRepository', () => {
 
   it('ida y vuelta sin pérdida', () => {
     const repositorio = new LocalStorageAjustesRepository(new AlmacenEnMemoria());
-    const ajustes = { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true };
+    const ajustes = {
+      validacionDesactivada: true,
+      ayudaPosicionDesactivada: true,
+      ordenRotacionCronologico: true,
+      mostrarNumerosMetros: true,
+    };
 
     repositorio.guardar(ajustes);
 
@@ -51,7 +57,12 @@ describe('LocalStorageAjustesRepository', () => {
       'interzone.ajustes',
       JSON.stringify({
         version: 999,
-        data: { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true },
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
+          mostrarNumerosMetros: true,
+        },
       }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
@@ -64,6 +75,21 @@ describe('LocalStorageAjustesRepository', () => {
     almacen.setItem(
       'interzone.ajustes',
       JSON.stringify({ version: 2, data: { validacionDesactivada: true, ayudaPosicionDesactivada: true } }),
+    );
+    const repositorio = new LocalStorageAjustesRepository(almacen);
+
+    expect(() => repositorio.leer()).not.toThrow();
+    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+  });
+
+  it('una versión 3 con forma incompatible (sin mostrarNumerosMetros) tampoco se lee a ciegas', () => {
+    const almacen = new AlmacenEnMemoria();
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({
+        version: 3,
+        data: { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true },
+      }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 

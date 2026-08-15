@@ -24,4 +24,13 @@
     <input type="checkbox" [checked]="ordenRotacionCronologico()" (change)="alternarOrdenRotacion.emit()" />
     Pestañas de rotación en orden de juego (R1, R6, R5, R4, R3, R2)
   </label>
+
+  <label class="app-ajustes__check">
+    <input
+      type="checkbox"
+      [checked]="mostrarNumerosMetros()"
+      (change)="alternarMostrarNumerosMetros.emit()"
+    />
+    Mostrar números de metros junto a la rejilla
+  </label>
 </app-modal>

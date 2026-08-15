@@ -64,11 +64,14 @@ export class Pista {
   readonly idArrastrada = input<string | null>(null);
   /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo cada ficha. */
   readonly mostrarPosicion = input(true);
+  /** Ajuste global: si se pintan los números de metros a la izquierda de la rejilla. */
+  readonly mostrarNumerosMetros = input(false);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly abrirAjustes = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+  protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
   protected readonly entradasLeyenda = ENTRADAS_LEYENDA;
   protected readonly leyendaAbierta = signal(false);
 
