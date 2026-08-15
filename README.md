@@ -88,5 +88,10 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.
 
+**Spec 017** no encaja en ningún paso de arriba: corrige y amplía el líbero por rotación y la
+validación del paso 3 tras usar la pizarra en la práctica (el líbero pasa de sustituir siempre al
+mismo titular a declararse rotación a rotación, y se puede desactivar la validación al enseñar
+una excepción). Se numera después de las specs ya reservadas (012–016) para no reordenarlas.
+
 Después de la v1: sistemas de defensa (V2), que reutilizan el mismo modelo de pista y de
 rejilla pero añaden bloqueo y atacante rival.
