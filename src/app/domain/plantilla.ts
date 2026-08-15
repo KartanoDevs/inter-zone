@@ -51,11 +51,14 @@ export function validarPlantilla(orden: OrdenSaque, configuracion: Configuracion
 }
 
 export function asignarIndices(orden: OrdenSaque, configuracion: ConfiguracionRoles): OrdenSaque {
-  const desdeColocador = formacionEnRotacion(orden, 1);
+  const [p1, p2, p3, p4, p5, p6] = formacionEnRotacion(orden, 1);
+  // El índice se cuenta en el sentido en que gira la rotación (P2→P1→P6→P5→P4→P3→P2),
+  // no en el orden en que se escribió `orden` (docs/dominio.md §2).
+  const enSentidoDeRotacion: OrdenSaque = [p1, p6, p5, p4, p3, p2];
 
   const indicesPorId = new Map<string, 1 | 2>();
   const contadores = new Map<RolId, number>();
-  for (const jugador of desdeColocador) {
+  for (const jugador of enSentidoDeRotacion) {
     if (!configuracion[jugador.rol].llevaIndice) {
       continue;
     }
