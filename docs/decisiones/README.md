@@ -23,7 +23,7 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0007](0007-validarformacion-infracciones-y-avisos.md) | `validarFormacion` devuelve infracciones y avisos por separado | Aceptada |
 | [0008](0008-plantilla-ts-aparte-de-roles-ts.md) | `plantilla.ts` como fichero de dominio aparte de `roles.ts` | Aceptada |
 | [0009](0009-central-usa-c-colision-por-etiqueta.md) | El central usa C como abreviatura; la colisión se compara por etiqueta, no por letra | Aceptada |
-| [0010](0010-rn-anclada-al-colocador.md) | `Rn` se numera anclada al colocador, no al orden de saque tal cual se definió | Aceptada |
+| [0010](0010-rn-anclada-al-colocador.md) | `Rn` se numera anclada al colocador, no al orden de saque tal cual se definió | Sustituida por 0018 |
 | [0011](0011-crearsistema-en-catalogo-sistemas.md) | `crearSistema` vive en `catalogo-sistemas.ts`, no en `sistema-recepcion.ts` | Aceptada |
 | [0012](0012-fechas-en-el-repositorio.md) | `creadoEn`/`actualizadoEn` viven en el repositorio, no en `Sistema` | Aceptada |
 | [0013](0013-plantilla-global-en-domain.md) | La plantilla global vive en `domain/`; el `SistemaStore` se cablea con `useFactory` | Aceptada |
@@ -31,3 +31,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0015](0015-sustituto-libero-por-rotacion-e-indice-de-rol.md) | El sustituto del líbero se declara por rotación; el índice de rol cuenta en sentido de rotación | Parcialmente sustituida por 0017 |
 | [0016](0016-modal-generico.md) | Un componente `Modal` genérico sustituye a las implementaciones paralelas de diálogo | Aceptada |
 | [0017](0017-indice-de-rol-declarado.md) | El índice de rol se declara, no se deriva | Aceptada |
+| [0018](0018-rn-es-la-rotacion-fisica.md) | `Rn` es la rotación física número n, no "el colocador ocupa Pn" | Aceptada |

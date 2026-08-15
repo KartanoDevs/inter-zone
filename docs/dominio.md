@@ -17,7 +17,7 @@ que aparecen en el código.
 |---|---|
 | **Posición rotacional** | Uno de los seis lugares P1..P6 que ocupa un jugador en el momento del saque. No es dónde está de verdad: es su obligación reglamentaria. |
 | **Rol** | La función del jugador en el equipo: colocador, receptor, central, líbero, opuesto. No cambia al rotar. |
-| **Rotación** | Estado del equipo identificado por en qué posición rotacional está el **colocador**. `Rn` significa "el colocador ocupa Pn". R1..R6. Solo coincide con "quién saca" (P1) en R1. |
+| **Rotación** | Estado del equipo tras `n-1` rotaciones físicas desde la formación de partida. `Rn` es la rotación física número n (ver §4), no "el colocador ocupa Pn" — solo coinciden en R1 y R4. R1..R6. |
 | **Orden de saque** | Los seis jugadores ordenados P1, P2, P3, P4, P5, P6 en la rotación inicial. Se define **una sola vez** por equipo. De él se derivan las otras cinco rotaciones. |
 | **Formación** | Dónde se coloca realmente cada jugador en el momento del saque contrario, para una rotación concreta. Es lo que diseña el entrenador. |
 | **Falta posicional** | Infracción por no respetar el orden relativo entre posiciones rotacionales en el instante del saque. |
@@ -145,13 +145,22 @@ cualquier rotación es **derivable**. Nunca se almacena; se calcula.
 
 ### Numeración de las rotaciones
 
-`Rn` significa siempre **"el colocador ocupa Pn"**, con independencia de cómo se definió el
-orden de saque. Es la convención habitual del sistema 5-1: R1 es la rotación en la que el
-colocador saca (zaga derecha), R3 es su posición natural de armado en la red, etc.
+`Rn` es **la rotación físicamente número n**: R1 es la formación de partida (el colocador en
+P1), y cada `Rn+1` es exactamente un paso de rotación real después de `Rn`, en el sentido ya
+descrito arriba (`P2→P1→P6→P5→P4→P3→P2`). El colocador recorre, en orden, **P1, P6, P5, P4, P3,
+P2** para R1..R6 — es la rotación física la que decide dónde cae, no al revés. R1 es la rotación
+en la que el colocador saca (zaga derecha); R5, no R3, es su posición natural de armado en el
+centro de la red.
 
-Esto es distinto de "rotar el orden de saque tal cual se definió", que depende de dónde
-empezó el entrenador a escribir la lista. Si el orden de saque no arranca con el colocador en
-P1, ambas numeraciones divergen. Ver `docs/decisiones/0010-rn-anclada-al-colocador.md`.
+**No es "el colocador ocupa Pn".** Esa lectura (ADR 0010) coincide con la rotación física real
+solo en R1 y R4, por una coincidencia aritmética, y falla en las otras cuatro — comprobado
+contra rotaciones reales de un 5-1 y contra `docs/voley/normas_posicion_recepcion_5_1.md`, que
+ya documentaba la secuencia correcta sin que nadie la hubiera contrastado. Ver
+`docs/decisiones/0018-rn-es-la-rotacion-fisica.md`.
+
+Lo que sí sigue igual: R1 se ancla al colocador, no a dónde empezó el entrenador a escribir la
+lista del orden de saque. Si el orden de saque no arranca con el colocador en P1, `Rn` para
+`n>1` se deriva igual a partir de ese anclaje.
 
 ---
 

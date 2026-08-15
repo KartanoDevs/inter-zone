@@ -1,6 +1,7 @@
 # 0010 — `Rn` se numera anclada al colocador, no al orden de saque tal cual se definió
 
-**Estado:** Aceptada
+**Estado:** Sustituida por 0018 (el anclaje al colocador para fijar R1 sigue vigente; "Rn =
+colocador en Pn" para n>1 no)
 
 **Contexto.** La decisión 0005 deriva las rotaciones rotando el orden de saque, pero no fija
 qué desplazamiento corresponde a cada `Rn`. El código lo resolvía numerando desde el orden tal
