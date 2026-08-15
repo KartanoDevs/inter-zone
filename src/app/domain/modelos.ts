@@ -28,12 +28,14 @@ export interface ColisionAbreviatura {
 export type OrdenSaque = readonly [Jugador, Jugador, Jugador, Jugador, Jugador, Jugador];
 
 /**
- * A quién sustituye el líbero. Un solo campo en vez de dos opcionales sueltos: no puede
- * existir un líbero declarado sin decidir a quién sustituye (spec 011).
+ * A quién sustituye el líbero, decidido rotación a rotación (spec 017): puede sustituir a un
+ * titular distinto en cada una de las seis, o a ninguno (`null`) en las que no entra a propósito.
+ * No puede existir un líbero declarado sin decidir, para las seis rotaciones, a quién sustituye
+ * — de ahí que el mapa cubra siempre 1..6, nunca un subconjunto (spec 011, precisado por 017).
  */
 export interface SustitucionLibero {
   readonly jugador: Jugador;
-  readonly sustituidoId: string;
+  readonly sustitutosPorRotacion: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, string | null>>;
 }
 
 /**

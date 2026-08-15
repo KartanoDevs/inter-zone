@@ -70,37 +70,40 @@ describe('puedeCrearPlantillaEquipo', () => {
 });
 
 describe('puedeCrearPlantillaEquipo con líbero', () => {
-  it('011-E1: declarar el líbero junto con a quién sustituye se acepta', () => {
+  it('011-E1 (revisa forma por 017): declarar el líbero junto con a quién sustituye en cada rotación se acepta', () => {
     const resultado = puedeCrearPlantillaEquipo(
       'Equipo A',
       ordenValidoEstandar(),
       CONFIGURACION_ROLES_POR_DEFECTO,
       [],
-      { jugador: jugador('libero', 'libero'), sustituidoId: 'central2' },
+      { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'central2', 2: null, 3: null, 4: null, 5: null, 6: null } },
     );
 
     expect(resultado).toBe(true);
   });
 
-  it('011-E4: el líbero puede sustituir a cualquier titular, no solo al central', () => {
+  it('011-E4 (revisa forma por 017): el líbero puede sustituir a cualquier titular, no solo al central', () => {
     const resultado = puedeCrearPlantillaEquipo(
       'Equipo A',
       ordenValidoEstandar(),
       CONFIGURACION_ROLES_POR_DEFECTO,
       [],
-      { jugador: jugador('libero', 'libero'), sustituidoId: 'opuesto' },
+      { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'opuesto', 2: null, 3: null, 4: null, 5: null, 6: null } },
     );
 
     expect(resultado).toBe(true);
   });
 
-  it('011-E12: sustituir a alguien que no es titular se rechaza', () => {
+  it('011-E12 (revisa 017-E9): sustituir a alguien que no es titular se rechaza, sea cual sea la rotación', () => {
     const resultado = puedeCrearPlantillaEquipo(
       'Equipo A',
       ordenValidoEstandar(),
       CONFIGURACION_ROLES_POR_DEFECTO,
       [],
-      { jugador: jugador('libero', 'libero'), sustituidoId: 'jugador-inexistente' },
+      {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: { 1: null, 2: null, 3: 'jugador-inexistente', 4: null, 5: null, 6: null },
+      },
     );
 
     expect(resultado).toBe(false);

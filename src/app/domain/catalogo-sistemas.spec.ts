@@ -28,7 +28,8 @@ function plantilla(): PlantillaEquipo {
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustituidoId } };
+  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
+  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
 describe('crearSistema', () => {
@@ -120,12 +121,13 @@ describe('ordenarCatalogo', () => {
 });
 
 describe('cambiarSustitutoLibero', () => {
-  it('011-E11: cambiar a quién sustituye el líbero purga lo que deja de valer', () => {
+  it('011-E11 (revisa firma por rotación, 017-E8): cambiar a quién sustituye el líbero en una rotación purga lo que deja de valer en esa rotación, sin afectar a las demás', () => {
     const plantillaCentral2 = plantillaConLibero('central2');
     const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
     const libero = plantillaCentral2.libero!.jugador;
     // R1: central2 es zaguero en esta plantilla -> juega el líbero por él. Opuesto también es
     // zaguero en R1, pero como el líbero sustituye a central2, opuesto juega de titular.
+    const formacionR2 = [{ jugador: colocador, punto: { x: 5, y: 5 } }];
     const sistema: Sistema = {
       id: 's1',
       nombre: 'Sistema',
@@ -140,14 +142,17 @@ describe('cambiarSustitutoLibero', () => {
           { jugador: libero, punto: { x: 4.5, y: 6 } },
           { jugador: opuesto, punto: { x: 8, y: 8 } },
         ],
+        2: formacionR2,
       },
       explicacionesRotacion: {},
     };
 
-    const resultado = cambiarSustitutoLibero(sistema, 'opuesto');
+    const resultado = cambiarSustitutoLibero(sistema, 1, 'opuesto');
 
     const idsEnR1 = resultado.formaciones[1]?.map((c) => c.jugador.id);
     expect(idsEnR1).not.toContain('opuesto');
     expect(idsEnR1).toContain('libero');
+    // 017-E8: la rotación 2 no ha cambiado su sustituto -> su formación queda intacta.
+    expect(resultado.formaciones[2]).toEqual(formacionR2);
   });
 });

@@ -1,23 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import type { Jugador, OrdenSaque, PlantillaEquipo } from './modelos';
-import { formacionEnRotacion, jugadoresEnPista, rotacionDe, rotar } from './rotacion';
+import { formacionEnRotacion, jugadoresEnPista, rotacionDe, rotar, sustitutosLiberoPorDefecto } from './rotacion';
 
 function jugador(id: string, rol: Jugador['rol']): Jugador {
   return { id, rol };
 }
 
+function ordenConLibero(): OrdenSaque {
+  return [
+    jugador('colocador', 'colocador'),
+    jugador('receptor1', 'receptor'),
+    jugador('central1', 'central'),
+    jugador('opuesto', 'opuesto'),
+    jugador('receptor2', 'receptor'),
+    jugador('central2', 'central'),
+  ];
+}
+
+/** Mismo sustituto para las seis rotaciones — el caso de la spec 011, antes de que la 017
+ * permitiera un valor distinto por rotación. Sigue siendo una plantilla válida: un mapa por
+ * rotación con el mismo valor en las seis. */
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
+  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
   return {
     nombre: 'Equipo A',
-    ordenSaque: [
-      jugador('colocador', 'colocador'),
-      jugador('receptor1', 'receptor'),
-      jugador('central1', 'central'),
-      jugador('opuesto', 'opuesto'),
-      jugador('receptor2', 'receptor'),
-      jugador('central2', 'central'),
-    ],
-    libero: { jugador: jugador('libero', 'libero'), sustituidoId },
+    ordenSaque: ordenConLibero(),
+    libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
   };
 }
 
@@ -193,5 +201,66 @@ describe('jugadoresEnPista', () => {
     };
 
     expect(jugadoresEnPista(plantilla, 3)).toEqual(formacionEnRotacion(plantilla.ordenSaque, 3));
+  });
+
+  it('017-E5: con el sustituto por defecto (rotación a rotación), el líbero juega las seis rotaciones', () => {
+    const orden = ordenConLibero();
+    const plantilla: PlantillaEquipo = {
+      nombre: 'Equipo A',
+      ordenSaque: orden,
+      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: sustitutosLiberoPorDefecto(orden) },
+    };
+
+    const rotacionesConLibero = [1, 2, 3, 4, 5, 6].filter((rotacion) =>
+      jugadoresEnPista(plantilla, rotacion).some((j) => j.id === 'libero'),
+    );
+
+    // A diferencia de la spec 011 (un único sustituto para las seis, líbero solo en tres),
+    // con un sustituto por rotación el líbero juega las seis.
+    expect(rotacionesConLibero).toHaveLength(6);
+  });
+
+  it('017-E6: elegir "ninguno" en una rotación deja jugando a los seis titulares en esa rotación, sin afectar a las demás', () => {
+    const orden = ordenConLibero();
+    const defecto = sustitutosLiberoPorDefecto(orden);
+    const plantilla: PlantillaEquipo = {
+      nombre: 'Equipo A',
+      ordenSaque: orden,
+      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { ...defecto, 1: null } },
+    };
+
+    const enR1 = jugadoresEnPista(plantilla, 1);
+    expect(enR1.some((j) => j.id === 'libero')).toBe(false);
+    expect(enR1).toEqual(formacionEnRotacion(orden, 1));
+
+    // R3 conserva su sustituto por defecto: no se ve afectada por lo declarado en R1.
+    const enR3 = jugadoresEnPista(plantilla, 3);
+    expect(enR3.some((j) => j.id === 'libero')).toBe(true);
+  });
+
+  it('017-E7: elegir un titular que en esa rotación juega de delantero no mete al líbero en pista', () => {
+    const orden = ordenConLibero();
+    // central1 ocupa P3 (delantero) en R1 con este orden.
+    const plantilla: PlantillaEquipo = {
+      nombre: 'Equipo A',
+      ordenSaque: orden,
+      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'central1', 2: null, 3: null, 4: null, 5: null, 6: null } },
+    };
+
+    const enR1 = jugadoresEnPista(plantilla, 1);
+
+    expect(enR1.some((j) => j.id === 'libero')).toBe(false);
+    expect(enR1.some((j) => j.id === 'central1')).toBe(true);
+  });
+});
+
+describe('sustitutosLiberoPorDefecto', () => {
+  it('017-E4: el defecto, rotación a rotación, es el central que cae en zaga en esa rotación', () => {
+    const orden = ordenConLibero(); // P3=central1 (delantero en R1), P6=central2 (zaguero en R1)
+
+    const defecto = sustitutosLiberoPorDefecto(orden);
+
+    expect(defecto[1]).toBe('central2'); // R1: central2 en zaga
+    expect(defecto[3]).toBe('central1'); // R3: central1 en zaga
   });
 });

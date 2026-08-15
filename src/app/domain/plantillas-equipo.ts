@@ -12,7 +12,10 @@ export function puedeCrearPlantillaEquipo(
     nombre.length > 0 &&
     !existentes.some((plantilla) => plantilla.nombre === nombre) &&
     validarPlantilla(ordenSaque, configuracion) &&
-    (libero === undefined || ordenSaque.some((jugador) => jugador.id === libero.sustituidoId))
+    (libero === undefined ||
+      Object.values(libero.sustitutosPorRotacion).every(
+        (sustituidoId) => sustituidoId === null || ordenSaque.some((jugador) => jugador.id === sustituidoId),
+      ))
   );
 }
 
