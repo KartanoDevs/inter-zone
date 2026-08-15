@@ -94,15 +94,11 @@ describe('guardarFormacion', () => {
 
   it('005-E4: un aviso al límite no bloquea el guardado', () => {
     const sistema = sistemaVacio();
-    const [colocador, receptor1, receptor2, central1, central2, opuesto] = sistema.plantilla.ordenSaque;
-    const formacionAlLimite: Formacion = [
-      { jugador: opuesto, punto: { x: 8, y: 8 } },
-      { jugador: colocador, punto: { x: 8, y: 1 } },
-      { jugador: receptor1, punto: { x: 4.5, y: 4 } },
-      { jugador: receptor2, punto: { x: 1, y: 1 } },
-      { jugador: central1, punto: { x: 1, y: 6 } },
-      { jugador: central2, punto: { x: 4.5, y: 4.03 } },
-    ];
+    const legal = formacionLegalR2(sistema.plantilla.ordenSaque); // ya en orden P1..P6
+    // Acerca al zaguero de P6 al delantero de P3 hasta dejar un margen de 3 cm (< ε = 5 cm).
+    const formacionAlLimite: Formacion = legal.map((c, indice) =>
+      indice === 5 ? { ...c, punto: { ...c.punto, y: legal[2].punto.y + 0.03 } } : c,
+    );
 
     const resultado = guardarFormacion(sistema, 2, formacionAlLimite);
 

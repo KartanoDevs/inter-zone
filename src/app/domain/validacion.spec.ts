@@ -345,7 +345,7 @@ describe('validarFormacion', () => {
     expect(enR1.infracciones.length).toBeGreaterThan(0);
   });
 
-  it('003-E8: la rotación pedida se interpreta como Rn anclada al colocador', () => {
+  it('003-E8 (revisa 019): la rotación pedida se interpreta como Rn de la rotación física, no "colocador en Pn"', () => {
     const opuesto = jugador('q1', 'opuesto');
     const receptor1 = jugador('q2', 'receptor');
     const colocador = jugador('q3', 'colocador');
@@ -362,7 +362,9 @@ describe('validarFormacion', () => {
       { jugador: receptor3, punto: { x: 4.5, y: 6 } },
     ];
 
-    const resultado = validarFormacion(formacion, formacionEnRotacion(orden, 3));
+    // Con el colocador en la posición 3 del orden de saque, la formación tal cual construida
+    // (sin rotar) es su R5 bajo la numeración por rotación física — no su R3.
+    const resultado = validarFormacion(formacion, formacionEnRotacion(orden, 5));
 
     expect(resultado.infracciones).toEqual([]);
   });
