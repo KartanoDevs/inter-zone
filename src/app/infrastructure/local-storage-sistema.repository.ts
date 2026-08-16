@@ -1,6 +1,7 @@
 import type { Celda, Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
 import { sistemaPorDefecto } from '../domain/sistema-por-defecto';
+import { sistemaDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 
 const CLAVE = 'interzone.sistemas';
 /**
@@ -78,14 +79,14 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
 
   /**
    * Sin nada legible (nunca se guardó nada, JSON roto, o versión distinta a la actual), se
-   * siembra el sistema de recepción por defecto (spec 025) en vez de devolver el catálogo
-   * vacío. Es distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un
-   * payload legible con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
+   * siembran los dos sistemas de ejemplo: recepción (spec 025) y defensa (spec 030). Es
+   * distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un payload legible
+   * con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
    */
   listar(): readonly Sistema[] {
     const payload = this.leerPayload();
     if (!payload) {
-      return [sistemaPorDefecto(this.plantilla)];
+      return [sistemaPorDefecto(this.plantilla), sistemaDefensaPorDefecto(this.plantilla)];
     }
     return payload.data.sistemas.map((persistido) => this.aSistema(persistido));
   }

@@ -81,6 +81,13 @@ Modelos y reglas. Aquí vive el voleibol.
   sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`, con
   el que arranca la app si el navegador no tiene nada guardado. Deriva el roster de cada
   rotación con `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
+- `sistema-defensa-por-defecto.ts` — `sistemaDefensaPorDefecto(plantilla): Sistema` (spec 030):
+  el sistema defensivo de `docs/voley/sistema_defensivo_unificado.md`, sembrado junto al de
+  recepción. Coloca **por zona física del campo, derivada del rol y de la línea** (líbero a la 5,
+  receptor zaguero a la 6, colocador u opuesto a la 1; central a la 3, receptor delantero a la 4,
+  colocador u opuesto a la 2), nunca por posición rotacional — de ahí que la geometría se declare
+  una sola vez por (zona, vía) y valga para las seis rotaciones. Es lo que distingue esta spec de
+  la 029, descartada por colocar por P1..P6.
 - `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
 
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
@@ -144,9 +151,10 @@ Adaptadores hacia el mundo exterior.
   rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
   rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
   Desde la versión 5 (spec 025) guarda `descripcion?`. Sin nada legible (nunca se guardó nada,
-  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` en vez de
-  devolver el catálogo vacío (ADR 0021) — un payload legible con `sistemas: []` sí se respeta
-  como catálogo vacío, no se siembra nada encima. Desde la spec 028, cada posición persistida
+  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` y
+  `sistemaDefensaPorDefecto` (spec 030) en vez de devolver el catálogo vacío (ADR 0021) — un
+  payload legible con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada
+  encima. Desde la spec 028, cada posición persistida
   guarda también `celdas?` (la zona de responsabilidad, specs 022/024) — antes se perdía al
   recargar; no subió la versión porque es una lectura/escritura nueva de un campo que antes se
   ignoraba del todo, no un cambio de significado de datos ya existentes.

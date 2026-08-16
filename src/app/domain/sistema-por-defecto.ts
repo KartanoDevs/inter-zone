@@ -147,7 +147,7 @@ export function sistemaPorDefecto(plantilla: PlantillaEquipo): Sistema {
   }
   return {
     id: 'sistema-por-defecto',
-    nombre: 'Recepción a 3 (5-1)',
+    nombre: 'TEST Recepción 5-1',
     tipo: 'recepcion',
     plantilla,
     formaciones,

@@ -12,8 +12,9 @@ sin cubrir.
 
 ## Qué hace (v1)
 
-- Arrancar con un sistema de ejemplo ya construido — la recepción a 3 en 5-1, con las seis
-  rotaciones colocadas y explicadas — si el navegador no tiene nada guardado.
+- Arrancar con dos sistemas de ejemplo ya construidos si el navegador no tiene nada guardado: la
+  recepción a 3 en 5-1 (seis rotaciones colocadas y explicadas) y la defensa especializada por
+  zonas (veinticuatro formaciones, con su zona de responsabilidad pintada).
 - Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
 - Crear, renombrar, clonar y borrar varios sistemas de recepción con nombre, cada uno ligado a
   una plantilla, y elegir con cuál se trabaja.
