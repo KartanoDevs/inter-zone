@@ -81,14 +81,6 @@ Modelos y reglas. Aquí vive el voleibol.
   sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`, con
   el que arranca la app si el navegador no tiene nada guardado. Deriva el roster de cada
   rotación con `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
-- `sistema-defensivo-por-defecto.ts` — `sistemaDefensivoPorDefecto(plantilla): Sistema` (spec
-  029): el sistema defensivo 2-1-3 de
-  `docs/voley/Guia_Sistema_Defensivo_2-1-3_Esquema_5-1.md`, sembrado junto al anterior. Solo
-  cubre las vías `z4` y `z2` (la guía no documenta `z3` ni `pipe`). Es puramente posicional:
-  quién bloquea, es off-blocker o defiende profundo depende solo de la posición rotacional
-  (P1..P6) y de la vía, nunca de la identidad del jugador — así que los puntos, celdas y
-  explicaciones por jugador se declaran una vez por (posición, vía) y se reutilizan en las seis
-  rotaciones, no seis veces como en la recepción.
 - `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
 
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
@@ -145,19 +137,16 @@ Adaptadores hacia el mundo exterior.
   inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
   Recibe también la plantilla real por constructor: en la v1 es una única constante de la
   aplicación, no un dato de dominio (ADR 0013).
-- Formato persistido: `{ "version": 5, "data": { "sistemas": [...] } }` (la versión no subió con
-  la spec 029: sembrar un segundo sistema por defecto no cambia la forma persistida). Cada
-  sistema
+- Formato persistido: `{ "version": 5, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
   0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
   cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
   rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
   rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
   Desde la versión 5 (spec 025) guarda `descripcion?`. Sin nada legible (nunca se guardó nada,
-  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` y, desde la
-  spec 029, también `sistemaDefensivoPorDefecto` — en vez de devolver el catálogo vacío (ADR
-  0021) — un payload legible con `sistemas: []` sí se respeta como catálogo vacío, no se siembra
-  nada encima. Desde la spec 028, cada posición persistida
+  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` en vez de
+  devolver el catálogo vacío (ADR 0021) — un payload legible con `sistemas: []` sí se respeta
+  como catálogo vacío, no se siembra nada encima. Desde la spec 028, cada posición persistida
   guarda también `celdas?` (la zona de responsabilidad, specs 022/024) — antes se perdía al
   recargar; no subió la versión porque es una lectura/escritura nueva de un campo que antes se
   ignoraba del todo, no un cambio de significado de datos ya existentes.

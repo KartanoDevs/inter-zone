@@ -1,7 +1,5 @@
 ﻿import { describe, expect, it } from 'vitest';
 import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
-import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
-import { sistemaDefensivoPorDefecto } from '../domain/sistema-defensivo-por-defecto';
 import { LocalStorageSistemaRepository, type AlmacenClaveValor } from './local-storage-sistema.repository';
 
 class AlmacenEnMemoria implements AlmacenClaveValor {
@@ -80,23 +78,23 @@ describe('LocalStorageSistemaRepository', () => {
     expect(resultado).toEqual(original);
   });
 
-  it('008-E2: un almacén vacío no da error (siembra los sistemas por defecto, specs 025 y 029)', () => {
+  it('008-E2: un almacén vacío no da error (siembra el sistema por defecto desde la spec 025)', () => {
     const repositorio = crearRepositorio();
 
     expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    expect(repositorio.listar()).toHaveLength(1);
   });
 
-  it('008-E3: datos corruptos no interrumpen el arranque (siembra los sistemas por defecto, specs 025 y 029)', () => {
+  it('008-E3: datos corruptos no interrumpen el arranque (siembra el sistema por defecto desde la spec 025)', () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem('interzone.sistemas', 'esto no es json{');
     const repositorio = crearRepositorio(almacen);
 
     expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    expect(repositorio.listar()).toHaveLength(1);
   });
 
-  it('008-E4: una versión futura desconocida no se sobrescribe al leer (siembra los sistemas por defecto, specs 025 y 029)', () => {
+  it('008-E4: una versión futura desconocida no se sobrescribe al leer (siembra el sistema por defecto desde la spec 025)', () => {
     const almacen = new AlmacenEnMemoria();
     const bruto = JSON.stringify({ version: 999, data: { sistemas: ['dato de una versión futura'] } });
     almacen.setItem('interzone.sistemas', bruto);
@@ -104,11 +102,11 @@ describe('LocalStorageSistemaRepository', () => {
 
     const resultado = repositorio.listar();
 
-    expect(resultado).toHaveLength(2);
+    expect(resultado).toHaveLength(1);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
-  it('008-E4b: una versión anterior con forma incompatible tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 029)', () => {
+  it('008-E4b: una versión anterior con forma incompatible tampoco se lee a ciegas (siembra el sistema por defecto desde la spec 025)', () => {
     // Forma real de antes de la spec 011: el líbero como discriminador `ocupanteCasilla`,
     // no como `sustitutoLibero`. Sin migración implementada, se trata como no legible —
     // igual que una versión futura — en vez de intentar leerla con las reglas nuevas.
@@ -134,7 +132,7 @@ describe('LocalStorageSistemaRepository', () => {
     const repositorio = crearRepositorio(almacen);
 
     expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    expect(repositorio.listar()).toHaveLength(1);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
@@ -190,7 +188,7 @@ describe('LocalStorageSistemaRepository', () => {
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
   });
 
-  it('008-E4c (añadido en 017): una versión 2 con forma incompatible (sustitutoLibero único) tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 029)', () => {
+  it('008-E4c (añadido en 017): una versión 2 con forma incompatible (sustitutoLibero único) tampoco se lee a ciegas (siembra el sistema por defecto desde la spec 025)', () => {
     // Forma real de la spec 011: un único `sustitutoLibero` para las seis rotaciones, no
     // `sustitutosLibero` por rotación (spec 017). Mismo motivo que 008-E4b: sin migración
     // real, se trata como no legible en vez de interpretarla con las reglas nuevas.
@@ -216,7 +214,7 @@ describe('LocalStorageSistemaRepository', () => {
     const repositorio = crearRepositorio(almacen);
 
     expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    expect(repositorio.listar()).toHaveLength(1);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
@@ -262,39 +260,10 @@ describe('LocalStorageSistemaRepository', () => {
 
     const resultado = repositorio.listar();
 
-    const recepcion = resultado.find((s) => s.tipo === 'recepcion');
-    expect(recepcion?.nombre).toBe('Recepción a 3 (5-1)');
-    expect(Object.keys(recepcion?.formaciones ?? {}).sort()).toEqual(['1', '2', '3', '4', '5', '6']);
-  });
-
-  it('029-E1: un almacén sin nada legible siembra también el sistema de defensa por defecto', () => {
-    const repositorio = crearRepositorio();
-
-    const resultado = repositorio.listar();
-
-    expect(resultado).toHaveLength(2);
-    const defensa = resultado.find((s) => s.tipo === 'defensa');
-    expect(defensa?.nombre).toBe('Defensa 2-1-3 (5-1)');
-  });
-
-  it('029-E11: con sistemas ya guardados, no se siembra ninguno de los dos por defecto', () => {
-    const repositorio = crearRepositorio();
-    repositorio.guardar([sistema('s1', 'Uno')]);
-
-    const resultado = repositorio.listar();
-
-    expect(resultado.map((s) => s.nombre)).toEqual(['Uno']);
-  });
-
-  it('029-E12: ida y vuelta conserva las doce formaciones del sistema de defensa por defecto, con sus zonas', () => {
-    const almacen = new AlmacenEnMemoria();
-    const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA_GLOBAL);
-    const original = sistemaDefensivoPorDefecto(PLANTILLA_GLOBAL);
-
-    repositorio.guardar([original]);
-    const resultado = repositorio.listar();
-
-    expect(resultado[0]?.defensas).toEqual(original.defensas);
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0]?.nombre).toBe('Recepción a 3 (5-1)');
+    expect(resultado[0]?.tipo).toBe('recepcion');
+    expect(Object.keys(resultado[0]?.formaciones ?? {}).sort()).toEqual(['1', '2', '3', '4', '5', '6']);
   });
 
   it('025-E12: con sistemas ya guardados, no se siembra nada', () => {

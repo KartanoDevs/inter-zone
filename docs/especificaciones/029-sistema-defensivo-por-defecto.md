@@ -1,6 +1,6 @@
 # 029 — Sistema defensivo 2-1-3 por defecto
 
-**Estado:** Completada
+**Estado:** Descartada
 **Paso de la hoja de ruta:** No encaja en ningún paso: siembra un segundo dato de ejemplo, como
 la spec 025.
 
@@ -183,3 +183,17 @@ que sembrar un segundo por defecto no necesitó ningún cableado nuevo — solo 
 **Lo que no se desvió:** la traducción de numeración guía↔app (idéntica a la de recepción,
 verificada de nuevo aquí) y las dos decisiones tomadas con el usuario (Z3/pipe sin formación,
 siembra de los dos sistemas a la vez) se implementaron tal cual. `docs/dominio.md` no se tocó.
+
+## Descartada
+
+El usuario pidió borrar el sistema de defensa por defecto: la geometría de puntos y zonas que
+esta spec tuvo que inventar para traducir las descripciones cualitativas de la guía (dónde
+exactamente se para cada defensor, qué celdas cubre cada uno) no refleja bien la táctica real.
+Se rehará como una spec nueva, con instrucciones más precisas sobre la geometría concreta.
+
+Revertido en un commit aparte: se borraron `domain/sistema-defensivo-por-defecto.ts` y su
+`.spec.ts`, la siembra doble en `LocalStorageSistemaRepository.listar()` (vuelve a sembrar solo
+la recepción, spec 025), y las menciones en `docs/arquitectura.md`/`README.md`. La spec 028
+(persistir `celdas`) no se revierte: es un arreglo real e independiente, no específico de este
+sistema. La guía (`docs/voley/Guia_Sistema_Defensivo_2-1-3_Esquema_5-1.md`) se conserva como
+referencia para cuando se retome.
