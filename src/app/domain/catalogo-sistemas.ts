@@ -40,6 +40,18 @@ export function describirSistema(sistema: Sistema, texto: string): Sistema {
   return { ...sistema, descripcion };
 }
 
+/**
+ * Duplica un sistema entero — mismo tipo, misma plantilla (con cualquier personalización del
+ * líbero que tuviera), formaciones, explicaciones y descripción — bajo un id y un nombre
+ * nuevos (spec 026). Mismas reglas de nombre que `crearSistema`/`renombrarSistema`.
+ */
+export function clonarSistema(sistema: Sistema, id: string, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
+  if (!nombreValido(nuevoNombre) || colisiona(existentes, null, sistema.tipo, nuevoNombre)) {
+    return null;
+  }
+  return { ...sistema, id, nombre: nuevoNombre };
+}
+
 const ORDEN_TIPO: Readonly<Record<TipoSistema, number>> = { recepcion: 0, defensa: 1 };
 
 export function ordenarCatalogo(sistemas: readonly Sistema[]): readonly Sistema[] {

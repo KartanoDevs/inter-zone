@@ -73,7 +73,8 @@ Modelos y reglas. Aquí vive el voleibol.
   `ordenarCatalogo`, `cambiarSustitutoLibero` (a quién sustituye el líbero, purgando cada
   formación con el roster que le toca en su propia rotación — ADR 0014), `describirSistema`
   (descripción general del sistema, spec 025; texto en blanco la borra, igual que
-  `explicarRotacion`).
+  `explicarRotacion`), `clonarSistema` (spec 026: duplica un sistema entero bajo un id y un
+  nombre nuevos; mismas reglas de nombre que `crearSistema`/`renombrarSistema`).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
@@ -117,9 +118,14 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   de la rejilla de responsabilidad de un jugador en el borrador, spec 022; si `celdas` era
   `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que pintar o borrar
   cualquiera de sus celdas materializa y congela la zona en vez de sustituirla), `guardar` (en
-  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`,
-  `renombrarActivo`, `borrar`, `seleccionarJugador`, `guardarExplicacion`, `guardarDescripcion`
-  (spec 025), `cambiarSustitutoLibero`.
+  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`, `clonar`
+  (spec 026, mismo patrón que `crear` pero a partir del sistema activo), `renombrarActivo`,
+  `borrar`, `seleccionarJugador` (toggle: toca a la misma ficha deselecciona, a otra cambia el
+  foco — spec 010), `enfocarJugador` (selecciona sin toggle, spec 027: se usa al terminar un
+  arrastre que coloca una ficha), `deseleccionarJugador` (spec 027: pinchar el fondo cuando no
+  tiene ya otro trabajo asignado — pintar zona, en defensa), `guardarExplicacion`,
+  `guardarDescripcion` (spec 025), `cambiarSustitutoLibero`. `quitar` también deselecciona si el
+  jugador quitado era el seleccionado (spec 027).
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -169,8 +175,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   `abierto` opcional, por defecto desplegado — spec 025 lo usa plegado para el panel de
   descripción del sistema). `Tablero` monta dos: uno para `descripcionSistemaActivo` y otro,
   el de siempre, para `explicacionMostrada`.
-- `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/borrar), `DialogoSistema`
-  (alta y edición, con el tipo de sistema seleccionable — spec 021).
+- `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/clonar/borrar — el botón de
+  clonar, spec 026, deshabilitado sin sistema activo igual que renombrar y borrar),
+  `DialogoSistema` (alta, edición y clonado — spec 026 añade un tercer modo en
+  `Tablero.dialogoSistema`, reutilizando el componente sin cambios: `mostrarTipo` en `false`
+  como al editar, `nombreInicial` con el nombre sugerido «‹Original› (copia)»).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
   el borrado de un sistema.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals

@@ -5,6 +5,7 @@
     (elegir)="elegirSistema($event)"
     (crear)="abrirCrear()"
     (editar)="abrirEditar()"
+    (clonar)="abrirClonar()"
     (borrar)="pedirBorrado()"
   ></app-barra-sistemas>
 
@@ -86,8 +87,8 @@
 
   @if (dialogoSistema(); as modo) {
     <app-dialogo-sistema
-      [titulo]="modo === 'crear' ? 'Nuevo sistema' : 'Renombrar sistema'"
-      [nombreInicial]="modo === 'editar' ? (store.sistemaActivo()?.nombre ?? '') : ''"
+      [titulo]="modo === 'crear' ? 'Nuevo sistema' : modo === 'clonar' ? 'Clonar sistema' : 'Renombrar sistema'"
+      [nombreInicial]="modo === 'editar' ? (store.sistemaActivo()?.nombre ?? '') : modo === 'clonar' ? nombreClonSugerido() : ''"
       [mostrarTipo]="modo === 'crear'"
       (confirmar)="confirmarDialogoSistema($event)"
       (cancelar)="cancelarDialogoSistema()"

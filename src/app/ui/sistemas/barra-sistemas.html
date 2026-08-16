@@ -25,6 +25,15 @@
   </button>
   <button
     type="button"
+    class="app-boton app-boton--secundario"
+    aria-label="Clonar sistema"
+    [disabled]="!sistemaActivoId()"
+    (click)="clonar.emit()"
+  >
+    ⧉
+  </button>
+  <button
+    type="button"
     class="app-boton app-boton--destructivo"
     aria-label="Borrar sistema"
     [disabled]="!sistemaActivoId()"

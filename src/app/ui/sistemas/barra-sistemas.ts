@@ -26,6 +26,7 @@ export class BarraSistemas {
   readonly elegir = output<string>();
   readonly crear = output<void>();
   readonly editar = output<void>();
+  readonly clonar = output<void>();
   readonly borrar = output<void>();
 
   protected onElegir(evento: Event): void {

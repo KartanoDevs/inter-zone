@@ -268,6 +268,72 @@ describe('SistemaStore', () => {
     expect(store.borrador()).toEqual([]);
   });
 
+  it('027-E1: enfocar un jugador lo deja seleccionado, sustituyendo a cualquier otro', () => {
+    const [colocador, receptor1] = plantilla().ordenSaque;
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+    store.seleccionarJugador(colocador.id);
+
+    store.enfocarJugador(receptor1.id);
+
+    expect(store.jugadorSeleccionadoId()).toBe(receptor1.id);
+  });
+
+  it('027-E3: quitar al jugador seleccionado lo deselecciona', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+    store.colocarOMover(colocador.id, { x: 1, y: 1 });
+    store.enfocarJugador(colocador.id);
+
+    store.quitar(colocador.id);
+
+    expect(store.jugadorSeleccionadoId()).toBeNull();
+  });
+
+  it('027-E3b: quitar a otro jugador no toca la selección actual', () => {
+    const [colocador, receptor1] = plantilla().ordenSaque;
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+    store.colocarOMover(receptor1.id, { x: 1, y: 1 });
+    store.enfocarJugador(colocador.id);
+
+    store.quitar(receptor1.id);
+
+    expect(store.jugadorSeleccionadoId()).toBe(colocador.id);
+  });
+
+  it('027-E4: deseleccionar limpia la selección', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+    store.seleccionarJugador(colocador.id);
+
+    store.deseleccionarJugador();
+
+    expect(store.jugadorSeleccionadoId()).toBeNull();
+  });
+
+  it('026-E10: clonar el sistema activo deja el clon activo, en R1', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const original: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } };
+    const store = new SistemaStore(new RepositorioFake([original]));
+    store.seleccionarRotacion(1);
+
+    const clonado = store.clonar('Uno (copia)');
+
+    expect(clonado).toBe(true);
+    expect(store.sistemaActivoId()).not.toBe('r1');
+    expect(store.sistemaActivo()?.nombre).toBe('Uno (copia)');
+    expect(store.rotacionActiva()).toBe(1);
+    expect(store.catalogo().map((s) => s.nombre)).toEqual(['Uno', 'Uno (copia)']);
+  });
+
+  it('026-E12 (aplicación): un nombre inválido no clona nada', () => {
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+
+    const clonado = store.clonar('Uno');
+
+    expect(clonado).toBe(false);
+    expect(store.catalogo().map((s) => s.id)).toEqual(['r1']);
+  });
+
   it('010-E6: renombrar el sistema activo actualiza su nombre', () => {
     const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
 

@@ -67,7 +67,7 @@ function indiceColorDe(jugador: Jugador): number {
 const RETARDO_ARRASTRE_MS = 150;
 const UMBRAL_ARRASTRE_PX = 8;
 
-type DialogoSistemaAbierto = 'crear' | 'editar' | null;
+type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
 interface Arrastre {
   readonly jugadorId: string;
@@ -319,6 +319,13 @@ export class Tablero {
 
   protected readonly tituloDescripcionSistema = computed(() => `Sistema · ${this.store.sistemaActivo()?.nombre ?? ''}`);
 
+  /** Nombre sugerido al abrir el diálogo de clonar (spec 026, E7): «‹Nombre del original›
+   * (copia)», editable antes de confirmar. */
+  protected readonly nombreClonSugerido = computed(() => {
+    const nombre = this.store.sistemaActivo()?.nombre;
+    return nombre ? `${nombre} (copia)` : '';
+  });
+
   protected readonly tituloEnsenanza = computed(() => {
     const base = `Enseñanza · R${this.store.rotacionActiva()}`;
     const seleccionadoId = this.store.jugadorSeleccionadoId();
@@ -359,13 +366,22 @@ export class Tablero {
     }
   }
 
+  protected abrirClonar(): void {
+    if (this.store.sistemaActivo()) {
+      this.dialogoSistema.set('clonar');
+    }
+  }
+
   protected cancelarDialogoSistema(): void {
     this.dialogoSistema.set(null);
   }
 
   protected confirmarDialogoSistema(datos: DatosSistema): void {
-    if (this.dialogoSistema() === 'crear') {
+    const modo = this.dialogoSistema();
+    if (modo === 'crear') {
       this.store.crear(datos.nombre, datos.tipo);
+    } else if (modo === 'clonar') {
+      this.store.clonar(datos.nombre);
     } else {
       this.store.renombrarActivo(datos.nombre);
     }
@@ -493,11 +509,17 @@ export class Tablero {
    * primer punto tocado decide el modo del trazo entero — pintar si esa celda no era suya,
    * borrar si ya lo era — para que un arrastre no alterne entre pintar y borrar celda a celda.
    * Si el trazo se cierra (vuelve cerca de donde empezó), al soltar se rellena lo que encierra
-   * (spec 024, E9-E11). Sin jugador seleccionado, o en recepción, el fondo se queda inerte.
+   * (spec 024, E9-E11). Sin jugador seleccionado, el fondo se queda inerte. En recepción, donde
+   * el fondo no pinta, pinchar fuera con alguien seleccionado lo deselecciona en su lugar (spec
+   * 027) — en defensa el fondo sigue pintando exactamente igual que hoy, sin ese atajo.
    */
   protected iniciarPintado(evento: PointerEvent): void {
     const jugadorId = this.store.jugadorSeleccionadoId();
-    if (!jugadorId || !this.esDefensa()) {
+    if (!jugadorId) {
+      return;
+    }
+    if (!this.esDefensa()) {
+      this.store.deseleccionarJugador();
       return;
     }
     evento.preventDefault();
@@ -623,6 +645,9 @@ export class Tablero {
         const pista = this.pistaCmp();
         if (pista.contiene(e)) {
           this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
+          // Terminar un arrastre que coloca la ficha la deja seleccionada (spec 027, E1/E2):
+          // venga de la pista (se reposiciona) o del banquillo (se coloca por primera vez).
+          this.store.enfocarJugador(jugadorId);
         } else if (origen === 'pista') {
           this.store.quitar(jugadorId);
         }

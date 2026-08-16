@@ -15,8 +15,8 @@ sin cubrir.
 - Arrancar con un sistema de ejemplo ya construido — la recepción a 3 en 5-1, con las seis
   rotaciones colocadas y explicadas — si el navegador no tiene nada guardado.
 - Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
-- Crear, renombrar y borrar varios sistemas de recepción con nombre, cada uno ligado a una
-  plantilla, y elegir con cuál se trabaja.
+- Crear, renombrar, clonar y borrar varios sistemas de recepción con nombre, cada uno ligado a
+  una plantilla, y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
   numeradas por dónde está el colocador).
 - El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la

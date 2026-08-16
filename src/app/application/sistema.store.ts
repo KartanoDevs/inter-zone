@@ -4,6 +4,7 @@ import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
+  clonarSistema,
   crearSistema,
   describirSistema,
   ordenarCatalogo,
@@ -265,6 +266,19 @@ export class SistemaStore {
     this.jugadorSeleccionadoId.update((actual) => (actual === jugadorId ? null : jugadorId));
   }
 
+  /** Selecciona a `jugadorId` directamente, sin toggle (spec 027): a diferencia de
+   * `seleccionarJugador`, no deselecciona si ya era el seleccionado. Se usa al terminar un
+   * arrastre que coloca una ficha, para que quede señalada. */
+  enfocarJugador(jugadorId: string): void {
+    this.jugadorSeleccionadoId.set(jugadorId);
+  }
+
+  /** Limpia la selección (spec 027): se usa al pinchar el fondo de la pista cuando no tiene ya
+   * otro trabajo asignado (pintar zona, en defensa). */
+  deseleccionarJugador(): void {
+    this.jugadorSeleccionadoId.set(null);
+  }
+
   crear(nombre: string, tipo: TipoSistema): boolean {
     const id = crypto.randomUUID();
     const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL, this.sistemas());
@@ -272,6 +286,25 @@ export class SistemaStore {
       return false;
     }
     this.sistemas.update((lista) => [...lista, nuevo]);
+    this.repositorio.guardar(this.sistemas());
+    this.sistemaActivoId.set(id);
+    this.rotacionActiva.set(1);
+    this.cambiarContexto();
+    return true;
+  }
+
+  /** Duplica el sistema activo bajo un nombre nuevo y lo deja activo (spec 026). */
+  clonar(nombre: string): boolean {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return false;
+    }
+    const id = crypto.randomUUID();
+    const clon = clonarSistema(sistema, id, nombre, this.sistemas());
+    if (!clon) {
+      return false;
+    }
+    this.sistemas.update((lista) => [...lista, clon]);
     this.repositorio.guardar(this.sistemas());
     this.sistemaActivoId.set(id);
     this.rotacionActiva.set(1);
@@ -352,8 +385,13 @@ export class SistemaStore {
     });
   }
 
+  /** Quita a `jugadorId` del borrador. Si era el seleccionado, lo deselecciona (spec 027): no
+   * tiene sentido dejar el panel de enseñanza mostrando a alguien que ya no está en la formación. */
   quitar(jugadorId: string): void {
     this.borrador.update((formacion) => formacion.filter((c) => c.jugador.id !== jugadorId));
+    if (this.jugadorSeleccionadoId() === jugadorId) {
+      this.jugadorSeleccionadoId.set(null);
+    }
   }
 
   /** Marca `celda` como responsabilidad de `jugadorId` (spec 022). Si todavía no tenía ninguna

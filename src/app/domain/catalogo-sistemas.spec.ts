@@ -3,6 +3,7 @@ import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
+  clonarSistema,
   crearSistema,
   describirSistema,
   ordenarCatalogo,
@@ -26,6 +27,14 @@ function ordenConCentral2(): OrdenSaque {
 
 function plantilla(): PlantillaEquipo {
   return { nombre: 'Equipo A', ordenSaque: ordenConCentral2() };
+}
+
+function sistema(id: string, nombre: string): Sistema {
+  return { id, nombre, tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+}
+
+function sistemaConLibero(id: string, nombre: string): Sistema {
+  return { id, nombre, tipo: 'recepcion', plantilla: plantillaConLibero('central2'), formaciones: {}, explicacionesRotacion: {} };
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
@@ -105,6 +114,90 @@ describe('borrarSistema', () => {
     const resultado = borrarSistema([uno, dos], 's1');
 
     expect(resultado).toEqual([dos]);
+  });
+});
+
+describe('clonarSistema', () => {
+  it('026-E1: clonar copia las seis formaciones', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const original: Sistema = {
+      id: 's1',
+      nombre: 'Original',
+      tipo: 'recepcion',
+      plantilla: plantilla(),
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }], 2: [{ jugador: colocador, punto: { x: 7, y: 1 } }] },
+      explicacionesRotacion: {},
+    };
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.formaciones).toEqual(original.formaciones);
+  });
+
+  it('026-E2: el clon copia la descripción general', () => {
+    const original: Sistema = { ...sistema('s1', 'Original'), descripcion: 'Recepción a 3 en 5-1.' };
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.descripcion).toBe('Recepción a 3 en 5-1.');
+  });
+
+  it('026-E3: el clon copia las explicaciones de rotación y de jugador', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const original: Sistema = {
+      ...sistema('s1', 'Original'),
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Explicación del jugador' }] },
+      explicacionesRotacion: { 1: 'Explicación de la rotación' },
+    };
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.explicacionesRotacion[1]).toBe('Explicación de la rotación');
+    expect(resultado?.formaciones[1]?.[0]?.explicacion).toBe('Explicación del jugador');
+  });
+
+  it('026-E4: el clon copia a quién sustituye el líbero en cada rotación', () => {
+    const original = sistemaConLibero('s1', 'Original');
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.plantilla.libero?.sustitutosPorRotacion).toEqual(original.plantilla.libero?.sustitutosPorRotacion);
+  });
+
+  it('026-E5: el clon es independiente, editarlo no toca el original', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const original: Sistema = { ...sistema('s1', 'Original'), formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } };
+
+    const clon = clonarSistema(original, 's2', 'Original (copia)', [original])!;
+    const clonEditado = { ...clon, formaciones: { ...clon.formaciones, 1: [{ jugador: colocador, punto: { x: 1, y: 1 } }] } };
+
+    expect(clonEditado.formaciones[1]?.[0]?.punto).toEqual({ x: 1, y: 1 });
+    expect(original.formaciones[1]?.[0]?.punto).toEqual({ x: 8, y: 1 });
+  });
+
+  it('026-E6: el clon nace con un id distinto', () => {
+    const original = sistema('s1', 'Original');
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.id).not.toBe(original.id);
+  });
+
+  it('026-E8: un nombre de clon repetido dentro del mismo tipo se rechaza', () => {
+    const original = sistema('s1', 'Original');
+    const otro: Sistema = { ...sistema('s2', 'Original (copia)') };
+
+    const resultado = clonarSistema(original, 's3', 'Original (copia)', [original, otro]);
+
+    expect(resultado).toBeNull();
+  });
+
+  it('026-E9: el clon es del mismo tipo que el original', () => {
+    const original: Sistema = { ...sistema('s1', 'Original'), tipo: 'defensa' };
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.tipo).toBe('defensa');
   });
 });
 
