@@ -1,6 +1,7 @@
-import type { Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
+import type { Celda, Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
 import { sistemaPorDefecto } from '../domain/sistema-por-defecto';
+import { sistemaDefensivoPorDefecto } from '../domain/sistema-defensivo-por-defecto';
 
 const CLAVE = 'interzone.sistemas';
 /**
@@ -23,6 +24,9 @@ interface PosicionPersistida {
   readonly x: number;
   readonly y: number;
   readonly explicacion?: string;
+  /** Zona de responsabilidad (spec 022/024). Ausente: nunca se tocó, se ve el bloque por
+   * defecto. `[]`: vaciada a propósito, sin defecto (spec 028). */
+  readonly celdas?: readonly Celda[];
 }
 
 interface SistemaPersistido {
@@ -75,14 +79,15 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
 
   /**
    * Sin nada legible (nunca se guardó nada, JSON roto, o versión distinta a la actual), se
-   * siembra el sistema de recepción por defecto (spec 025) en vez de devolver el catálogo
-   * vacío. Es distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un
-   * payload legible con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
+   * siembran los dos sistemas de ejemplo — recepción (spec 025) y defensa (spec 029) — en vez
+   * de devolver el catálogo vacío. Es distinto de "el usuario guardó un catálogo vacío a
+   * propósito": eso sí es un payload legible con `sistemas: []`, y ahí no se siembra nada
+   * (spec 025, E12-E13).
    */
   listar(): readonly Sistema[] {
     const payload = this.leerPayload();
     if (!payload) {
-      return [sistemaPorDefecto(this.plantilla)];
+      return [sistemaPorDefecto(this.plantilla), sistemaDefensivoPorDefecto(this.plantilla)];
     }
     return payload.data.sistemas.map((persistido) => this.aSistema(persistido));
   }
@@ -203,6 +208,7 @@ function posicionesPersistidasDe(formacion: Formacion): readonly PosicionPersist
     x: c.punto.x,
     y: c.punto.y,
     explicacion: c.explicacion,
+    celdas: c.celdas,
   }));
 }
 
@@ -212,7 +218,13 @@ function formacionDe(posiciones: readonly PosicionPersistida[], jugadorPorId: Re
     if (!jugador) {
       throw new Error(`Jugador desconocido en los datos guardados: ${p.jugadorId}`);
     }
-    const colocacion: Colocacion = { jugador, punto: { x: p.x, y: p.y } };
-    return p.explicacion === undefined ? colocacion : { ...colocacion, explicacion: p.explicacion };
+    let colocacion: Colocacion = { jugador, punto: { x: p.x, y: p.y } };
+    if (p.explicacion !== undefined) {
+      colocacion = { ...colocacion, explicacion: p.explicacion };
+    }
+    if (p.celdas !== undefined) {
+      colocacion = { ...colocacion, celdas: p.celdas };
+    }
+    return colocacion;
   });
 }
