@@ -5,6 +5,7 @@ import {
   borrarSistema,
   cambiarSustitutoLibero,
   crearSistema,
+  describirSistema,
   ordenarCatalogo,
   renombrarSistema,
 } from '../domain/catalogo-sistemas';
@@ -120,6 +121,9 @@ export class SistemaStore {
   readonly explicacionRotacionActiva = computed(
     () => this.sistemaActivo()?.explicacionesRotacion[this.rotacionActiva()] ?? '',
   );
+
+  /** Descripción general del sistema activo, independiente de la rotación (spec 025). */
+  readonly descripcionSistemaActivo = computed(() => this.sistemaActivo()?.descripcion ?? '');
 
   readonly explicacionJugadorSeleccionado = computed(() => {
     const id = this.jugadorSeleccionadoId();
@@ -322,6 +326,15 @@ export class SistemaStore {
       return;
     }
     this.reemplazarSistema(actualizado);
+  }
+
+  /** Cambia la descripción general del sistema activo (spec 025). */
+  guardarDescripcion(texto: string): void {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return;
+    }
+    this.reemplazarSistema(describirSistema(sistema, texto));
   }
 
   cancelarCambio(): void {

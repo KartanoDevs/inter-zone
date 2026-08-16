@@ -4,6 +4,7 @@ import {
   borrarSistema,
   cambiarSustitutoLibero,
   crearSistema,
+  describirSistema,
   ordenarCatalogo,
   renombrarSistema,
 } from './catalogo-sistemas';
@@ -117,6 +118,40 @@ describe('ordenarCatalogo', () => {
     const resultado = ordenarCatalogo([defensaB, recepcionB, defensaA, recepcionA]);
 
     expect(resultado.map((s) => s.nombre)).toEqual(['Recepción A', 'Recepción B', 'Defensa A', 'Defensa B']);
+  });
+});
+
+describe('crearSistema (spec 025)', () => {
+  it('025-E11: un sistema creado a mano nace sin descripción', () => {
+    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', plantilla(), []);
+
+    expect(resultado?.descripcion).toBeUndefined();
+  });
+});
+
+describe('describirSistema', () => {
+  it('025-E9: editar la descripción la deja guardada', () => {
+    const sistema: Sistema = { id: 's1', nombre: 'Uno', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+
+    const resultado = describirSistema(sistema, 'Recepción a 3 en 5-1.');
+
+    expect(resultado.descripcion).toBe('Recepción a 3 en 5-1.');
+  });
+
+  it('025-E10: vaciar el texto borra la descripción', () => {
+    const sistema: Sistema = {
+      id: 's1',
+      nombre: 'Uno',
+      tipo: 'recepcion',
+      plantilla: plantilla(),
+      formaciones: {},
+      explicacionesRotacion: {},
+      descripcion: 'Texto previo',
+    };
+
+    const resultado = describirSistema(sistema, '   ');
+
+    expect(resultado.descripcion).toBeUndefined();
   });
 });
 

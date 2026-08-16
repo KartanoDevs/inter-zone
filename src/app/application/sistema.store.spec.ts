@@ -351,6 +351,28 @@ describe('SistemaStore', () => {
     expect(colocacion?.explicacion).toBe('Explicación nueva del jugador');
   });
 
+  it('025 (aplicación): sin descripción, el store la muestra vacía', () => {
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+
+    expect(store.descripcionSistemaActivo()).toBe('');
+  });
+
+  it('025 (aplicación): la descripción del sistema activo se lee del store', () => {
+    const conDescripcion: Sistema = { ...sistemaBase('r1', 'Uno'), descripcion: 'Recepción a 3 en 5-1.' };
+    const store = new SistemaStore(new RepositorioFake([conDescripcion]));
+
+    expect(store.descripcionSistemaActivo()).toBe('Recepción a 3 en 5-1.');
+  });
+
+  it('025 (aplicación): guardar la descripción la deja en el sistema activo', () => {
+    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+
+    store.guardarDescripcion('Texto nuevo del sistema');
+
+    expect(store.sistemaActivo()?.descripcion).toBe('Texto nuevo del sistema');
+    expect(store.descripcionSistemaActivo()).toBe('Texto nuevo del sistema');
+  });
+
   it('011-E13: quién está disponible cambia con la rotación — el líbero solo cuando le toca', () => {
     const store = new SistemaStore(new RepositorioFake([sistemaConLibero('r1', 'Uno')]));
 

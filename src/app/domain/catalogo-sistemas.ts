@@ -33,6 +33,13 @@ export function borrarSistema(sistemas: readonly Sistema[], id: string): readonl
   return sistemas.filter((sistema) => sistema.id !== id);
 }
 
+/** Cambia la descripción general del sistema (spec 025). Texto en blanco la borra, igual que
+ * `explicarRotacion` con la explicación de una rotación. */
+export function describirSistema(sistema: Sistema, texto: string): Sistema {
+  const descripcion = texto.trim().length === 0 ? undefined : texto;
+  return { ...sistema, descripcion };
+}
+
 const ORDEN_TIPO: Readonly<Record<TipoSistema, number>> = { recepcion: 0, defensa: 1 };
 
 export function ordenarCatalogo(sistemas: readonly Sistema[]): readonly Sistema[] {

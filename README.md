@@ -12,6 +12,8 @@ sin cubrir.
 
 ## Qué hace (v1)
 
+- Arrancar con un sistema de ejemplo ya construido — la recepción a 3 en 5-1, con las seis
+  rotaciones colocadas y explicadas — si el navegador no tiene nada guardado.
 - Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
 - Crear, renombrar y borrar varios sistemas de recepción con nombre, cada uno ligado a una
   plantilla, y elegir con cuál se trabaja.
@@ -22,8 +24,8 @@ sin cubrir.
 - Bloquear el guardado de una rotación que cometa falta de posición.
 - Crear sistemas de defensa: colocar a los seis defensores por rotación y por vía de ataque
   del rival (zona 4, zona 3, zona 2, pipe), sin validación de posición.
-- Escribir por qué se coloca así una rotación, o un jugador dentro de ella — enseñanza, no
-  solo geometría.
+- Escribir por qué se coloca así una rotación, un jugador dentro de ella, o el sistema entero
+  — enseñanza, no solo geometría.
 - Pintar sobre una rejilla la zona de responsabilidad de cada receptor.
 - Detectar huecos (nadie cubre) y conflictos (dos o más se pisan).
 - Consultar un sistema guardado, rotación a rotación, en solo lectura.

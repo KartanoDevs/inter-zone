@@ -62,6 +62,8 @@ export interface Sistema {
   readonly tipo: TipoSistema;
   readonly plantilla: PlantillaEquipo;
   readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
+  /** Explicación general del sistema, independiente de cualquier rotación. Voluntaria (spec 025). */
+  readonly descripcion?: string;
   /** Explicación de enseñanza de conjunto para cada rotación guardada. Voluntaria. */
   readonly explicacionesRotacion: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>>>;
   /** Formaciones de defensa, por rotación y por vía de ataque (spec 021). Ausente en un sistema

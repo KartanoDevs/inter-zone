@@ -1,15 +1,16 @@
 import type { Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
+import { sistemaPorDefecto } from '../domain/sistema-por-defecto';
 
 const CLAVE = 'interzone.sistemas';
 /**
- * 4 desde la spec 021: se añade `defensas` (formaciones de defensa, por rotación y por vía de
- * ataque) a la forma persistida. Mismo motivo que las subidas anteriores: sin `migrar()` real,
- * cualquier versión que no sea exactamente esta se trata como no legible — igual que una
- * versión futura (spec 008, E4) — en vez de intentar interpretarla con las reglas nuevas y
- * arriesgarse a reventar o, peor, a leerla mal en silencio.
+ * 5 desde la spec 025: se añade `descripcion` (descripción general del sistema, independiente
+ * de cualquier rotación) a la forma persistida. Mismo motivo que las subidas anteriores: sin
+ * `migrar()` real, cualquier versión que no sea exactamente esta se trata como no legible —
+ * igual que una versión futura (spec 008, E4) — en vez de intentar interpretarla con las
+ * reglas nuevas y arriesgarse a reventar o, peor, a leerla mal en silencio.
  */
-const VERSION_ACTUAL = 4;
+const VERSION_ACTUAL = 5;
 
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
@@ -28,6 +29,8 @@ interface SistemaPersistido {
   readonly id: string;
   readonly nombre: string;
   readonly tipo: TipoSistema;
+  /** Descripción general del sistema. Ausente si no se ha escrito ninguna (spec 025). */
+  readonly descripcion?: string;
   /** A quién sustituye el líbero en cada rotación, si el sistema tiene uno. Ausente si no
    * tiene líbero; `null` en las rotaciones donde no sustituye a nadie (spec 017). */
   readonly sustitutosLibero?: Readonly<Record<string, string | null>>;
@@ -70,9 +73,18 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
     private readonly ahora: () => string = () => new Date().toISOString(),
   ) {}
 
+  /**
+   * Sin nada legible (nunca se guardó nada, JSON roto, o versión distinta a la actual), se
+   * siembra el sistema de recepción por defecto (spec 025) en vez de devolver el catálogo
+   * vacío. Es distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un
+   * payload legible con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
+   */
   listar(): readonly Sistema[] {
     const payload = this.leerPayload();
-    return payload ? payload.data.sistemas.map((persistido) => this.aSistema(persistido)) : [];
+    if (!payload) {
+      return [sistemaPorDefecto(this.plantilla)];
+    }
+    return payload.data.sistemas.map((persistido) => this.aSistema(persistido));
   }
 
   guardar(sistemas: readonly Sistema[]): void {
@@ -125,6 +137,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       id: sistema.id,
       nombre: sistema.nombre,
       tipo: sistema.tipo,
+      descripcion: sistema.descripcion,
       sustitutosLibero: sistema.plantilla.libero?.sustitutosPorRotacion,
       formaciones,
       defensas,
@@ -178,6 +191,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       plantilla,
       formaciones,
       defensas,
+      descripcion: persistido.descripcion,
       explicacionesRotacion: { ...persistido.explicacionesRotacion },
     };
   }

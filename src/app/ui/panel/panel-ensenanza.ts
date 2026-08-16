@@ -16,6 +16,8 @@ import { Modal } from '../comun/modal';
 export class PanelEnsenanza {
   readonly titulo = input.required<string>();
   readonly texto = input.required<string>();
+  /** Si el panel arranca desplegado o plegado. Por defecto desplegado. */
+  readonly abierto = input(true);
 
   readonly guardar = output<string>();
 

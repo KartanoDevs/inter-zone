@@ -28,7 +28,8 @@ Modelos y reglas. Aquí vive el voleibol.
 
 - `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `OrdenSaque`, `PlantillaEquipo`,
   `TipoSistema`, `ViaAtaque`, `Celda`, `Sistema` (con `formaciones` para recepción y `defensas`
-  —por rotación y por vía, spec 021— para defensa), `Colocacion` (con `celdas?`, la rejilla de
+  —por rotación y por vía, spec 021— para defensa, y `descripcion?` — descripción general
+  independiente de la rotación, spec 025), `Colocacion` (con `celdas?`, la rejilla de
   responsabilidad de ese jugador en esa formación, solo en defensa desde la spec 024),
   `Formacion`, `Infraccion`, `Aviso`, `ResultadoValidacion`. Desde la spec 024, `celdas`
   distingue dos estados que antes eran indistinguibles: `undefined` es "nunca tocada" (se
@@ -70,9 +71,15 @@ Modelos y reglas. Aquí vive el voleibol.
   nada de líberos (ADR 0014).
 - `catalogo-sistemas.ts` — `crearSistema`, `renombrarSistema`, `borrarSistema`,
   `ordenarCatalogo`, `cambiarSustitutoLibero` (a quién sustituye el líbero, purgando cada
-  formación con el roster que le toca en su propia rotación — ADR 0014).
+  formación con el roster que le toca en su propia rotación — ADR 0014), `describirSistema`
+  (descripción general del sistema, spec 025; texto en blanco la borra, igual que
+  `explicarRotacion`).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
+- `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
+  sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`, con
+  el que arranca la app si el navegador no tiene nada guardado. Deriva el roster de cada
+  rotación con `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
 - `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
 
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
@@ -100,8 +107,10 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   en defensa), `hayCambiosSinGuardar`, `resultadoValidacion` (siempre `null` en defensa: no es
   que la validación esté desactivada, es que no existe), `puedeGuardar` (en defensa, solo exige
   los seis colocados), `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno
-  la de la rotación), `celdasJugadorSeleccionado` (spec 024: las celdas del jugador
-  seleccionado, o su bloque por defecto si no tiene ninguna; siempre vacío fuera de defensa).
+  la de la rotación), `descripcionSistemaActivo` (spec 025: la descripción general del sistema
+  activo, o cadena vacía si no tiene), `celdasJugadorSeleccionado` (spec 024: las celdas del
+  jugador seleccionado, o su bloque por defecto si no tiene ninguna; siempre vacío fuera de
+  defensa).
 - Acciones: `activarSistema`, `seleccionarRotacion`, `seleccionarVia`,
   `confirmarCambio`/`cancelarCambio`, `colocarOMover` (conserva `celdas` y `explicacion` de la
   colocación previa), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o quitan una celda
@@ -109,8 +118,8 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que pintar o borrar
   cualquiera de sus celdas materializa y congela la zona en vez de sustituirla), `guardar` (en
   defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`,
-  `renombrarActivo`, `borrar`, `seleccionarJugador`, `guardarExplicacion`,
-  `cambiarSustitutoLibero`.
+  `renombrarActivo`, `borrar`, `seleccionarJugador`, `guardarExplicacion`, `guardarDescripcion`
+  (spec 025), `cambiarSustitutoLibero`.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -122,12 +131,16 @@ Adaptadores hacia el mundo exterior.
   inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
   Recibe también la plantilla real por constructor: en la v1 es una única constante de la
   aplicación, no un dato de dominio (ADR 0013).
-- Formato persistido: `{ "version": 4, "data": { "sistemas": [...] } }`. Cada sistema
+- Formato persistido: `{ "version": 5, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
   0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
   cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
   rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
   rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
+  Desde la versión 5 (spec 025) guarda `descripcion?`. Sin nada legible (nunca se guardó nada,
+  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` en vez de
+  devolver el catálogo vacío (ADR 0021) — un payload legible con `sistemas: []` sí se respeta
+  como catálogo vacío, no se siembra nada encima.
 - `LocalStorageAjustesRepository implements AjustesRepository`, mismo patrón (versión + data)
   pero bajo su propia clave: los ajustes (por ahora, si la validación de posiciones está
   desactivada) son globales a la app, no de un sistema concreto (ADR 0015).
@@ -152,7 +165,10 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6) y `SelectorVia` (pestañas de vía,
   solo en defensa, spec 021).
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
-  `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable).
+  `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable; input
+  `abierto` opcional, por defecto desplegado — spec 025 lo usa plegado para el panel de
+  descripción del sistema). `Tablero` monta dos: uno para `descripcionSistemaActivo` y otro,
+  el de siempre, para `explicacionMostrada`.
 - `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/borrar), `DialogoSistema`
   (alta y edición, con el tipo de sistema seleccionable — spec 021).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar

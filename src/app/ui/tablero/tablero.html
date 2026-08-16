@@ -47,6 +47,13 @@
   <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
 
   <app-panel-ensenanza
+    [titulo]="tituloDescripcionSistema()"
+    [texto]="store.descripcionSistemaActivo()"
+    [abierto]="false"
+    (guardar)="guardarDescripcionSistema($event)"
+  ></app-panel-ensenanza>
+
+  <app-panel-ensenanza
     [titulo]="tituloEnsenanza()"
     [texto]="store.explicacionMostrada()"
     (guardar)="guardarExplicacion($event)"

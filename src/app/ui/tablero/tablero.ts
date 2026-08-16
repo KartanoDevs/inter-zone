@@ -317,6 +317,8 @@ export class Tablero {
     this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
   );
 
+  protected readonly tituloDescripcionSistema = computed(() => `Sistema · ${this.store.sistemaActivo()?.nombre ?? ''}`);
+
   protected readonly tituloEnsenanza = computed(() => {
     const base = `Enseñanza · R${this.store.rotacionActiva()}`;
     const seleccionadoId = this.store.jugadorSeleccionadoId();
@@ -390,6 +392,10 @@ export class Tablero {
 
   protected guardarExplicacion(texto: string): void {
     this.store.guardarExplicacion(texto);
+  }
+
+  protected guardarDescripcionSistema(texto: string): void {
+    this.store.guardarDescripcion(texto);
   }
 
   protected onAgarrarPaleta(chip: ChipAgarrado): void {
