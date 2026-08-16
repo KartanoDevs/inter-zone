@@ -7,7 +7,7 @@
   aria-label="Pista de voleibol con la formación de la rotación activa"
   (pointerdown)="fondoAgarrado.emit($event)"
 >
-  @if (vistaConjunto()) {
+  @if (mostrarZonas()) {
     <defs>
       @for (patron of patronesFranjas(); track patron.id) {
         <pattern
@@ -68,7 +68,7 @@
   <rect class="app-pista__borde-campo" x="0" y="0" width="9" height="9"></rect>
   <line class="app-pista__red" x1="0" y1="0" x2="9" y2="0"></line>
 
-  @if (vistaConjunto()) {
+  @if (mostrarZonas()) {
     <g class="app-pista__celdas-conjunto">
       @for (celda of celdasVistaConjunto(); track celda.columna + '-' + celda.fila) {
         <rect
@@ -78,18 +78,7 @@
           [attr.width]="tamanoCelda"
           [attr.height]="tamanoCelda"
           [attr.fill]="rellenoDe(celda)"
-        ></rect>
-      }
-    </g>
-  } @else {
-    <g class="app-pista__celdas-pintadas">
-      @for (celda of celdasPintadas(); track celda.columna + '-' + celda.fila) {
-        <rect
-          class="app-pista__celda-pintada"
-          [attr.x]="celda.columna * tamanoCelda"
-          [attr.y]="celda.fila * tamanoCelda"
-          [attr.width]="tamanoCelda"
-          [attr.height]="tamanoCelda"
+          [attr.opacity]="opacidadDe(celda)"
         ></rect>
       }
     </g>
@@ -125,17 +114,7 @@
 
 <button type="button" class="app-pista__ajustes-boton" aria-label="Ajustes" (click)="abrirAjustes.emit()">⚙</button>
 
-<button
-  type="button"
-  class="app-pista__conjunto-boton"
-  [class.app-pista__conjunto-boton--activo]="vistaConjunto()"
-  aria-label="Ver todas las zonas de responsabilidad"
-  (click)="alternarVistaConjunto.emit()"
->
-  ◈
-</button>
-
-@if (vistaConjunto()) {
+@if (mostrarZonas()) {
   <div class="app-pista__leyenda-colores">
     @for (entrada of leyendaVistaConjunto(); track entrada.etiqueta) {
       <div class="app-pista__leyenda-colores-fila">

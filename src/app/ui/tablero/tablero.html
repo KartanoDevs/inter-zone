@@ -27,15 +27,14 @@
         [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
         [mostrarRival]="esDefensa()"
         [viaActiva]="store.viaActiva()"
-        [celdasPintadas]="celdasJugadorSeleccionado()"
-        [vistaConjunto]="vistaConjunto()"
+        [mostrarZonas]="esDefensa()"
         [celdasVistaConjunto]="celdasVistaConjunto()"
         [leyendaVistaConjunto]="leyendaVistaConjunto()"
+        [indiceColorSeleccionado]="indiceColorSeleccionado()"
         (fichaAgarrada)="onAgarrarFicha($event)"
         (rivalAgarrado)="onAgarrarRival($event)"
         (fondoAgarrado)="iniciarPintado($event)"
         (abrirAjustes)="abrirAjustes()"
-        (alternarVistaConjunto)="alternarVistaConjunto()"
       ></app-pista>
       <app-panel-validacion
         [completo]="completo()"

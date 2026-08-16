@@ -13,7 +13,7 @@ import { SistemaStore, type RotacionValida } from '../../application/sistema.sto
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { viaDeAtaque } from '../../domain/defensa';
-import { celdaDe } from '../../domain/rejilla';
+import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
 import type {
@@ -163,8 +163,6 @@ export class Tablero {
   protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
   protected readonly confirmandoBorrado = signal(false);
   protected readonly ajustesAbierto = signal(false);
-  /** Vista de conjunto (spec 023): efímera, nunca persiste — cada carga empieza en modo pintar. */
-  protected readonly vistaConjunto = signal(false);
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -202,22 +200,26 @@ export class Tablero {
     });
   });
 
-  /** Celdas del jugador seleccionado (spec 022): es a quien pinta el modo pintar. */
-  protected readonly celdasJugadorSeleccionado = computed<readonly Celda[]>(() => {
+  /** Índice de color del jugador seleccionado (spec 024): qué zona de `celdasVistaConjunto` se
+   * pinta a plena intensidad; las de los demás se atenúan (E12). `null` si no hay nadie
+   * seleccionado, y entonces ninguna se destaca (E13). */
+  protected readonly indiceColorSeleccionado = computed<number | null>(() => {
     const id = this.store.jugadorSeleccionadoId();
-    if (!id) {
-      return [];
-    }
-    return this.store.borrador().find((c) => c.jugador.id === id)?.celdas ?? [];
+    const colocacion = this.store.borrador().find((c) => c.jugador.id === id);
+    return colocacion ? indiceColorDe(colocacion.jugador) : null;
   });
 
   /** Todas las celdas pintadas de la formación activa, con el índice de color de cada jugador
-   * que la cubre (spec 023, E1); varios índices en la misma celda si la comparten (E3). */
+   * que la cubre (spec 023, E1); varios índices en la misma celda si la comparten (E3). El
+   * jugador seleccionado aporta sus celdas efectivas (spec 024): incluye el bloque por defecto
+   * si todavía no ha pintado nada — los demás solo lo que tengan pintado de verdad. */
   protected readonly celdasVistaConjunto = computed<readonly CeldaConjunto[]>(() => {
+    const seleccionadoId = this.store.jugadorSeleccionadoId();
     const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
     for (const colocacion of this.store.borrador()) {
       const indice = indiceColorDe(colocacion.jugador);
-      for (const celda of colocacion.celdas ?? []) {
+      const celdas = colocacion.jugador.id === seleccionadoId ? this.store.celdasJugadorSeleccionado() : (colocacion.celdas ?? []);
+      for (const celda of celdas) {
         const clave = `${celda.columna},${celda.fila}`;
         const existente = porClave.get(clave);
         if (existente) {
@@ -406,10 +408,6 @@ export class Tablero {
     this.ajustesAbierto.set(false);
   }
 
-  protected alternarVistaConjunto(): void {
-    this.vistaConjunto.update((actual) => !actual);
-  }
-
   protected cambiarSustitutoLibero(sustituidoId: string | null): void {
     this.store.cambiarSustitutoLibero(this.store.rotacionActiva(), sustituidoId);
   }
@@ -484,15 +482,16 @@ export class Tablero {
   }
 
   /**
-   * Modo pintar (spec 022): con un jugador seleccionado, arrastrar por el fondo de la pista
-   * pinta o borra celdas para él en vez de mover fichas. El primer punto tocado decide el
-   * modo del trazo entero — pintar si esa celda no era suya, borrar si ya lo era — para que un
-   * arrastre no alterne entre pintar y borrar celda a celda. Sin jugador seleccionado, no hace
-   * nada: el fondo se queda inerte, como hoy.
+   * Modo pintar (spec 022, solo en defensa desde la spec 024): con un jugador seleccionado,
+   * arrastrar por el fondo de la pista pinta o borra celdas para él en vez de mover fichas. El
+   * primer punto tocado decide el modo del trazo entero — pintar si esa celda no era suya,
+   * borrar si ya lo era — para que un arrastre no alterne entre pintar y borrar celda a celda.
+   * Si el trazo se cierra (vuelve cerca de donde empezó), al soltar se rellena lo que encierra
+   * (spec 024, E9-E11). Sin jugador seleccionado, o en recepción, el fondo se queda inerte.
    */
   protected iniciarPintado(evento: PointerEvent): void {
     const jugadorId = this.store.jugadorSeleccionadoId();
-    if (!jugadorId || this.vistaConjunto()) {
+    if (!jugadorId || !this.esDefensa()) {
       return;
     }
     evento.preventDefault();
@@ -500,6 +499,15 @@ export class Tablero {
 
     let modo: 'pintar' | 'borrar' | null = null;
     const tocadas = new Set<string>();
+    const trazo: Celda[] = [];
+
+    const aplicar = (celda: Celda): void => {
+      if (modo === 'pintar') {
+        this.store.pintarCelda(jugadorId, celda);
+      } else {
+        this.store.borrarCelda(jugadorId, celda);
+      }
+    };
 
     const procesar = (e: PointerEvent): void => {
       const celda = celdaDe(this.pistaCmp().puntoDesde(e));
@@ -511,15 +519,12 @@ export class Tablero {
         return;
       }
       tocadas.add(clave);
+      trazo.push(celda);
       if (modo === null) {
-        const yaPintada = this.celdasJugadorSeleccionado().some((c) => c.columna === celda.columna && c.fila === celda.fila);
+        const yaPintada = this.store.celdasJugadorSeleccionado().some((c) => c.columna === celda.columna && c.fila === celda.fila);
         modo = yaPintada ? 'borrar' : 'pintar';
       }
-      if (modo === 'pintar') {
-        this.store.pintarCelda(jugadorId, celda);
-      } else {
-        this.store.borrarCelda(jugadorId, celda);
-      }
+      aplicar(celda);
     };
 
     procesar(evento);
@@ -533,7 +538,18 @@ export class Tablero {
       this.pistaCmp().liberarPuntero(e);
     };
 
-    const soltar = (e: PointerEvent): void => limpiar(e);
+    const soltar = (e: PointerEvent): void => {
+      limpiar(e);
+      if (!modo || trazo.length === 0) {
+        return;
+      }
+      for (const celda of celdasDeTrazo(trazo)) {
+        const clave = `${celda.columna},${celda.fila}`;
+        if (!tocadas.has(clave)) {
+          aplicar(celda);
+        }
+      }
+    };
 
     window.addEventListener('pointermove', mover);
     window.addEventListener('pointerup', soltar);

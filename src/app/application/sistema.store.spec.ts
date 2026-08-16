@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
+import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
 import { SistemaStore } from './sistema.store';
 
@@ -481,9 +481,12 @@ describe('SistemaStore', () => {
 
   describe('zonas de responsabilidad', () => {
     it('022-E4: pintar celdas las marca como responsabilidad del jugador', () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
       const [colocador] = plantilla().ordenSaque;
-      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 }, celdas: [] }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
 
       store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
       store.pintarCelda(colocador.id, { columna: 2, fila: 3 });
@@ -496,9 +499,12 @@ describe('SistemaStore', () => {
     });
 
     it('022-E5: borrar una celda ya pintada por el jugador la despinta', () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
       const [colocador] = plantilla().ordenSaque;
-      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 }, celdas: [] }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
       store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
       store.pintarCelda(colocador.id, { columna: 2, fila: 3 });
 
@@ -509,10 +515,17 @@ describe('SistemaStore', () => {
     });
 
     it('022-E6: dos jugadores pueden compartir la misma celda', () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
       const [colocador, receptor1] = plantilla().ordenSaque;
-      store.colocarOMover(colocador.id, { x: 1, y: 1 });
-      store.colocarOMover(receptor1.id, { x: 2, y: 2 });
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: {
+          1: [
+            { jugador: colocador, punto: { x: 1, y: 1 }, celdas: [] },
+            { jugador: receptor1, punto: { x: 2, y: 2 }, celdas: [] },
+          ],
+        },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
       store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
 
       store.pintarCelda(receptor1.id, { columna: 2, fila: 2 });
@@ -522,8 +535,36 @@ describe('SistemaStore', () => {
       expect(formacion.find((c) => c.jugador.id === receptor1.id)?.celdas).toEqual([{ columna: 2, fila: 2 }]);
     });
 
+    it('mover un jugador con celdas pintadas conserva sus celdas', () => {
+      const [colocador] = plantilla().ordenSaque;
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 }, celdas: [] }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
+      store.pintarCelda(colocador.id, { columna: 2, fila: 2 });
+
+      store.colocarOMover(colocador.id, { x: 3, y: 3 });
+
+      const celdas = store.borrador().find((c) => c.jugador.id === colocador.id)?.celdas;
+      expect(celdas).toEqual([{ columna: 2, fila: 2 }]);
+    });
+
+    it('mover un jugador con explicación guardada conserva su explicación', () => {
+      const [colocador] = plantilla().ordenSaque;
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 }, explicacion: 'Se esconde tras el opuesto' }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
+
+      store.colocarOMover(colocador.id, { x: 3, y: 3 });
+
+      const explicacion = store.borrador().find((c) => c.jugador.id === colocador.id)?.explicacion;
+      expect(explicacion).toBe('Se esconde tras el opuesto');
+    });
+
     it('022-E8: la zona pintada se guarda junto con la formación', () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
       const orden = plantilla().ordenSaque;
       const puntosLegalesR1 = [
         { x: 8, y: 8 },
@@ -533,7 +574,13 @@ describe('SistemaStore', () => {
         { x: 1, y: 6 },
         { x: 4.5, y: 6 },
       ];
-      orden.forEach((jugador, indice) => store.colocarOMover(jugador.id, puntosLegalesR1[indice]));
+      const formacionInicial: Formacion = orden.map((jugador, indice) => ({
+        jugador,
+        punto: puntosLegalesR1[indice],
+        ...(indice === 0 ? { celdas: [] } : {}),
+      }));
+      const sistema: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: formacionInicial } };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
       store.pintarCelda(orden[0].id, { columna: 16, fila: 16 });
 
       store.guardar();
@@ -559,16 +606,142 @@ describe('SistemaStore', () => {
     });
 
     it('022-E10: la zona se guarda igual en defensa, por rotación y vía', () => {
-      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
-      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       const orden = plantilla().ordenSaque;
-      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+      const formacionInicial: Formacion = orden.map((jugador, indice) => ({
+        jugador,
+        punto: { x: 4.5, y: 4.5 },
+        ...(indice === 0 ? { celdas: [] } : {}),
+      }));
+      const sistemaDefensa: Sistema = {
+        ...sistemaBase('d1', 'Defensa'),
+        tipo: 'defensa',
+        defensas: { 1: { z4: formacionInicial } },
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       store.pintarCelda(orden[0].id, { columna: 9, fila: 9 });
 
       store.guardar();
 
       const guardado = store.sistemaActivo()?.defensas?.[1]?.z4?.find((c) => c.jugador.id === orden[0].id);
       expect(guardado?.celdas).toEqual([{ columna: 9, fila: 9 }]);
+    });
+  });
+
+  describe('zona por defecto (spec 024)', () => {
+    it('024-E1: en un sistema de recepción, seleccionar un jugador no muestra ninguna zona', () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+
+      store.seleccionarJugador(colocador.id);
+
+      expect(store.celdasJugadorSeleccionado()).toEqual([]);
+    });
+
+    it('024-E2: las celdas ya guardadas en un sistema de recepción no se pierden al guardar de nuevo', () => {
+      const orden = plantilla().ordenSaque;
+      const puntosLegalesR1 = [
+        { x: 8, y: 8 },
+        { x: 8, y: 1 },
+        { x: 4.5, y: 1 },
+        { x: 1, y: 1 },
+        { x: 1, y: 6 },
+        { x: 4.5, y: 6 },
+      ];
+      const formacionConCeldas: Formacion = orden.map((jugador, indice) => ({
+        jugador,
+        punto: puntosLegalesR1[indice],
+        ...(indice === 0 ? { celdas: [{ columna: 16, fila: 16 }] } : {}),
+      }));
+      const sistema: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: formacionConCeldas } };
+      const store = new SistemaStore(new RepositorioFake([sistema]));
+
+      store.guardar();
+
+      const guardado = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
+      expect(guardado?.celdas).toEqual([{ columna: 16, fila: 16 }]);
+    });
+
+    it('024-E3: seleccionar un jugador sin celdas pintadas muestra el bloque de 2×2 más cercano a su punto', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+
+      store.seleccionarJugador(colocador.id);
+
+      expect(store.celdasJugadorSeleccionado()).toEqual([
+        { columna: 1, fila: 1 },
+        { columna: 2, fila: 1 },
+        { columna: 1, fila: 2 },
+        { columna: 2, fila: 2 },
+      ]);
+    });
+
+    it('024-E5: el bloque por defecto se recalcula al mover la ficha mientras no se ha pintado nada', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarJugador(colocador.id);
+
+      store.colocarOMover(colocador.id, { x: 5, y: 5 });
+
+      expect(store.celdasJugadorSeleccionado()).toEqual([
+        { columna: 9, fila: 9 },
+        { columna: 10, fila: 9 },
+        { columna: 9, fila: 10 },
+        { columna: 10, fila: 10 },
+      ]);
+    });
+
+    it('024-E6: pintar una celda nueva sobre el bloque por defecto lo congela añadiendo esa celda', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarJugador(colocador.id);
+
+      store.pintarCelda(colocador.id, { columna: 5, fila: 5 });
+
+      const celdas = store.borrador().find((c) => c.jugador.id === colocador.id)?.celdas;
+      expect(celdas).toEqual([
+        { columna: 1, fila: 1 },
+        { columna: 2, fila: 1 },
+        { columna: 1, fila: 2 },
+        { columna: 2, fila: 2 },
+        { columna: 5, fila: 5 },
+      ]);
+    });
+
+    it('024-E7: borrar una celda del bloque por defecto la convierte en zona explícita con las celdas restantes', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarJugador(colocador.id);
+
+      store.borrarCelda(colocador.id, { columna: 1, fila: 1 });
+
+      const celdas = store.borrador().find((c) => c.jugador.id === colocador.id)?.celdas;
+      expect(celdas).toEqual([
+        { columna: 2, fila: 1 },
+        { columna: 1, fila: 2 },
+        { columna: 2, fila: 2 },
+      ]);
+    });
+
+    it('024-E8: el bloque por defecto no se guarda si nadie lo ha tocado', () => {
+      const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      const orden = plantilla().ordenSaque;
+      orden.forEach((jugador) => store.colocarOMover(jugador.id, { x: 4.5, y: 4.5 }));
+      store.seleccionarJugador(orden[0].id);
+
+      store.guardar();
+
+      const guardado = store.sistemaActivo()?.defensas?.[1]?.z4?.find((c) => c.jugador.id === orden[0].id);
+      expect(guardado?.celdas).toBeUndefined();
     });
   });
 });

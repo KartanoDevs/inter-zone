@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import type { Celda, ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
+import type { ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { TAMANO_CELDA } from '../../domain/rejilla';
 import { Modal } from '../comun/modal';
@@ -109,19 +109,20 @@ export class Pista {
   /** Si el sistema activo es de defensa: pinta la ficha rival en la vía activa (spec 021). */
   readonly mostrarRival = input(false);
   readonly viaActiva = input<ViaAtaque | null>(null);
-  /** Celdas de la rejilla de responsabilidad del jugador seleccionado (spec 022). */
-  readonly celdasPintadas = input<readonly Celda[]>([]);
-  /** Vista de conjunto (spec 023): todas las celdas pintadas a la vez, con su color. */
-  readonly vistaConjunto = input(false);
+  /** Si se pintan las zonas de responsabilidad: solo en defensa (spec 024, E1). */
+  readonly mostrarZonas = input(false);
+  /** Todas las celdas pintadas de la formación activa, con su color por jugador (spec 023). */
   readonly celdasVistaConjunto = input<readonly CeldaConjunto[]>([]);
   readonly leyendaVistaConjunto = input<readonly EntradaLeyendaColor[]>([]);
+  /** Índice de color del jugador seleccionado: su zona se pinta a plena intensidad; las de los
+   * demás se atenúan (spec 024, E12-E13). */
+  readonly indiceColorSeleccionado = input<number | null>(null);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
   /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
   readonly fondoAgarrado = output<PointerEvent>();
   readonly abrirAjustes = output<void>();
-  readonly alternarVistaConjunto = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
@@ -158,6 +159,13 @@ export class Pista {
     }
     const ordenados = [...new Set(celda.indicesColor)].sort((a, b) => a - b);
     return `url(#app-pista__franjas-${ordenados.join('-')})`;
+  }
+
+  /** Plena intensidad para la zona del jugador seleccionado; atenuada para las demás (spec 024,
+   * E12). Sin nadie seleccionado, todas iguales — ninguna destacada (E13). */
+  protected opacidadDe(celda: CeldaConjunto): number {
+    const activo = this.indiceColorSeleccionado();
+    return activo === null || celda.indicesColor.includes(activo) ? 1 : 0.35;
   }
 
   private readonly svgRef = viewChild.required<ElementRef<SVGSVGElement>>('svgPista');

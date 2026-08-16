@@ -29,8 +29,11 @@ Modelos y reglas. Aquí vive el voleibol.
 - `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `OrdenSaque`, `PlantillaEquipo`,
   `TipoSistema`, `ViaAtaque`, `Celda`, `Sistema` (con `formaciones` para recepción y `defensas`
   —por rotación y por vía, spec 021— para defensa), `Colocacion` (con `celdas?`, la rejilla de
-  responsabilidad de ese jugador en esa formación, spec 022), `Formacion`, `Infraccion`, `Aviso`,
-  `ResultadoValidacion`.
+  responsabilidad de ese jugador en esa formación, solo en defensa desde la spec 024),
+  `Formacion`, `Infraccion`, `Aviso`, `ResultadoValidacion`. Desde la spec 024, `celdas`
+  distingue dos estados que antes eran indistinguibles: `undefined` es "nunca tocada" (se
+  muestra el bloque por defecto derivado del punto) y `[]` es "vaciada a propósito" (cero
+  celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
   rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
@@ -41,8 +44,13 @@ Modelos y reglas. Aquí vive el voleibol.
   un punto del campo rival, con el espejo de zonas ya resuelto (spec 021, ver `docs/dominio.md`
   §3). Función pura, sin estado.
 - `rejilla.ts` — `TAMANO_CELDA` (0,5 m, ADR 0004), `celdaDe(punto): Celda | null` (`null` fuera
-  de las líneas del campo propio) y `centroDe(celda): Punto` (spec 022). `cobertura.ts` (huecos
-  y conflictos) sigue sin existir: llega con las specs 014–015 de la hoja de ruta.
+  de las líneas del campo propio) y `centroDe(celda): Punto` (spec 022). `bloquePorDefecto(punto):
+  Celda[]` (spec 024): el bloque de hasta 2×2 celdas más cercano a un punto — cerca de una línea
+  del campo se recorta a 2×1 o 1×1 en vez de desplazarse entero hacia dentro. `trazoCerrado(trazo):
+  boolean`, `rellenarContorno(contorno): Celda[]` (flood fill puro desde fuera de la rejilla) y
+  `celdasDeTrazo(trazo): Celda[]` (combina las dos: si el trazo se cierra, rellena; si no, lo
+  devuelve tal cual) — pintado por contorno, spec 024. `cobertura.ts` (huecos y conflictos) sigue
+  sin existir: llega con las specs 014–015 de la hoja de ruta.
 - `sistema-defensa.ts` — `guardarFormacionDefensa(sistema, rotacion, via, formacion)`: análogo a
   `guardarFormacion` pero keyed por rotación y vía, y **nunca** valida posición (spec 021, en
   defensa la validación no existe). Reutiliza `jugadoresEnPista` para el roster, igual que
@@ -92,13 +100,16 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   en defensa), `hayCambiosSinGuardar`, `resultadoValidacion` (siempre `null` en defensa: no es
   que la validación esté desactivada, es que no existe), `puedeGuardar` (en defensa, solo exige
   los seis colocados), `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno
-  la de la rotación).
+  la de la rotación), `celdasJugadorSeleccionado` (spec 024: las celdas del jugador
+  seleccionado, o su bloque por defecto si no tiene ninguna; siempre vacío fuera de defensa).
 - Acciones: `activarSistema`, `seleccionarRotacion`, `seleccionarVia`,
-  `confirmarCambio`/`cancelarCambio`, `colocarOMover`, `quitar`, `vaciar`, `pintarCelda`/
-  `borrarCelda` (marcan o quitan una celda de la rejilla de responsabilidad de un jugador en el
-  borrador, spec 022), `guardar` (en defensa llama a `guardarFormacionDefensa` en vez de
-  `guardarFormacion`), `crear`, `renombrarActivo`, `borrar`, `seleccionarJugador`,
-  `guardarExplicacion`,
+  `confirmarCambio`/`cancelarCambio`, `colocarOMover` (conserva `celdas` y `explicacion` de la
+  colocación previa), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o quitan una celda
+  de la rejilla de responsabilidad de un jugador en el borrador, spec 022; si `celdas` era
+  `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que pintar o borrar
+  cualquiera de sus celdas materializa y congela la zona en vez de sustituirla), `guardar` (en
+  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`,
+  `renombrarActivo`, `borrar`, `seleccionarJugador`, `guardarExplicacion`,
   `cambiarSustitutoLibero`.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
@@ -129,13 +140,15 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
-  defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020). Pinta las
-  celdas del jugador seleccionado (`celdasPintadas`, spec 022) y expone un `pointerdown` de
-  fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la ficha rival paran
-  la propagación de su propio `pointerdown` para no disparar los dos gestos a la vez. En la
-  vista de conjunto (spec 023), pinta las celdas de todos con una paleta fija de 7 colores
-  (`PALETA_COLORES`) y una leyenda; una celda compartida se pinta con un patrón SVG de franjas
-  diagonales, uno por cada combinación de colores que aparece.
+  defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020). Expone un
+  `pointerdown` de fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la
+  ficha rival paran la propagación de su propio `pointerdown` para no disparar los dos gestos a
+  la vez. Cuando `mostrarZonas` (solo en defensa, spec 024), pinta siempre las celdas de todos
+  con una paleta fija de 7 colores (`PALETA_COLORES`) y una leyenda — ya no hay un interruptor
+  aparte para verlas (spec 023 quedó revertida por la 024): la del jugador seleccionado
+  (`indiceColorSeleccionado`) se ve a plena intensidad y las demás atenuadas. Una celda
+  compartida se pinta con un patrón SVG de franjas diagonales, uno por cada combinación de
+  colores que aparece.
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6) y `SelectorVia` (pestañas de vía,
   solo en defensa, spec 021).
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
@@ -146,14 +159,14 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   el borrado de un sistema.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
-  ficha). El modo pintar (spec 022) es un segundo gestor de `PointerEvent` en paralelo al de
-  arrastre: con un jugador seleccionado, arrastrar sobre el fondo de la pista pinta o borra
-  celdas en vez de mover fichas — el primer punto tocado decide si el trazo entero pinta o
-  borra, según si esa celda ya era del jugador. El índice de color de cada jugador para la
-  vista de conjunto (spec 023, `indiceColorDe`) se deriva del mismo orden fijo de roles que ya
-  usan el banquillo y la leyenda de etiquetas (`claveOrdenRol`) — nunca se declara ni se
-  guarda. El interruptor de la vista de conjunto (`vistaConjunto`) es una signal efímera de
-  `Tablero`, igual que `ajustesAbierto`: no persiste entre sesiones.
+  ficha). El modo pintar (spec 022, solo en defensa desde la spec 024) es un segundo gestor de
+  `PointerEvent` en paralelo al de arrastre: con un jugador seleccionado, arrastrar sobre el
+  fondo de la pista pinta o borra celdas en vez de mover fichas — el primer punto tocado decide
+  si el trazo entero pinta o borra, según si esa celda ya era del jugador (vía
+  `store.celdasJugadorSeleccionado()`, que ya incluye el bloque por defecto). Al soltar, si el
+  trazo se cerró, `celdasDeTrazo` añade las celdas del interior (spec 024, E9-E11). El índice de
+  color de cada jugador (`indiceColorDe`) se deriva del mismo orden fijo de roles que ya usan el
+  banquillo y la leyenda de etiquetas (`claveOrdenRol`) — nunca se declara ni se guarda.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
 la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un

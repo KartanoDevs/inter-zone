@@ -60,14 +60,6 @@
   fill: var(--neon-pink);
 }
 
-.app-pista__celda-pintada {
-  fill: var(--neon-purple);
-  fill-opacity: 0.3;
-  stroke: var(--neon-purple);
-  stroke-width: 0.02;
-  pointer-events: none;
-}
-
 .app-pista__celda-conjunto {
   fill-opacity: 0.55;
   stroke: rgba(255, 255, 255, 0.25);
@@ -161,40 +153,9 @@
   color: var(--text-main);
 }
 
-.app-pista__conjunto-boton {
-  position: absolute;
-  top: 73px;
-  right: 5px;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid var(--neon-purple);
-  border-radius: 50%;
-  background: var(--bg-card);
-  color: var(--neon-purple);
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.app-pista__conjunto-boton:hover,
-.app-pista__conjunto-boton:focus-visible {
-  background: var(--bg-card-alt);
-  color: var(--text-main);
-}
-
-.app-pista__conjunto-boton--activo {
-  background: var(--neon-purple);
-  color: var(--bg-darker);
-}
-
 .app-pista__leyenda-colores {
   position: absolute;
-  top: 107px;
+  top: 73px;
   right: 5px;
   z-index: 5;
   display: flex;

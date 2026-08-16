@@ -9,6 +9,7 @@ import {
   renombrarSistema,
 } from '../domain/catalogo-sistemas';
 import { jugadoresEnPista } from '../domain/rotacion';
+import { bloquePorDefecto } from '../domain/rejilla';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
 import { guardarFormacionDefensa } from '../domain/sistema-defensa';
 import { validarFormacion } from '../domain/validacion';
@@ -131,6 +132,24 @@ export class SistemaStore {
   readonly explicacionMostrada = computed(() =>
     this.jugadorSeleccionadoId() ? this.explicacionJugadorSeleccionado() : this.explicacionRotacionActiva(),
   );
+
+  /**
+   * Celdas efectivas del jugador seleccionado (spec 024): las que ya tenga pintadas, o si no
+   * tiene ninguna, el bloque de 1 m² por defecto en su posición — que por eso sigue a la ficha
+   * mientras no se pinte ni se borre nada suyo (E5). Solo existe en defensa: en recepción la
+   * zona de responsabilidad no se pinta (E1), aunque haya quedado guardada de antes (E2).
+   */
+  readonly celdasJugadorSeleccionado = computed<readonly Celda[]>(() => {
+    const id = this.jugadorSeleccionadoId();
+    if (!id || this.sistemaActivo()?.tipo !== 'defensa') {
+      return [];
+    }
+    const colocacion = this.borrador().find((c) => c.jugador.id === id);
+    if (!colocacion) {
+      return [];
+    }
+    return colocacion.celdas ?? bloquePorDefecto(colocacion.punto);
+  });
 
   constructor(
     private readonly repositorio: SistemaRepository,
@@ -314,32 +333,47 @@ export class SistemaStore {
     if (!jugador) {
       return;
     }
-    this.borrador.update((formacion) => [...formacion.filter((c) => c.jugador.id !== jugadorId), { jugador, punto }]);
+    this.borrador.update((formacion) => {
+      const previa = formacion.find((c) => c.jugador.id === jugadorId);
+      return [...formacion.filter((c) => c.jugador.id !== jugadorId), { ...previa, jugador, punto }];
+    });
   }
 
   quitar(jugadorId: string): void {
     this.borrador.update((formacion) => formacion.filter((c) => c.jugador.id !== jugadorId));
   }
 
-  /** Marca `celda` como responsabilidad de `jugadorId` (spec 022). Idempotente: pintar una
-   * celda ya suya no la duplica — para despintarla, ver `borrarCelda`. */
+  /** Marca `celda` como responsabilidad de `jugadorId` (spec 022). Si todavía no tenía ninguna
+   * celda propia, parte del bloque por defecto (spec 024, E6) en vez de partir de vacío — así
+   * pintar una celda nueva la añade a lo que ya se veía, no lo sustituye. Idempotente: pintar
+   * una celda ya suya no la duplica — para despintarla, ver `borrarCelda`. */
   pintarCelda(jugadorId: string, celda: Celda): void {
     this.borrador.update((formacion) =>
       formacion.map((c) => {
-        if (c.jugador.id !== jugadorId || c.celdas?.some((existente) => coincide(existente, celda))) {
+        if (c.jugador.id !== jugadorId) {
           return c;
         }
-        return { ...c, celdas: [...(c.celdas ?? []), celda] };
+        const base = c.celdas ?? bloquePorDefecto(c.punto);
+        if (base.some((existente) => coincide(existente, celda))) {
+          return { ...c, celdas: base };
+        }
+        return { ...c, celdas: [...base, celda] };
       }),
     );
   }
 
-  /** Quita `celda` de la responsabilidad de `jugadorId` (spec 022). Idempotente. */
+  /** Quita `celda` de la responsabilidad de `jugadorId` (spec 022). Si todavía no tenía ninguna
+   * celda propia, parte del bloque por defecto (spec 024, E7): borrar una de sus celdas la
+   * convierte en zona explícita con las que queden, en vez de no hacer nada. Idempotente. */
   borrarCelda(jugadorId: string, celda: Celda): void {
     this.borrador.update((formacion) =>
-      formacion.map((c) =>
-        c.jugador.id === jugadorId ? { ...c, celdas: c.celdas?.filter((existente) => !coincide(existente, celda)) } : c,
-      ),
+      formacion.map((c) => {
+        if (c.jugador.id !== jugadorId) {
+          return c;
+        }
+        const base = c.celdas ?? bloquePorDefecto(c.punto);
+        return { ...c, celdas: base.filter((existente) => !coincide(existente, celda)) };
+      }),
     );
   }
 

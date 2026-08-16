@@ -233,10 +233,17 @@ Motivo en `docs/decisiones/0004-rejilla-de-responsabilidad.md`.
 
 - La rejilla cubre el campo propio, 9×9 m (spec 022; la zona libre queda fuera por ahora — ver
   Preguntas abiertas de la spec 022 sobre si se amplía más adelante).
+- **Solo existen en defensa** (spec 024). Hasta esa spec se permitía pintarlas también en
+  recepción; en la práctica no aportaba nada fuera de defensa, que es donde hay una vía de
+  ataque concreta contra la que cubrir zona.
 - Cada celda puede estar asignada a cero, uno o varios jugadores.
-- **Cualquiera de los seis puede tener celdas asignadas**, no solo quien recibe (spec 022): en
-  defensa, los seis defienden zona; en recepción, nada impide que un entrenador quiera marcar
-  la cobertura de cualquiera de los seis, no solo de quien recibe.
+- **Cualquiera de los seis puede tener celdas asignadas**, no solo quien recibe (spec 022): los
+  seis defienden zona, no solo uno.
+- **Zona por defecto** (spec 024): un jugador seleccionado sin ninguna celda pintada todavía
+  muestra, como zona, el bloque de 2×2 celdas (1 m²) más cercano a su posición. Se deriva de su
+  punto y nunca se almacena — sigue a la ficha si se mueve. En cuanto se pinta o se borra
+  cualquier celda suya, deja de recalcularse: la zona pasa a ser la pintada a mano, ya fija,
+  aunque se mueva la ficha después.
 - **Hueco:** celda dentro de las líneas del campo con cero jugadores asignados.
 - **Conflicto:** celda con dos o más jugadores asignados.
 
