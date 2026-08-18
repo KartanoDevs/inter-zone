@@ -297,12 +297,12 @@ describe('zaguerosEnRotacion', () => {
       (rotacion) => new Set(zaguerosEnRotacion(orden, rotacion).map((j) => j.id)),
     );
 
-    expect(idsPorRotacion[0]).toEqual(new Set(['colocador', 'receptor2', 'central2']));
-    expect(idsPorRotacion[1]).toEqual(new Set(['central2', 'opuesto', 'receptor2']));
-    expect(idsPorRotacion[2]).toEqual(new Set(['receptor2', 'central1', 'opuesto']));
-    expect(idsPorRotacion[3]).toEqual(new Set(['opuesto', 'receptor1', 'central1']));
-    expect(idsPorRotacion[4]).toEqual(new Set(['central1', 'colocador', 'receptor1']));
-    expect(idsPorRotacion[5]).toEqual(new Set(['receptor1', 'central2', 'colocador']));
+    expect(idsPorRotacion[0]).toEqual(new Set(['colocador', 'receptor2', 'central1']));
+    expect(idsPorRotacion[1]).toEqual(new Set(['central1', 'opuesto', 'receptor2']));
+    expect(idsPorRotacion[2]).toEqual(new Set(['receptor2', 'central2', 'opuesto']));
+    expect(idsPorRotacion[3]).toEqual(new Set(['opuesto', 'receptor1', 'central2']));
+    expect(idsPorRotacion[4]).toEqual(new Set(['central2', 'colocador', 'receptor1']));
+    expect(idsPorRotacion[5]).toEqual(new Set(['receptor1', 'central1', 'colocador']));
   });
 });
 

@@ -76,12 +76,14 @@ describe('sistemaPorDefecto', () => {
   it('025-E7: es un sistema corriente, se puede editar y volver a guardar', () => {
     const sistema = sistemaPorDefecto(PLANTILLA_GLOBAL);
     const formacion = sistema.formaciones[1]!;
-    const movida = formacion.map((c) => (c.jugador.id === 'central1' ? { ...c, punto: { x: 4.6, y: 0.8 } } : c));
+    // `central2` es el central de P3: el que está en pista en R1, porque al de P6 lo sustituye
+    // el líbero.
+    const movida = formacion.map((c) => (c.jugador.id === 'central2' ? { ...c, punto: { x: 4.6, y: 0.8 } } : c));
 
     const guardado = guardarFormacion(sistema, 1, movida);
 
     expect(guardado).not.toBeNull();
-    expect(guardado!.formaciones[1]?.find((c) => c.jugador.id === 'central1')?.punto).toEqual({ x: 4.6, y: 0.8 });
+    expect(guardado!.formaciones[1]?.find((c) => c.jugador.id === 'central2')?.punto).toEqual({ x: 4.6, y: 0.8 });
   });
 
   it('025-E8: el sistema por defecto trae descripción general', () => {

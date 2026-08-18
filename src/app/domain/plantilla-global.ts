@@ -18,16 +18,16 @@ function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
  * El índice de receptor/central se declara aquí, no se deriva (spec 018): la convención real
  * del entrenador no sale de un único recorrido del orden de saque (cuenta los receptores
  * hacia delante desde el colocador y los centrales hacia atrás), así que `plantilla.ts` ya no
- * tiene una función que lo calcule. Ojo: el sufijo numérico del *id* (`central1`) es solo un
- * identificador interno y no coincide con la etiqueta (`central1` se pinta `C2`).
+ * tiene una función que lo calcule. El sufijo numérico del *id* sí coincide con la etiqueta:
+ * `central1` es el central contiguo al colocador — en R1, el de P6 — y se pinta `C1`.
  */
 const ORDEN_TITULARES: OrdenSaque = [
   jugador('colocador', 'colocador'), // P1 en R1 -> C
   jugador('receptor1', 'receptor', 1), // P2 -> R1
-  jugador('central1', 'central', 2), // P3 -> C2
+  jugador('central2', 'central', 2), // P3 -> C2
   jugador('opuesto', 'opuesto'), // P4 -> O
   jugador('receptor2', 'receptor', 2), // P5 -> R2
-  jugador('central2', 'central', 1), // P6 -> C1
+  jugador('central1', 'central', 1), // P6 -> C1
 ];
 
 export const PLANTILLA_GLOBAL: PlantillaEquipo = {
