@@ -1,6 +1,7 @@
 # 0017 — El índice de rol se declara, no se deriva
 
-**Estado:** Aceptada
+**Estado:** Precisada por 0022 (el aviso sobre el id `central1`, que dejó de ser cierto al
+alinearse con su etiqueta; la decisión de fondo —el índice se declara, no se deriva— sigue vigente)
 
 **Contexto.** La spec 017 (ADR 0015) giró el recorrido de `asignarIndices` para que `C1` fuera
 el central que arranca en zaga, corrigiendo el sentido equivocado que llevaba desde la spec 006.

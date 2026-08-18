@@ -30,8 +30,9 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0014](0014-libero-fuera-del-orden-de-saque.md) | El líbero vive fuera del orden de saque; entra y sale según la rotación | Aceptada |
 | [0015](0015-sustituto-libero-por-rotacion-e-indice-de-rol.md) | El sustituto del líbero se declara por rotación; el índice de rol cuenta en sentido de rotación | Parcialmente sustituida por 0017 |
 | [0016](0016-modal-generico.md) | Un componente `Modal` genérico sustituye a las implementaciones paralelas de diálogo | Aceptada |
-| [0017](0017-indice-de-rol-declarado.md) | El índice de rol se declara, no se deriva | Aceptada |
+| [0017](0017-indice-de-rol-declarado.md) | El índice de rol se declara, no se deriva | Precisada por 0022 |
 | [0018](0018-rn-es-la-rotacion-fisica.md) | `Rn` es la rotación física número n, no "el colocador ocupa Pn" | Revertida por 0019 |
 | [0019](0019-revierte-0018-rn-anclada-al-colocador.md) | Se revierte la ADR 0018: `Rn` sí es "el colocador ocupa Pn" | Aceptada |
 | [0020](0020-via-de-ataque-sin-posicion-persistida.md) | La vía de ataque se persiste como valor derivado, no como posición del rival | Aceptada |
 | [0021](0021-sistema-por-defecto-sembrado.md) | El sistema de recepción por defecto se siembra, no se guarda como dato fijo | Aceptada |
+| [0022](0022-id-de-central-alineado-con-su-etiqueta.md) | El id de un central coincide con su etiqueta: `central1` es `C1` | Aceptada |

@@ -596,8 +596,8 @@ Lo que hay que tener presente:
 
 ## 9. Antes de escribir una línea de código
 
-Este documento describe un esquema que **no existe todavía**, y choca con cuatro cosas ya escritas.
-Hay que resolverlas antes de implementar, no después:
+Este documento describe un esquema que **no existe todavía**, y choca con tres cosas ya escritas.
+Las tres autorizan el backend; hay que resolverlas antes de implementar, no después:
 
 1. **ADR 0001, «Sin backend en la v1».** No hay que revocarla de fondo: ya nombra este mismo stack
    —*«Node, Express, PostgreSQL y Prisma»*— y fija la condición de disparo, *«si el equipo pide
@@ -610,19 +610,18 @@ Hay que resolverlas antes de implementar, no después:
 3. **`README.md`, «Qué NO hace (deliberadamente)»**: la sección dice literalmente que no hay backend
    ni login. La hoja de ruta del mismo fichero, en cambio, ya anticipaba esto: *«un esquema pensado
    para migrar a PostgreSQL + Prisma en la V2»*.
-4. **Queda desactualizado un párrafo de la ADR 0017**, que dice en sus consecuencias que
-   `plantilla-global.ts` avisa de que *«`central1` se pinta `C2`»*. Ya no es cierto: los ids se
-   enderezaron al escribir este documento (sección 8). La ADR **no se edita** —
-   `docs/decisiones/README.md` es append-only—, así que la corrección va en una decisión nueva.
-   Sigue vigente su decisión de fondo: el índice se declara, no se deriva.
-
-Dos correcciones de código que este documento provocó y **ya están hechas**, con la suite en verde:
+Lo que este documento provocó y **ya está hecho**, con la suite en verde:
 
 - `src/app/domain/plantilla-global.ts` — `central1` pasa a ser el central de P6, el contiguo al
   colocador, coherente con su etiqueta `C1`. Ajustados los dos tests que codificaban el cruce
   (`rotacion.spec.ts`, `sistema-por-defecto.spec.ts`), ambos como puro renombrado.
 - `src/app/ui/tablero/tablero.ts` — `LIMITE_Y` pasa de `[-3.6, 9.3]` a `[0, 9.3]`: ningún jugador
-  propio se arrastra ya al campo rival.
+  propio se arrastra ya al campo rival. `docs/dominio.md` §3 ya decía `0 ≤ y ≤ 12`, así que aquí no
+  se cambió ninguna regla: se alineó el código con la que ya estaba escrita.
+- [ADR 0022](decisiones/0022-id-de-central-alineado-con-su-etiqueta.md) recoge la decisión del id
+  del central, y la ADR 0017 queda marcada como «Precisada por 0022» — su aviso de que *«`central1`
+  se pinta `C2`»* dejó de ser cierto, aunque su decisión de fondo (el índice se declara, no se
+  deriva) sigue vigente.
 
 **Requisito de versión:** el esquema da por hecho **PostgreSQL 15 o superior**. Lo necesita
 `UNIQUE NULLS NOT DISTINCT`, que sostiene dos restricciones de peso: «solo un colocador, un opuesto
