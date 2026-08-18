@@ -14,7 +14,7 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 
 | # | Decisión | Estado |
 |---|---|---|
-| [0001](0001-sin-backend-en-la-v1.md) | Sin backend en la v1 | Aceptada |
+| [0001](0001-sin-backend-en-la-v1.md) | Sin backend en la v1 | Sustituida por 0023 |
 | [0002](0002-coordenadas-en-metros.md) | Sistema de coordenadas en metros, origen en la esquina | Aceptada |
 | [0003](0003-svg-en-lugar-de-canvas.md) | SVG en lugar de Canvas y Fabric.js | Aceptada |
 | [0004](0004-rejilla-de-responsabilidad.md) | Zonas de responsabilidad como rejilla de 0,5 m | Aceptada |
@@ -36,3 +36,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0020](0020-via-de-ataque-sin-posicion-persistida.md) | La vía de ataque se persiste como valor derivado, no como posición del rival | Aceptada |
 | [0021](0021-sistema-por-defecto-sembrado.md) | El sistema de recepción por defecto se siembra, no se guarda como dato fijo | Aceptada |
 | [0022](0022-id-de-central-alineado-con-su-etiqueta.md) | El id de un central coincide con su etiqueta: `central1` es `C1` | Aceptada |
+| [0023](0023-cierra-la-v1-entra-el-backend.md) | Se cierra la v1: entran backend, base de datos y cuentas | Aceptada |

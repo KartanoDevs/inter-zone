@@ -1,6 +1,7 @@
 # 0001 — Sin backend en la v1
 
-**Estado:** Aceptada
+**Estado:** Sustituida por 0023 — se cumplió la condición que esta misma decisión dejó escrita
+(«si el equipo pide editar desde varios dispositivos»), así que la v1 se cierra y entra el backend
 
 **Contexto.** El objetivo es doble: que el equipo tenga una herramienta útil pronto y que el
 código sea de buena calidad. Un backend con Node, Express, PostgreSQL y Prisma añade semanas

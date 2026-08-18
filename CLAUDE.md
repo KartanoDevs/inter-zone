@@ -121,7 +121,11 @@ partir de una spec en `Borrador`.
 6. **Huecos y conflictos se derivan, nunca se almacenan.** Se calculan desde la asignación
    de celdas.
 7. **Sin Fabric.js, sin Canvas, sin librerías de gráficos.** SVG nativo desde signals.
-8. **Sin backend, sin base de datos, sin autenticación.** Ver decisión 0001.
+8. **`server/` solo importa de `src/app/domain/`.** Nunca de `application/`, `infrastructure/`
+   ni `ui/`, y jamás al revés: el dominio no sabe que existe un servidor. Desde la v2 hay
+   backend, base de datos y autenticación (decisión 0023, que sustituye a la 0001); lo que
+   permite compartir el dominio entre navegador y servidor es el invariante 2, así que
+   romperlo ahora cuesta el doble que antes.
 
 ## Errores que ya se han cometido y no hay que repetir
 

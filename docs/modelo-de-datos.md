@@ -277,8 +277,20 @@ INSERT INTO jugador (id, rol, indice, orden_saque) VALUES
   ('libero',    'libero',    NULL, NULL);
 ```
 
-Son los siete huecos del dominio, **no personas**. Quién los ocupa en cada entrenamiento no se
-guarda, porque a este nivel las posiciones cambian de una semana a otra.
+### Léase esto antes de tocar la tabla
+
+**Estas siete filas no son jugadores del equipo: son los siete huecos del sistema.** «El colocador»,
+«el central que arranca junto a él», «el líbero». Quién los ocupa el martes que viene no se guarda
+en ninguna parte, y es a propósito: a este nivel una misma persona juega en varios puestos según el
+día.
+
+Por eso llevan `rol`, y por eso el rol **no** es «de qué juega Fulanito». Es lo que define el hueco,
+y de él dependen tres cosas que se romperían si se quitara: la regla de que el líbero no puede
+ocupar P2, P3 ni P4; las etiquetas `C`, `R1`, `C2`, `O`, `L` que se pintan en cada ficha; y el
+reparto por zonas del sistema de defensa sembrado.
+
+Cuando en el futuro se añadan personas con nombre y apellidos, **no llevarán rol fijo** — irán en
+una tabla aparte, y su relación con estos huecos será por convocatoria, no por definición.
 
 - **`central1` es el central contiguo al colocador y se etiqueta `C1`.** En R1 el colocador está en
   P1 y ese central en P6, a su lado. Es la convención del entrenador que recoge la ADR 0017:
@@ -497,6 +509,12 @@ para enseñar una excepción, y la 026 contempla guardar a propósito una versi�
 enseñar el error. **Un sistema con formaciones ilegales es un dato legítimo.** Un `CHECK` lo
 impediría y se llevaría por delante un caso de uso didáctico.
 
+Lo que sí hay que reservar es **cuándo se enseña el veredicto**. En consulta y en examen, el alumno
+coloca a los seis y **no ve las faltas hasta que pulsa «Confirmar»**: enseñárselas mientras arrastra
+convierte el ejercicio en un juego de calentar y enfriar, y deja de medir si entendió la regla. Eso
+no cambia nada aquí —el veredicto se sigue calculando al vuelo con `validarFormacion`, y no se
+guarda— pero es un requisito que las specs 012–013 tienen que recoger cuando se escriban.
+
 ### Lo que no cabe en una restricción de tabla
 
 Son condiciones sobre conjuntos de filas, no sobre una fila:
@@ -524,11 +542,16 @@ arriba, que es lo que se pedía al diseñarlo.
 | Ampliación | Cómo entra |
 |---|---|
 | Un tercer equipo (cadete, juvenil) | `INSERT` en `equipo` |
-| Jugadores con nombre real | Tabla nueva enlazada; los siete huecos siguen intactos |
+| Jugadores con nombre real | Tabla nueva enlazada, **sin rol fijo**; los siete huecos siguen intactos |
 | Varias alineaciones por equipo | Tabla nueva, con `sistema` apuntando a ella |
 | Modo examen | `intento_examen` e `intento_colocacion`, colgando de `sistema` y `usuario` |
 | IA que redacta sistemas | Tabla de auditoría: petición, antes, después |
 | Renombrar roles por equipo («Receptor» → «Punta») | Tabla de configuración de roles |
+
+Sobre los jugadores con nombre: **no llevarán rol**. A este nivel una misma persona juega de
+receptora un día y de central al siguiente, así que atarla a un puesto sería inventarse un dato que
+además envejece mal. Su vínculo con los siete huecos será por convocatoria —quién ocupa qué en un
+partido concreto—, nunca por definición.
 
 Sobre la IA, que es lo que viene después: **la normalización hasta `colocacion` es precisamente lo
 que hace falta**. Modificar un sistema pasa a ser un `UPDATE` de la fila de un jugador en una
@@ -586,30 +609,30 @@ Lo que hay que tener presente:
 - **Los dos sistemas semilla pasan de factorías a datos de seed.** `sistemaPorDefecto` y
   `sistemaDefensaPorDefecto` producen entre los dos 30 formaciones y 180 colocaciones, que ahora hay
   que insertar y asignar a un equipo. Dejan de reaparecer solos cuando no hay nada legible.
-- **Decisión pendiente y de calado:** `SistemaRepository` es **síncrono** (`listar(): readonly
-  Sistema[]`, `guardar(...): void`) y escribe **el catálogo entero de golpe**. Un adaptador HTTP es
-  asíncrono y granular, así que el puerto tiene que cambiar de forma — y eso toca `application/`, no
-  solo `infrastructure/`. `docs/arquitectura.md` ya reservó el hueco («sabemos que habrá un segundo
-  adaptador HTTP»), pero no anticipó el cambio de firma. Merece ADR propia.
+- **El cambio de más calado:** `SistemaRepository` es **síncrono** (`listar(): readonly Sistema[]`,
+  `guardar(...): void`) y escribe **el catálogo entero de golpe**. Un adaptador HTTP es asíncrono y
+  granular, así que el puerto cambia de forma — y eso toca `application/`, no solo
+  `infrastructure/`. `docs/arquitectura.md` ya reservó el hueco («sabemos que habrá un segundo
+  adaptador HTTP»), pero no anticipó el cambio de firma. **Llevará su propia ADR, al cerrar la spec
+  que lo haga.** El write-all, además, deja de ser inofensivo en cuanto hay latencia: crear un
+  sistema antes de que llegue el catálogo mandaría una lista de un elemento sobre un catálogo
+  remoto poblado. Lo arregla la granularidad, no un indicador de carga.
 
 ---
 
-## 9. Antes de escribir una línea de código
+## 9. Estado: autorizado, sin construir
 
-Este documento describe un esquema que **no existe todavía**, y choca con tres cosas ya escritas.
-Las tres autorizan el backend; hay que resolverlas antes de implementar, no después:
+Este esquema **no existe todavía**. Lo que sí está resuelto es el permiso para construirlo: los tres
+textos que decían lo contrario ya se han reescrito.
 
-1. **ADR 0001, «Sin backend en la v1».** No hay que revocarla de fondo: ya nombra este mismo stack
-   —*«Node, Express, PostgreSQL y Prisma»*— y fija la condición de disparo, *«si el equipo pide
-   editar desde varios dispositivos, esa petición justificará el backend»*, que es justo lo que ha
-   pasado. Hace falta una ADR nueva que la sustituya, con el número que toque, siguiendo la regla
-   append-only de `docs/decisiones/README.md`.
-2. **`CLAUDE.md`, invariante 8:** *«Sin backend, sin base de datos, sin autenticación»*. Está en la
-   lista de invariantes que no se negocian, así que hay que reescribirlo o cualquier asistente
-   rechazará el trabajo por protocolo.
-3. **`README.md`, «Qué NO hace (deliberadamente)»**: la sección dice literalmente que no hay backend
-   ni login. La hoja de ruta del mismo fichero, en cambio, ya anticipaba esto: *«un esquema pensado
-   para migrar a PostgreSQL + Prisma en la V2»*.
+1. **[ADR 0023](decisiones/0023-cierra-la-v1-entra-el-backend.md)** cierra la v1 y abre la v2. No
+   revoca el fondo de la 0001 —que ya nombraba este mismo stack y fijaba la condición de disparo,
+   *«si el equipo pide editar desde varios dispositivos»*—: constata que esa condición se cumplió.
+   La 0001 queda marcada como *Sustituida por 0023*.
+2. **`CLAUDE.md`**, invariante 8: donde decía *«sin backend, sin base de datos, sin autenticación»*
+   ahora fija la regla de capas nueva — `server/` solo importa de `src/app/domain/`.
+3. **`README.md`** describe la v2 en «Qué NO hace», en «Stack» y en el paso 8 de la hoja de ruta.
+
 Lo que este documento provocó y **ya está hecho**, con la suite en verde:
 
 - `src/app/domain/plantilla-global.ts` — `central1` pasa a ser el central de P6, el contiguo al

@@ -34,11 +34,17 @@ sin cubrir.
   guardado, además del veredicto de legalidad.
 - Guardar en el navegador; exportar e importar JSON y PNG.
 
-## Qué NO hace (deliberadamente)
+## Qué NO hace
 
-Sin backend, sin base de datos, sin login, sin roles de usuario, sin PWA offline. Todo eso
-entra cuando el equipo haya usado la herramienta en entrenamientos reales y pida algo
-concreto. Ver `docs/decisiones/0001-sin-backend-en-la-v1.md`.
+**Todavía no, pero está decidido y en marcha: la v2.** Backend, base de datos, login con Google o
+contraseña, lista blanca de correos, tres roles de acceso, y sistemas separados por equipo
+masculino y femenino. La condición que la v1 puso para construirlo —que el equipo pidiera editar
+desde varios dispositivos— se cumplió. El esquema está en `docs/modelo-de-datos.md` y la decisión
+en `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`. Mientras tanto, lo que guarda de verdad
+sigue siendo el navegador.
+
+**Fuera a propósito, también en la v2:** PWA offline y sincronización sin conexión. `localStorage`
+no se queda como modo desconectado; se sustituye.
 
 ## Stack
 
@@ -46,7 +52,9 @@ concreto. Ver `docs/decisiones/0001-sin-backend-en-la-v1.md`.
 - SVG nativo para el render (no Canvas, no Fabric.js).
 - TypeScript estricto.
 - Vitest para los tests.
-- Persistencia en `localStorage` detrás de un puerto.
+- Persistencia en `localStorage` detrás de un puerto. En la v2, PostgreSQL con Prisma tras un
+  backend de Node y Express en `server/`, con un segundo adaptador del mismo puerto — `domain/` no
+  se entera.
 
 ## Arranque
 
@@ -95,6 +103,13 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    incluido) y se guarda sin validación de posición — en defensa esa regla no existe. Spec 021.
    La rejilla pintable del paso 5 se generaliza para activarse también aquí: pintar la zona de
    cada defensor y verlas todas a la vez son las specs 022–023.
+8. **Backend, cuentas y equipos (v2).** Los sistemas dejan de vivir en un navegador y pasan a una
+   base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
+   estudiarlos. Por orden: el puerto de persistencia se vuelve asíncrono y granular; cada sistema
+   pasa a ser del equipo masculino o del femenino; nace `server/` con PostgreSQL y su API; la
+   pizarra habla con él; se entra con lista blanca, contraseña y Google; y por último los tres
+   roles deciden quién ve y quién edita cada cosa. Specs 031–037. El esquema completo, en
+   `docs/modelo-de-datos.md`.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.
