@@ -11,10 +11,17 @@
 # de `tsc --build` sin `--noEmit` (no hay outDir configurado), nunca código fuente real.
 src/**/*.js
 
-# Node
+# Node — con barra inicial para que solo afecte a la raíz; server/ tiene sus propias entradas
+# más abajo (spec 033), porque /node_modules sin más no habría alcanzado server/node_modules.
 /node_modules
 npm-debug.log
 yarn-error.log
+
+# server/ (spec 033): su propio proyecto Node, con su propio node_modules y su cliente Prisma
+# generado — ninguno de los dos es código fuente.
+server/node_modules
+server/generated
+server/.env
 
 # IDEs and editors
 .idea/

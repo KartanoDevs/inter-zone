@@ -38,3 +38,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0022](0022-id-de-central-alineado-con-su-etiqueta.md) | El id de un central coincide con su etiqueta: `central1` es `C1` | Aceptada |
 | [0023](0023-cierra-la-v1-entra-el-backend.md) | Se cierra la v1: entran backend, base de datos y cuentas | Aceptada |
 | [0024](0024-puerto-de-persistencia-asincrono-y-granular.md) | El puerto de persistencia es asíncrono y granular | Aceptada |
+| [0025](0025-el-servidor-importa-el-dominio.md) | El servidor importa `src/app/domain/` directamente | Aceptada |

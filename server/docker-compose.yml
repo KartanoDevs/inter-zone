@@ -1,0 +1,18 @@
+# Postgres desechable para desarrollo y para los tests de integración (spec 033).
+# No es infraestructura de despliegue: solo levanta la base de datos local.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: interzone
+      POSTGRES_PASSWORD: interzone
+      POSTGRES_DB: interzone
+    ports:
+      - '5432:5432'
+    volumes:
+      # Postgres 18 cambió el punto de montaje esperado a /var/lib/postgresql (sin /data):
+      # https://github.com/docker-library/postgres/pull/1259
+      - interzone-postgres:/var/lib/postgresql
+
+volumes:
+  interzone-postgres:

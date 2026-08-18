@@ -1,0 +1,36 @@
+{
+  "name": "interzone-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/main.ts",
+    "start": "tsx --env-file=.env src/main.ts",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "seed": "tsx --env-file=.env src/infraestructura/semilla.ts",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "prisma": {
+    "seed": "tsx src/infraestructura/semilla.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.12",
+    "typescript": "~6.0.2",
+    "vitest": "^4.0.8"
+  }
+}

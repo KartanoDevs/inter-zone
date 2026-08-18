@@ -1,0 +1,126 @@
+// Espejo de docs/modelo-de-datos.md — solo las seis tablas que necesita la spec 033
+// (equipo, jugador, sistema, sistema_rotacion, formacion, colocacion). Las tres de acceso
+// (usuario, lista_blanca, membresia) llegan con la spec 035, en una migración nueva que no
+// toca esta.
+//
+// Los CHECK y la función celdas_validas() no se declaran aquí: Prisma no los expresa en su
+// lenguaje de esquema (docs/modelo-de-datos.md §6, "Nota sobre Prisma"). Van a mano en
+// prisma/migrations/.../migration.sql.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum tipo_sistema {
+  recepcion
+  defensa
+}
+
+enum rol_jugador {
+  colocador
+  receptor
+  central
+  opuesto
+  libero
+}
+
+enum via_ataque {
+  z4
+  z3
+  z2
+  pipe
+}
+
+enum estado_sistema {
+  borrador
+  validado
+}
+
+model equipo {
+  id     String @id @default(uuid()) @db.Uuid
+  clave  String @unique
+  nombre String
+
+  sistemas sistema[]
+}
+
+/// Catálogo fijo de siete huecos del dominio, no personas (docs/modelo-de-datos.md §5).
+model jugador {
+  id          String       @id
+  rol         rol_jugador
+  indice      Int?         @db.SmallInt
+  orden_saque Int?         @db.SmallInt
+
+  colocaciones       colocacion[]
+  sustituye_en       sistema_rotacion[]
+}
+
+model sistema {
+  id             String         @id @default(uuid()) @db.Uuid
+  equipo_id      String         @db.Uuid
+  tipo           tipo_sistema
+  nombre         String
+  descripcion    String?
+  estado         estado_sistema @default(borrador)
+  creado_en      DateTime       @default(now()) @db.Timestamptz
+  actualizado_en DateTime       @default(now()) @db.Timestamptz
+
+  equipo     equipo             @relation(fields: [equipo_id], references: [id], onDelete: Restrict)
+  rotaciones sistema_rotacion[]
+
+  @@unique([equipo_id, tipo, nombre])
+  @@index([equipo_id, tipo, estado])
+}
+
+/// La explicación de conjunto de una rotación y a quién sustituye el líbero en ella — dos cosas
+/// en una tabla porque ambas van por (sistema, rotación) (docs/modelo-de-datos.md §5).
+model sistema_rotacion {
+  sistema_id         String  @db.Uuid
+  rotacion           Int     @db.SmallInt
+  explicacion        String?
+  libero_sustituye_a String?
+
+  sistema  sistema     @relation(fields: [sistema_id], references: [id], onDelete: Cascade)
+  jugador  jugador?    @relation(fields: [libero_sustituye_a], references: [id], onDelete: Restrict)
+  formaciones formacion[]
+
+  @@id([sistema_id, rotacion])
+}
+
+model formacion {
+  id         String      @id @default(uuid()) @db.Uuid
+  sistema_id String      @db.Uuid
+  rotacion   Int         @db.SmallInt
+  via        via_ataque?
+
+  rotacion_ref sistema_rotacion @relation(fields: [sistema_id, rotacion], references: [sistema_id, rotacion], onDelete: Cascade)
+  colocaciones colocacion[]
+
+  @@unique([sistema_id, rotacion, via])
+}
+
+model colocacion {
+  formacion_id String  @db.Uuid
+  jugador_id   String
+  x            Float
+  y            Float
+  explicacion  String?
+  /// Los tres estados de Colocacion.celdas (docs/modelo-de-datos.md §5): null = nunca tocada,
+  /// [] = vaciada a propósito, con valores = zona pintada. Prisma no admite "lista opcional"
+  /// en su lenguaje de esquema (Int[]? no es válido) y su cliente tipado no deja escribir
+  /// null en una columna array aunque la propia columna sí lo permita — así que esta columna
+  /// se escribe y se lee con SQL a mano en sistema.repositorio.ts, no con el cliente
+  /// generado. Se deja declarada aquí solo para que Prisma conozca la tabla.
+  celdas       Int[]
+
+  formacion formacion @relation(fields: [formacion_id], references: [id], onDelete: Cascade)
+  jugador   jugador   @relation(fields: [jugador_id], references: [id], onDelete: Restrict)
+
+  @@id([formacion_id, jugador_id])
+}
