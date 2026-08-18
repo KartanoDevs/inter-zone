@@ -1,0 +1,629 @@
+# Modelo de datos relacional (PostgreSQL)
+
+Esquema de la base de datos de la V2, con backend Node y PostgreSQL. Sale de los requisitos de
+datos que ya existen en la aplicación más los que añade el paso a multiusuario.
+
+**Esto no es una spec.** No tiene escenarios Dado/Cuando/Entonces y sí habla de implementación, que
+es justo lo que `docs/flujo-de-trabajo.md` prohíbe en una spec. Es un documento de diseño previo:
+fija la forma de los datos para que la spec que venga después pueda escribirse en lenguaje de
+voleibol sin tener que discutir tablas por el camino.
+
+**Nada de lo que hay aquí está construido.** Ver «Antes de escribir una línea de código» al final.
+
+## Aviso de vocabulario: «rol» significa ahora dos cosas
+
+`docs/dominio.md` ya avisa de que rol y posición rotacional son cosas distintas. A partir de este
+documento hay una tercera:
+
+| Concepto | Valores | Enumerado |
+|---|---|---|
+| **Rol de acceso** — qué puede hacer una persona | admin, entrenador, usuario | `rol_acceso` |
+| **Rol de voleibol** — de qué juega una ficha | colocador, receptor, central, opuesto, líbero | `rol_jugador` |
+| **Posición rotacional** — obligación reglamentaria | P1..P6 | *ninguno: se deriva, no se almacena* |
+
+Los enumerados se llaman distinto a propósito. Si alguna vez lees `rol` a secas en una consulta,
+mira la tabla antes de suponer cuál es.
+
+---
+
+## 1. Principios de diseño
+
+1. **Nada derivado se almacena.** Es el invariante que más fácil se rompe al pasar a SQL. La lista
+   completa está en la sección 6.
+2. **Metros, nunca píxeles.** ADR 0002, y no cambia porque ahora haya una base de datos.
+3. **Sencillo, pero sin condenarse a rehacerlo.** Nueve tablas, ninguna columna especulativa. Todo
+   lo previsible a futuro (un tercer equipo, jugadores con nombre, el modo examen, la IA que redacta
+   sistemas) entra como fila nueva o tabla nueva, jamás como `ALTER` de lo ya escrito. La sección 7
+   lo detalla caso por caso.
+4. **La base de datos rechaza lo imposible; la aplicación decide lo discutible.** Una rotación 7 o
+   una celda 400 no deben poder escribirse. Una formación con falta de posición, en cambio, es un
+   dato legítimo (sección 6).
+5. **Normalizado hasta la colocación.** Es lo que permite que modificar un sistema sea un `UPDATE`
+   de una fila en vez de reescribir un documento entero — y lo que hará falta el día que una IA
+   redacte sistemas desde texto y haya que enseñar el diff antes de aplicarlo.
+
+---
+
+## 2. Modelo entidad-relación
+
+```mermaid
+erDiagram
+    usuario ||--o{ membresia : "pertenece a"
+    equipo  ||--o{ membresia : "tiene miembros"
+    equipo  ||--o{ sistema : "es dueño de"
+    usuario ||--o{ sistema : "crea / valida"
+    lista_blanca }o--|| equipo : "invita a"
+
+    sistema ||--o{ sistema_rotacion : "tiene 6"
+    sistema_rotacion ||--o{ formacion : "1 en recepción, 4 en defensa"
+    formacion ||--o{ colocacion : "tiene 6"
+    jugador ||--o{ colocacion : "se coloca en"
+    jugador ||--o{ sistema_rotacion : "sustituido por el líbero"
+```
+
+Lectura en prosa:
+
+- Una persona entra solo si su email está en `lista_blanca`. Al registrarse se convierte en
+  `usuario` y se le crean sus filas de `membresia`.
+- Cada `sistema` pertenece a un `equipo` (masculino o femenino) y tiene **seis** filas de
+  `sistema_rotacion`, una por R1..R6.
+- Cada rotación tiene **una** `formacion` si el sistema es de recepción, y **hasta cuatro** (una por
+  vía de ataque) si es de defensa.
+- Cada `formacion` tiene seis `colocacion`, una por jugador en pista.
+- `jugador` es un catálogo fijo de siete filas: los huecos del dominio, no personas.
+
+---
+
+## 3. Enumerados
+
+```sql
+CREATE TYPE rol_acceso     AS ENUM ('admin', 'entrenador', 'usuario');
+CREATE TYPE rol_jugador    AS ENUM ('colocador', 'receptor', 'central', 'opuesto', 'libero');
+CREATE TYPE tipo_sistema   AS ENUM ('recepcion', 'defensa');
+CREATE TYPE via_ataque     AS ENUM ('z4', 'z3', 'z2', 'pipe');
+CREATE TYPE estado_sistema AS ENUM ('borrador', 'validado');
+```
+
+`rol_jugador`, `tipo_sistema` y `via_ataque` son copia literal de `RolId`, `TipoSistema` y
+`ViaAtaque` en `src/app/domain/modelos.ts`. No se traducen ni se reordenan: los mismos literales
+viajan de la base de datos al dominio sin capa intermedia.
+
+**El equipo no es un enumerado, es una tabla.** Con dos filas hoy, pero el día que aparezca un
+cadete o un juvenil eso es un `INSERT` y no una migración. Es la diferencia entre poder crecer y
+tener que tocar el esquema.
+
+---
+
+## 4. Acceso: usuarios, equipos y permisos
+
+### `usuario`
+
+```sql
+CREATE EXTENSION IF NOT EXISTS citext;
+
+CREATE TABLE usuario (
+  id                          uuid        PRIMARY KEY,
+  email                       citext      NOT NULL UNIQUE,
+  nombre                      text        NOT NULL,
+  es_admin                    boolean     NOT NULL DEFAULT false,
+  google_sub                  text        UNIQUE,
+  contrasena_hash             text,
+  creado_en                   timestamptz NOT NULL DEFAULT now(),
+  ultimo_acceso_en            timestamptz,
+
+  -- Ajustes de la app (hoy globales; con cuentas pasan a ser de la persona)
+  validacion_desactivada      boolean     NOT NULL DEFAULT false,
+  ayuda_posicion_desactivada  boolean     NOT NULL DEFAULT false,
+  orden_rotacion_cronologico  boolean     NOT NULL DEFAULT false,
+  mostrar_numeros_metros      boolean     NOT NULL DEFAULT false,
+
+  CONSTRAINT usuario_tiene_forma_de_entrar
+    CHECK (google_sub IS NOT NULL OR contrasena_hash IS NOT NULL)
+);
+```
+
+- `citext` para el email: nadie debería quedarse fuera por escribir su correo en mayúsculas. Si se
+  prefiere no depender de la extensión, la alternativa es `text` con
+  `CREATE UNIQUE INDEX ON usuario (lower(email))`.
+- **Las dos vías de entrada conviven.** `google_sub` y `contrasena_hash` son ambos opcionales, pero
+  al menos uno tiene que estar. Así, quien se registró con contraseña puede enlazar su cuenta de
+  Google después sin acabar con dos usuarios y dos catálogos.
+- Los cuatro booleanos son `Ajustes` de `src/app/domain/puertos.ts`, aquí como columnas y no como
+  tabla aparte: son cuatro banderas de una fila, y una tabla `1:1` no aportaría nada. La ADR 0015
+  los sacó de `SistemaRepository` porque no pertenecen a ningún sistema; ahora pertenecen a la
+  persona, que es donde encajan de verdad.
+
+### `equipo`
+
+```sql
+CREATE TABLE equipo (
+  id     uuid PRIMARY KEY,
+  clave  text NOT NULL UNIQUE,
+  nombre text NOT NULL
+);
+
+INSERT INTO equipo (id, clave, nombre) VALUES
+  (gen_random_uuid(), 'masculino', 'Senior masculino'),
+  (gen_random_uuid(), 'femenino',  'Senior femenino');
+```
+
+`clave` es el identificador estable que usa el código; `nombre` es lo que se ve en el desplegable y
+puede cambiar sin romper nada. Mismo criterio que `RolId` frente a `DefinicionRol.nombre` en
+`src/app/domain/roles.ts`.
+
+### `lista_blanca`
+
+```sql
+CREATE TABLE lista_blanca (
+  email        citext      PRIMARY KEY,
+  rol          rol_acceso  NOT NULL DEFAULT 'usuario',
+  equipo_id    uuid        REFERENCES equipo (id) ON DELETE RESTRICT,
+  invitado_por uuid        REFERENCES usuario (id) ON DELETE SET NULL,
+  creado_en    timestamptz NOT NULL DEFAULT now(),
+  usada_en     timestamptz
+);
+```
+
+Es **la única puerta**. Si al registrarse —da igual que sea por Google o por email y contraseña— el
+correo no está en esta tabla, no se crea usuario. No hay registro abierto.
+
+`equipo_id` nulo significa «ambos equipos». Al entrar por primera vez, la fila se traduce:
+
+| `lista_blanca.rol` | Efecto |
+|---|---|
+| `admin` | `usuario.es_admin = true`. Sin membresías: el admin lo ve todo. |
+| `entrenador` | Una `membresia` con rol `entrenador` en su equipo, o en los dos si `equipo_id` es nulo. |
+| `usuario` | Igual, con rol `usuario`. |
+
+Y se sella `usada_en`. **A partir de ese momento la lista blanca es historia, no fuente de verdad**:
+para cambiar los permisos de alguien se tocan `usuario` y `membresia`, no su invitación. Sin esa
+regla acabaríamos con dos sitios que dicen cosas distintas sobre la misma persona.
+
+### `membresia`
+
+```sql
+CREATE TABLE membresia (
+  usuario_id uuid       NOT NULL REFERENCES usuario (id) ON DELETE CASCADE,
+  equipo_id  uuid       NOT NULL REFERENCES equipo (id)  ON DELETE CASCADE,
+  rol        rol_acceso NOT NULL,
+  PRIMARY KEY (usuario_id, equipo_id),
+  CONSTRAINT membresia_sin_admin CHECK (rol <> 'admin')
+);
+```
+
+Aquí está la respuesta a «un usuario de la whitelist tendrá que añadirse para ver los permisos que
+tendrá sobre dicho sistema»: **se añade al equipo, y sus permisos sobre un sistema salen de su rol
+en el equipo dueño de ese sistema**. No hay permisos sistema a sistema, que obligarían a mantener
+una fila por cada par (persona, sistema) y a acordarse de darlos cada vez que se crea uno.
+
+Un entrenador puede llevar los dos equipos con una sola cuenta: dos filas. `admin` no aparece aquí
+porque no está acotado a ningún equipo.
+
+### Matriz de permisos
+
+Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
+
+| | Admin | Entrenador | Usuario |
+|---|---|---|---|
+| Ver sistemas validados | todos | de sus equipos | de sus equipos |
+| Ver borradores | sí | de sus equipos | **no** |
+| Crear, editar, clonar, borrar | sí | de sus equipos | no |
+| Validar un sistema | sí | de sus equipos | no |
+| Gestionar lista blanca, usuarios y equipos | sí | no | no |
+| Examinarse *(futuro)* | sí | sí | sí |
+
+Traducido a consulta, lo que un usuario ve:
+
+```sql
+SELECT s.* FROM sistema s
+WHERE s.estado = 'validado'
+  AND s.equipo_id IN (SELECT equipo_id FROM membresia WHERE usuario_id = $1);
+```
+
+Y lo que ve un entrenador, borradores incluidos:
+
+```sql
+SELECT s.* FROM sistema s
+WHERE s.equipo_id IN (
+  SELECT equipo_id FROM membresia WHERE usuario_id = $1 AND rol = 'entrenador'
+);
+```
+
+**Quién valida: el entrenador de ese equipo, o un admin.** Un entrenador no depende de nadie para
+publicar sus sistemas hacia los jugadores. En consulta:
+
+```sql
+-- ¿puede $1 validar el sistema $2?
+SELECT u.es_admin
+    OR EXISTS (
+         SELECT 1 FROM membresia m
+         JOIN sistema s ON s.equipo_id = m.equipo_id
+         WHERE m.usuario_id = u.id AND m.rol = 'entrenador' AND s.id = $2
+       )
+FROM usuario u WHERE u.id = $1;
+```
+
+Es política de aplicación, no estructura: endurecerla después —que valide solo un admin, o que nadie
+valide lo suyo— es cambiar esta condición, sin tocar ninguna tabla.
+
+---
+
+## 5. Voleibol: sistemas, formaciones y colocaciones
+
+### `jugador` — catálogo fijo de siete huecos
+
+```sql
+CREATE TABLE jugador (
+  id          text        PRIMARY KEY,
+  rol         rol_jugador NOT NULL,
+  indice      smallint,
+  orden_saque smallint,
+
+  CONSTRAINT jugador_indice_valido CHECK (indice IN (1, 2)),
+  CONSTRAINT jugador_orden_valido  CHECK (orden_saque BETWEEN 1 AND 6),
+  CONSTRAINT jugador_libero_fuera_del_orden
+    CHECK ((rol = 'libero') = (orden_saque IS NULL)),
+  CONSTRAINT jugador_orden_unico      UNIQUE (orden_saque),
+  CONSTRAINT jugador_rol_indice_unico UNIQUE NULLS NOT DISTINCT (rol, indice)
+);
+
+INSERT INTO jugador (id, rol, indice, orden_saque) VALUES
+  ('colocador', 'colocador', NULL, 1),  -- P1 -> C
+  ('receptor1', 'receptor',  1,    2),  -- P2 -> R1
+  ('central2',  'central',   2,    3),  -- P3 -> C2
+  ('opuesto',   'opuesto',   NULL, 4),  -- P4 -> O
+  ('receptor2', 'receptor',  2,    5),  -- P5 -> R2
+  ('central1',  'central',   1,    6),  -- P6 -> C1, el central contiguo al colocador
+  ('libero',    'libero',    NULL, NULL);
+```
+
+Son los siete huecos del dominio, **no personas**. Quién los ocupa en cada entrenamiento no se
+guarda, porque a este nivel las posiciones cambian de una semana a otra.
+
+- **`central1` es el central contiguo al colocador y se etiqueta `C1`.** En R1 el colocador está en
+  P1 y ese central en P6, a su lado. Es la convención del entrenador que recoge la ADR 0017:
+  *«nombra `R1` al receptor de P2 y `C1` al central de P6»*.
+- **Esto corrige un desajuste que arrastraba `plantilla-global.ts`**, donde los dos ids estaban
+  cruzados: el hueco de P6 se etiquetaba `C1` pero llevaba el id `central2`, y el de P3 se
+  etiquetaba `C2` con el id `central1`. Las etiquetas en pantalla eran —y siguen siendo—
+  correctas; lo que no cuadraba era el identificador interno. Al enderezarlo, id y etiqueta
+  coinciden por construcción y desaparece la trampa que la ADR 0017 dejó anotada.
+- `PRIMARY KEY` de tipo `text` con los mismos literales que usa la aplicación. Es lo que permite que
+  una `Colocacion` se reensamble sin ninguna capa de traducción.
+- `jugador_libero_fuera_del_orden` es la ADR 0014 en una línea: el líbero no ocupa plaza fija en el
+  orden de saque.
+- `UNIQUE NULLS NOT DISTINCT (rol, indice)` expresa de una tacada los invariantes 7 y 8 de
+  `docs/dominio.md`: un colocador, un opuesto, un líbero, R1 ≠ R2, C1 ≠ C2. Con la regla normal de
+  `UNIQUE` no funcionaría, porque dos `NULL` se consideran distintos y colarían dos colocadores.
+
+### `sistema`
+
+```sql
+CREATE TABLE sistema (
+  id             uuid           PRIMARY KEY,
+  equipo_id      uuid           NOT NULL REFERENCES equipo (id) ON DELETE RESTRICT,
+  tipo           tipo_sistema   NOT NULL,
+  nombre         text           NOT NULL,
+  descripcion    text,
+  estado         estado_sistema NOT NULL DEFAULT 'borrador',
+  creado_por     uuid           REFERENCES usuario (id) ON DELETE SET NULL,
+  validado_por   uuid           REFERENCES usuario (id) ON DELETE SET NULL,
+  validado_en    timestamptz,
+  creado_en      timestamptz    NOT NULL DEFAULT now(),
+  actualizado_en timestamptz    NOT NULL DEFAULT now(),
+
+  CONSTRAINT sistema_nombre_no_vacio CHECK (btrim(nombre) <> ''),
+  CONSTRAINT sistema_nombre_unico    UNIQUE (equipo_id, tipo, nombre),
+  CONSTRAINT sistema_validado_con_fecha
+    CHECK ((estado = 'validado') = (validado_en IS NOT NULL))
+);
+
+CREATE INDEX sistema_por_equipo ON sistema (equipo_id, tipo, estado);
+```
+
+- **`UNIQUE (equipo_id, tipo, nombre)`.** Hoy la unicidad es `(tipo, nombre)` —lo comprueba
+  `colisiona` en `src/app/domain/catalogo-sistemas.ts`, y la spec 006 E5 acepta a propósito el mismo
+  nombre en tipos distintos—. Con dos equipos se extiende de la forma natural: masculino y femenino
+  pueden tener cada uno su «5-1» de recepción sin pisarse.
+- **`sistema_validado_con_fecha` mira `validado_en`, no `validado_por`**, y es deliberado. Con la
+  clave ajena en `ON DELETE SET NULL`, borrar a la persona que validó un sistema pondría
+  `validado_por` a nulo y volvería a evaluar el `CHECK`: si la condición dependiera de esa columna,
+  el borrado fallaría. Así, un sistema validado sigue validado aunque su validador ya no esté; solo
+  se pierde el nombre.
+- **`actualizado_en` hace de testigo de concurrencia.** La spec 008 dejó anotado que `guardar()` no
+  mira lo ya almacenado antes de escribir; contra una base de datos eso es pisar el trabajo de otro
+  entrenador. Con un `WHERE id = $1 AND actualizado_en = $2` la escritura tardía falla en vez de
+  ganar. No hace falta columna de versión.
+- `ON DELETE RESTRICT` en `equipo_id`: no se borra un equipo con sistemas dentro.
+
+### `sistema_rotacion`
+
+```sql
+CREATE TABLE sistema_rotacion (
+  sistema_id         uuid     NOT NULL REFERENCES sistema (id) ON DELETE CASCADE,
+  rotacion           smallint NOT NULL,
+  explicacion        text,
+  libero_sustituye_a text     REFERENCES jugador (id) ON DELETE RESTRICT,
+
+  PRIMARY KEY (sistema_id, rotacion),
+  CONSTRAINT sistema_rotacion_valida CHECK (rotacion BETWEEN 1 AND 6),
+  CONSTRAINT sistema_rotacion_libero_no_se_sustituye
+    CHECK (libero_sustituye_a <> 'libero')
+);
+```
+
+**Dos cosas en una tabla, porque las dos van por (sistema, rotación):** la explicación de conjunto de
+esa rotación y a quién sustituye el líbero en ella. Tenerlas separadas serían dos tablas con la
+misma clave primaria.
+
+- **Seis filas por sistema, creadas al crearlo.** El comentario de `SustitucionLibero` en
+  `modelos.ts` es explícito: el mapa cubre siempre 1..6, nunca un subconjunto. Que sean seis no es
+  expresable como restricción de tabla —es una condición sobre el conjunto de filas—, así que es un
+  invariante de creación: se insertan las seis a la vez.
+- `libero_sustituye_a` nulo = en esa rotación el líbero no entra. Es el `null` de
+  `sustitutosPorRotacion`.
+- **El sustituto vive en el sistema, no en el equipo.** Hoy `cambiarSustitutoLibero` clona la
+  plantilla del sistema, así que dos sistemas del mismo equipo pueden usar al líbero de forma
+  distinta. Se respeta.
+- **En defensa una rotación tiene cuatro formaciones pero una sola explicación de rotación.** Por eso
+  esto no cuelga de `formacion`: colgaría cuatro copias del mismo texto.
+
+### `formacion`
+
+```sql
+CREATE TABLE formacion (
+  id         uuid     PRIMARY KEY,
+  sistema_id uuid     NOT NULL,
+  rotacion   smallint NOT NULL,
+  via        via_ataque,
+
+  FOREIGN KEY (sistema_id, rotacion)
+    REFERENCES sistema_rotacion (sistema_id, rotacion) ON DELETE CASCADE,
+  CONSTRAINT formacion_unica UNIQUE NULLS NOT DISTINCT (sistema_id, rotacion, via)
+);
+```
+
+- `via` nula = recepción. Con vía = defensa, y es una de las cuatro.
+- **`UNIQUE NULLS NOT DISTINCT`** otra vez, y aquí es imprescindible: con la regla normal, dos
+  formaciones de recepción de la misma rotación (ambas con `via` nula) no colisionarían, porque
+  `NULL ≠ NULL`. Con `NULLS NOT DISTINCT`, «sin vía» cuenta como un valor más y la restricción
+  funciona. Requiere PostgreSQL 15 o superior.
+- **La clave ajena apunta a `sistema_rotacion`, no a `sistema`.** Una sola clave que además
+  garantiza que la rotación existe antes de colgarle formaciones.
+
+*Endurecimiento opcional, no incluido:* que un sistema de recepción no pueda tener formaciones con
+vía, y uno de defensa no pueda tenerlas sin ella, se puede forzar denormalizando `tipo` en esta
+tabla con una clave ajena compuesta contra `sistema (id, tipo)` más un `CHECK`. Se deja fuera por
+sencillez; la aplicación ya lo garantiza en `guardarFormacion` y `guardarFormacionDefensa`. Si algún
+día una IA empieza a escribir formaciones directamente, este es el primer candado que hay que poner.
+
+### `colocacion`
+
+```sql
+CREATE FUNCTION celdas_validas(celdas integer[]) RETURNS boolean
+  LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
+    SELECT coalesce(bool_and(c BETWEEN 0 AND 323), true)
+       AND count(*) = count(DISTINCT c)
+    FROM unnest(celdas) AS c;
+  $$;
+
+CREATE TABLE colocacion (
+  formacion_id uuid             NOT NULL REFERENCES formacion (id) ON DELETE CASCADE,
+  jugador_id   text             NOT NULL REFERENCES jugador (id)   ON DELETE RESTRICT,
+  x            double precision NOT NULL,
+  y            double precision NOT NULL,
+  explicacion  text,
+  celdas       integer[],
+
+  PRIMARY KEY (formacion_id, jugador_id),
+  CONSTRAINT colocacion_x_en_zona CHECK (x BETWEEN -2.5 AND 11.5),
+  CONSTRAINT colocacion_y_en_zona CHECK (y BETWEEN 0 AND 12),
+  CONSTRAINT colocacion_celdas_en_rejilla CHECK (celdas IS NULL OR celdas_validas(celdas))
+);
+```
+
+**Las coordenadas van en `double precision`, sin escala fijada.** La spec 008 E6 exige que los
+decimales lleguen exactos, sin redondear, y su sección de preguntas cerradas lo confirma: se guardan
+tal cual. Un `numeric(4,2)` con la escala inventada rompería ese escenario.
+
+**Los rangos salen de `docs/dominio.md` §3: `-2.5 ≤ x ≤ 11.5` y `0 ≤ y ≤ 12`.** Es la zona libre,
+más ancha que las líneas del campo, porque un jugador puede estar fuera de ellas en el momento del
+saque y sigue siendo legal.
+
+**`y` nunca es negativa: nadie del propio equipo pasa la red.** Escribir este documento destapó que
+la pizarra sí lo permitía —`LIMITE_Y` valía `[-3.6, 9.3]` en `src/app/ui/tablero/tablero.ts`, así
+que se podía arrastrar a un defensor al campo rival—. Era un fallo, no una licencia, y se corrigió
+al fijar este esquema. El campo rival (`y < 0`) es solo para la ficha rival, que tiene sus propios
+límites y de la que además no se persiste ninguna posición (ADR 0020). Ninguno de los dos sistemas
+sembrados tenía una `y` negativa, así que la corrección no dejó datos fuera de rango.
+
+Estos `CHECK` sirven para atajar disparates —una `x` de 500, lo que escribiría un modelo que se
+inventa una formación—, no para arbitrar reglas de voleibol. La `x`, más ancha en el documento de
+dominio que en los límites de arrastre, se deja como la marca el dominio: la restricción no debe ser
+más estrecha que la regla.
+
+**Las celdas van como array, no como tabla hija.** Dos motivos:
+
+1. **Volumen.** Un sistema de defensa completo son 24 formaciones × 6 jugadores, y cada zona son
+   decenas de celdas: normalizadas rondarían las decenas de miles de filas por sistema, sin ganar
+   ninguna consulta que no se pueda hacer igual de bien sobre el array.
+2. **Los tres estados.** `Colocacion.celdas` distingue tres situaciones que una tabla hija no separa
+   sin una bandera extra:
+
+   | Valor | Significado |
+   |---|---|
+   | `NULL` | Nunca se tocó. Se muestra el bloque 2×2 por defecto derivado del punto. |
+   | `'{}'` | Vaciada a propósito (spec 028). Cero celdas, sin bloque por defecto. |
+   | `{12,13,30,31}` | Zona pintada a mano. |
+
+   Con filas hijas, «ninguna fila» significaría las dos primeras cosas a la vez.
+
+El índice es **lineal**: `indice = fila * 18 + columna`, con `fila` y `columna` en 0..17 sobre la
+rejilla de 18×18 que sale de `TAMANO_CELDA = 0.5` y el campo propio de 9×9 m
+(`src/app/domain/rejilla.ts`). De vuelta: `fila = indice / 18`, `columna = indice % 18`. De ahí el
+`0..323` del `CHECK`.
+
+`celdas_validas` comprueba rango y ausencia de duplicados. Sobre un array vacío, los agregados dan
+`true`, así que `'{}'` pasa — que es justo lo que hace falta.
+
+---
+
+## 6. Lo que NO va en la base de datos
+
+Media docena de cosas que parecen columnas y no lo son. Es la sección que hay que releer contra el
+DDL antes de dar el esquema por bueno.
+
+### Derivado, nunca almacenado
+
+De los invariantes de `docs/dominio.md` §7:
+
+| Dato | Se deriva de | Dónde |
+|---|---|---|
+| Posición rotacional P1..P6 | orden de saque + rotación | `formacionEnRotacion` |
+| Quién está en pista | sustituto del líbero + rotación | `jugadoresEnPista` |
+| Etiqueta (`C`, `R1`, `C2`, `O`, `L`) | rol + configuración + índice | `etiquetaDe` |
+| Vía de ataque | punto del rival | `viaDeAtaque`, y ADR 0020: solo se guarda la vía ya resuelta |
+| Zona por defecto 2×2 | el punto del jugador | `bloquePorDefecto` |
+| Infracciones y avisos | la formación | `validarFormacion` |
+| Huecos y conflictos | las celdas de todos | todavía sin implementar |
+
+Si aparece en el esquema una columna de posición rotacional, de etiqueta o de vía calculada desde un
+punto, sobra.
+
+### La falta de posición no es un `CHECK`
+
+Podría parecer el candado ideal, y sería un error. La spec 017 permite **desactivar la validación**
+para enseñar una excepción, y la 026 contempla guardar a propósito una versión «con falta» para
+enseñar el error. **Un sistema con formaciones ilegales es un dato legítimo.** Un `CHECK` lo
+impediría y se llevaría por delante un caso de uso didáctico.
+
+### Lo que no cabe en una restricción de tabla
+
+Son condiciones sobre conjuntos de filas, no sobre una fila:
+
+- «Exactamente seis colocaciones, y justo el roster de esa rotación» → se queda en `guardarFormacion`
+  y `guardarFormacionDefensa`, que ya lo comprueban.
+- «Seis filas de `sistema_rotacion` por sistema» → invariante de creación.
+- «Exactamente 1 colocador, 2 receptores, 2 centrales y 1 opuesto» → `validarPlantilla`. El catálogo
+  fijo de siete filas lo cumple por construcción.
+
+### Nota sobre Prisma
+
+**Prisma no sabe expresar `CHECK` ni índices parciales** en su schema. Van en SQL a mano dentro de la
+migración (`prisma migrate dev --create-only` y editar el fichero antes de aplicarlo). Aquí no es un
+detalle menor: **casi todos los invariantes de voleibol de este modelo son `CHECK`s.** Si se generan
+las migraciones sin revisarlas, el esquema queda sin la mitad de sus garantías.
+
+---
+
+## 7. Ampliaciones que no tocarán el esquema
+
+Todo esto entra como fila nueva o tabla nueva. Ninguna requiere `ALTER` de las nueve tablas de
+arriba, que es lo que se pedía al diseñarlo.
+
+| Ampliación | Cómo entra |
+|---|---|
+| Un tercer equipo (cadete, juvenil) | `INSERT` en `equipo` |
+| Jugadores con nombre real | Tabla nueva enlazada; los siete huecos siguen intactos |
+| Varias alineaciones por equipo | Tabla nueva, con `sistema` apuntando a ella |
+| Modo examen | `intento_examen` e `intento_colocacion`, colgando de `sistema` y `usuario` |
+| IA que redacta sistemas | Tabla de auditoría: petición, antes, después |
+| Renombrar roles por equipo («Receptor» → «Punta») | Tabla de configuración de roles |
+
+Sobre la IA, que es lo que viene después: **la normalización hasta `colocacion` es precisamente lo
+que hace falta**. Modificar un sistema pasa a ser un `UPDATE` de la fila de un jugador en una
+rotación, no reescribir el sistema entero, así que se puede enseñar el diff al entrenador antes de
+aplicarlo, revertirlo, y evitar que dos ediciones simultáneas se pisen. Con el sistema guardado como
+un único documento, ninguna de las tres cosas es posible.
+
+---
+
+## 8. Compatibilidad con la aplicación
+
+Ida y vuelta entre lo que hay hoy y las tablas.
+
+| Modelo actual | Tabla y columna |
+|---|---|
+| `Sistema.id`, `.nombre`, `.tipo`, `.descripcion` | `sistema` |
+| `Sistema.plantilla` | catálogo fijo `jugador` — no se guarda por sistema |
+| `SustitucionLibero.sustitutosPorRotacion[n]` | `sistema_rotacion.libero_sustituye_a` |
+| `Sistema.explicacionesRotacion[n]` | `sistema_rotacion.explicacion` |
+| `Sistema.formaciones[n]` | `formacion` con `via IS NULL` |
+| `Sistema.defensas[n][via]` | `formacion` con `via` |
+| `Colocacion.jugador.id` | `colocacion.jugador_id` |
+| `Colocacion.punto.x` / `.y` | `colocacion.x` / `.y` |
+| `Colocacion.explicacion` | `colocacion.explicacion` |
+| `Colocacion.celdas` | `colocacion.celdas` (índice lineal) |
+| `SistemaPersistido.creadoEn` / `.actualizadoEn` | `sistema.creado_en` / `.actualizado_en` |
+| `Ajustes` (los cuatro) | columnas de `usuario` |
+
+Lo que hay que tener presente:
+
+- **Los siete `jugador.id` son literalmente los strings que la app ya usa**, así que una `Colocacion`
+  se reensambla sin traducir nada. `formacionDe` en el repositorio actual seguiría funcionando igual.
+- **Excepción: `central1` y `central2` se intercambiaron al escribir este documento.** Los ids
+  estaban cruzados respecto a las etiquetas, así que `ORDEN_TITULARES` en
+  `src/app/domain/plantilla-global.ts` ya se enderezó: `central1` es el central de P6, contiguo al
+  colocador, y se pinta `C1`. **Las etiquetas en pantalla no cambiaron** —lo confirma
+  `plantilla-global.spec.ts`, que verifica las seis rotaciones de referencia etiqueta a etiqueta y
+  siguió pasando sin tocarlo—; solo se movió el identificador interno.
+
+  **Consecuencia sobre datos ya guardados:** las posiciones se persisten por `jugadorId`, así que
+  cualquier sistema hecho a mano y guardado en un navegador *antes* del cambio tiene ahora los dos
+  centrales cruzados. Los dos sistemas sembrados no se ven afectados, porque se generan por rol vía
+  `jugadoresEnPista`. Se hizo ahora precisamente por eso: el único dato en riesgo estaba en el
+  navegador de una persona, no en una base de datos con el trabajo de dos equipos dentro.
+- **La ADR 0012 se mantiene intacta.** `creado_en` y `actualizado_en` son columnas de
+  infraestructura; no entran en el tipo `Sistema` de dominio, igual que hoy no entran en él.
+- **`equipo` y `estado`, en cambio, sí son visibles para quien usa la aplicación**: uno es el
+  desplegable al crear un sistema, el otro decide qué ve un usuario normal. No se pueden esconder en
+  infraestructura como las fechas. **Decisión pendiente:** o `Sistema` gana esos dos campos, o
+  `SistemaRepository` gana un método de metadatos, que es exactamente la salida que la propia ADR
+  0012 dejó anticipada («algo como `metadatosDe(id)`»).
+- **La política de versionado actual deja de valer.** Hoy, una versión distinta a la esperada se
+  trata como payload ilegible: se descarta todo y se siembra de cero. Contra una base de datos eso
+  es borrar el trabajo de un equipo. Se sustituye por migraciones versionadas, con Prisma Migrate.
+- **Los dos sistemas semilla pasan de factorías a datos de seed.** `sistemaPorDefecto` y
+  `sistemaDefensaPorDefecto` producen entre los dos 30 formaciones y 180 colocaciones, que ahora hay
+  que insertar y asignar a un equipo. Dejan de reaparecer solos cuando no hay nada legible.
+- **Decisión pendiente y de calado:** `SistemaRepository` es **síncrono** (`listar(): readonly
+  Sistema[]`, `guardar(...): void`) y escribe **el catálogo entero de golpe**. Un adaptador HTTP es
+  asíncrono y granular, así que el puerto tiene que cambiar de forma — y eso toca `application/`, no
+  solo `infrastructure/`. `docs/arquitectura.md` ya reservó el hueco («sabemos que habrá un segundo
+  adaptador HTTP»), pero no anticipó el cambio de firma. Merece ADR propia.
+
+---
+
+## 9. Antes de escribir una línea de código
+
+Este documento describe un esquema que **no existe todavía**, y choca con cuatro cosas ya escritas.
+Hay que resolverlas antes de implementar, no después:
+
+1. **ADR 0001, «Sin backend en la v1».** No hay que revocarla de fondo: ya nombra este mismo stack
+   —*«Node, Express, PostgreSQL y Prisma»*— y fija la condición de disparo, *«si el equipo pide
+   editar desde varios dispositivos, esa petición justificará el backend»*, que es justo lo que ha
+   pasado. Hace falta una ADR nueva que la sustituya, con el número que toque, siguiendo la regla
+   append-only de `docs/decisiones/README.md`.
+2. **`CLAUDE.md`, invariante 8:** *«Sin backend, sin base de datos, sin autenticación»*. Está en la
+   lista de invariantes que no se negocian, así que hay que reescribirlo o cualquier asistente
+   rechazará el trabajo por protocolo.
+3. **`README.md`, «Qué NO hace (deliberadamente)»**: la sección dice literalmente que no hay backend
+   ni login. La hoja de ruta del mismo fichero, en cambio, ya anticipaba esto: *«un esquema pensado
+   para migrar a PostgreSQL + Prisma en la V2»*.
+4. **Queda desactualizado un párrafo de la ADR 0017**, que dice en sus consecuencias que
+   `plantilla-global.ts` avisa de que *«`central1` se pinta `C2`»*. Ya no es cierto: los ids se
+   enderezaron al escribir este documento (sección 8). La ADR **no se edita** —
+   `docs/decisiones/README.md` es append-only—, así que la corrección va en una decisión nueva.
+   Sigue vigente su decisión de fondo: el índice se declara, no se deriva.
+
+Dos correcciones de código que este documento provocó y **ya están hechas**, con la suite en verde:
+
+- `src/app/domain/plantilla-global.ts` — `central1` pasa a ser el central de P6, el contiguo al
+  colocador, coherente con su etiqueta `C1`. Ajustados los dos tests que codificaban el cruce
+  (`rotacion.spec.ts`, `sistema-por-defecto.spec.ts`), ambos como puro renombrado.
+- `src/app/ui/tablero/tablero.ts` — `LIMITE_Y` pasa de `[-3.6, 9.3]` a `[0, 9.3]`: ningún jugador
+  propio se arrastra ya al campo rival.
+
+**Requisito de versión:** el esquema da por hecho **PostgreSQL 15 o superior**. Lo necesita
+`UNIQUE NULLS NOT DISTINCT`, que sostiene dos restricciones de peso: «solo un colocador, un opuesto
+y un líbero» en `jugador`, y «una sola formación de recepción por rotación» en `formacion`.
