@@ -159,11 +159,16 @@ export class SistemaStore {
   constructor(
     private readonly repositorio: SistemaRepository,
     private readonly ajustesRepositorio?: AjustesRepository,
-  ) {
-    const catalogo = ordenarCatalogo(repositorio.listar());
+  ) {}
+
+  /** Carga el catálogo y los ajustes (spec 031). Se llama una vez, antes de que se muestre la
+   * pizarra — `app.config.ts` la dispara con `provideAppInitializer` — para que ningún consumidor
+   * vea nunca el estado a medio poblar. */
+  async cargar(): Promise<void> {
+    const catalogo = ordenarCatalogo(await this.repositorio.listar());
     this.sistemas.set(catalogo);
     this.sistemaActivoId.set(catalogo[0]?.id ?? null);
-    const ajustes = ajustesRepositorio?.leer();
+    const ajustes = await this.ajustesRepositorio?.leer();
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
     this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
@@ -172,35 +177,36 @@ export class SistemaStore {
   }
 
   /** Ver/ocultar faltas y avisos: desactivarla permite guardar cualquier formación completa (spec 017). */
-  alternarValidacion(): void {
+  async alternarValidacion(): Promise<void> {
     const valor = !this.validacionDesactivada();
     this.validacionDesactivada.set(valor);
-    this.guardarAjustes();
+    await this.guardarAjustes();
   }
 
   /** Ver/ocultar la ayuda de posición rotacional (P1..P6) bajo cada ficha. */
-  alternarAyudaPosicion(): void {
+  async alternarAyudaPosicion(): Promise<void> {
     const valor = !this.ayudaPosicionDesactivada();
     this.ayudaPosicionDesactivada.set(valor);
-    this.guardarAjustes();
+    await this.guardarAjustes();
   }
 
   /** Pestañas en orden cronológico de juego (R1, R6, R5, R4, R3, R2) en vez de orden numérico. */
-  alternarOrdenRotacion(): void {
+  async alternarOrdenRotacion(): Promise<void> {
     const valor = !this.ordenRotacionCronologico();
     this.ordenRotacionCronologico.set(valor);
-    this.guardarAjustes();
+    await this.guardarAjustes();
   }
 
   /** Ver/ocultar los números de metros a la izquierda de la rejilla. */
-  alternarMostrarNumerosMetros(): void {
+  async alternarMostrarNumerosMetros(): Promise<void> {
     const valor = !this.mostrarNumerosMetros();
     this.mostrarNumerosMetros.set(valor);
-    this.guardarAjustes();
+    await this.guardarAjustes();
   }
 
-  private guardarAjustes(): void {
-    this.ajustesRepositorio?.guardar({
+  /** Solo toca el ajuste global (spec 031): nunca reescribe el catálogo de sistemas. */
+  private async guardarAjustes(): Promise<void> {
+    await this.ajustesRepositorio?.guardar({
       validacionDesactivada: this.validacionDesactivada(),
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
       ordenRotacionCronologico: this.ordenRotacionCronologico(),
@@ -279,14 +285,14 @@ export class SistemaStore {
     this.jugadorSeleccionadoId.set(null);
   }
 
-  crear(nombre: string, tipo: TipoSistema): boolean {
+  async crear(nombre: string, tipo: TipoSistema): Promise<boolean> {
     const id = crypto.randomUUID();
     const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL, this.sistemas());
     if (!nuevo) {
       return false;
     }
     this.sistemas.update((lista) => [...lista, nuevo]);
-    this.repositorio.guardar(this.sistemas());
+    await this.repositorio.crear(nuevo);
     this.sistemaActivoId.set(id);
     this.rotacionActiva.set(1);
     this.cambiarContexto();
@@ -294,7 +300,7 @@ export class SistemaStore {
   }
 
   /** Duplica el sistema activo bajo un nombre nuevo y lo deja activo (spec 026). */
-  clonar(nombre: string): boolean {
+  async clonar(nombre: string): Promise<boolean> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return false;
@@ -305,14 +311,14 @@ export class SistemaStore {
       return false;
     }
     this.sistemas.update((lista) => [...lista, clon]);
-    this.repositorio.guardar(this.sistemas());
+    await this.repositorio.crear(clon);
     this.sistemaActivoId.set(id);
     this.rotacionActiva.set(1);
     this.cambiarContexto();
     return true;
   }
 
-  renombrarActivo(nombre: string): boolean {
+  async renombrarActivo(nombre: string): Promise<boolean> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return false;
@@ -321,23 +327,23 @@ export class SistemaStore {
     if (!actualizado) {
       return false;
     }
-    this.reemplazarSistema(actualizado);
+    await this.reemplazarSistema(actualizado);
     return true;
   }
 
   /** A quién sustituye el líbero del sistema activo, en una rotación concreta (spec 017). */
-  cambiarSustitutoLibero(rotacion: RotacionValida, sustituidoId: string | null): void {
+  async cambiarSustitutoLibero(rotacion: RotacionValida, sustituidoId: string | null): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return;
     }
-    this.reemplazarSistema(cambiarSustitutoLibero(sistema, rotacion, sustituidoId));
+    await this.reemplazarSistema(cambiarSustitutoLibero(sistema, rotacion, sustituidoId));
     this.borrador.set(this.formacionGuardadaActiva());
   }
 
-  borrar(id: string): void {
+  async borrar(id: string): Promise<void> {
     this.sistemas.update((lista) => borrarSistema(lista, id));
-    this.repositorio.guardar(this.sistemas());
+    await this.repositorio.borrar(id);
     if (this.sistemaActivoId() === id) {
       const primero = ordenarCatalogo(this.sistemas())[0] ?? null;
       this.sistemaActivoId.set(primero?.id ?? null);
@@ -346,7 +352,7 @@ export class SistemaStore {
     }
   }
 
-  guardarExplicacion(texto: string): void {
+  async guardarExplicacion(texto: string): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return;
@@ -358,16 +364,16 @@ export class SistemaStore {
     if (!actualizado) {
       return;
     }
-    this.reemplazarSistema(actualizado);
+    await this.reemplazarSistema(actualizado);
   }
 
   /** Cambia la descripción general del sistema activo (spec 025). */
-  guardarDescripcion(texto: string): void {
+  async guardarDescripcion(texto: string): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return;
     }
-    this.reemplazarSistema(describirSistema(sistema, texto));
+    await this.reemplazarSistema(describirSistema(sistema, texto));
   }
 
   cancelarCambio(): void {
@@ -432,7 +438,7 @@ export class SistemaStore {
     this.borrador.set([]);
   }
 
-  guardar(): void {
+  async guardar(): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema || !this.puedeGuardar()) {
       return;
@@ -444,14 +450,15 @@ export class SistemaStore {
     if (!guardado) {
       return;
     }
-    this.reemplazarSistema(guardado);
+    await this.reemplazarSistema(guardado);
     this.borrador.set(this.formacionGuardadaActiva());
   }
 
-  /** Sustituye un sistema en el catálogo por su versión actualizada y persiste. */
-  private reemplazarSistema(actualizado: Sistema): void {
+  /** Sustituye un sistema en el catálogo por su versión actualizada y persiste solo ese sistema
+   * (spec 031): nunca reescribe los demás. */
+  private async reemplazarSistema(actualizado: Sistema): Promise<void> {
     this.sistemas.update((lista) => lista.map((s) => (s.id === actualizado.id ? actualizado : s)));
-    this.repositorio.guardar(this.sistemas());
+    await this.repositorio.actualizar(actualizado);
   }
 
   /** Recarga el borrador desde lo guardado y deselecciona: se llama al cambiar de rotación o de sistema. */

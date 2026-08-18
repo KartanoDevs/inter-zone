@@ -50,7 +50,7 @@ function esPayloadValido(valor: unknown): valor is Payload {
 export class LocalStorageAjustesRepository implements AjustesRepository {
   constructor(private readonly almacen: AlmacenClaveValor) {}
 
-  leer(): Ajustes {
+  async leer(): Promise<Ajustes> {
     const bruto = this.almacen.getItem(CLAVE);
     if (bruto === null) {
       return AJUSTES_POR_DEFECTO;
@@ -67,7 +67,7 @@ export class LocalStorageAjustesRepository implements AjustesRepository {
     return parseado.data;
   }
 
-  guardar(ajustes: Ajustes): void {
+  async guardar(ajustes: Ajustes): Promise<void> {
     const payload: Payload = { version: VERSION_ACTUAL, data: ajustes };
     this.almacen.setItem(CLAVE, JSON.stringify(payload));
   }

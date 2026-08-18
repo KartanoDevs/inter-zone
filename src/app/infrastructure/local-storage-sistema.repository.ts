@@ -78,29 +78,63 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
   ) {}
 
   /**
-   * Sin nada legible (nunca se guardó nada, JSON roto, o versión distinta a la actual), se
-   * siembran los dos sistemas de ejemplo: recepción (spec 025) y defensa (spec 030). Es
-   * distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un payload legible
-   * con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
+   * Nada guardado nunca (`bruto === null`): se siembran los dos sistemas de ejemplo —recepción
+   * (spec 025) y defensa (spec 030)— y se escriben de inmediato (spec 031), así una escritura
+   * granular posterior (`crear`, `actualizar`, `borrar`) los encuentra ya en el almacén y no los
+   * pierde por no conocerlos.
+   *
+   * JSON roto o versión que esta aplicación no sabe interpretar: se siembra igual, pero **solo
+   * en memoria**, sin tocar el almacén — sobrescribirlo aquí rompería la garantía de la spec
+   * 008-E4, que nunca se sobrescribe a ciegas una versión futura desconocida.
+   *
+   * Es distinto de "el usuario guardó un catálogo vacío a propósito": eso sí es un payload
+   * legible con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
    */
-  listar(): readonly Sistema[] {
+  async listar(): Promise<readonly Sistema[]> {
+    const semillas = () => [sistemaPorDefecto(this.plantilla), sistemaDefensaPorDefecto(this.plantilla)];
+    if (this.almacen.getItem(CLAVE) === null) {
+      const nuevas = semillas();
+      const marca = this.ahora();
+      this.escribir(nuevas.map((sistema) => this.aPersistido(sistema, marca, marca)));
+      return nuevas;
+    }
     const payload = this.leerPayload();
     if (!payload) {
-      return [sistemaPorDefecto(this.plantilla), sistemaDefensaPorDefecto(this.plantilla)];
+      return semillas();
     }
     return payload.data.sistemas.map((persistido) => this.aSistema(persistido));
   }
 
-  guardar(sistemas: readonly Sistema[]): void {
-    const anterior = this.leerPayload();
-    const timestampsPorId = new Map(
-      (anterior?.data.sistemas ?? []).map((s) => [s.id, s.creadoEn] as const),
-    );
+  /** Añade un sistema sin tocar los demás (spec 031): lee el almacén tal y como está ahora
+   * mismo, nunca desde una copia en memoria que pudiera estar desactualizada. */
+  async crear(sistema: Sistema): Promise<void> {
     const marca = this.ahora();
-    const persistidos = sistemas.map((sistema) =>
-      this.aPersistido(sistema, timestampsPorId.get(sistema.id) ?? marca, marca),
-    );
-    const payload: Payload = { version: VERSION_ACTUAL, data: { sistemas: persistidos } };
+    const persistidos = this.leerPersistidos();
+    this.escribir([...persistidos, this.aPersistido(sistema, marca, marca)]);
+  }
+
+  /** Sustituye un sistema por su versión actualizada sin tocar los demás (spec 031).
+   * `creadoEn` se conserva del que ya hubiera; si no existía, se comporta como `crear`. */
+  async actualizar(sistema: Sistema): Promise<void> {
+    const marca = this.ahora();
+    const persistidos = this.leerPersistidos();
+    const anterior = persistidos.find((p) => p.id === sistema.id);
+    const actualizado = this.aPersistido(sistema, anterior?.creadoEn ?? marca, marca);
+    const existia = persistidos.some((p) => p.id === sistema.id);
+    this.escribir(existia ? persistidos.map((p) => (p.id === sistema.id ? actualizado : p)) : [...persistidos, actualizado]);
+  }
+
+  /** Quita un sistema sin tocar los demás (spec 031). */
+  async borrar(id: string): Promise<void> {
+    this.escribir(this.leerPersistidos().filter((p) => p.id !== id));
+  }
+
+  private leerPersistidos(): readonly SistemaPersistido[] {
+    return this.leerPayload()?.data.sistemas ?? [];
+  }
+
+  private escribir(sistemas: readonly SistemaPersistido[]): void {
+    const payload: Payload = { version: VERSION_ACTUAL, data: { sistemas } };
     this.almacen.setItem(CLAVE, JSON.stringify(payload));
   }
 

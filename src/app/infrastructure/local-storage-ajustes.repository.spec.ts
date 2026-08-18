@@ -22,13 +22,13 @@ const AJUSTES_POR_DEFECTO = {
 };
 
 describe('LocalStorageAjustesRepository', () => {
-  it('sin nada guardado, todos los ajustes están en su valor por defecto', () => {
+  it('sin nada guardado, todos los ajustes están en su valor por defecto', async () => {
     const repositorio = new LocalStorageAjustesRepository(new AlmacenEnMemoria());
 
-    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
-  it('ida y vuelta sin pérdida', () => {
+  it('ida y vuelta sin pérdida', async () => {
     const repositorio = new LocalStorageAjustesRepository(new AlmacenEnMemoria());
     const ajustes = {
       validacionDesactivada: true,
@@ -37,21 +37,21 @@ describe('LocalStorageAjustesRepository', () => {
       mostrarNumerosMetros: true,
     };
 
-    repositorio.guardar(ajustes);
+    await repositorio.guardar(ajustes);
 
-    expect(repositorio.leer()).toEqual(ajustes);
+    expect(await repositorio.leer()).toEqual(ajustes);
   });
 
-  it('datos corruptos no interrumpen la lectura y devuelven el valor por defecto', () => {
+  it('datos corruptos no interrumpen la lectura y devuelven el valor por defecto', async () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem('interzone.ajustes', 'esto no es json{');
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
-    expect(() => repositorio.leer()).not.toThrow();
-    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+    await expect(repositorio.leer()).resolves.not.toThrow();
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
-  it('una versión desconocida se ignora y devuelve el valor por defecto', () => {
+  it('una versión desconocida se ignora y devuelve el valor por defecto', async () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem(
       'interzone.ajustes',
@@ -67,10 +67,10 @@ describe('LocalStorageAjustesRepository', () => {
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
-    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
-  it('una versión 2 con forma incompatible (sin ordenRotacionCronologico) tampoco se lee a ciegas', () => {
+  it('una versión 2 con forma incompatible (sin ordenRotacionCronologico) tampoco se lee a ciegas', async () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem(
       'interzone.ajustes',
@@ -78,11 +78,11 @@ describe('LocalStorageAjustesRepository', () => {
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
-    expect(() => repositorio.leer()).not.toThrow();
-    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+    await expect(repositorio.leer()).resolves.not.toThrow();
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
-  it('una versión 3 con forma incompatible (sin mostrarNumerosMetros) tampoco se lee a ciegas', () => {
+  it('una versión 3 con forma incompatible (sin mostrarNumerosMetros) tampoco se lee a ciegas', async () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem(
       'interzone.ajustes',
@@ -93,7 +93,7 @@ describe('LocalStorageAjustesRepository', () => {
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
-    expect(() => repositorio.leer()).not.toThrow();
-    expect(repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+    await expect(repositorio.leer()).resolves.not.toThrow();
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 });

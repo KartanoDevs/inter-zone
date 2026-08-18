@@ -1,8 +1,12 @@
 import type { Sistema } from './modelos';
 
+/** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
+ * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). */
 export interface SistemaRepository {
-  listar(): readonly Sistema[];
-  guardar(sistemas: readonly Sistema[]): void;
+  listar(): Promise<readonly Sistema[]>;
+  crear(sistema: Sistema): Promise<void>;
+  actualizar(sistema: Sistema): Promise<void>;
+  borrar(id: string): Promise<void>;
 }
 
 /** Ajustes globales de la app (no de un sistema concreto): si la validación de posiciones
@@ -18,6 +22,6 @@ export interface Ajustes {
 }
 
 export interface AjustesRepository {
-  leer(): Ajustes;
-  guardar(ajustes: Ajustes): void;
+  leer(): Promise<Ajustes>;
+  guardar(ajustes: Ajustes): Promise<void>;
 }

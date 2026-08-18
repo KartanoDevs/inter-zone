@@ -88,7 +88,10 @@ Modelos y reglas. Aquí vive el voleibol.
   colocador u opuesto a la 2), nunca por posición rotacional — de ahí que la geometría se declare
   una sola vez por (zona, vía) y valga para las seis rotaciones. Es lo que distingue esta spec de
   la 029, descartada por colocar por P1..P6.
-- `puertos.ts` — la interfaz `SistemaRepository`, sin implementación.
+- `puertos.ts` — las interfaces `SistemaRepository` y `AjustesRepository`, sin implementación.
+  Asíncronas las dos; `SistemaRepository` además es granular —`crear`/`actualizar`/`borrar` por
+  sistema, nunca un `guardar` de todo el catálogo— para que una escritura no pueda arriesgar el
+  trabajo de un sistema que no tocó (spec 031, ADR 0024).
 
 Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
 eso `creadoEn`/`actualizadoEn` de un sistema no viven aquí, sino en `infrastructure/` (ADR
@@ -102,8 +105,12 @@ ser evidente para alguien que solo lea `domain/`.
 ### `application/`
 
 Orquestación y estado de la aplicación con signals. Una única clase, `SistemaStore` — sin
-decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeable sin
-`TestBed` (`sistema.store.spec.ts`).
+decorador de Angular, instanciable con `new SistemaStore(repositorio, ajustesRepositorio)` y
+testeable sin `TestBed` (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031):
+`cargar()` es un método aparte, asíncrono, que hay que llamar y esperar antes de que el store sea
+útil — `app.config.ts` lo dispara con `provideAppInitializer`, así que Angular no monta la
+aplicación hasta que el catálogo y los ajustes están listos, la misma garantía que antes daba el
+constructor síncrono.
 
 - Escribibles: `sistemas` (catálogo completo), `sistemaActivoId`, `rotacionActiva`, `viaActiva`
   (spec 021, solo relevante en sistemas de defensa), `borrador` (la formación en edición, antes
@@ -132,7 +139,10 @@ decorador de Angular, instanciable con `new SistemaStore(repositorio)` y testeab
   arrastre que coloca una ficha), `deseleccionarJugador` (spec 027: pinchar el fondo cuando no
   tiene ya otro trabajo asignado — pintar zona, en defensa), `guardarExplicacion`,
   `guardarDescripcion` (spec 025), `cambiarSustitutoLibero`. `quitar` también deselecciona si el
-  jugador quitado era el seleccionado (spec 027).
+  jugador quitado era el seleccionado (spec 027). Toda acción que persiste algo es `async` desde
+  la spec 031 y llama al método del puerto que corresponde a lo que tocó (`crear`, `actualizar`
+  o `borrar`), nunca a uno que reescriba el catálogo entero; `ui/` no espera esas promesas
+  (*fire-and-forget*), porque ninguna pantalla depende hoy de saber cuándo termina la escritura.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -143,24 +153,33 @@ Adaptadores hacia el mundo exterior.
 - `LocalStorageSistemaRepository implements SistemaRepository`, sobre un `AlmacenClaveValor`
   inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
   Recibe también la plantilla real por constructor: en la v1 es una única constante de la
-  aplicación, no un dato de dominio (ADR 0013).
+  aplicación, no un dato de dominio (ADR 0013). `crear`, `actualizar` y `borrar` (spec 031, ADR
+  0024) leen el almacén tal y como está en el momento de escribir, nunca desde una copia en
+  memoria: así una escritura granular no pierde de vista un sistema que otra escritura hubiera
+  guardado mientras tanto.
 - Formato persistido: `{ "version": 5, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
   0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
   cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
   rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
   rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
-  Desde la versión 5 (spec 025) guarda `descripcion?`. Sin nada legible (nunca se guardó nada,
-  JSON roto, o versión distinta a la actual), `listar()` siembra `sistemaPorDefecto` y
-  `sistemaDefensaPorDefecto` (spec 030) en vez de devolver el catálogo vacío (ADR 0021) — un
+  Desde la versión 5 (spec 025) guarda `descripcion?`. Nada guardado nunca (`bruto === null`):
+  `listar()` siembra `sistemaPorDefecto` y `sistemaDefensaPorDefecto` (spec 030) **y los
+  persiste de inmediato** (spec 031), para que una escritura granular posterior los encuentre ya
+  en el almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se
+  siembra igual, pero **solo en memoria**, sin tocar el almacén — sobrescribirlo rompería la
+  garantía de nunca sobrescribir a ciegas una versión futura desconocida (spec 008, E4). Un
   payload legible con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada
-  encima. Desde la spec 028, cada posición persistida
+  encima (ADR 0021). Desde la spec 028, cada posición persistida
   guarda también `celdas?` (la zona de responsabilidad, specs 022/024) — antes se perdía al
   recargar; no subió la versión porque es una lectura/escritura nueva de un campo que antes se
   ignoraba del todo, no un cambio de significado de datos ya existentes.
 - `LocalStorageAjustesRepository implements AjustesRepository`, mismo patrón (versión + data)
   pero bajo su propia clave: los ajustes (por ahora, si la validación de posiciones está
-  desactivada) son globales a la app, no de un sistema concreto (ADR 0015).
+  desactivada) son globales a la app, no de un sistema concreto (ADR 0015). Sigue siendo un
+  único documento de cuatro banderas que se reescribe entero en cada `guardar()` (spec 031): no
+  hay nada que la granularidad de `SistemaRepository` pudiera arriesgar aquí, solo se volvió
+  asíncrono.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
 import { sistemaDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
@@ -70,45 +70,44 @@ function crearRepositorio(almacen: AlmacenClaveValor = new AlmacenEnMemoria()): 
 }
 
 describe('LocalStorageSistemaRepository', () => {
-  it('008-E1: ida y vuelta sin pérdida', () => {
+  it('008-E1: ida y vuelta sin pérdida', async () => {
     const repositorio = crearRepositorio();
     const original = [sistema('s1', 'Uno'), sistema('s2', 'Dos')];
 
-    repositorio.guardar(original);
-    const resultado = repositorio.listar();
+    await repositorio.crear(original[0]);
+    await repositorio.crear(original[1]);
+    const resultado = await repositorio.listar();
 
     expect(resultado).toEqual(original);
   });
 
-  it('008-E2: un almacén vacío no da error (siembra los sistemas por defecto, specs 025 y 030)', () => {
+  it('008-E2: un almacén vacío no da error (siembra los sistemas por defecto, specs 025 y 030)', async () => {
     const repositorio = crearRepositorio();
 
-    expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    await expect(repositorio.listar()).resolves.toHaveLength(2);
   });
 
-  it('008-E3: datos corruptos no interrumpen el arranque (siembra los sistemas por defecto, specs 025 y 030)', () => {
+  it('008-E3: datos corruptos no interrumpen el arranque (siembra los sistemas por defecto, specs 025 y 030)', async () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem('interzone.sistemas', 'esto no es json{');
     const repositorio = crearRepositorio(almacen);
 
-    expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    await expect(repositorio.listar()).resolves.toHaveLength(2);
   });
 
-  it('008-E4: una versión futura desconocida no se sobrescribe al leer (siembra los sistemas por defecto, specs 025 y 030)', () => {
+  it('008-E4: una versión futura desconocida no se sobrescribe al leer (siembra los sistemas por defecto, specs 025 y 030)', async () => {
     const almacen = new AlmacenEnMemoria();
     const bruto = JSON.stringify({ version: 999, data: { sistemas: ['dato de una versión futura'] } });
     almacen.setItem('interzone.sistemas', bruto);
     const repositorio = crearRepositorio(almacen);
 
-    const resultado = repositorio.listar();
+    const resultado = await repositorio.listar();
 
     expect(resultado).toHaveLength(2);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
-  it('008-E4b: una versión anterior con forma incompatible tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 030)', () => {
+  it('008-E4b: una versión anterior con forma incompatible tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 030)', async () => {
     // Forma real de antes de la spec 011: el líbero como discriminador `ocupanteCasilla`,
     // no como `sustitutoLibero`. Sin migración implementada, se trata como no legible —
     // igual que una versión futura — en vez de intentar leerla con las reglas nuevas.
@@ -133,22 +132,24 @@ describe('LocalStorageSistemaRepository', () => {
     almacen.setItem('interzone.sistemas', bruto);
     const repositorio = crearRepositorio(almacen);
 
-    expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    const resultado = await repositorio.listar();
+
+    expect(resultado).toHaveLength(2);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
-  it('008-E5: borrar un sistema y guardar el resto lo quita al releer', () => {
+  it('008-E5: borrar un sistema lo quita al releer, sin tocar los demás', async () => {
     const repositorio = crearRepositorio();
-    repositorio.guardar([sistema('s1', 'Uno'), sistema('s2', 'Dos')]);
+    await repositorio.crear(sistema('s1', 'Uno'));
+    await repositorio.crear(sistema('s2', 'Dos'));
 
-    repositorio.guardar([sistema('s2', 'Dos')]);
-    const resultado = repositorio.listar();
+    await repositorio.borrar('s1');
+    const resultado = await repositorio.listar();
 
     expect(resultado.map((s) => s.id)).toEqual(['s2']);
   });
 
-  it('008-E6: los decimales de las coordenadas llegan exactos', () => {
+  it('008-E6: los decimales de las coordenadas llegan exactos', async () => {
     const repositorio = crearRepositorio();
     const [colocador] = PLANTILLA.ordenSaque;
     const conDecimales: Sistema = {
@@ -156,13 +157,13 @@ describe('LocalStorageSistemaRepository', () => {
       formaciones: { 2: [{ jugador: colocador, punto: { x: 4.53, y: 1.8 } }] },
     };
 
-    repositorio.guardar([conDecimales]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(conDecimales);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.formaciones[2]?.[0]?.punto).toEqual({ x: 4.53, y: 1.8 });
   });
 
-  it('008-E7: las explicaciones de rotación y de jugador sobreviven', () => {
+  it('008-E7: las explicaciones de rotación y de jugador sobreviven', async () => {
     const repositorio = crearRepositorio();
     const [colocador] = PLANTILLA.ordenSaque;
     const conExplicaciones: Sistema = {
@@ -171,18 +172,18 @@ describe('LocalStorageSistemaRepository', () => {
       explicacionesRotacion: { 2: 'Explicación de la rotación' },
     };
 
-    repositorio.guardar([conExplicaciones]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(conExplicaciones);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.explicacionesRotacion[2]).toBe('Explicación de la rotación');
     expect(resultado[0]?.formaciones[2]?.[0]?.explicacion).toBe('Explicación del jugador');
   });
 
-  it('008-E8: lo escrito tiene la forma {version, data}', () => {
+  it('008-E8: lo escrito tiene la forma {version, data}', async () => {
     const almacen = new AlmacenEnMemoria();
     const repositorio = crearRepositorio(almacen);
 
-    repositorio.guardar([sistema('s1', 'Uno')]);
+    await repositorio.crear(sistema('s1', 'Uno'));
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
 
     expect(Object.keys(guardado).sort()).toEqual(['data', 'version']);
@@ -190,7 +191,7 @@ describe('LocalStorageSistemaRepository', () => {
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
   });
 
-  it('008-E4c (añadido en 017): una versión 2 con forma incompatible (sustitutoLibero único) tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 030)', () => {
+  it('008-E4c (añadido en 017): una versión 2 con forma incompatible (sustitutoLibero único) tampoco se lee a ciegas (siembra los sistemas por defecto, specs 025 y 030)', async () => {
     // Forma real de la spec 011: un único `sustitutoLibero` para las seis rotaciones, no
     // `sustitutosLibero` por rotación (spec 017). Mismo motivo que 008-E4b: sin migración
     // real, se trata como no legible en vez de interpretarla con las reglas nuevas.
@@ -215,109 +216,112 @@ describe('LocalStorageSistemaRepository', () => {
     almacen.setItem('interzone.sistemas', bruto);
     const repositorio = crearRepositorio(almacen);
 
-    expect(() => repositorio.listar()).not.toThrow();
-    expect(repositorio.listar()).toHaveLength(2);
+    const resultado = await repositorio.listar();
+
+    expect(resultado).toHaveLength(2);
     expect(almacen.getItem('interzone.sistemas')).toBe(bruto);
   });
 
-  it('008-E9: la fecha de creación se fija una sola vez', () => {
+  it('008-E9: la fecha de creación se fija una sola vez', async () => {
     const almacen = new AlmacenEnMemoria();
     let tiempo = 't1';
     const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA, () => tiempo);
 
-    repositorio.guardar([sistema('s1', 'Uno')]);
+    await repositorio.crear(sistema('s1', 'Uno'));
     tiempo = 't2';
-    repositorio.guardar([sistema('s1', 'Uno (renombrado)')]);
+    await repositorio.actualizar(sistema('s1', 'Uno (renombrado)'));
 
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
     expect(guardado.data.sistemas[0].creadoEn).toBe('t1');
   });
 
-  it('008-E10: la fecha de modificación cambia con cada guardado', () => {
+  it('008-E10: la fecha de modificación cambia con cada guardado', async () => {
     const almacen = new AlmacenEnMemoria();
     let tiempo = 't1';
     const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA, () => tiempo);
 
-    repositorio.guardar([sistema('s1', 'Uno')]);
+    await repositorio.crear(sistema('s1', 'Uno'));
     tiempo = 't2';
-    repositorio.guardar([sistema('s1', 'Uno (renombrado)')]);
+    await repositorio.actualizar(sistema('s1', 'Uno (renombrado)'));
 
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
     expect(guardado.data.sistemas[0].actualizadoEn).toBe('t2');
     expect(guardado.data.sistemas[0].creadoEn).toBe('t1');
   });
 
-  it('021-E13 (persistencia): la defensa guardada, por rotación y vía, sobrevive a recargar', () => {
+  it('021-E13 (persistencia): la defensa guardada, por rotación y vía, sobrevive a recargar', async () => {
     const repositorio = crearRepositorio();
-    const original = [sistemaDefensa('d1', 'Defensa')];
+    const original = sistemaDefensa('d1', 'Defensa');
 
-    repositorio.guardar(original);
-    const resultado = repositorio.listar();
+    await repositorio.crear(original);
+    const resultado = await repositorio.listar();
 
-    expect(resultado).toEqual(original);
+    expect(resultado).toEqual([original]);
   });
 
-  it('025-E1: un almacén sin nada legible siembra el sistema de recepción por defecto', () => {
+  it('025-E1: un almacén sin nada legible siembra el sistema de recepción por defecto', async () => {
     const repositorio = crearRepositorio();
 
-    const resultado = repositorio.listar();
+    const resultado = await repositorio.listar();
 
     const recepcion = resultado.find((s) => s.tipo === 'recepcion');
     expect(recepcion?.nombre).toBe('TEST Recepción 5-1');
     expect(Object.keys(recepcion?.formaciones ?? {}).sort()).toEqual(['1', '2', '3', '4', '5', '6']);
   });
 
-  it('030-E13: sin nada legible se siembra también el sistema de defensa por defecto', () => {
+  it('030-E13: sin nada legible se siembra también el sistema de defensa por defecto', async () => {
     const repositorio = crearRepositorio();
 
-    const resultado = repositorio.listar();
+    const resultado = await repositorio.listar();
 
     expect(resultado).toHaveLength(2);
     expect(resultado.find((s) => s.tipo === 'defensa')?.nombre).toBe('TEST Defensa zonas');
   });
 
-  it('030-E15: ida y vuelta conserva las 24 formaciones de defensa, con sus zonas', () => {
+  it('030-E15: ida y vuelta conserva las 24 formaciones de defensa, con sus zonas', async () => {
     const almacen = new AlmacenEnMemoria();
     const repositorio = new LocalStorageSistemaRepository(almacen, PLANTILLA_GLOBAL);
     const original = sistemaDefensaPorDefecto(PLANTILLA_GLOBAL);
 
-    repositorio.guardar([original]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(original);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.defensas).toEqual(original.defensas);
     expect(resultado[0]?.descripcion).toBe(original.descripcion);
     expect(resultado[0]?.explicacionesRotacion).toEqual(original.explicacionesRotacion);
   });
 
-  it('025-E12: con sistemas ya guardados, no se siembra nada', () => {
+  it('025-E12: con sistemas ya guardados, no se siembra nada', async () => {
     const repositorio = crearRepositorio();
-    repositorio.guardar([sistema('s1', 'Uno')]);
+    await repositorio.crear(sistema('s1', 'Uno'));
 
-    const resultado = repositorio.listar();
+    const resultado = await repositorio.listar();
 
     expect(resultado.map((s) => s.nombre)).toEqual(['Uno']);
   });
 
-  it('025-E13: borrado el sistema por defecto, no reaparece', () => {
+  it('025-E13: borrado el sistema por defecto, no reaparece', async () => {
     const repositorio = crearRepositorio();
-    repositorio.listar(); // primer arranque: se siembra en memoria, sin persistir todavía
+    const sembrados = await repositorio.listar(); // primer arranque: se siembra y se persiste (spec 031)
 
-    repositorio.guardar([]); // el usuario borró el único sistema que había
+    for (const sembrado of sembrados) {
+      await repositorio.borrar(sembrado.id);
+    }
 
-    expect(repositorio.listar()).toEqual([]);
+    expect(await repositorio.listar()).toEqual([]);
   });
 
-  it('025-E14: la descripción del sistema sobrevive a guardar y releer', () => {
+  it('025-E14: la descripción del sistema sobrevive a guardar y releer', async () => {
     const repositorio = crearRepositorio();
     const conDescripcion: Sistema = { ...sistema('s1', 'Uno'), descripcion: 'Recepción a 3 en 5-1.' };
 
-    repositorio.guardar([conDescripcion]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(conDescripcion);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.descripcion).toBe('Recepción a 3 en 5-1.');
   });
 
-  it('028-E1: las celdas pintadas de un jugador sobreviven a guardar y releer', () => {
+  it('028-E1: las celdas pintadas de un jugador sobreviven a guardar y releer', async () => {
     const repositorio = crearRepositorio();
     const [colocador] = PLANTILLA.ordenSaque;
     const conCeldas: Sistema = {
@@ -336,8 +340,8 @@ describe('LocalStorageSistemaRepository', () => {
       },
     };
 
-    repositorio.guardar([conCeldas]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(conCeldas);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.formaciones[1]?.[0]?.celdas).toEqual([
       { columna: 2, fila: 3 },
@@ -345,7 +349,7 @@ describe('LocalStorageSistemaRepository', () => {
     ]);
   });
 
-  it('028-E2: sin celdas pintadas, no aparece un array vacío tras releer', () => {
+  it('028-E2: sin celdas pintadas, no aparece un array vacío tras releer', async () => {
     const repositorio = crearRepositorio();
     const [colocador] = PLANTILLA.ordenSaque;
     const sinCeldas: Sistema = {
@@ -353,13 +357,13 @@ describe('LocalStorageSistemaRepository', () => {
       formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
     };
 
-    repositorio.guardar([sinCeldas]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(sinCeldas);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.formaciones[1]?.[0]?.celdas).toBeUndefined();
   });
 
-  it('028-E3: una zona vaciada a propósito sobrevive como vacía, no como "nunca tocada"', () => {
+  it('028-E3: una zona vaciada a propósito sobrevive como vacía, no como "nunca tocada"', async () => {
     const repositorio = crearRepositorio();
     const [colocador] = PLANTILLA.ordenSaque;
     const zonaVaciada: Sistema = {
@@ -367,9 +371,37 @@ describe('LocalStorageSistemaRepository', () => {
       formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 }, celdas: [] }] },
     };
 
-    repositorio.guardar([zonaVaciada]);
-    const resultado = repositorio.listar();
+    await repositorio.crear(zonaVaciada);
+    const resultado = await repositorio.listar();
 
     expect(resultado[0]?.formaciones[1]?.[0]?.celdas).toEqual([]);
+  });
+
+  describe('spec 031 — granularidad', () => {
+    it('031-E1 (persistencia): actualizar un sistema no reescribe los demás', async () => {
+      const repositorio = crearRepositorio();
+      await repositorio.crear(sistema('s1', 'Uno'));
+      await repositorio.crear(sistema('s2', 'Dos'));
+
+      await repositorio.actualizar({ ...sistema('s1', 'Uno'), descripcion: 'Cambiado' });
+      const resultado = await repositorio.listar();
+
+      expect(resultado.find((s) => s.id === 's2')).toEqual(sistema('s2', 'Dos'));
+      expect(resultado.find((s) => s.id === 's1')?.descripcion).toBe('Cambiado');
+    });
+
+    it('031-E4: una versión futura desconocida no se pierde al crear un sistema nuevo encima', async () => {
+      // Límite conocido y ya documentado (spec 008, "Al cerrar"): una escritura después de un
+      // estado no legible sí sobrescribe. Este test fija ese comportamiento, no lo cambia.
+      const almacen = new AlmacenEnMemoria();
+      const bruto = JSON.stringify({ version: 999, data: { sistemas: ['dato de una versión futura'] } });
+      almacen.setItem('interzone.sistemas', bruto);
+      const repositorio = crearRepositorio(almacen);
+
+      await repositorio.crear(sistema('s1', 'Uno'));
+      const resultado = await repositorio.listar();
+
+      expect(resultado.map((s) => s.id)).toEqual(['s1']);
+    });
   });
 });
