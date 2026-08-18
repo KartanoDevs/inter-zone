@@ -34,8 +34,10 @@ const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 
 // Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
 // nunca quede recortada por el borde visible (igual que en la maqueta).
+// Nadie del propio equipo pasa de la red: `y = 0` es el suelo del rango, no el centro del
+// viewBox. El campo rival (y < 0) es solo para la ficha rival, que tiene sus propios limites.
 const LIMITE_X: readonly [number, number] = [-0.3, 9.3];
-const LIMITE_Y: readonly [number, number] = [-3.6, 9.3];
+const LIMITE_Y: readonly [number, number] = [0, 9.3];
 
 // La ficha rival solo se mueve dentro de su propio campo (spec 021): ahí es de donde
 // `viaDeAtaque` deriva la vía, y no tiene sentido soltarla fuera de él.
