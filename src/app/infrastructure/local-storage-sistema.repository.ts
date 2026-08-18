@@ -1,17 +1,17 @@
-import type { Celda, Colocacion, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
+import type { Celda, Colocacion, EquipoId, Formacion, Jugador, PlantillaEquipo, Sistema, TipoSistema } from '../domain/modelos';
 import type { SistemaRepository } from '../domain/puertos';
 import { sistemaPorDefecto } from '../domain/sistema-por-defecto';
 import { sistemaDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 
 const CLAVE = 'interzone.sistemas';
 /**
- * 5 desde la spec 025: se añade `descripcion` (descripción general del sistema, independiente
- * de cualquier rotación) a la forma persistida. Mismo motivo que las subidas anteriores: sin
- * `migrar()` real, cualquier versión que no sea exactamente esta se trata como no legible —
- * igual que una versión futura (spec 008, E4) — en vez de intentar interpretarla con las
- * reglas nuevas y arriesgarse a reventar o, peor, a leerla mal en silencio.
+ * 6 desde la spec 032: se añade `equipoId` (a qué equipo pertenece el sistema). 5 añadió
+ * `descripcion`. Mismo motivo que las subidas anteriores: sin `migrar()` real, cualquier
+ * versión que no sea exactamente esta se trata como no legible — igual que una versión futura
+ * (spec 008, E4) — en vez de intentar interpretarla con las reglas nuevas y arriesgarse a
+ * reventar o, peor, a leerla mal en silencio.
  */
-const VERSION_ACTUAL = 5;
+const VERSION_ACTUAL = 6;
 
 /** Lo mínimo que necesita el repositorio de un almacén de clave-valor. `localStorage` lo cumple tal cual. */
 export interface AlmacenClaveValor {
@@ -33,6 +33,8 @@ interface SistemaPersistido {
   readonly id: string;
   readonly nombre: string;
   readonly tipo: TipoSistema;
+  /** Equipo al que pertenece (spec 032). */
+  readonly equipoId: EquipoId;
   /** Descripción general del sistema. Ausente si no se ha escrito ninguna (spec 025). */
   readonly descripcion?: string;
   /** A quién sustituye el líbero en cada rotación, si el sistema tiene uno. Ausente si no
@@ -91,7 +93,9 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
    * legible con `sistemas: []`, y ahí no se siembra nada (spec 025, E12-E13).
    */
   async listar(): Promise<readonly Sistema[]> {
-    const semillas = () => [sistemaPorDefecto(this.plantilla), sistemaDefensaPorDefecto(this.plantilla)];
+    // Solo del equipo masculino (spec 032): no hay guía de referencia para sembrar el femenino
+    // también, así que ese equipo empieza sin ningún sistema.
+    const semillas = () => [sistemaPorDefecto(this.plantilla, 'masculino'), sistemaDefensaPorDefecto(this.plantilla, 'masculino')];
     if (this.almacen.getItem(CLAVE) === null) {
       const nuevas = semillas();
       const marca = this.ahora();
@@ -175,6 +179,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       id: sistema.id,
       nombre: sistema.nombre,
       tipo: sistema.tipo,
+      equipoId: sistema.equipoId,
       descripcion: sistema.descripcion,
       sustitutosLibero: sistema.plantilla.libero?.sustitutosPorRotacion,
       formaciones,
@@ -226,6 +231,7 @@ export class LocalStorageSistemaRepository implements SistemaRepository {
       id: persistido.id,
       nombre: persistido.nombre,
       tipo: persistido.tipo,
+      equipoId: persistido.equipoId,
       plantilla,
       formaciones,
       defensas,

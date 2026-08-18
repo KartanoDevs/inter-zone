@@ -1,4 +1,6 @@
 <div class="app-tablero">
+  <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
+
   <app-barra-sistemas
     [sistemas]="opcionesSistema()"
     [sistemaActivoId]="store.sistemaActivoId()"
@@ -77,7 +79,9 @@
       [mensaje]="
         pendiente.tipo === 'rotacion'
           ? 'Esta rotación tiene cambios sin guardar. Si cambias de rotación se perderán.'
-          : 'Esta rotación tiene cambios sin guardar. Si cambias de sistema se perderán.'
+          : pendiente.tipo === 'equipo'
+            ? 'Esta rotación tiene cambios sin guardar. Si cambias de equipo se perderán.'
+            : 'Esta rotación tiene cambios sin guardar. Si cambias de sistema se perderán.'
       "
       textoConfirmar="Descartar y continuar"
       (confirmar)="confirmarCambio()"
@@ -90,6 +94,7 @@
       [titulo]="modo === 'crear' ? 'Nuevo sistema' : modo === 'clonar' ? 'Clonar sistema' : 'Renombrar sistema'"
       [nombreInicial]="modo === 'editar' ? (store.sistemaActivo()?.nombre ?? '') : modo === 'clonar' ? nombreClonSugerido() : ''"
       [mostrarTipo]="modo === 'crear'"
+      [equipoInicial]="store.equipoActivo()"
       (confirmar)="confirmarDialogoSistema($event)"
       (cancelar)="cancelarDialogoSistema()"
     ></app-dialogo-sistema>

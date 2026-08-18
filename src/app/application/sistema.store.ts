@@ -1,5 +1,5 @@
 import { computed, signal } from '@angular/core';
-import type { Celda, Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
+import type { Celda, EquipoId, Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
 import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
@@ -22,7 +22,8 @@ export type RotacionValida = 1 | 2 | 3 | 4 | 5 | 6;
 type CambioPendiente =
   | { readonly tipo: 'rotacion'; readonly valor: RotacionValida }
   | { readonly tipo: 'sistema'; readonly valor: string }
-  | { readonly tipo: 'via'; readonly valor: ViaAtaque };
+  | { readonly tipo: 'via'; readonly valor: ViaAtaque }
+  | { readonly tipo: 'equipo'; readonly valor: EquipoId };
 
 function coincide(a: Celda, b: Celda): boolean {
   return a.columna === b.columna && a.fila === b.fila;
@@ -56,6 +57,8 @@ function formacionesIguales(a: Formacion, b: Formacion): boolean {
  */
 export class SistemaStore {
   readonly sistemas = signal<readonly Sistema[]>([]);
+  /** Equipo cuyo catálogo se ve y con el que se trabaja (spec 032). Masculino por defecto. */
+  readonly equipoActivo = signal<EquipoId>('masculino');
   readonly sistemaActivoId = signal<string | null>(null);
   readonly rotacionActiva = signal<RotacionValida>(1);
   readonly viaActiva = signal<ViaAtaque>('z4');
@@ -67,7 +70,11 @@ export class SistemaStore {
   readonly ordenRotacionCronologico = signal(false);
   readonly mostrarNumerosMetros = signal(false);
 
-  readonly catalogo = computed(() => ordenarCatalogo(this.sistemas()));
+  /** Solo los sistemas del equipo activo (spec 032): dos entrenadores nunca ven mezclados los
+   * sistemas del otro equipo. */
+  readonly catalogo = computed(() =>
+    ordenarCatalogo(this.sistemas().filter((sistema) => sistema.equipoId === this.equipoActivo())),
+  );
 
   readonly sistemaActivo = computed(() => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null);
 
@@ -165,9 +172,10 @@ export class SistemaStore {
    * pizarra — `app.config.ts` la dispara con `provideAppInitializer` — para que ningún consumidor
    * vea nunca el estado a medio poblar. */
   async cargar(): Promise<void> {
-    const catalogo = ordenarCatalogo(await this.repositorio.listar());
-    this.sistemas.set(catalogo);
-    this.sistemaActivoId.set(catalogo[0]?.id ?? null);
+    this.sistemas.set(ordenarCatalogo(await this.repositorio.listar()));
+    // El equipo activo ya vale su valor por defecto (masculino): `this.catalogo()` sale ya
+    // filtrado por él, así que el primero que active es el primero de ESE equipo (spec 032).
+    this.sistemaActivoId.set(this.catalogo()[0]?.id ?? null);
     const ajustes = await this.ajustesRepositorio?.leer();
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
@@ -227,6 +235,29 @@ export class SistemaStore {
     this.cambiarContexto();
   }
 
+  /** Cambia de equipo, con el mismo aviso de cambios sin guardar que cambiar de rotación, de vía
+   * o de sistema (spec 032). */
+  seleccionarEquipo(equipoId: EquipoId): void {
+    if (equipoId === this.equipoActivo()) {
+      return;
+    }
+    if (this.hayCambiosSinGuardar()) {
+      this.cambioPendiente.set({ tipo: 'equipo', valor: equipoId });
+      return;
+    }
+    this.cambiarEquipo(equipoId);
+  }
+
+  /** Cambia el equipo activo y activa el primero de su catálogo, o ninguno si está vacío. Lo
+   * usan tanto `seleccionarEquipo` (cambio directo) como `confirmarCambio` (cambio pendiente). */
+  private cambiarEquipo(equipoId: EquipoId): void {
+    this.equipoActivo.set(equipoId);
+    const primero = ordenarCatalogo(this.sistemas().filter((sistema) => sistema.equipoId === equipoId))[0] ?? null;
+    this.sistemaActivoId.set(primero?.id ?? null);
+    this.rotacionActiva.set(1);
+    this.cambiarContexto();
+  }
+
   seleccionarVia(via: ViaAtaque): void {
     if (via === this.viaActiva()) {
       return;
@@ -261,6 +292,9 @@ export class SistemaStore {
       this.rotacionActiva.set(pendiente.valor);
     } else if (pendiente.tipo === 'via') {
       this.viaActiva.set(pendiente.valor);
+    } else if (pendiente.tipo === 'equipo') {
+      this.cambiarEquipo(pendiente.valor); // ya llama a cambiarContexto()
+      return;
     } else {
       this.sistemaActivoId.set(pendiente.valor);
       this.rotacionActiva.set(1);
@@ -285,14 +319,17 @@ export class SistemaStore {
     this.jugadorSeleccionadoId.set(null);
   }
 
-  async crear(nombre: string, tipo: TipoSistema): Promise<boolean> {
+  /** Crea un sistema para `equipoId` (spec 032): si es distinto del equipo activo, el equipo
+   * activo cambia también, para que el sistema recién creado se vea de inmediato. */
+  async crear(nombre: string, tipo: TipoSistema, equipoId: EquipoId): Promise<boolean> {
     const id = crypto.randomUUID();
-    const nuevo = crearSistema(id, nombre, tipo, PLANTILLA_GLOBAL, this.sistemas());
+    const nuevo = crearSistema(id, nombre, tipo, equipoId, PLANTILLA_GLOBAL, this.sistemas());
     if (!nuevo) {
       return false;
     }
     this.sistemas.update((lista) => [...lista, nuevo]);
     await this.repositorio.crear(nuevo);
+    this.equipoActivo.set(equipoId);
     this.sistemaActivoId.set(id);
     this.rotacionActiva.set(1);
     this.cambiarContexto();

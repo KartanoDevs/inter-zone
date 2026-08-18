@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
+import type { EquipoId, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
@@ -29,12 +29,20 @@ function plantilla(): PlantillaEquipo {
   return { nombre: 'Equipo A', ordenSaque: ordenConCentral2() };
 }
 
-function sistema(id: string, nombre: string): Sistema {
-  return { id, nombre, tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+function sistema(id: string, nombre: string, equipoId: EquipoId = 'masculino'): Sistema {
+  return { id, nombre, tipo: 'recepcion', equipoId, plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 }
 
 function sistemaConLibero(id: string, nombre: string): Sistema {
-  return { id, nombre, tipo: 'recepcion', plantilla: plantillaConLibero('central2'), formaciones: {}, explicacionesRotacion: {} };
+  return {
+    id,
+    nombre,
+    tipo: 'recepcion',
+    equipoId: 'masculino',
+    plantilla: plantillaConLibero('central2'),
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
@@ -44,63 +52,85 @@ function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
 
 describe('crearSistema', () => {
   it('006-E1: crear un sistema de recepción se acepta', () => {
-    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', plantilla(), []);
+    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), []);
 
     expect(resultado).not.toBeNull();
     expect(resultado?.tipo).toBe('recepcion');
   });
 
   it('006-E2: crear un sistema de defensa se acepta', () => {
-    const resultado = crearSistema('s1', 'Defensa base', 'defensa', plantilla(), []);
+    const resultado = crearSistema('s1', 'Defensa base', 'defensa', 'masculino', plantilla(), []);
 
     expect(resultado).not.toBeNull();
     expect(resultado?.tipo).toBe('defensa');
   });
 
   it('006-E3: nombre vacío o en blanco se rechaza', () => {
-    expect(crearSistema('s1', '', 'recepcion', plantilla(), [])).toBeNull();
-    expect(crearSistema('s1', '   ', 'recepcion', plantilla(), [])).toBeNull();
+    expect(crearSistema('s1', '', 'recepcion', 'masculino', plantilla(), [])).toBeNull();
+    expect(crearSistema('s1', '   ', 'recepcion', 'masculino', plantilla(), [])).toBeNull();
   });
 
-  it('006-E4: nombre duplicado dentro del mismo tipo se rechaza', () => {
-    const existente: Sistema = { id: 's1', nombre: 'Recepción 5-1', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+  it('006-E4: nombre duplicado dentro del mismo tipo y equipo se rechaza', () => {
+    const existente = sistema('s1', 'Recepción 5-1');
 
-    const resultado = crearSistema('s2', 'Recepción 5-1', 'recepcion', plantilla(), [existente]);
+    const resultado = crearSistema('s2', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), [existente]);
 
     expect(resultado).toBeNull();
   });
 
   it('006-E5: mismo nombre en tipos distintos se acepta', () => {
-    const existente: Sistema = { id: 's1', nombre: 'Base', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const existente = sistema('s1', 'Base');
 
-    const resultado = crearSistema('s2', 'Base', 'defensa', plantilla(), [existente]);
+    const resultado = crearSistema('s2', 'Base', 'defensa', 'masculino', plantilla(), [existente]);
 
     expect(resultado).not.toBeNull();
+  });
+
+  it('032-E1: crear asigna el sistema al equipo elegido', () => {
+    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', 'femenino', plantilla(), []);
+
+    expect(resultado?.equipoId).toBe('femenino');
+  });
+
+  it('032-E2: el mismo nombre puede repetirse en equipos distintos', () => {
+    const existente = sistema('s1', '5-1', 'masculino');
+
+    const resultado = crearSistema('s2', '5-1', 'recepcion', 'femenino', plantilla(), [existente]);
+
+    expect(resultado).not.toBeNull();
+  });
+
+  it('032-E3: dentro del mismo equipo, el nombre repetido se sigue rechazando', () => {
+    const existente = sistema('s1', '5-1', 'masculino');
+
+    const resultado = crearSistema('s2', '5-1', 'recepcion', 'masculino', plantilla(), [existente]);
+
+    expect(resultado).toBeNull();
   });
 });
 
 describe('renombrarSistema', () => {
   it('006-E6: renombrar a un nombre libre se acepta', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const uno = sistema('s1', 'Recepción A');
 
-    const resultado = renombrarSistema(sistema, 'Recepción B', [sistema]);
+    const resultado = renombrarSistema(uno, 'Recepción B', [uno]);
 
     expect(resultado?.nombre).toBe('Recepción B');
   });
 
   it('006-E7: renombrar a un nombre ocupado por otro del mismo tipo se rechaza', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-    const otro: Sistema = { id: 's2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const uno = sistema('s1', 'Recepción A');
+    const otro = sistema('s2', 'Recepción B');
 
-    const resultado = renombrarSistema(sistema, 'Recepción B', [sistema, otro]);
+    const resultado = renombrarSistema(uno, 'Recepción B', [uno, otro]);
 
     expect(resultado).toBeNull();
   });
 
   it('006-E8: renombrar a su propio nombre actual se acepta', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const uno = sistema('s1', 'Recepción A');
 
-    const resultado = renombrarSistema(sistema, 'Recepción A', [sistema]);
+    const resultado = renombrarSistema(uno, 'Recepción A', [uno]);
 
     expect(resultado).not.toBeNull();
   });
@@ -108,8 +138,8 @@ describe('renombrarSistema', () => {
 
 describe('borrarSistema', () => {
   it('006-E9: borrar un sistema no afecta a los demás', () => {
-    const uno: Sistema = { id: 's1', nombre: 'Uno', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-    const dos: Sistema = { id: 's2', nombre: 'Dos', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const uno = sistema('s1', 'Uno');
+    const dos = sistema('s2', 'Dos');
 
     const resultado = borrarSistema([uno, dos], 's1');
 
@@ -124,6 +154,7 @@ describe('clonarSistema', () => {
       id: 's1',
       nombre: 'Original',
       tipo: 'recepcion',
+      equipoId: 'masculino',
       plantilla: plantilla(),
       formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }], 2: [{ jugador: colocador, punto: { x: 7, y: 1 } }] },
       explicacionesRotacion: {},
@@ -175,6 +206,14 @@ describe('clonarSistema', () => {
     expect(original.formaciones[1]?.[0]?.punto).toEqual({ x: 8, y: 1 });
   });
 
+  it('032-E4: el clon mantiene el mismo equipo que el original', () => {
+    const original = sistema('s1', 'Original', 'femenino');
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+
+    expect(resultado?.equipoId).toBe('femenino');
+  });
+
   it('026-E6: el clon nace con un id distinto', () => {
     const original = sistema('s1', 'Original');
 
@@ -203,10 +242,10 @@ describe('clonarSistema', () => {
 
 describe('ordenarCatalogo', () => {
   it('006-E10: recepción antes que defensa, alfabético dentro de cada grupo', () => {
-    const defensaB: Sistema = { id: '1', nombre: 'Defensa B', tipo: 'defensa', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-    const recepcionB: Sistema = { id: '2', nombre: 'Recepción B', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-    const defensaA: Sistema = { id: '3', nombre: 'Defensa A', tipo: 'defensa', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-    const recepcionA: Sistema = { id: '4', nombre: 'Recepción A', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+    const defensaB: Sistema = { ...sistema('1', 'Defensa B'), tipo: 'defensa' };
+    const recepcionB = sistema('2', 'Recepción B');
+    const defensaA: Sistema = { ...sistema('3', 'Defensa A'), tipo: 'defensa' };
+    const recepcionA = sistema('4', 'Recepción A');
 
     const resultado = ordenarCatalogo([defensaB, recepcionB, defensaA, recepcionA]);
 
@@ -216,7 +255,7 @@ describe('ordenarCatalogo', () => {
 
 describe('crearSistema (spec 025)', () => {
   it('025-E11: un sistema creado a mano nace sin descripción', () => {
-    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', plantilla(), []);
+    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), []);
 
     expect(resultado?.descripcion).toBeUndefined();
   });
@@ -224,25 +263,15 @@ describe('crearSistema (spec 025)', () => {
 
 describe('describirSistema', () => {
   it('025-E9: editar la descripción la deja guardada', () => {
-    const sistema: Sistema = { id: 's1', nombre: 'Uno', tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
-
-    const resultado = describirSistema(sistema, 'Recepción a 3 en 5-1.');
+    const resultado = describirSistema(sistema('s1', 'Uno'), 'Recepción a 3 en 5-1.');
 
     expect(resultado.descripcion).toBe('Recepción a 3 en 5-1.');
   });
 
   it('025-E10: vaciar el texto borra la descripción', () => {
-    const sistema: Sistema = {
-      id: 's1',
-      nombre: 'Uno',
-      tipo: 'recepcion',
-      plantilla: plantilla(),
-      formaciones: {},
-      explicacionesRotacion: {},
-      descripcion: 'Texto previo',
-    };
+    const conDescripcion: Sistema = { ...sistema('s1', 'Uno'), descripcion: 'Texto previo' };
 
-    const resultado = describirSistema(sistema, '   ');
+    const resultado = describirSistema(conDescripcion, '   ');
 
     expect(resultado.descripcion).toBeUndefined();
   });
@@ -260,6 +289,7 @@ describe('cambiarSustitutoLibero', () => {
       id: 's1',
       nombre: 'Sistema',
       tipo: 'recepcion',
+      equipoId: 'masculino',
       plantilla: plantillaCentral2,
       formaciones: {
         1: [

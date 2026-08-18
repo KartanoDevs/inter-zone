@@ -1,29 +1,40 @@
-import type { PlantillaEquipo, Sistema, TipoSistema } from './modelos';
+import type { EquipoId, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
 import { jugadoresEnPista } from './rotacion';
 
 function nombreValido(nombre: string): boolean {
   return nombre.trim().length > 0;
 }
 
-function colisiona(existentes: readonly Sistema[], idPropio: string | null, tipo: TipoSistema, nombre: string): boolean {
-  return existentes.some((sistema) => sistema.id !== idPropio && sistema.tipo === tipo && sistema.nombre === nombre);
+/** La unicidad del nombre se comprueba dentro de (equipoId, tipo), no globalmente (spec 032):
+ * masculino y femenino pueden tener cada uno su «5-1», igual que ya podían recepción y defensa. */
+function colisiona(
+  existentes: readonly Sistema[],
+  idPropio: string | null,
+  equipoId: EquipoId,
+  tipo: TipoSistema,
+  nombre: string,
+): boolean {
+  return existentes.some(
+    (sistema) => sistema.id !== idPropio && sistema.equipoId === equipoId && sistema.tipo === tipo && sistema.nombre === nombre,
+  );
 }
 
 export function crearSistema(
   id: string,
   nombre: string,
   tipo: TipoSistema,
+  equipoId: EquipoId,
   plantilla: PlantillaEquipo,
   existentes: readonly Sistema[],
 ): Sistema | null {
-  if (!nombreValido(nombre) || colisiona(existentes, null, tipo, nombre)) {
+  if (!nombreValido(nombre) || colisiona(existentes, null, equipoId, tipo, nombre)) {
     return null;
   }
-  return { id, nombre, tipo, plantilla, formaciones: {}, explicacionesRotacion: {} };
+  return { id, nombre, tipo, equipoId, plantilla, formaciones: {}, explicacionesRotacion: {} };
 }
 
 export function renombrarSistema(sistema: Sistema, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
-  if (!nombreValido(nuevoNombre) || colisiona(existentes, sistema.id, sistema.tipo, nuevoNombre)) {
+  if (!nombreValido(nuevoNombre) || colisiona(existentes, sistema.id, sistema.equipoId, sistema.tipo, nuevoNombre)) {
     return null;
   }
   return { ...sistema, nombre: nuevoNombre };
@@ -46,7 +57,7 @@ export function describirSistema(sistema: Sistema, texto: string): Sistema {
  * nuevos (spec 026). Mismas reglas de nombre que `crearSistema`/`renombrarSistema`.
  */
 export function clonarSistema(sistema: Sistema, id: string, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
-  if (!nombreValido(nuevoNombre) || colisiona(existentes, null, sistema.tipo, nuevoNombre)) {
+  if (!nombreValido(nuevoNombre) || colisiona(existentes, null, sistema.equipoId, sistema.tipo, nuevoNombre)) {
     return null;
   }
   return { ...sistema, id, nombre: nuevoNombre };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
+import type { EquipoId, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
 import { sistemaDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 import { LocalStorageSistemaRepository, type AlmacenClaveValor } from './local-storage-sistema.repository';
@@ -40,12 +40,13 @@ const PLANTILLA: PlantillaEquipo = {
   },
 };
 
-function sistema(id: string, nombre: string): Sistema {
+function sistema(id: string, nombre: string, equipoId: EquipoId = 'masculino'): Sistema {
   const [colocador] = PLANTILLA.ordenSaque;
   return {
     id,
     nombre,
     tipo: 'recepcion',
+    equipoId,
     plantilla: PLANTILLA,
     formaciones: { 2: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
     explicacionesRotacion: {},
@@ -58,6 +59,7 @@ function sistemaDefensa(id: string, nombre: string): Sistema {
     id,
     nombre,
     tipo: 'defensa',
+    equipoId: 'masculino',
     plantilla: PLANTILLA,
     formaciones: {},
     explicacionesRotacion: {},
@@ -187,7 +189,7 @@ describe('LocalStorageSistemaRepository', () => {
     const guardado = JSON.parse(almacen.getItem('interzone.sistemas')!);
 
     expect(Object.keys(guardado).sort()).toEqual(['data', 'version']);
-    expect(guardado.version).toBe(5);
+    expect(guardado.version).toBe(6);
     expect(Array.isArray(guardado.data.sistemas)).toBe(true);
   });
 
@@ -402,6 +404,27 @@ describe('LocalStorageSistemaRepository', () => {
       const resultado = await repositorio.listar();
 
       expect(resultado.map((s) => s.id)).toEqual(['s1']);
+    });
+  });
+
+  describe('spec 032 — cada sistema pertenece a un equipo', () => {
+    it('032-E10: el equipo de un sistema sobrevive a guardar y releer', async () => {
+      const repositorio = crearRepositorio();
+      const original = sistema('s1', 'Uno', 'femenino');
+
+      await repositorio.crear(original);
+      const resultado = await repositorio.listar();
+
+      expect(resultado[0]?.equipoId).toBe('femenino');
+    });
+
+    it('032-E11: sin nada guardado, los sistemas de ejemplo son del equipo masculino', async () => {
+      const repositorio = crearRepositorio();
+
+      const resultado = await repositorio.listar();
+
+      expect(resultado.every((s) => s.equipoId === 'masculino')).toBe(true);
+      expect(resultado.some((s) => s.equipoId === 'femenino')).toBe(false);
     });
   });
 });

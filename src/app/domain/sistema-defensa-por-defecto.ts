@@ -1,4 +1,4 @@
-import type { Celda, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Punto, RolId, Sistema, ViaAtaque } from './modelos';
+import type { Celda, EquipoId, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Punto, RolId, Sistema, ViaAtaque } from './modelos';
 import { jugadoresEnPista } from './rotacion';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from './roles';
 
@@ -196,8 +196,9 @@ function explicacionDeRotacion(porZona: Readonly<Record<ZonaFisica, Jugador>>): 
 }
 
 /** El sistema defensivo de `docs/voley/sistema_defensivo_unificado.md` (spec 030), sembrado
- * junto al de recepción cuando el navegador no tiene nada guardado. */
-export function sistemaDefensaPorDefecto(plantilla: PlantillaEquipo): Sistema {
+ * junto al de recepción cuando el navegador no tiene nada guardado. Del equipo masculino por
+ * defecto (spec 032), mismo motivo que `sistemaPorDefecto`. */
+export function sistemaDefensaPorDefecto(plantilla: PlantillaEquipo, equipoId: EquipoId = 'masculino'): Sistema {
   const defensas = {} as Record<1 | 2 | 3 | 4 | 5 | 6, Record<ViaAtaque, Formacion>>;
   const explicacionesRotacion = {} as Record<1 | 2 | 3 | 4 | 5 | 6, string>;
   for (const rotacion of ROTACIONES) {
@@ -218,6 +219,7 @@ export function sistemaDefensaPorDefecto(plantilla: PlantillaEquipo): Sistema {
     id: 'sistema-defensa-por-defecto',
     nombre: 'TEST Defensa zonas',
     tipo: 'defensa',
+    equipoId,
     plantilla,
     formaciones: {},
     defensas,

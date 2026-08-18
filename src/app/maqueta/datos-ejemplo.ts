@@ -112,7 +112,7 @@ function formacionPara(rotacion: number): Formacion {
  * necesita enseñarlas— las inserta directamente cuando esa función rechaza el guardado.
  */
 function construirSistemaEjemplo(): Sistema {
-  const vacio = crearSistema('sistema-ejemplo', 'Sistema de ejemplo', 'recepcion', PLANTILLA_EJEMPLO, []);
+  const vacio = crearSistema('sistema-ejemplo', 'Sistema de ejemplo', 'recepcion', 'masculino', PLANTILLA_EJEMPLO, []);
   if (!vacio) {
     throw new Error('No se pudo crear el sistema de ejemplo');
   }

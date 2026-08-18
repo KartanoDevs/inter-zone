@@ -1,0 +1,14 @@
+<div class="app-selector" role="tablist" aria-label="Equipo">
+  @for (equipo of equipos; track equipo) {
+    <button
+      type="button"
+      role="tab"
+      class="app-selector__boton"
+      [class.app-selector__boton--activa]="equipo === equipoActivo()"
+      [attr.aria-selected]="equipo === equipoActivo()"
+      (click)="seleccionar.emit(equipo)"
+    >
+      {{ nombreEquipo[equipo] }}
+    </button>
+  }
+</div>

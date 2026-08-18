@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
+import type { EquipoId, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
 import type { Ajustes, AjustesRepository, SistemaRepository } from '../domain/puertos';
 import { SistemaStore } from './sistema.store';
 
@@ -22,8 +22,8 @@ function plantilla(): PlantillaEquipo {
   return { nombre: 'Equipo A', ordenSaque: ordenConCentral2() };
 }
 
-function sistemaBase(id: string, nombre: string): Sistema {
-  return { id, nombre, tipo: 'recepcion', plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+function sistemaBase(id: string, nombre: string, equipoId: EquipoId = 'masculino'): Sistema {
+  return { id, nombre, tipo: 'recepcion', equipoId, plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
@@ -32,7 +32,15 @@ function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
 }
 
 function sistemaConLibero(id: string, nombre: string): Sistema {
-  return { id, nombre, tipo: 'recepcion', plantilla: plantillaConLibero('central2'), formaciones: {}, explicacionesRotacion: {} };
+  return {
+    id,
+    nombre,
+    tipo: 'recepcion',
+    equipoId: 'masculino',
+    plantilla: plantillaConLibero('central2'),
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 type Llamada =
@@ -321,7 +329,7 @@ describe('SistemaStore', () => {
     const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
     await store.cargar();
 
-    const creado = await store.crear('Recepción 5-1', 'recepcion');
+    const creado = await store.crear('Recepción 5-1', 'recepcion', 'masculino');
 
     expect(creado).toBe(true);
     expect(store.sistemaActivoId()).not.toBe('r1');
@@ -964,7 +972,7 @@ describe('SistemaStore', () => {
       const store = new SistemaStore(repositorio);
       await store.cargar();
 
-      await store.crear('Recepción nueva', 'recepcion');
+      await store.crear('Recepción nueva', 'recepcion', 'masculino');
 
       expect(repositorio.llamadas).toEqual([{ metodo: 'crear', argumento: expect.objectContaining({ nombre: 'Recepción nueva' }) }]);
     });
@@ -984,7 +992,7 @@ describe('SistemaStore', () => {
       const store = new SistemaStore(repositorio);
       await store.cargar();
 
-      const creado = await store.crear('Uno', 'recepcion');
+      const creado = await store.crear('Uno', 'recepcion', 'masculino');
 
       expect(creado).toBe(false);
       expect(repositorio.llamadas).toEqual([]);
@@ -1016,7 +1024,7 @@ describe('SistemaStore', () => {
       const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
       await store.cargar();
 
-      const creado = await store.crear('Dos', 'recepcion');
+      const creado = await store.crear('Dos', 'recepcion', 'masculino');
       expect(creado).toBe(true);
       expect(store.sistemaActivo()?.nombre).toBe('Dos');
 
@@ -1032,6 +1040,107 @@ describe('SistemaStore', () => {
       await store.borrar(idClon);
       expect(store.catalogo().some((s) => s.id === idClon)).toBe(false);
       expect(store.catalogo()).toHaveLength(2);
+    });
+  });
+
+  describe('spec 032 — cada sistema pertenece a un equipo', () => {
+    it('032-E5: el catálogo solo muestra los sistemas del equipo activo', async () => {
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino'), sistemaBase('f1', 'Recepción F', 'femenino')]),
+      );
+
+      await store.cargar();
+
+      expect(store.catalogo().map((s) => s.id)).toEqual(['m1']);
+    });
+
+    it('032-E6: cambiar de equipo activa el primero del catálogo del equipo nuevo', async () => {
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino'), sistemaBase('f1', 'Recepción F', 'femenino')]),
+      );
+      await store.cargar();
+
+      store.seleccionarEquipo('femenino');
+
+      expect(store.equipoActivo()).toBe('femenino');
+      expect(store.sistemaActivoId()).toBe('f1');
+      expect(store.catalogo().map((s) => s.id)).toEqual(['f1']);
+    });
+
+    it('032-E6b: cambiar a un equipo sin sistemas no deja ninguno activo', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino')]));
+      await store.cargar();
+
+      store.seleccionarEquipo('femenino');
+
+      expect(store.sistemaActivoId()).toBeNull();
+      expect(store.catalogo()).toEqual([]);
+    });
+
+    it('032-E7: cambiar de equipo con cambios sin guardar pide confirmar', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino')]));
+      await store.cargar();
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+
+      store.seleccionarEquipo('femenino');
+
+      expect(store.equipoActivo()).toBe('masculino');
+      expect(store.cambioPendiente()).toEqual({ tipo: 'equipo', valor: 'femenino' });
+    });
+
+    it('032-E7b: confirmar el cambio pendiente de equipo lo aplica y descarta los cambios', async () => {
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino'), sistemaBase('f1', 'Dos', 'femenino')]),
+      );
+      await store.cargar();
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarEquipo('femenino');
+
+      store.confirmarCambio();
+
+      expect(store.equipoActivo()).toBe('femenino');
+      expect(store.sistemaActivoId()).toBe('f1');
+      expect(store.cambioPendiente()).toBeNull();
+      expect(store.borrador()).toEqual([]);
+    });
+
+    it('032-E7c: cancelar el cambio pendiente de equipo mantiene el equipo y los cambios', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino')]));
+      await store.cargar();
+      const [colocador] = plantilla().ordenSaque;
+      store.colocarOMover(colocador.id, { x: 1, y: 1 });
+      store.seleccionarEquipo('femenino');
+
+      store.cancelarCambio();
+
+      expect(store.equipoActivo()).toBe('masculino');
+      expect(store.cambioPendiente()).toBeNull();
+      expect(store.borrador().some((c) => c.jugador.id === colocador.id)).toBe(true);
+    });
+
+    it('032-E8: crear un sistema para el equipo activo lo deja activo, sin cambiar de equipo', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino')]));
+      await store.cargar();
+
+      const creado = await store.crear('Dos', 'recepcion', 'masculino');
+
+      expect(creado).toBe(true);
+      expect(store.equipoActivo()).toBe('masculino');
+      expect(store.sistemaActivo()?.nombre).toBe('Dos');
+    });
+
+    it('032-E9: crear un sistema para el otro equipo cambia el equipo activo', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino')]));
+      await store.cargar();
+
+      const creado = await store.crear('Recepción F', 'recepcion', 'femenino');
+
+      expect(creado).toBe(true);
+      expect(store.equipoActivo()).toBe('femenino');
+      expect(store.sistemaActivo()?.nombre).toBe('Recepción F');
+      expect(store.sistemaActivo()?.equipoId).toBe('femenino');
     });
   });
 });

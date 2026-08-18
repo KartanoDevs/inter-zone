@@ -51,6 +51,11 @@ export interface PlantillaEquipo {
 
 export type TipoSistema = 'recepcion' | 'defensa';
 
+/** El equipo al que pertenece un sistema (spec 032). Fijos por ahora, igual que la plantilla es
+ * hoy una única constante de la aplicación (ADR 0013); equipos de verdad llegan con la base de
+ * datos. */
+export type EquipoId = 'masculino' | 'femenino';
+
 /** Por dónde ataca el rival: los tres tercios de la línea delantera, o el pipe por el centro
  * de zaga (spec 021). Se deriva de dónde se suelta la ficha rival; nunca se declara a mano. */
 export type ViaAtaque = 'z4' | 'z3' | 'z2' | 'pipe';
@@ -60,6 +65,9 @@ export interface Sistema {
   readonly id: string;
   readonly nombre: string;
   readonly tipo: TipoSistema;
+  /** Equipo al que pertenece (spec 032). El catálogo se filtra por él; la unicidad del nombre
+   * se comprueba dentro de (equipoId, tipo), no globalmente. */
+  readonly equipoId: EquipoId;
   readonly plantilla: PlantillaEquipo;
   readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
   /** Explicación general del sistema, independiente de cualquier rotación. Voluntaria (spec 025). */

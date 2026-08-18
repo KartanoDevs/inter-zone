@@ -1,4 +1,4 @@
-import type { Formacion, PlantillaEquipo, Punto, Sistema } from './modelos';
+import type { EquipoId, Formacion, PlantillaEquipo, Punto, Sistema } from './modelos';
 import { jugadoresEnPista } from './rotacion';
 
 /**
@@ -131,8 +131,9 @@ const EXPLICACIONES_ROTACION: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, string>> = 
 };
 
 /** El sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`
- * (spec 025), con el que arranca la app cuando el navegador no tiene nada guardado. */
-export function sistemaPorDefecto(plantilla: PlantillaEquipo): Sistema {
+ * (spec 025), con el que arranca la app cuando el navegador no tiene nada guardado. Del equipo
+ * masculino por defecto (spec 032): no hay guía de referencia para sembrar también el femenino. */
+export function sistemaPorDefecto(plantilla: PlantillaEquipo, equipoId: EquipoId = 'masculino'): Sistema {
   const formaciones: Record<1 | 2 | 3 | 4 | 5 | 6, Formacion> = {} as Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>;
   const explicacionesRotacion: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {} as Record<1 | 2 | 3 | 4 | 5 | 6, string>;
   for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
@@ -149,6 +150,7 @@ export function sistemaPorDefecto(plantilla: PlantillaEquipo): Sistema {
     id: 'sistema-por-defecto',
     nombre: 'TEST Recepción 5-1',
     tipo: 'recepcion',
+    equipoId,
     plantilla,
     formaciones,
     descripcion: DESCRIPCION,

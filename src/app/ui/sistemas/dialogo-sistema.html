@@ -26,6 +26,21 @@
         Defensa
       </label>
     </fieldset>
+
+    <fieldset class="app-dialogo-sistema__tipo">
+      <legend>Equipo</legend>
+      @for (equipo of equipos; track equipo) {
+        <label>
+          <input
+            type="radio"
+            name="equipo"
+            [checked]="equipoSeleccionado() === equipo"
+            (change)="equipoSeleccionado.set(equipo)"
+          />
+          {{ nombreEquipo[equipo] }}
+        </label>
+      }
+    </fieldset>
   }
 
   <ng-container acciones>

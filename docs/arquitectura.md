@@ -36,6 +36,8 @@ Modelos y reglas. Aquí vive el voleibol.
   muestra el bloque por defecto derivado del punto) y `[]` es "vaciada a propósito" (cero
   celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
+- `equipos.ts` — los dos equipos fijos (spec 032, `EQUIPOS`, `NOMBRE_EQUIPO`), mismo patrón que
+  `roles.ts`: el identificador es estable, el nombre visible es lo único configurable.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
   rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
   deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
@@ -112,11 +114,13 @@ testeable sin `TestBed` (`sistema.store.spec.ts`). El constructor no hace ningun
 aplicación hasta que el catálogo y los ajustes están listos, la misma garantía que antes daba el
 constructor síncrono.
 
-- Escribibles: `sistemas` (catálogo completo), `sistemaActivoId`, `rotacionActiva`, `viaActiva`
+- Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
+  masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `viaActiva`
   (spec 021, solo relevante en sistemas de defensa), `borrador` (la formación en edición, antes
-  de guardar), `cambioPendiente` (aviso de cambios sin guardar al cambiar de rotación, de vía o
-  de sistema), `jugadorSeleccionadoId`.
-- Derivados con `computed`: `catalogo` (ordenado), `sistemaActivo`, `posicionesActivas` (quién
+  de guardar), `cambioPendiente` (aviso de cambios sin guardar al cambiar de rotación, de vía, de
+  sistema o de equipo), `jugadorSeleccionadoId`.
+- Derivados con `computed`: `catalogo` (los sistemas de `equipoActivo`, ordenados — spec 032),
+  `sistemaActivo`, `posicionesActivas` (quién
   juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`),
   `formacionGuardadaActiva` (lee `formaciones[rotacion]` en recepción, `defensas[rotacion][via]`
   en defensa), `hayCambiosSinGuardar`, `resultadoValidacion` (siempre `null` en defensa: no es
@@ -126,14 +130,19 @@ constructor síncrono.
   activo, o cadena vacía si no tiene), `celdasJugadorSeleccionado` (spec 024: las celdas del
   jugador seleccionado, o su bloque por defecto si no tiene ninguna; siempre vacío fuera de
   defensa).
-- Acciones: `activarSistema`, `seleccionarRotacion`, `seleccionarVia`,
+- Acciones: `activarSistema`, `seleccionarEquipo` (spec 032, mismo aviso de cambios sin guardar
+  que las demás; activa el primero del catálogo del equipo nuevo, o ninguno si está vacío),
+  `seleccionarRotacion`, `seleccionarVia`,
   `confirmarCambio`/`cancelarCambio`, `colocarOMover` (conserva `celdas` y `explicacion` de la
   colocación previa), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o quitan una celda
   de la rejilla de responsabilidad de un jugador en el borrador, spec 022; si `celdas` era
   `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que pintar o borrar
   cualquiera de sus celdas materializa y congela la zona en vez de sustituirla), `guardar` (en
-  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear`, `clonar`
-  (spec 026, mismo patrón que `crear` pero a partir del sistema activo), `renombrarActivo`,
+  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear` (recibe el
+  equipo del sistema nuevo, spec 032; cambia `equipoActivo` si es distinto del que ya estaba
+  activo, para que el sistema recién creado se vea de inmediato), `clonar`
+  (spec 026, mismo patrón que `crear` pero a partir del sistema activo; mantiene su equipo, sin
+  parámetro propio), `renombrarActivo`,
   `borrar`, `seleccionarJugador` (toggle: toca a la misma ficha deselecciona, a otra cambia el
   foco — spec 010), `enfocarJugador` (selecciona sin toggle, spec 027: se usa al terminar un
   arrastre que coloca una ficha), `deseleccionarJugador` (spec 027: pinchar el fondo cuando no
@@ -157,16 +166,18 @@ Adaptadores hacia el mundo exterior.
   0024) leen el almacén tal y como está en el momento de escribir, nunca desde una copia en
   memoria: así una escritura granular no pierde de vista un sistema que otra escritura hubiera
   guardado mientras tanto.
-- Formato persistido: `{ "version": 5, "data": { "sistemas": [...] } }`. Cada sistema
+- Formato persistido: `{ "version": 6, "data": { "sistemas": [...] } }`. Cada sistema
   persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
   0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
   cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
   rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
   rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
-  Desde la versión 5 (spec 025) guarda `descripcion?`. Nada guardado nunca (`bruto === null`):
-  `listar()` siembra `sistemaPorDefecto` y `sistemaDefensaPorDefecto` (spec 030) **y los
-  persiste de inmediato** (spec 031), para que una escritura granular posterior los encuentre ya
-  en el almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se
+  Desde la versión 5 (spec 025) guarda `descripcion?`. Desde la versión 6 (spec 032) guarda
+  `equipoId`, obligatorio. Nada guardado nunca (`bruto === null`):
+  `listar()` siembra `sistemaPorDefecto` y `sistemaDefensaPorDefecto` (spec 030), del equipo
+  masculino (spec 032: no hay guía de referencia para sembrar también el femenino, que empieza
+  vacío) **y los persiste de inmediato** (spec 031), para que una escritura granular posterior
+  los encuentre ya en el almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se
   siembra igual, pero **solo en memoria**, sin tocar el almacén — sobrescribirlo rompería la
   garantía de nunca sobrescribir a ciegas una versión futura desconocida (spec 008, E4). Un
   payload legible con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada
@@ -206,10 +217,13 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   descripción del sistema). `Tablero` monta dos: uno para `descripcionSistemaActivo` y otro,
   el de siempre, para `explicacionMostrada`.
 - `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/clonar/borrar — el botón de
-  clonar, spec 026, deshabilitado sin sistema activo igual que renombrar y borrar),
-  `DialogoSistema` (alta, edición y clonado — spec 026 añade un tercer modo en
-  `Tablero.dialogoSistema`, reutilizando el componente sin cambios: `mostrarTipo` en `false`
-  como al editar, `nombreInicial` con el nombre sugerido «‹Original› (copia)»).
+  clonar, spec 026, deshabilitado sin sistema activo igual que renombrar y borrar; recibe el
+  catálogo ya filtrado por equipo, no sabe que existen equipos), `DialogoSistema` (alta, edición
+  y clonado — spec 026 añade un tercer modo en `Tablero.dialogoSistema`, reutilizando el
+  componente sin cambios: `mostrarTipo` en `false` como al editar, `nombreInicial` con el nombre
+  sugerido «‹Original› (copia)»; el campo de equipo, spec 032, comparte esa misma visibilidad —
+  ni el tipo ni el equipo cambian una vez creado), `SelectorEquipo` (pestañas del equipo activo,
+  spec 032, mismo patrón que `SelectorVia`).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
   el borrado de un sistema.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
@@ -239,6 +253,7 @@ src/app/
 ├── domain/
 │   ├── modelos.ts
 │   ├── roles.ts
+│   ├── equipos.ts
 │   ├── rotacion.ts
 │   ├── plantilla.ts
 │   ├── plantillas-equipo.ts

@@ -8,6 +8,7 @@ import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
+import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { DialogoAjustes, type OpcionLibero } from '../ajustes/dialogo-ajustes';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
@@ -19,6 +20,7 @@ import { claveOrdenRol } from '../comun/orden-roles';
 import type {
   Celda,
   Colocacion,
+  EquipoId,
   Formacion,
   Infraccion,
   Jugador,
@@ -150,6 +152,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     DialogoConfirmacion,
     BarraSistemas,
     DialogoSistema,
+    SelectorEquipo,
     DialogoAjustes,
   ],
   templateUrl: './tablero.html',
@@ -350,6 +353,10 @@ export class Tablero {
     this.store.activarSistema(id);
   }
 
+  protected elegirEquipo(equipoId: EquipoId): void {
+    this.store.seleccionarEquipo(equipoId);
+  }
+
   protected confirmarCambio(): void {
     this.store.confirmarCambio();
   }
@@ -381,7 +388,7 @@ export class Tablero {
   protected confirmarDialogoSistema(datos: DatosSistema): void {
     const modo = this.dialogoSistema();
     if (modo === 'crear') {
-      this.store.crear(datos.nombre, datos.tipo);
+      this.store.crear(datos.nombre, datos.tipo, datos.equipoId);
     } else if (modo === 'clonar') {
       this.store.clonar(datos.nombre);
     } else {
