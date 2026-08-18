@@ -39,3 +39,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0023](0023-cierra-la-v1-entra-el-backend.md) | Se cierra la v1: entran backend, base de datos y cuentas | Aceptada |
 | [0024](0024-puerto-de-persistencia-asincrono-y-granular.md) | El puerto de persistencia es asíncrono y granular | Aceptada |
 | [0025](0025-el-servidor-importa-el-dominio.md) | El servidor importa `src/app/domain/` directamente | Aceptada |
+| [0026](0026-escritura-antes-de-mutar-estado-local.md) | El store escribe en el repositorio antes de mutar sus signals, nunca al revés | Aceptada |

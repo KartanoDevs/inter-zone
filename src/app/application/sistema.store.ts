@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import type { Celda, EquipoId, Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
-import type { AjustesRepository, SistemaRepository } from '../domain/puertos';
+import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
@@ -36,6 +36,22 @@ function celdasIguales(a: readonly Celda[] = [], b: readonly Celda[] = []): bool
   return a.every((celda) => b.some((otra) => coincide(celda, otra)));
 }
 
+/** El mensaje que se enseña al entrenador por cada uno de los tres motivos de fallo que puede
+ * señalar un `SistemaRepository` (spec 034) — cada uno pide una reacción distinta, así que el
+ * texto lo dice, no solo "algo falló". */
+function mensajeDeError(error: unknown): string {
+  if (error instanceof ErrorDeRed) {
+    return 'No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.';
+  }
+  if (error instanceof ConflictoDeEdicion) {
+    return 'Alguien más ha modificado este sistema mientras tanto.';
+  }
+  if (error instanceof ErrorDelServidor) {
+    return `El servidor no pudo guardar el cambio: ${error.message}`;
+  }
+  return 'Ha ocurrido un error inesperado al guardar.';
+}
+
 function formacionesIguales(a: Formacion, b: Formacion): boolean {
   if (a.length !== b.length) {
     return false;
@@ -69,6 +85,10 @@ export class SistemaStore {
   readonly ayudaPosicionDesactivada = signal(false);
   readonly ordenRotacionCronologico = signal(false);
   readonly mostrarNumerosMetros = signal(false);
+  /** Último fallo al escribir, con un reintento explícito (spec 034). `null` cuando no hay
+   * ningún aviso pendiente — ni al arrancar, ni tras un reintento que tuvo éxito, ni tras
+   * cerrarlo a mano. */
+  readonly errorGuardado = signal<{ readonly mensaje: string; readonly reintentar: () => void } | null>(null);
 
   /** Solo los sistemas del equipo activo (spec 032): dos entrenadores nunca ven mezclados los
    * sistemas del otro equipo. */
@@ -167,6 +187,31 @@ export class SistemaStore {
     private readonly repositorio: SistemaRepository,
     private readonly ajustesRepositorio?: AjustesRepository,
   ) {}
+
+  /**
+   * Ejecuta una escritura contra el repositorio; el estado local solo cambia si `accion`
+   * termina bien —nada de UI optimista (spec 031)—, así que un fallo nunca dice "guardado"
+   * sobre algo que no llegó al servidor. Si falla, `errorGuardado` recoge el motivo y
+   * `reintentar` — que cada llamador pasa como "vuelve a intentar esta misma operación desde el
+   * principio", nunca como "reanuda a medias" — para que el entrenador decida si reintentar o
+   * cerrar el aviso sin perder lo que tenía a medio hacer (spec 034).
+   */
+  private async ejecutarEscritura(accion: () => Promise<void>, reintentar: () => void): Promise<boolean> {
+    try {
+      await accion();
+      this.errorGuardado.set(null);
+      return true;
+    } catch (error) {
+      this.errorGuardado.set({ mensaje: mensajeDeError(error), reintentar });
+      return false;
+    }
+  }
+
+  /** Cierra el aviso de fallo sin reintentar (spec 034, E8): no aplica el cambio, pero tampoco
+   * descarta el trabajo sin guardar — solo dice "cerrado". */
+  cerrarError(): void {
+    this.errorGuardado.set(null);
+  }
 
   /** Carga el catálogo y los ajustes (spec 031). Se llama una vez, antes de que se muestre la
    * pizarra — `app.config.ts` la dispara con `provideAppInitializer` — para que ningún consumidor
@@ -320,20 +365,27 @@ export class SistemaStore {
   }
 
   /** Crea un sistema para `equipoId` (spec 032): si es distinto del equipo activo, el equipo
-   * activo cambia también, para que el sistema recién creado se vea de inmediato. */
+   * activo cambia también, para que el sistema recién creado se vea de inmediato. Si falla al
+   * escribir (spec 034), no queda ni rastro local del intento — reintentar vuelve a generar un
+   * id nuevo, así que dos intentos que ambos lleguen al servidor (uno cuya respuesta se perdió
+   * por la red, y su reintento) crearían dos sistemas en vez de uno; es un límite conocido, no
+   * un caso que esta spec resuelva. */
   async crear(nombre: string, tipo: TipoSistema, equipoId: EquipoId): Promise<boolean> {
-    const id = crypto.randomUUID();
-    const nuevo = crearSistema(id, nombre, tipo, equipoId, PLANTILLA_GLOBAL, this.sistemas());
+    const nuevo = crearSistema(crypto.randomUUID(), nombre, tipo, equipoId, PLANTILLA_GLOBAL, this.sistemas());
     if (!nuevo) {
       return false;
     }
-    this.sistemas.update((lista) => [...lista, nuevo]);
-    await this.repositorio.crear(nuevo);
-    this.equipoActivo.set(equipoId);
-    this.sistemaActivoId.set(id);
-    this.rotacionActiva.set(1);
-    this.cambiarContexto();
-    return true;
+    return this.ejecutarEscritura(
+      async () => {
+        await this.repositorio.crear(nuevo);
+        this.sistemas.update((lista) => [...lista, nuevo]);
+        this.equipoActivo.set(equipoId);
+        this.sistemaActivoId.set(nuevo.id);
+        this.rotacionActiva.set(1);
+        this.cambiarContexto();
+      },
+      () => void this.crear(nombre, tipo, equipoId),
+    );
   }
 
   /** Duplica el sistema activo bajo un nombre nuevo y lo deja activo (spec 026). */
@@ -342,17 +394,20 @@ export class SistemaStore {
     if (!sistema) {
       return false;
     }
-    const id = crypto.randomUUID();
-    const clon = clonarSistema(sistema, id, nombre, this.sistemas());
+    const clon = clonarSistema(sistema, crypto.randomUUID(), nombre, this.sistemas());
     if (!clon) {
       return false;
     }
-    this.sistemas.update((lista) => [...lista, clon]);
-    await this.repositorio.crear(clon);
-    this.sistemaActivoId.set(id);
-    this.rotacionActiva.set(1);
-    this.cambiarContexto();
-    return true;
+    return this.ejecutarEscritura(
+      async () => {
+        await this.repositorio.crear(clon);
+        this.sistemas.update((lista) => [...lista, clon]);
+        this.sistemaActivoId.set(clon.id);
+        this.rotacionActiva.set(1);
+        this.cambiarContexto();
+      },
+      () => void this.clonar(nombre),
+    );
   }
 
   async renombrarActivo(nombre: string): Promise<boolean> {
@@ -364,8 +419,7 @@ export class SistemaStore {
     if (!actualizado) {
       return false;
     }
-    await this.reemplazarSistema(actualizado);
-    return true;
+    return this.reemplazarSistema(actualizado, () => void this.renombrarActivo(nombre));
   }
 
   /** A quién sustituye el líbero del sistema activo, en una rotación concreta (spec 017). */
@@ -374,19 +428,27 @@ export class SistemaStore {
     if (!sistema) {
       return;
     }
-    await this.reemplazarSistema(cambiarSustitutoLibero(sistema, rotacion, sustituidoId));
-    this.borrador.set(this.formacionGuardadaActiva());
+    const actualizado = cambiarSustitutoLibero(sistema, rotacion, sustituidoId);
+    const exito = await this.reemplazarSistema(actualizado, () => void this.cambiarSustitutoLibero(rotacion, sustituidoId));
+    if (exito) {
+      this.borrador.set(this.formacionGuardadaActiva());
+    }
   }
 
   async borrar(id: string): Promise<void> {
-    this.sistemas.update((lista) => borrarSistema(lista, id));
-    await this.repositorio.borrar(id);
-    if (this.sistemaActivoId() === id) {
-      const primero = ordenarCatalogo(this.sistemas())[0] ?? null;
-      this.sistemaActivoId.set(primero?.id ?? null);
-      this.rotacionActiva.set(1);
-      this.cambiarContexto();
-    }
+    await this.ejecutarEscritura(
+      async () => {
+        await this.repositorio.borrar(id);
+        this.sistemas.update((lista) => borrarSistema(lista, id));
+        if (this.sistemaActivoId() === id) {
+          const primero = ordenarCatalogo(this.sistemas())[0] ?? null;
+          this.sistemaActivoId.set(primero?.id ?? null);
+          this.rotacionActiva.set(1);
+          this.cambiarContexto();
+        }
+      },
+      () => void this.borrar(id),
+    );
   }
 
   async guardarExplicacion(texto: string): Promise<void> {
@@ -401,7 +463,7 @@ export class SistemaStore {
     if (!actualizado) {
       return;
     }
-    await this.reemplazarSistema(actualizado);
+    await this.reemplazarSistema(actualizado, () => void this.guardarExplicacion(texto));
   }
 
   /** Cambia la descripción general del sistema activo (spec 025). */
@@ -410,7 +472,7 @@ export class SistemaStore {
     if (!sistema) {
       return;
     }
-    await this.reemplazarSistema(describirSistema(sistema, texto));
+    await this.reemplazarSistema(describirSistema(sistema, texto), () => void this.guardarDescripcion(texto));
   }
 
   cancelarCambio(): void {
@@ -475,6 +537,8 @@ export class SistemaStore {
     this.borrador.set([]);
   }
 
+  /** Guarda la formación en edición (spec 034: si falla, el borrador no se toca — sigue ahí,
+   * listo para reintentar o para seguir editando antes de volver a intentarlo). */
   async guardar(): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema || !this.puedeGuardar()) {
@@ -487,15 +551,20 @@ export class SistemaStore {
     if (!guardado) {
       return;
     }
-    await this.reemplazarSistema(guardado);
-    this.borrador.set(this.formacionGuardadaActiva());
+    const exito = await this.reemplazarSistema(guardado, () => void this.guardar());
+    if (exito) {
+      this.borrador.set(this.formacionGuardadaActiva());
+    }
   }
 
   /** Sustituye un sistema en el catálogo por su versión actualizada y persiste solo ese sistema
-   * (spec 031): nunca reescribe los demás. */
-  private async reemplazarSistema(actualizado: Sistema): Promise<void> {
-    this.sistemas.update((lista) => lista.map((s) => (s.id === actualizado.id ? actualizado : s)));
-    await this.repositorio.actualizar(actualizado);
+   * (spec 031): nunca reescribe los demás. Si la escritura falla, el catálogo local no cambia
+   * (spec 034) — quien llama decide, con el `boolean` de vuelta, si depende de que triunfara. */
+  private async reemplazarSistema(actualizado: Sistema, reintentar: () => void): Promise<boolean> {
+    return this.ejecutarEscritura(async () => {
+      await this.repositorio.actualizar(actualizado);
+      this.sistemas.update((lista) => lista.map((s) => (s.id === actualizado.id ? actualizado : s)));
+    }, reintentar);
   }
 
   /** Recarga el borrador desde lo guardado y deselecciona: se llama al cambiar de rotación o de sistema. */

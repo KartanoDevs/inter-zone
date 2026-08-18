@@ -89,6 +89,17 @@
     ></app-dialogo-confirmacion>
   }
 
+  @if (store.errorGuardado(); as error) {
+    <app-dialogo-confirmacion
+      titulo="No se pudo guardar"
+      [mensaje]="error.mensaje"
+      textoConfirmar="Reintentar"
+      textoCancelar="Cerrar"
+      (confirmar)="reintentarGuardado()"
+      (cancelar)="cerrarErrorGuardado()"
+    ></app-dialogo-confirmacion>
+  }
+
   @if (dialogoSistema(); as modo) {
     <app-dialogo-sistema
       [titulo]="modo === 'crear' ? 'Nuevo sistema' : modo === 'clonar' ? 'Clonar sistema' : 'Renombrar sistema'"

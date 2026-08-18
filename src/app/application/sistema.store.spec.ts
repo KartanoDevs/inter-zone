@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EquipoId, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
-import type { Ajustes, AjustesRepository, SistemaRepository } from '../domain/puertos';
+import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type Ajustes, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
 import { SistemaStore } from './sistema.store';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
@@ -49,13 +49,29 @@ type Llamada =
   | { readonly metodo: 'borrar'; readonly argumento: string };
 
 /** Doble en memoria, granular (spec 031): un mapa por id en vez de un array reemplazado entero,
- * y un registro de llamadas para poder comprobar qué tocó cada operación y qué no. */
+ * y un registro de llamadas para poder comprobar qué tocó cada operación y qué no.
+ *
+ * `fallarProximaVez` (spec 034) encola un error que revienta la siguiente escritura —cualquiera
+ * de las tres, la que llegue primero— y luego el doble vuelve a comportarse con normalidad; así
+ * un test puede simular "falla una vez, y al reintentar ya funciona" sin duplicar la clase. */
 class RepositorioFake implements SistemaRepository {
   private readonly mapa: Map<string, Sistema>;
   readonly llamadas: Llamada[] = [];
+  private readonly colaDeFallos: Error[] = [];
 
   constructor(sistemas: readonly Sistema[] = []) {
     this.mapa = new Map(sistemas.map((s) => [s.id, s]));
+  }
+
+  fallarProximaVez(error: Error): void {
+    this.colaDeFallos.push(error);
+  }
+
+  private comprobarFallo(): void {
+    const error = this.colaDeFallos.shift();
+    if (error) {
+      throw error;
+    }
   }
 
   async listar(): Promise<readonly Sistema[]> {
@@ -63,16 +79,19 @@ class RepositorioFake implements SistemaRepository {
   }
 
   async crear(sistema: Sistema): Promise<void> {
+    this.comprobarFallo();
     this.llamadas.push({ metodo: 'crear', argumento: sistema });
     this.mapa.set(sistema.id, sistema);
   }
 
   async actualizar(sistema: Sistema): Promise<void> {
+    this.comprobarFallo();
     this.llamadas.push({ metodo: 'actualizar', argumento: sistema });
     this.mapa.set(sistema.id, sistema);
   }
 
   async borrar(id: string): Promise<void> {
+    this.comprobarFallo();
     this.llamadas.push({ metodo: 'borrar', argumento: id });
     this.mapa.delete(id);
   }
@@ -84,6 +103,14 @@ const AJUSTES_POR_DEFECTO: Ajustes = {
   ordenRotacionCronologico: false,
   mostrarNumerosMetros: false,
 };
+
+/** `reintentar` (spec 034) es `() => void`: dispara la escritura de nuevo pero no da al llamador
+ * un `Promise` que esperar. Un test que lo invoca necesita dejar pasar la cola de microtareas
+ * antes de comprobar el resultado; un `setTimeout` la vacía entera, a cualquier profundidad de
+ * `await`, sin depender de cuántos niveles tenga la cadena interna. */
+function flushPromesas(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 class AjustesRepositorioFake implements AjustesRepository {
   private ajustes: Ajustes = AJUSTES_POR_DEFECTO;
@@ -1141,6 +1168,122 @@ describe('SistemaStore', () => {
       expect(store.equipoActivo()).toBe('femenino');
       expect(store.sistemaActivo()?.nombre).toBe('Recepción F');
       expect(store.sistemaActivo()?.equipoId).toBe('femenino');
+    });
+  });
+
+  describe('spec 034 — la pizarra no pierde trabajo cuando falla el guardado', () => {
+    const puntosLegalesR1 = [
+      { x: 8, y: 8 },
+      { x: 8, y: 1 },
+      { x: 4.5, y: 1 },
+      { x: 1, y: 1 },
+      { x: 1, y: 6 },
+      { x: 4.5, y: 6 },
+    ];
+
+    function colocarFormacionValida(store: SistemaStore): void {
+      plantilla().ordenSaque.forEach((jugador, indice) => store.colocarOMover(jugador.id, puntosLegalesR1[indice]));
+    }
+
+    it('034-E5: si guardar falla, el borrador sigue ahí, sin persistirse', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      colocarFormacionValida(store);
+      const borradorAntesDelFallo = store.borrador();
+      repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
+
+      await store.guardar();
+
+      expect(store.borrador()).toEqual(borradorAntesDelFallo);
+      expect(store.sistemaActivo()?.formaciones[1]).toBeUndefined();
+      const persistidos = await repositorio.listar();
+      expect(persistidos[0]?.formaciones[1]).toBeUndefined();
+    });
+
+    it('034-E6: un guardado fallido se anuncia con un motivo y una forma de reintentar', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      colocarFormacionValida(store);
+      repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
+
+      await store.guardar();
+
+      expect(store.errorGuardado()?.mensaje).toMatch(/conectar con el servidor/);
+      expect(typeof store.errorGuardado()?.reintentar).toBe('function');
+    });
+
+    it('034-E6b: cada motivo de fallo se anuncia con un mensaje distinto', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      colocarFormacionValida(store);
+      repositorio.fallarProximaVez(new ConflictoDeEdicion('alguien mas guardo antes'));
+
+      await store.guardar();
+
+      expect(store.errorGuardado()?.mensaje).toMatch(/modificado este sistema/);
+    });
+
+    it('034-E7: reintentar tras un fallo aplica el cambio y borra el aviso', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      colocarFormacionValida(store);
+      repositorio.fallarProximaVez(new ErrorDelServidor('caida temporal'));
+      await store.guardar();
+      const borradorPendiente = store.borrador();
+
+      store.errorGuardado()?.reintentar();
+      await flushPromesas();
+
+      expect(store.errorGuardado()).toBeNull();
+      expect(store.sistemaActivo()?.formaciones[1]).toEqual(borradorPendiente);
+      const persistidos = await repositorio.listar();
+      expect(persistidos[0]?.formaciones[1]).toEqual(borradorPendiente);
+    });
+
+    it('034-E8: cerrar el aviso no aplica ni descarta el cambio pendiente', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      colocarFormacionValida(store);
+      const borradorPendiente = store.borrador();
+      repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
+      await store.guardar();
+
+      store.cerrarError();
+
+      expect(store.errorGuardado()).toBeNull();
+      expect(store.borrador()).toEqual(borradorPendiente);
+      expect(store.sistemaActivo()?.formaciones[1]).toBeUndefined();
+    });
+
+    it('034-E9: crear y borrar avisan y se pueden reintentar por el mismo mecanismo', async () => {
+      const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+
+      repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
+      const creado = await store.crear('Dos', 'recepcion', 'masculino');
+
+      expect(creado).toBe(false);
+      expect(store.errorGuardado()).not.toBeNull();
+      expect(store.catalogo().map((s) => s.nombre)).toEqual(['Uno']);
+
+      store.errorGuardado()?.reintentar();
+      await flushPromesas();
+
+      expect(store.errorGuardado()).toBeNull();
+      expect(store.catalogo().map((s) => s.nombre).sort()).toEqual(['Dos', 'Uno']);
+
+      repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
+      const idNuevo = store.sistemaActivoId()!;
+      await store.borrar(idNuevo);
+
+      expect(store.errorGuardado()).not.toBeNull();
+      expect(store.catalogo().some((s) => s.id === idNuevo)).toBe(true);
     });
   });
 });

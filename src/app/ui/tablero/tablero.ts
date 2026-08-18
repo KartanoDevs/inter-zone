@@ -365,6 +365,14 @@ export class Tablero {
     this.store.cancelarCambio();
   }
 
+  protected reintentarGuardado(): void {
+    this.store.errorGuardado()?.reintentar();
+  }
+
+  protected cerrarErrorGuardado(): void {
+    this.store.cerrarError();
+  }
+
   protected abrirCrear(): void {
     this.dialogoSistema.set('crear');
   }
