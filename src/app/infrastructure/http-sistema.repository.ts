@@ -26,7 +26,12 @@ export class HttpSistemaRepository implements SistemaRepository {
 
   constructor(
     private readonly baseUrl: string,
-    private readonly fetchFn: typeof fetch = fetch,
+    // `.bind(globalThis)`: sin esto, `this.fetchFn(...)` invoca `fetch` con `this` = la
+    // instancia del repositorio en vez de `window`, y el navegador lanza síncronamente
+    // "Illegal invocation" antes de tocar la red (nunca aparece en la pestaña Network). Node
+    // no reproduce esa exigencia, así que ni los tests con `fetchFn` inyectado ni un `npm
+    // start` local la detectan — solo se ve en un navegador real.
+    private readonly fetchFn: typeof fetch = fetch.bind(globalThis),
   ) {}
 
   async listar(): Promise<readonly Sistema[]> {

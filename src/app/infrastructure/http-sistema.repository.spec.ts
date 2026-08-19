@@ -104,6 +104,30 @@ describe('HttpSistemaRepository', () => {
     });
   });
 
+  describe('el fetchFn por defecto', () => {
+    it('sobrevive a invocarse como this.fetchFn(...), como hace la clase internamente', async () => {
+      // Un navegador real exige que `fetch` se llame con `this === window`; llamado como
+      // método de otro objeto (`this.fetchFn(...)`), lanza síncronamente "Illegal invocation"
+      // antes de tocar la red. Node no reproduce esa exigencia (por eso este test no puede
+      // usar directamente `fetch` global de Node: no fallaría ni con el bug presente), así
+      // que se simula aquí el mismo contrato que exige un navegador.
+      const fetchOriginal = globalThis.fetch;
+      globalThis.fetch = function (this: unknown): Promise<Response> {
+        if (this !== globalThis) {
+          throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+        }
+        return Promise.resolve(respuestaJson(200, []));
+      } as typeof fetch;
+
+      try {
+        const repositorio = new HttpSistemaRepository('http://api');
+        await expect(repositorio.listar()).resolves.toBeDefined();
+      } finally {
+        globalThis.fetch = fetchOriginal;
+      }
+    });
+  });
+
   describe('el testigo de concurrencia', () => {
     it('crear guarda el actualizadoEn que devuelve el servidor, para el próximo PUT', async () => {
       const { fetchFn, llamadas } = crearFetchFalso([
