@@ -12,12 +12,13 @@ sin cubrir.
 
 ## Qué hace (v1)
 
-- Arrancar con dos sistemas de ejemplo ya construidos si el navegador no tiene nada guardado: la
-  recepción a 3 en 5-1 (seis rotaciones colocadas y explicadas) y la defensa especializada por
-  zonas (veinticuatro formaciones, con su zona de responsabilidad pintada).
+- Arrancar con dos sistemas de ejemplo ya construidos: la recepción a 3 en 5-1 (seis rotaciones
+  colocadas y explicadas) y la defensa especializada por zonas (veinticuatro formaciones, con su
+  zona de responsabilidad pintada). Los siembra el servidor (`npm run seed` en `server/`) si la
+  base de datos está vacía.
 - Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
 - Crear, renombrar, clonar y borrar varios sistemas de recepción con nombre, cada uno ligado a
-  una plantilla, y elegir con cuál se trabaja.
+  una plantilla y a un equipo (masculino o femenino), y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
   numeradas por dónde está el colocador).
 - El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la
@@ -32,19 +33,25 @@ sin cubrir.
 - Consultar un sistema guardado, rotación a rotación, en solo lectura.
 - Examinarse: colocar los jugadores y recibir una nota de perfección frente al sistema
   guardado, además del veredicto de legalidad.
-- Guardar en el navegador; exportar e importar JSON y PNG.
+- Guardar en un servidor propio (PostgreSQL); exportar e importar JSON y PNG. Los ajustes de
+  pantalla (validación desactivada, ayuda de posición…) siguen en el navegador, por dispositivo.
 
 ## Qué NO hace
 
-**Todavía no, pero está decidido y en marcha: la v2.** Backend, base de datos, login con Google o
-contraseña, lista blanca de correos, tres roles de acceso, y sistemas separados por equipo
-masculino y femenino. La condición que la v1 puso para construirlo —que el equipo pidiera editar
-desde varios dispositivos— se cumplió. El esquema está en `docs/modelo-de-datos.md` y la decisión
-en `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`. Mientras tanto, lo que guarda de verdad
-sigue siendo el navegador.
+**Ya hecho, de la v2:** backend propio (Express + PostgreSQL vía Prisma, en `server/`), sistemas
+separados por equipo masculino y femenino, y la pizarra hablando con el servidor en vez de con
+`localStorage`. La condición que la v1 puso para construirlo —que el equipo pidiera editar desde
+varios dispositivos— se cumplió; la decisión está en
+`docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
+
+**Todavía no, pero está decidido y en marcha:** login con Google o contraseña, lista blanca de
+correos y tres roles de acceso. El esquema está en `docs/modelo-de-datos.md`; las tablas de
+sistemas ya existen, las de acceso llegan con las specs 035-037.
 
 **Fuera a propósito, también en la v2:** PWA offline y sincronización sin conexión. `localStorage`
-no se queda como modo desconectado; se sustituye.
+no se queda como modo desconectado para los sistemas; se sustituyó por el servidor. Sí se queda,
+a propósito, como almacén de los ajustes de pantalla: son preferencias por dispositivo, no
+trabajo de un entrenador que perder.
 
 ## Stack
 
@@ -52,29 +59,48 @@ no se queda como modo desconectado; se sustituye.
 - SVG nativo para el render (no Canvas, no Fabric.js).
 - TypeScript estricto.
 - Vitest para los tests.
-- Persistencia en `localStorage` detrás de un puerto. En la v2, PostgreSQL con Prisma tras un
-  backend de Node y Express en `server/`, con un segundo adaptador del mismo puerto — `domain/` no
-  se entera.
+- Persistencia de los sistemas en PostgreSQL con Prisma, tras un backend de Node y Express en
+  `server/`, hablado por HTTP desde un puerto asíncrono y granular (`domain/` declara el
+  contrato; ni Angular ni Express se enteran de cómo lo cumple el otro lado). Los ajustes de
+  pantalla siguen en `localStorage`, detrás del mismo tipo de puerto.
 
 ## Arranque
 
-Requiere Node 22.22.3 o superior.
+Requiere Node 22.22.3 o superior. La pizarra pide el catálogo al arrancar (`provideAppInitializer`
+en `app.config.ts`), así que **hace falta el backend levantado** para ver algo más que una
+pantalla vacía — no basta con `npm install && npm start` en la raíz.
 
 ```bash
 npm install
 npm test          # dominio, infraestructura y aplicación; deben pasar siempre
-npm start
 ```
+
+Backend, en otra terminal — requiere además Docker (instrucciones completas y la lista de rutas
+en `server/README.md`, no se duplican aquí):
+
+```bash
+cd server
+npm install
+cp .env.example .env
+npm run db:up               # PostgreSQL en Docker
+npx prisma migrate deploy
+npm run seed                 # equipo + jugador + los dos sistemas de ejemplo
+npm run dev                  # http://localhost:3000
+```
+
+Con el backend arriba, `npm start` en la raíz sirve la pizarra en `http://localhost:4200`.
 
 ## Documentación
 
 | Fichero | Para qué |
 |---|---|
 | `docs/dominio.md` | Las reglas del voleibol y el vocabulario del proyecto. La fuente de verdad. |
-| `docs/arquitectura.md` | Capas, dependencias permitidas, estructura de carpetas. |
+| `docs/arquitectura.md` | Capas, dependencias permitidas, estructura de carpetas — incluye `server/`. |
+| `docs/modelo-de-datos.md` | El esquema de PostgreSQL: qué tablas existen y cuáles quedan por construir. |
 | `docs/flujo-de-trabajo.md` | Cómo se trabaja aquí: ciclo SDD + TDD. |
 | `docs/decisiones/` | Registro de decisiones tomadas y su motivo, una por fichero. Solo se añade. |
 | `docs/especificaciones/` | Una spec por porción de trabajo. Se cierran al terminarse. |
+| `server/README.md` | Arranque del backend, rutas de la API, estructura de `server/`. |
 | `CLAUDE.md` | Contexto e invariantes para asistentes de IA. |
 
 ## Hoja de ruta
@@ -88,15 +114,15 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
 3. **Catálogo de sistemas, enseñanza, persistencia, pizarra interactiva y líbero por
    rotación.** Crear, renombrar y borrar varios sistemas; explicaciones de enseñanza por
    rotación y por jugador; guardado en el navegador con un esquema pensado para migrar a
-   PostgreSQL + Prisma en la V2; la pista SVG con arrastre, validación en vivo, navegación
-   R1–R6 y selección de jugador; y el líbero sustituyendo a cualquier jugador de zaga, entrando
-   y saliendo según la rotación (FIVB 19.3.1.1). Primer punto en que la herramienta enseña algo
-   tocándola. Specs 006–011.
+   PostgreSQL + Prisma (migración ya hecha, ver el paso 8); la pista SVG con arrastre,
+   validación en vivo, navegación R1–R6 y selección de jugador; y el líbero sustituyendo a
+   cualquier jugador de zaga, entrando y saliendo según la rotación (FIVB 19.3.1.1). Primer
+   punto en que la herramienta enseña algo tocándola. Specs 006–011.
 4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
    jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 012–013.
 5. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
    Specs 014–015.
-6. **Exportar e importar JSON y PNG.** Compartir un sistema sin backend. Spec 016.
+6. **Exportar e importar JSON y PNG.** Compartir un sistema sin depender del servidor. Spec 016.
 7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por rotación y por vía de
    ataque del rival (zona 4, zona 3, zona 2, pipe): se marca la vía soltando una ficha rival
    genérica en su campo, se colocan los seis defensores (mismo roster que en recepción, líbero
@@ -105,11 +131,12 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    cada defensor y verlas todas a la vez son las specs 022–023.
 8. **Backend, cuentas y equipos (v2).** Los sistemas dejan de vivir en un navegador y pasan a una
    base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
-   estudiarlos. Por orden: el puerto de persistencia se vuelve asíncrono y granular; cada sistema
-   pasa a ser del equipo masculino o del femenino; nace `server/` con PostgreSQL y su API; la
-   pizarra habla con él; se entra con lista blanca, contraseña y Google; y por último los tres
-   roles deciden quién ve y quién edita cada cosa. Specs 031–037. El esquema completo, en
-   `docs/modelo-de-datos.md`.
+   estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);
+   cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
+   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034). **Pendiente:** se entra
+   con lista blanca, contraseña y Google (specs 035-036); y los tres roles deciden quién ve y
+   quién edita cada cosa (spec 037) — estas tres, sin fichero de spec todavía. El esquema
+   completo, en `docs/modelo-de-datos.md`.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

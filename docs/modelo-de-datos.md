@@ -8,7 +8,9 @@ es justo lo que `docs/flujo-de-trabajo.md` prohíbe en una spec. Es un documento
 fija la forma de los datos para que la spec que venga después pueda escribirse en lenguaje de
 voleibol sin tener que discutir tablas por el camino.
 
-**Nada de lo que hay aquí está construido.** Ver «Antes de escribir una línea de código» al final.
+**Seis de las nueve tablas ya están construidas** (spec 033): `equipo`, `jugador`, `sistema`,
+`sistema_rotacion`, `formacion`, `colocacion`. Las tres de acceso —`usuario`, `lista_blanca`,
+`membresia`— siguen sin construir, y llegan con las specs 035-037. Ver la sección 9, al final.
 
 ## Aviso de vocabulario: «rol» significa ahora dos cosas
 
@@ -98,6 +100,8 @@ tener que tocar el esquema.
 
 ### `usuario`
 
+**Sin construir** — llega con la spec 035.
+
 ```sql
 CREATE EXTENSION IF NOT EXISTS citext;
 
@@ -135,6 +139,8 @@ CREATE TABLE usuario (
 
 ### `equipo`
 
+**Ya construida y sembrada** (spec 033) — la única de esta sección que existe hoy.
+
 ```sql
 CREATE TABLE equipo (
   id     uuid PRIMARY KEY,
@@ -152,6 +158,8 @@ puede cambiar sin romper nada. Mismo criterio que `RolId` frente a `DefinicionRo
 `src/app/domain/roles.ts`.
 
 ### `lista_blanca`
+
+**Sin construir** — llega con la spec 035.
 
 ```sql
 CREATE TABLE lista_blanca (
@@ -181,6 +189,8 @@ regla acabaríamos con dos sitios que dicen cosas distintas sobre la misma perso
 
 ### `membresia`
 
+**Sin construir** — llega con la spec 037 (los tres roles de acceso).
+
 ```sql
 CREATE TABLE membresia (
   usuario_id uuid       NOT NULL REFERENCES usuario (id) ON DELETE CASCADE,
@@ -200,6 +210,9 @@ Un entrenador puede llevar los dos equipos con una sola cuenta: dos filas. `admi
 porque no está acotado a ningún equipo.
 
 ### Matriz de permisos
+
+**Diseño, no ejecutable todavía**: las consultas de esta sección asumen `membresia` y
+`usuario.es_admin`, que no existen hasta la spec 037.
 
 Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
 
@@ -332,6 +345,11 @@ CREATE TABLE sistema (
 
 CREATE INDEX sistema_por_equipo ON sistema (equipo_id, tipo, estado);
 ```
+
+**Construida con las columnas de acceso aplazadas** (spec 033): la migración real de
+`server/prisma/migrations/` omite `creado_por`, `validado_por`, `validado_en` y el `CHECK
+sistema_validado_con_fecha`, porque no hay tabla `usuario` a la que referenciar todavía. Llegan
+en la migración de la spec 035 o 037, sin tocar el resto de esta tabla.
 
 - **`UNIQUE (equipo_id, tipo, nombre)`.** Hoy la unicidad es `(tipo, nombre)` —lo comprueba
   `colisiona` en `src/app/domain/catalogo-sistemas.ts`, y la spec 006 E5 acepta a propósito el mismo
@@ -532,6 +550,10 @@ migración (`prisma migrate dev --create-only` y editar el fichero antes de apli
 detalle menor: **casi todos los invariantes de voleibol de este modelo son `CHECK`s.** Si se generan
 las migraciones sin revisarlas, el esquema queda sin la mitad de sus garantías.
 
+**Ya aplicada en la migración real** (spec 033): `server/prisma/migrations/.../migration.sql`
+añade a mano, tras lo que genera Prisma, exactamente los `CHECK` y la función `celdas_validas()`
+de esta sección.
+
 ---
 
 ## 7. Ampliaciones que no tocarán el esquema
@@ -568,6 +590,7 @@ Ida y vuelta entre lo que hay hoy y las tablas.
 | Modelo actual | Tabla y columna |
 |---|---|
 | `Sistema.id`, `.nombre`, `.tipo`, `.descripcion` | `sistema` |
+| `Sistema.equipoId` (spec 032) | `sistema.equipo_id` |
 | `Sistema.plantilla` | catálogo fijo `jugador` — no se guarda por sistema |
 | `SustitucionLibero.sustitutosPorRotacion[n]` | `sistema_rotacion.libero_sustituye_a` |
 | `Sistema.explicacionesRotacion[n]` | `sistema_rotacion.explicacion` |
@@ -578,7 +601,7 @@ Ida y vuelta entre lo que hay hoy y las tablas.
 | `Colocacion.explicacion` | `colocacion.explicacion` |
 | `Colocacion.celdas` | `colocacion.celdas` (índice lineal) |
 | `SistemaPersistido.creadoEn` / `.actualizadoEn` | `sistema.creado_en` / `.actualizado_en` |
-| `Ajustes` (los cuatro) | columnas de `usuario` |
+| `Ajustes` (los cuatro) | columnas de `usuario` (plan — hasta la spec 035 siguen en `localStorage`) |
 
 Lo que hay que tener presente:
 
@@ -591,39 +614,54 @@ Lo que hay que tener presente:
   `plantilla-global.spec.ts`, que verifica las seis rotaciones de referencia etiqueta a etiqueta y
   siguió pasando sin tocarlo—; solo se movió el identificador interno.
 
-  **Consecuencia sobre datos ya guardados:** las posiciones se persisten por `jugadorId`, así que
-  cualquier sistema hecho a mano y guardado en un navegador *antes* del cambio tiene ahora los dos
-  centrales cruzados. Los dos sistemas sembrados no se ven afectados, porque se generan por rol vía
-  `jugadoresEnPista`. Se hizo ahora precisamente por eso: el único dato en riesgo estaba en el
-  navegador de una persona, no en una base de datos con el trabajo de dos equipos dentro.
+  **Consecuencia sobre datos ya guardados (histórico, previo a la spec 033):** las posiciones se
+  persisten por `jugadorId`, así que cualquier sistema hecho a mano y guardado en un navegador
+  *antes* del cambio tenía los dos centrales cruzados. Los dos sistemas sembrados no se vieron
+  afectados, porque se generan por rol vía `jugadoresEnPista`. Se hizo en su momento precisamente
+  por eso: el único dato en riesgo estaba en el navegador de una persona, todavía no en la base
+  de datos que hoy guarda el trabajo de los dos equipos.
 - **La ADR 0012 se mantiene intacta.** `creado_en` y `actualizado_en` son columnas de
   infraestructura; no entran en el tipo `Sistema` de dominio, igual que hoy no entran en él.
 - **`equipo` y `estado`, en cambio, sí son visibles para quien usa la aplicación**: uno es el
-  desplegable al crear un sistema, el otro decide qué ve un usuario normal. No se pueden esconder en
-  infraestructura como las fechas. **Decisión pendiente:** o `Sistema` gana esos dos campos, o
-  `SistemaRepository` gana un método de metadatos, que es exactamente la salida que la propia ADR
-  0012 dejó anticipada («algo como `metadatosDe(id)`»).
-- **La política de versionado actual deja de valer.** Hoy, una versión distinta a la esperada se
-  trata como payload ilegible: se descarta todo y se siembra de cero. Contra una base de datos eso
-  es borrar el trabajo de un equipo. Se sustituye por migraciones versionadas, con Prisma Migrate.
-- **Los dos sistemas semilla pasan de factorías a datos de seed.** `sistemaPorDefecto` y
-  `sistemaDefensaPorDefecto` producen entre los dos 30 formaciones y 180 colocaciones, que ahora hay
-  que insertar y asignar a un equipo. Dejan de reaparecer solos cuando no hay nada legible.
-- **El cambio de más calado:** `SistemaRepository` es **síncrono** (`listar(): readonly Sistema[]`,
-  `guardar(...): void`) y escribe **el catálogo entero de golpe**. Un adaptador HTTP es asíncrono y
-  granular, así que el puerto cambia de forma — y eso toca `application/`, no solo
-  `infrastructure/`. `docs/arquitectura.md` ya reservó el hueco («sabemos que habrá un segundo
-  adaptador HTTP»), pero no anticipó el cambio de firma. **Llevará su propia ADR, al cerrar la spec
-  que lo haga.** El write-all, además, deja de ser inofensivo en cuanto hay latencia: crear un
-  sistema antes de que llegue el catálogo mandaría una lista de un elemento sobre un catálogo
-  remoto poblado. Lo arregla la granularidad, no un indicador de carga.
+  desplegable al crear un sistema, el otro decide qué ve un usuario normal. No se pueden esconder
+  en infraestructura como las fechas. **`equipo` ya se resolvió** (spec 032): `Sistema` ganó el
+  campo `equipoId` directamente, no un método de metadatos aparte. **`estado` sigue sin
+  resolver** — la tabla `sistema` ya tiene la columna `estado_sistema`, pero nace siempre
+  `'borrador'`; nada la lee ni la cambia todavía. Queda para cuando la spec 037 dé sentido a
+  «validado».
+- **La política de versionado de la v1 dejó de valer para los sistemas.** Antes, una versión
+  distinta a la esperada se trataba como payload ilegible: se descartaba todo y se sembraba de
+  cero. Contra una base de datos eso habría sido borrar el trabajo de un equipo. Se sustituyó por
+  migraciones versionadas con Prisma Migrate (`server/prisma/migrations/`). El patrón antiguo
+  sigue vivo, a propósito, en `LocalStorageAjustesRepository` (`VERSION_ACTUAL = 4`): los ajustes
+  siguen siendo un documento único en `localStorage`, no filas de una tabla.
+- **Los dos sistemas semilla pasaron de factorías a datos de seed.** `sistemaPorDefecto` y
+  `sistemaDefensaPorDefecto` producen entre los dos 30 formaciones y 180 colocaciones, que
+  `server/src/infraestructura/semilla.ts` inserta y asigna al equipo masculino (`npm run seed`).
+  Ya no reaparecen solos cuando no hay nada legible: si la base de datos está vacía hay que
+  sembrarla explícitamente.
+- **El cambio de más calado, ya hecho (spec 031, ADR 0024):** `SistemaRepository` era
+  **síncrono** (`listar(): readonly Sistema[]`, `guardar(...): void`) y escribía **el catálogo
+  entero de golpe**. Pasó a asíncrono y granular —`listar/crear/actualizar/borrar`, todos
+  `Promise`, cada uno tocando solo el sistema que le corresponde— antes incluso de que naciera
+  `server/`, precisamente para que el adaptador HTTP no tuviera que escribir el catálogo entero
+  en cada guardado. Tocó `application/`, no solo `infrastructure/`: `SistemaStore` ganó
+  `cargar()` como método aparte (el constructor dejó de hacer E/S) y, ya con el adaptador HTTP
+  real (spec 034, ADR 0026), un helper `ejecutarEscritura` que espera la respuesta del
+  repositorio antes de mutar el estado local, en vez de mutar primero y confiar en que la
+  escritura no fallara.
 
 ---
 
-## 9. Estado: autorizado, sin construir
+## 9. Estado: seis tablas construidas, tres pendientes
 
-Este esquema **no existe todavía**. Lo que sí está resuelto es el permiso para construirlo: los tres
-textos que decían lo contrario ya se han reescrito.
+Las seis tablas de voleibol —`equipo`, `jugador`, `sistema`, `sistema_rotacion`, `formacion`,
+`colocacion`— están construidas, migradas y con datos desde la spec 033. Las tres de acceso
+—`usuario`, `lista_blanca`, `membresia`— siguen siendo solo diseño: llegan con las specs
+035-037, en una migración aparte que no toca las seis ya existentes.
+
+Antes de que se construyera nada de esto, lo que había que resolver era el permiso para
+construirlo. Los tres textos que lo bloqueaban ya se reescribieron:
 
 1. **[ADR 0023](decisiones/0023-cierra-la-v1-entra-el-backend.md)** cierra la v1 y abre la v2. No
    revoca el fondo de la 0001 —que ya nombraba este mismo stack y fijaba la condición de disparo,
@@ -633,7 +671,18 @@ textos que decían lo contrario ya se han reescrito.
    ahora fija la regla de capas nueva — `server/` solo importa de `src/app/domain/`.
 3. **`README.md`** describe la v2 en «Qué NO hace», en «Stack» y en el paso 8 de la hoja de ruta.
 
-Lo que este documento provocó y **ya está hecho**, con la suite en verde:
+Concedido el permiso, esto es lo que se construyó encima, cada paso con su propia ADR:
+
+- **[ADR 0024](decisiones/0024-puerto-de-persistencia-asincrono-y-granular.md)** — el puerto de
+  persistencia se vuelve asíncrono y granular (spec 031), antes incluso de que naciera `server/`
+  (ver §8).
+- **[ADR 0025](decisiones/0025-el-servidor-importa-el-dominio.md)** — `server/` importa
+  `src/app/domain/` directamente y nunca al revés (spec 033).
+- **[ADR 0026](decisiones/0026-escritura-antes-de-mutar-estado-local.md)** — la escritura al
+  repositorio va siempre antes de mutar el estado local, no al revés (spec 034, tras el
+  adaptador HTTP real).
+
+Lo que este documento provocó directamente y **ya está hecho**, con la suite en verde:
 
 - `src/app/domain/plantilla-global.ts` — `central1` pasa a ser el central de P6, el contiguo al
   colocador, coherente con su etiqueta `C1`. Ajustados los dos tests que codificaban el cruce
@@ -646,6 +695,13 @@ Lo que este documento provocó y **ya está hecho**, con la suite en verde:
   se pinta `C2`»* dejó de ser cierto, aunque su decisión de fondo (el índice se declara, no se
   deriva) sigue vigente.
 
+**Sesión, sin diseñar todavía.** Ninguna sección de este documento contempla cómo se guarda una
+sesión de acceso (cookie firmada, JWT, tabla de tokens…) — no hay ni una mención a sesión, token
+o cookie en todo el fichero. Es requisito previo de la spec 035: se decide al congelarla, con su
+propia ADR. Si la decisión resulta ser una tabla nueva, el principio 3 de la sección 1 («nueve
+tablas») pasa a diez, y la tabla de la sección 7 gana una fila.
+
 **Requisito de versión:** el esquema da por hecho **PostgreSQL 15 o superior**. Lo necesita
 `UNIQUE NULLS NOT DISTINCT`, que sostiene dos restricciones de peso: «solo un colocador, un opuesto
-y un líbero» en `jugador`, y «una sola formación de recepción por rotación» en `formacion`.
+y un líbero» en `jugador`, y «una sola formación de recepción por rotación» en `formacion`. La
+base real (`server/docker-compose.yml`) usa PostgreSQL 18.

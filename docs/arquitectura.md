@@ -15,10 +15,19 @@ voleibol en milisegundos, sin `TestBed`, sin DOM y sin arrancar nada.
                             │                        ▲
                             ▼                        │
                     infrastructure/  ────────────────┘
+
+    server/  ──────────────────────────────────────►  domain/
 ```
 
 Las flechas apuntan solo hacia dentro. `domain/` no conoce a nadie. `infrastructure/`
 implementa puertos que se **declaran** en `domain/`.
+
+`server/` (spec 033) es un segundo consumidor de `domain/`, con sus propias reglas: importa
+`src/app/domain/` con rutas relativas y nunca al revés, y nunca importa de `application/`,
+`infrastructure/` ni `ui/` — el dominio no sabe que existe un servidor (ADR 0025, invariante 8
+de `CLAUDE.md`). Es exactamente lo que el invariante 2 (`domain/` no importa nada externo) hace
+posible: el mismo código de reglas de voleibol corre en el navegador y en Node sin adaptador
+intermedio.
 
 ## Capas
 
@@ -80,9 +89,11 @@ Modelos y reglas. Aquí vive el voleibol.
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
-  sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`, con
-  el que arranca la app si el navegador no tiene nada guardado. Deriva el roster de cada
-  rotación con `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
+  sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`. En la
+  v1 arrancaba la app con él si el navegador no tenía nada guardado; desde la spec 033, es
+  `server/src/infraestructura/semilla.ts` quien siembra este mismo sistema en PostgreSQL
+  (`npm run seed`), no un adaptador de `infrastructure/`. Deriva el roster de cada rotación con
+  `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
 - `sistema-defensa-por-defecto.ts` — `sistemaDefensaPorDefecto(plantilla): Sistema` (spec 030):
   el sistema defensivo de `docs/voley/sistema_defensivo_unificado.md`, sembrado junto al de
   recepción. Coloca **por zona física del campo, derivada del rol y de la línea** (líbero a la 5,
@@ -93,12 +104,17 @@ Modelos y reglas. Aquí vive el voleibol.
 - `puertos.ts` — las interfaces `SistemaRepository` y `AjustesRepository`, sin implementación.
   Asíncronas las dos; `SistemaRepository` además es granular —`crear`/`actualizar`/`borrar` por
   sistema, nunca un `guardar` de todo el catálogo— para que una escritura no pueda arriesgar el
-  trabajo de un sistema que no tocó (spec 031, ADR 0024).
+  trabajo de un sistema que no tocó (spec 031, ADR 0024). También declara `ErrorDeRed`,
+  `ErrorDelServidor` y `ConflictoDeEdicion` (spec 034): los tres motivos de fallo que un
+  adaptador puede señalar al escribir, parte del contrato del puerto — no un detalle de cómo lo
+  cumple un adaptador en concreto.
 
-Todo son funciones puras y tipos. Sin clases con estado, sin fechas, sin aleatoriedad — por
-eso `creadoEn`/`actualizadoEn` de un sistema no viven aquí, sino en `infrastructure/` (ADR
-0012). `cobertura.ts` (huecos y conflictos derivados de la rejilla) todavía no existe: llega
-con las specs 014–015 de la hoja de ruta del README.
+Todo son funciones puras y tipos, con una excepción deliberada: las tres clases de error de
+`puertos.ts` no tienen estado propio (heredan de `Error` sin añadir nada), así que siguen sin
+fecha ni aleatoriedad — la regla de fondo es esa, no "cero clases". `creadoEn`/`actualizadoEn`
+de un sistema no viven aquí, sino en `infrastructure/` (ADR 0012). `cobertura.ts` (huecos y
+conflictos derivados de la rejilla) todavía no existe: llega con las specs 014–015 de la hoja
+de ruta del README.
 
 **La configuración de roles vive aquí**, no en la UI ni en un fichero de entorno. Cambiar
 "Receptor" por "Punta" es cambiar el vocabulario del dominio, y el sitio donde se hace debe
@@ -118,7 +134,8 @@ constructor síncrono.
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `viaActiva`
   (spec 021, solo relevante en sistemas de defensa), `borrador` (la formación en edición, antes
   de guardar), `cambioPendiente` (aviso de cambios sin guardar al cambiar de rotación, de vía, de
-  sistema o de equipo), `jugadorSeleccionadoId`.
+  sistema o de equipo), `jugadorSeleccionadoId`, `errorGuardado` (spec 034, ADR 0026: motivo de
+  la última escritura fallida y cómo reintentarla, o `null`).
 - Derivados con `computed`: `catalogo` (los sistemas de `equipoActivo`, ordenados — spec 032),
   `sistemaActivo`, `posicionesActivas` (quién
   juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`),
@@ -150,8 +167,15 @@ constructor síncrono.
   `guardarDescripcion` (spec 025), `cambiarSustitutoLibero`. `quitar` también deselecciona si el
   jugador quitado era el seleccionado (spec 027). Toda acción que persiste algo es `async` desde
   la spec 031 y llama al método del puerto que corresponde a lo que tocó (`crear`, `actualizar`
-  o `borrar`), nunca a uno que reescriba el catálogo entero; `ui/` no espera esas promesas
-  (*fire-and-forget*), porque ninguna pantalla depende hoy de saber cuándo termina la escritura.
+  o `borrar`), nunca a uno que reescriba el catálogo entero.
+
+  **La llamada al repositorio va siempre primero (ADR 0026).** Los ocho métodos de escritura
+  pasan por un helper común, `ejecutarEscritura(accion, reintentar)`: espera a que el
+  repositorio termine y solo entonces muta los signals locales — nunca al revés. Si falla, no
+  toca ningún signal de estado y publica el motivo en `errorGuardado: { mensaje, reintentar } |
+  null`, para que `ui/` pueda avisar y ofrecer reintentar. No es UI optimista: con
+  `localStorage` (que nunca fallaba) mutar antes de esperar era inofensivo, pero con un
+  adaptador HTTP real habría dejado ver un cambio como guardado justo antes de perderlo.
 
 Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenece a `domain/`.
 
@@ -159,38 +183,57 @@ Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenec
 
 Adaptadores hacia el mundo exterior.
 
-- `LocalStorageSistemaRepository implements SistemaRepository`, sobre un `AlmacenClaveValor`
-  inyectado (que `localStorage` cumple tal cual — la inyección permite testear sin DOM).
-  Recibe también la plantilla real por constructor: en la v1 es una única constante de la
-  aplicación, no un dato de dominio (ADR 0013). `crear`, `actualizar` y `borrar` (spec 031, ADR
-  0024) leen el almacén tal y como está en el momento de escribir, nunca desde una copia en
-  memoria: así una escritura granular no pierde de vista un sistema que otra escritura hubiera
-  guardado mientras tanto.
-- Formato persistido: `{ "version": 6, "data": { "sistemas": [...] } }`. Cada sistema
-  persistido guarda `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR
-  0012), y `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en
-  cada rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por
-  rotación desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por
-  rotación y por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020).
-  Desde la versión 5 (spec 025) guarda `descripcion?`. Desde la versión 6 (spec 032) guarda
-  `equipoId`, obligatorio. Nada guardado nunca (`bruto === null`):
-  `listar()` siembra `sistemaPorDefecto` y `sistemaDefensaPorDefecto` (spec 030), del equipo
-  masculino (spec 032: no hay guía de referencia para sembrar también el femenino, que empieza
-  vacío) **y los persiste de inmediato** (spec 031), para que una escritura granular posterior
-  los encuentre ya en el almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se
-  siembra igual, pero **solo en memoria**, sin tocar el almacén — sobrescribirlo rompería la
-  garantía de nunca sobrescribir a ciegas una versión futura desconocida (spec 008, E4). Un
-  payload legible con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada
-  encima (ADR 0021). Desde la spec 028, cada posición persistida
-  guarda también `celdas?` (la zona de responsabilidad, specs 022/024) — antes se perdía al
-  recargar; no subió la versión porque es una lectura/escritura nueva de un campo que antes se
-  ignoraba del todo, no un cambio de significado de datos ya existentes.
-- `LocalStorageAjustesRepository implements AjustesRepository`, mismo patrón (versión + data)
-  pero bajo su propia clave: los ajustes (por ahora, si la validación de posiciones está
-  desactivada) son globales a la app, no de un sistema concreto (ADR 0015). Sigue siendo un
-  único documento de cuatro banderas que se reescribe entero en cada `guardar()` (spec 031): no
-  hay nada que la granularidad de `SistemaRepository` pudiera arriesgar aquí, solo se volvió
-  asíncrono.
+- `HttpSistemaRepository implements SistemaRepository` (spec 034) — **el adaptador en uso**,
+  contra la API de `server/`. `fetch` nativo, no `HttpClient` de Angular (mismo criterio que
+  `LocalStorageSistemaRepository` corriendo sin DOM: el test sustituye la función global y sigue
+  corriendo sin `TestBed`). Traduce cualquier respuesta o excepción a uno de los tres motivos
+  que declara el puerto: `ErrorDeRed` (la petición no llegó), `ErrorDelServidor` (el servidor
+  respondió con error) o `ConflictoDeEdicion` (409 — alguien más modificó el sistema mientras
+  tanto). El testigo de concurrencia (`actualizadoEn`, que el servidor exige como cabecera
+  `If-Match` al actualizar) se guarda aquí, en memoria e indexado por id — nunca en el tipo de
+  dominio, que sigue sin fechas (ADR 0012).
+- `LocalStorageSistemaRepository implements SistemaRepository` — **el adaptador de la v1**, ya
+  no cableado en `app.config.ts` desde la spec 034. No se ha retirado: exporta el tipo
+  `AlmacenClaveValor`, que `LocalStorageAjustesRepository` sigue usando, y su `.spec.ts`
+  documenta el formato persistido de la v1 dentro de la suite en verde. Sobre un
+  `AlmacenClaveValor` inyectado (que `localStorage` cumple tal cual — la inyección permite
+  testear sin DOM). Recibe también la plantilla real por constructor: en la v1 es una única
+  constante de la aplicación, no un dato de dominio (ADR 0013). `crear`, `actualizar` y `borrar`
+  (spec 031, ADR 0024) leen el almacén tal y como está en el momento de escribir, nunca desde
+  una copia en memoria: así una escritura granular no pierde de vista un sistema que otra
+  escritura hubiera guardado mientras tanto.
+- Formato persistido por `LocalStorageSistemaRepository` (histórico — así es como quedaron
+  guardados los sistemas hasta la spec 034, y así los sigue leyendo su `.spec.ts`):
+  `{ "version": 6, "data": { "sistemas": [...] } }`. Cada sistema persistido guarda
+  `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR 0012), y
+  `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en cada
+  rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por rotación
+  desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por rotación y
+  por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020). Desde la
+  versión 5 (spec 025) guarda `descripcion?`. Desde la versión 6 (spec 032) guarda `equipoId`,
+  obligatorio. Nada guardado nunca (`bruto === null`): `listar()` siembra `sistemaPorDefecto` y
+  `sistemaDefensaPorDefecto` (spec 030), del equipo masculino (spec 032: no hay guía de
+  referencia para sembrar también el femenino, que empieza vacío) **y los persiste de
+  inmediato** (spec 031), para que una escritura granular posterior los encuentre ya en el
+  almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se siembra
+  igual, pero **solo en memoria**, sin tocar el almacén — sobrescribirlo rompería la garantía de
+  nunca sobrescribir a ciegas una versión futura desconocida (spec 008, E4). Un payload legible
+  con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada encima (ADR 0021).
+  Desde la spec 028, cada posición persistida guarda también `celdas?` (la zona de
+  responsabilidad, specs 022/024) — antes se perdía al recargar; no subió la versión porque es
+  una lectura/escritura nueva de un campo que antes se ignoraba del todo, no un cambio de
+  significado de datos ya existentes. El servidor de `server/` siembra por su cuenta, con su
+  propio script (`npm run seed`, ver la sección `server/` más abajo) — no reutiliza esta lógica.
+- `LocalStorageAjustesRepository implements AjustesRepository` — **excepción deliberada**: es el
+  único adaptador de `localStorage` que sigue en producción. La spec 034 dejó los `Ajustes`
+  fuera de alcance a propósito: son preferencias de pantalla por dispositivo (validación
+  desactivada, ayuda de posición…), no trabajo de un entrenador que perder, y no hay tabla de
+  servidor para ellos todavía (`docs/modelo-de-datos.md` los convierte en columnas de `usuario`,
+  que no existe hasta la spec 035). Mismo patrón (versión + data) que
+  `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la app,
+  no de un sistema concreto (ADR 0015). Sigue siendo un único documento de cuatro banderas que
+  se reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
+  `SistemaRepository` pudiera arriesgar aquí, solo se volvió asíncrono.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -246,6 +289,33 @@ voleibol.
 `src/app/maqueta/` sigue existiendo como boceto congelado: no se borra, pero desde la spec 009
 `app.html` ya no la renderiza. Sirve de referencia visual, no se toca.
 
+### `server/`
+
+Proyecto Node aparte, con su propio `package.json` y `node_modules` (spec 033). API REST con
+Express 5 que guarda y sirve sistemas en PostgreSQL vía Prisma. **Importa `src/app/domain/`
+directamente, con rutas relativas — nunca al revés, y nunca de `application/`, `infrastructure/`
+ni `ui/`** (ADR 0025, invariante 8 de `CLAUDE.md`): es el mismo dominio que corre en el
+navegador, ejecutándose en Node.
+
+- `src/http/servidor.ts` — fábrica del servidor Express (`crearServidor()`, sin escuchar puerto:
+  eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
+  CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
+  `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, sin autenticación todavía (specs
+  035-037): reciben y devuelven el `Sistema` de dominio tal cual lo serializa el cliente, sin
+  traducción de forma en la frontera HTTP. `PUT` exige la cabecera `If-Match` con el testigo de
+  concurrencia; `409` si caducó.
+- `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
+  repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
+- `src/infraestructura/semilla.ts` — siembra el equipo, el catálogo fijo de jugadores y los dos
+  sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía
+  `LocalStorageSistemaRepository.listar()` en la v1.
+- `prisma/schema.prisma` y `prisma/migrations/` — el esquema completo está en
+  `docs/modelo-de-datos.md`. Los `CHECK` y la función `celdas_validas()` no se expresan en el
+  lenguaje de esquema de Prisma: van a mano en el SQL de la migración.
+
+Arranque, tests y la lista completa de rutas están en `server/README.md`, no se duplican aquí.
+
 ## Estructura de carpetas
 
 ```
@@ -264,22 +334,36 @@ src/app/
 │   ├── catalogo-sistemas.ts
 │   ├── sistema-recepcion.ts
 │   ├── sistema-defensa.ts
+│   ├── sistema-por-defecto.ts
+│   ├── sistema-defensa-por-defecto.ts
 │   ├── puertos.ts
 │   └── *.spec.ts
 ├── application/
 │   ├── sistema.store.ts
 │   └── sistema.store.spec.ts
 ├── infrastructure/
-│   ├── local-storage-sistema.repository.ts
-│   └── local-storage-sistema.repository.spec.ts
+│   ├── http-sistema.repository.ts          # en uso (spec 034)
+│   ├── local-storage-sistema.repository.ts  # legado de la v1, ver `infrastructure/` arriba
+│   ├── local-storage-ajustes.repository.ts  # en uso, excepción deliberada
+│   └── *.spec.ts
 ├── ui/
 │   ├── tablero/
 │   ├── pista/
 │   ├── rotaciones/
 │   ├── panel/
 │   ├── sistemas/
+│   ├── ajustes/
 │   └── comun/
 └── maqueta/        # boceto congelado, no se renderiza ni se borra
+
+server/
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/       # los CHECK y celdas_validas() están a mano en el SQL
+└── src/
+    ├── infraestructura/   # Prisma, el repositorio de sistemas, la semilla
+    ├── http/               # Express: rutas y la fábrica del servidor
+    └── main.ts
 ```
 
 Los tests viven junto al fichero que prueban, no en una carpeta `test/` paralela.
@@ -297,9 +381,10 @@ Si algún día el entrenador tiene que dibujar flechas a mano alzada, se reeval�
 
 ## Sobre las abstracciones
 
-Solo hay una abstracción especulativa permitida en el proyecto: `SistemaRepository`, porque
-sabemos que habrá un segundo adaptador (HTTP) y porque poder testear sin `localStorage`
-tiene valor hoy.
+Solo hay una abstracción especulativa permitida en el proyecto: `SistemaRepository`. La apuesta
+se cobró — el segundo adaptador (HTTP, spec 034) existe y es hoy el que está en producción — y
+poder testear sin `localStorage` tuvo valor desde el principio, con o sin ese segundo
+adaptador.
 
 No se crean interfaces con una sola implementación "por si acaso". En particular, **no hay
 adaptador de renderizado**: el SVG se deriva de los signals, así que no existe el problema
