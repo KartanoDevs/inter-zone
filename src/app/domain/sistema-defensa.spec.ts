@@ -42,7 +42,7 @@ function formacionLegalPara(orden: OrdenSaque, rotacion: number): Formacion {
 }
 
 function sistemaDefensaVacio(plantilla: PlantillaEquipo): Sistema {
-  return { id: 's1', nombre: 'Sistema', tipo: 'defensa', plantilla, formaciones: {}, explicacionesRotacion: {} };
+  return { id: 's1', nombre: 'Sistema', tipo: 'defensa', equipoId: 'masculino', plantilla, formaciones: {}, explicacionesRotacion: {} };
 }
 
 describe('guardarFormacionDefensa', () => {

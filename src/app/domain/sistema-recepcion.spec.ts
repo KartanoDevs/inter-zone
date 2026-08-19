@@ -28,6 +28,7 @@ function sistemaVacio(): Sistema {
     id: 'sistema-1',
     nombre: 'Sistema',
     tipo: 'recepcion',
+    equipoId: 'masculino',
     plantilla: plantilla(),
     formaciones: {},
     explicacionesRotacion: {},
@@ -201,7 +202,7 @@ describe('guardarFormacion', () => {
 describe('guardarFormacion con líbero', () => {
   it('011-E9: guardar exige a quien está en pista de verdad, no al titular fijo', () => {
     const plantilla = plantillaConLibero('central2');
-    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+    const sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', equipoId: 'masculino', plantilla, formaciones: {}, explicacionesRotacion: {} };
     // R1: central2 es zaguero en esta plantilla -> en pista debería estar el líbero, no central2.
     const conElTitularEnVezDelLibero = formacionLegalPara(plantilla.ordenSaque, 1);
 
@@ -212,7 +213,7 @@ describe('guardarFormacion con líbero', () => {
 
   it('011-E10: un sistema con líbero guarda sus seis rotaciones sin ninguna bloqueada', () => {
     const plantilla = plantillaConLibero('central2');
-    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', equipoId: 'masculino', plantilla, formaciones: {}, explicacionesRotacion: {} };
 
     for (let rotacion = 1; rotacion <= 6; rotacion++) {
       const guardado = guardarFormacion(sistema, rotacion, formacionLegalEnPista(plantilla, rotacion));
@@ -240,7 +241,7 @@ describe('guardarFormacion con líbero', () => {
       ordenSaque: orden,
       libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: sustitutosLiberoPorDefecto(orden) },
     };
-    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', plantilla, formaciones: {}, explicacionesRotacion: {} };
+    let sistema: Sistema = { id: 's1', nombre: 'Sistema', tipo: 'recepcion', equipoId: 'masculino', plantilla, formaciones: {}, explicacionesRotacion: {} };
 
     for (let rotacion = 1; rotacion <= 6; rotacion++) {
       const guardado = guardarFormacion(sistema, rotacion, formacionLegalEnPista(plantilla, rotacion));

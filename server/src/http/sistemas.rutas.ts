@@ -53,7 +53,7 @@ sistemasRutas.put('/sistemas/:id', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Falta la cabecera If-Match con la marca de última modificación' });
     return;
   }
-  const sistema = { ...(req.body as Sistema), id: req.params['id']! };
+  const sistema = { ...(req.body as Sistema), id: req.params['id'] as string };
   try {
     const actualizadoEn = await sistemaRepositorio.actualizar(sistema, testigo);
     res.json({ actualizadoEn });
@@ -76,7 +76,7 @@ sistemasRutas.put('/sistemas/:id', async (req: Request, res: Response) => {
 
 sistemasRutas.delete('/sistemas/:id', async (req: Request, res: Response) => {
   try {
-    await sistemaRepositorio.borrar(req.params['id']!);
+    await sistemaRepositorio.borrar(req.params['id'] as string);
   } catch (error) {
     if (error instanceof SistemaNoEncontrado) {
       res.status(404).json({ error: 'Sistema no encontrado' });

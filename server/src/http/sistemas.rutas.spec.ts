@@ -77,7 +77,7 @@ async function putSistema(id: string, sistema: object, testigoIfMatch: string): 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getCatalogo(equipoId: EquipoId): Promise<any[]> {
   const respuesta = await fetch(`${base}/api/sistemas?equipoId=${equipoId}`);
-  return respuesta.json();
+  return (await respuesta.json()) as any[];
 }
 
 async function borrarSistema(id: string): Promise<RespuestaJson> {
@@ -89,7 +89,7 @@ async function borrarSistema(id: string): Promise<RespuestaJson> {
  * Postgres las devuelve no tiene por qué coincidir con el del dominio. Se ordena por id de
  * jugador antes de comparar. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizarFormaciones(formaciones: Record<string, any[]>): Record<string, any[]> {
+function normalizarFormaciones(formaciones: Readonly<Record<string, readonly any[]>>): Record<string, any[]> {
   const resultado: Record<string, unknown[]> = {};
   for (const [clave, formacion] of Object.entries(formaciones)) {
     resultado[clave] = [...formacion].sort((a, b) => a.jugador.id.localeCompare(b.jugador.id));
@@ -98,7 +98,12 @@ function normalizarFormaciones(formaciones: Record<string, any[]>): Record<strin
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizarDefensas(defensas: Record<string, Record<string, any[]>>): Record<string, Record<string, unknown[]>> {
+function normalizarDefensas(
+  defensas: Readonly<Record<string, Readonly<Record<string, readonly any[]>>>> | undefined,
+): Record<string, Record<string, unknown[]>> {
+  if (!defensas) {
+    return {};
+  }
   const resultado: Record<string, Record<string, unknown[]>> = {};
   for (const [rotacion, porVia] of Object.entries(defensas)) {
     resultado[rotacion] = normalizarFormaciones(porVia);
