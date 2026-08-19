@@ -86,6 +86,11 @@ corrige la spec antes de cerrarla, y si la lección afecta a las reglas del vole
 actualiza `docs/dominio.md`. Si fue una decisión estructural, se añade un fichero nuevo en
 `docs/decisiones/`.
 
+Si la spec cambió qué capas existen, qué adaptador está en uso, o qué hace la aplicación en
+producción —no solo cómo lo hace por dentro—, se actualizan también `docs/arquitectura.md` y
+`README.md` antes de cerrarla (ADR 0027). La mayoría de specs no mueven nada de eso; cuando no lo
+hacen, no hay nada que tocar en ninguno de los dos.
+
 ## La trampa a vigilar
 
 El fallo típico de combinar SDD y TDD es escribir la spec **después**, mirando el código, para

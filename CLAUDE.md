@@ -95,7 +95,11 @@ Cuando el último escenario esté en verde:
    `docs/decisiones/` con el siguiente número (`NNNN-slug.md`) y su entrada en
    `docs/decisiones/README.md` (append-only: nunca edites ni borres una decisión existente) y
    avisa.
-6. **No empieces la siguiente spec** sin que el usuario lo pida.
+6. Si la spec cambió qué capas existen, qué adaptador está en uso, o qué hace la aplicación en
+   producción —no solo cómo lo hace por dentro—, actualiza también `docs/arquitectura.md` y
+   `README.md` (ADR 0027) y avisa de qué has cambiado. La mayoría de specs no mueven nada de
+   eso; si no es el caso, no hay nada que tocar aquí.
+7. **No empieces la siguiente spec** sin que el usuario lo pida.
 
 ### Si el usuario pega una spec nueva sin pedir que la implementes
 

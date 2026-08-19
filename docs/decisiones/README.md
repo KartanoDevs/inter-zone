@@ -40,3 +40,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0024](0024-puerto-de-persistencia-asincrono-y-granular.md) | El puerto de persistencia es asíncrono y granular | Aceptada |
 | [0025](0025-el-servidor-importa-el-dominio.md) | El servidor importa `src/app/domain/` directamente | Aceptada |
 | [0026](0026-escritura-antes-de-mutar-estado-local.md) | El store escribe en el repositorio antes de mutar sus signals, nunca al revés | Aceptada |
+| [0027](0027-cerrar-spec-tambien-actualiza-arquitectura-y-readme.md) | Cerrar una spec también actualiza `docs/arquitectura.md` y `README.md` si tocó la estructura | Aceptada |
