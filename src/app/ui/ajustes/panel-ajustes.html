@@ -1,0 +1,50 @@
+@if (tieneLibero()) {
+  <div class="app-ajustes__grupo">
+    <label class="app-ajustes__etiqueta" for="app-ajustes-libero">Líbero sustituye a (R{{ rotacion() }})</label>
+    <select id="app-ajustes-libero" class="app-ajustes__select" (change)="onCambiarSustituto($event)">
+      @for (opcion of opcionesLibero(); track opcion.id ?? '') {
+        <option [value]="opcion.id ?? ''" [selected]="opcion.id === sustitutoActual()">{{ opcion.etiqueta }}</option>
+      }
+    </select>
+  </div>
+}
+
+<button
+  type="button"
+  class="app-ajustes__switch"
+  [attr.aria-pressed]="validacionDesactivada()"
+  (click)="alternarValidacion.emit()"
+>
+  <span class="app-ajustes__pastilla" aria-hidden="true"></span>
+  <span class="app-ajustes__texto">Desactivar validación de posiciones</span>
+</button>
+
+<button
+  type="button"
+  class="app-ajustes__switch"
+  [attr.aria-pressed]="ayudaPosicionDesactivada()"
+  (click)="alternarAyudaPosicion.emit()"
+>
+  <span class="app-ajustes__pastilla" aria-hidden="true"></span>
+  <span class="app-ajustes__texto">Ocultar la ayuda de posición (P1-P6)</span>
+</button>
+
+<button
+  type="button"
+  class="app-ajustes__switch"
+  [attr.aria-pressed]="ordenRotacionCronologico()"
+  (click)="alternarOrdenRotacion.emit()"
+>
+  <span class="app-ajustes__pastilla" aria-hidden="true"></span>
+  <span class="app-ajustes__texto">Pestañas de rotación en orden de juego (R1, R6, R5, R4, R3, R2)</span>
+</button>
+
+<button
+  type="button"
+  class="app-ajustes__switch"
+  [attr.aria-pressed]="mostrarNumerosMetros()"
+  (click)="alternarMostrarNumerosMetros.emit()"
+>
+  <span class="app-ajustes__pastilla" aria-hidden="true"></span>
+  <span class="app-ajustes__texto">Mostrar números de metros junto a la rejilla</span>
+</button>

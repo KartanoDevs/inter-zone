@@ -5,46 +5,349 @@
   background: var(--bg-dark);
 }
 
+.app-tablero__nav button svg,
+.app-tablero__acciones .app-boton svg,
+.app-tablero__tabs button svg,
+.app-tablero__futura-icono svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-tablero__nav button svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.6;
+}
+
+.app-tablero__acciones .app-boton svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.7;
+}
+
+.app-tablero__tabs button svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.6;
+}
+
+.app-tablero__futura-icono svg {
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.6;
+}
+
 .app-tablero {
   height: 100%;
   max-width: 720px;
   margin: 0 auto;
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, auto) auto auto auto;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   gap: 4px;
-  padding: 4px 0;
+  padding: 4px 0 0;
   overflow-y: auto;
+  /* Scroll sí, barra no: en una pizarra táctil la barra solo come ancho — el gesto de
+     deslizar sigue funcionando igual sin ella. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.app-tablero > app-barra-sistemas,
+.app-tablero::-webkit-scrollbar {
+  display: none;
+}
+
 .app-tablero > app-selector-rotacion,
-.app-tablero > app-paleta-jugadores,
-.app-tablero > app-panel-ensenanza,
-.app-tablero > .app-tablero__acciones {
+.app-tablero > app-selector-via {
   margin-inline: var(--space-2);
 }
 
+/* ---- navegación de ventana (Editor · Examen · Cuenta) ---- */
+
+.app-tablero__nav {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin: 0 var(--space-2);
+  padding: 3px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+}
+
+.app-tablero__nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.app-tablero__nav button[aria-current='page'] {
+  background: rgba(0, 229, 255, 0.14);
+  color: var(--neon-cyan);
+}
+
+/* ---- cabecera: equipo + sistema activo ---- */
+
+.app-tablero__cabecera {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 var(--space-2);
+}
+
+.app-tablero__cabecera > app-barra-sistemas {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- pista ---- */
+
 .app-tablero__campo-envoltorio {
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-  min-height: 0;
+  /* Nunca `flex: 1`: eso reservaba todo el alto sobrante del flex column y dejaba a Vaciar/
+     Guardar colgando muy por debajo de la pista. El alto de la pista lo decide su ancho (vía
+     `aspect-ratio`), no el espacio disponible. */
+  flex: 0 0 auto;
 }
 
 .app-tablero__campo {
   position: relative;
   width: 100%;
   aspect-ratio: 10.5 / 13.8;
-  max-height: 100%;
 }
 
+/* ---- acciones: Vaciar / Guardar, compactas ---- */
+
 .app-tablero__acciones {
+  flex: 0 0 auto;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
+  margin: 0 var(--space-2);
 }
+
+.app-tablero__acciones .app-boton {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 var(--space-2);
+  font-size: 13px;
+}
+
+.app-tablero__acciones .app-boton--primario {
+  flex: 1.6;
+}
+
+/* ---- panel de pestañas: Banquillo · Enseñanza · Zonas · Ajustes ---- */
+
+.app-tablero__panel {
+  /* Pegado al fondo del scroll, no al fondo de la ventana: si el resto del contenido no cabe
+     en pantalla, esto es lo único que tiene que verse siempre — es lo que abre y cierra
+     banquillo, enseñanza, zonas y ajustes. */
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  flex: 0 0 auto;
+  background: var(--bg-card);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+}
+
+.app-tablero__tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 5px 5px 0;
+}
+
+.app-tablero__tabs button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  border-radius: 7px 7px 0 0;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.app-tablero__tabs button:hover:not(:disabled) {
+  color: var(--text-secondary);
+}
+
+.app-tablero__tabs button[aria-selected='true'] {
+  color: var(--neon-cyan);
+  background: var(--bg-card-alt);
+}
+
+.app-tablero__tabs button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 14%;
+  right: 14%;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+.app-tablero__tabs button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.app-tablero__tabs-cuenta {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 22px);
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--neon-cyan);
+  color: var(--bg-darker);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  line-height: 15px;
+}
+
+.app-tablero__tabpanel {
+  background: var(--bg-card-alt);
+  padding: var(--space-2);
+  overflow-y: auto;
+  max-height: 220px;
+  transition:
+    max-height 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding 220ms ease;
+}
+
+.app-tablero__panel--plegado .app-tablero__tabpanel {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+app-panel-ensenanza + app-panel-ensenanza {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+/* ---- leyenda de zonas ---- */
+
+.app-tablero__leyenda-zonas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.app-tablero__leyenda-zonas-fila {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.app-tablero__leyenda-zonas-muestra {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+/* ---- ventanas futuras: Examen, Cuenta (specs sin escribir) ---- */
+
+.app-tablero__futura {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  margin: 0 var(--space-2);
+  text-align: center;
+}
+
+.app-tablero__futura-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  color: var(--neon-cyan);
+  margin-bottom: var(--space-1);
+}
+
+.app-tablero__futura h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+}
+
+.app-tablero__futura p {
+  margin: 0;
+  max-width: 40ch;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.app-tablero__futura-spec {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px 11px;
+  margin-top: var(--space-1);
+}
+
+/* ---- fantasma de arrastre ---- */
 
 .app-tablero__fantasma {
   position: fixed;
@@ -62,4 +365,12 @@
   font-weight: 700;
   font-size: 13px;
   box-shadow: 0 0 14px rgba(255, 0, 255, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-tablero__nav button,
+  .app-tablero__tabs button,
+  .app-tablero__tabpanel {
+    transition: none;
+  }
 }

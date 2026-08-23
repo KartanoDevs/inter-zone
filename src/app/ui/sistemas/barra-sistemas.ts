@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { TipoSistema } from '../../domain/modelos';
 
 export interface OpcionSistema {
@@ -8,9 +8,11 @@ export interface OpcionSistema {
 }
 
 /**
- * Desplegable de sistemas más las acciones de catálogo (crear, renombrar, borrar). No decide
- * el orden: recibe el catálogo ya ordenado de `SistemaStore.catalogo()` (recepción antes que
- * defensa, spec 006 E10) y solo lo pinta.
+ * Selector del sistema activo: desplegable nativo (accesible, con teclado) restyleado como una
+ * pastilla con badge de tipo (recepción/defensa) y flecha decorativa. No decide el orden:
+ * recibe el catálogo ya ordenado de `SistemaStore.catalogo()` (recepción antes que defensa,
+ * spec 006 E10) y solo lo pinta. El CRUD de catálogo (crear, renombrar, clonar, borrar) vive en
+ * el `Speeddial` de `Tablero`, no aquí.
  */
 @Component({
   selector: 'app-barra-sistemas',
@@ -24,10 +26,8 @@ export class BarraSistemas {
   readonly sistemaActivoId = input.required<string | null>();
 
   readonly elegir = output<string>();
-  readonly crear = output<void>();
-  readonly editar = output<void>();
-  readonly clonar = output<void>();
-  readonly borrar = output<void>();
+
+  protected readonly sistemaActivo = computed(() => this.sistemas().find((sistema) => sistema.id === this.sistemaActivoId()) ?? null);
 
   protected onElegir(evento: Event): void {
     const id = (evento.target as HTMLSelectElement).value;

@@ -16,8 +16,9 @@ const PUNTO_POR_VIA: Readonly<Record<ViaAtaque, Punto>> = {
 };
 
 /** Paleta de la vista de conjunto (spec 023), en el mismo orden que `CLAVES_ORDEN_COLOR` de
- * `Tablero`: colocador, receptor1, receptor2, central1, central2, opuesto, líbero. */
-const PALETA_COLORES = [
+ * `Tablero`: colocador, receptor1, receptor2, central1, central2, opuesto, líbero. Se exporta
+ * porque `Tablero` la necesita también para la leyenda de colores de su pestaña "Zonas". */
+export const PALETA_COLORES = [
   '--neon-cyan',
   '--neon-green',
   '--neon-teal',
@@ -33,11 +34,6 @@ export interface CeldaConjunto {
   readonly columna: number;
   readonly fila: number;
   readonly indicesColor: readonly number[];
-}
-
-export interface EntradaLeyendaColor {
-  readonly etiqueta: string;
-  readonly indiceColor: number;
 }
 
 interface PatronFranjas {
@@ -113,7 +109,6 @@ export class Pista {
   readonly mostrarZonas = input(false);
   /** Todas las celdas pintadas de la formación activa, con su color por jugador (spec 023). */
   readonly celdasVistaConjunto = input<readonly CeldaConjunto[]>([]);
-  readonly leyendaVistaConjunto = input<readonly EntradaLeyendaColor[]>([]);
   /** Índice de color del jugador seleccionado: su zona se pinta a plena intensidad; las de los
    * demás se atenúan (spec 024, E12-E13). */
   readonly indiceColorSeleccionado = input<number | null>(null);
@@ -122,7 +117,6 @@ export class Pista {
   readonly rivalAgarrado = output<PointerEvent>();
   /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
   readonly fondoAgarrado = output<PointerEvent>();
-  readonly abrirAjustes = output<void>();
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
@@ -130,7 +124,6 @@ export class Pista {
   protected readonly leyendaAbierta = signal(false);
   protected readonly tamanoCelda = TAMANO_CELDA;
   protected readonly ladoPatron = LADO_PATRON;
-  protected readonly paleta = PALETA_COLORES;
 
   protected readonly puntoRival = computed<Punto | null>(() => {
     const via = this.viaActiva();

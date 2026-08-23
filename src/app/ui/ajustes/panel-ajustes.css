@@ -1,0 +1,100 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-ajustes__grupo {
+  margin-bottom: var(--space-1);
+}
+
+.app-ajustes__etiqueta {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.app-ajustes__select {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+/* La lista desplegable la pinta el navegador en un contexto aparte que no siempre hereda
+   `color-scheme` — sin esto sale blanca encima de una app 100% oscura. */
+.app-ajustes__select option {
+  background-color: var(--bg-card-alt);
+  color: var(--text-main);
+}
+
+.app-ajustes__switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-ajustes__pastilla {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.app-ajustes__pastilla::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.app-ajustes__switch[aria-pressed='true'] .app-ajustes__pastilla {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--neon-cyan);
+}
+
+.app-ajustes__switch[aria-pressed='true'] .app-ajustes__pastilla::after {
+  transform: translateX(16px);
+  background: var(--neon-cyan);
+}
+
+.app-ajustes__texto {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-ajustes__pastilla,
+  .app-ajustes__pastilla::after {
+    transition: none;
+  }
+}

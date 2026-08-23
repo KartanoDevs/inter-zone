@@ -3,24 +3,68 @@
 }
 
 .app-barra-sistemas {
+  position: relative;
   display: flex;
-  gap: 6px;
   align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 30px 0 10px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.app-barra-sistemas__tipo {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(0, 229, 255, 0.16);
+  color: var(--neon-cyan);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.app-barra-sistemas__tipo--defensa {
+  background: rgba(170, 136, 255, 0.18);
+  color: var(--neon-purple);
 }
 
 .app-barra-sistemas__select {
   flex: 1;
   min-width: 0;
-  padding: 8px var(--space-1);
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: var(--text-main);
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 13px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
-.app-barra-sistemas .app-boton {
-  flex: 0 0 auto;
-  padding: 8px 12px;
+/* El propio `<select>` toma el fondo oscuro de `.app-barra-sistemas` de alrededor, pero su
+   lista desplegable la pinta el navegador en un contexto aparte que no siempre hereda
+   `color-scheme` — sin esto sale blanca encima de una app 100% oscura. */
+.app-barra-sistemas__select option {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+}
+
+.app-barra-sistemas__flecha {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }

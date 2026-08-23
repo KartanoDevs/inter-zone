@@ -1,0 +1,138 @@
+:host {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+}
+
+.sd {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.sd__fab {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  border: 0;
+  border-radius: 50%;
+  color: var(--bg-darker);
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.35);
+  transition: box-shadow 200ms ease;
+}
+
+.sd__fab svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sd--abierto .sd__fab {
+  box-shadow: 0 0 24px rgba(255, 0, 255, 0.45);
+}
+
+.sd--abierto .sd__fab svg {
+  transform: rotate(135deg);
+}
+
+.sd__item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 50%;
+  color: var(--neon-cyan);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(0) scale(0.4);
+  pointer-events: none;
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms ease,
+    background 150ms ease;
+}
+
+.sd__item svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sd__item:hover:not(:disabled) {
+  background: rgba(0, 229, 255, 0.12);
+}
+
+.sd__item--peligro {
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+.sd__item--peligro:hover:not(:disabled) {
+  background: rgba(255, 0, 85, 0.12);
+}
+
+.sd__item:disabled {
+  cursor: not-allowed;
+}
+
+.sd--abierto .sd__item {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(var(--dy)) scale(1);
+}
+
+.sd--abierto .sd__item:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.sd__etiqueta {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 8px);
+  transform: translateY(-50%);
+  white-space: nowrap;
+  padding: 4px 9px;
+  background: rgba(18, 22, 45, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.sd--abierto .sd__item .sd__etiqueta {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd__fab svg,
+  .sd__item,
+  .sd__etiqueta {
+    transition: none;
+  }
+}

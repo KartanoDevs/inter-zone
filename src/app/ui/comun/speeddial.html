@@ -1,0 +1,58 @@
+<div class="sd" [class.sd--abierto]="abierto()">
+  <button
+    type="button"
+    class="sd__fab"
+    [attr.aria-expanded]="abierto()"
+    aria-label="Acciones del sistema"
+    (click)="alternar()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  </button>
+
+  @for (accion of acciones(); track accion.id; let indice = $index) {
+    <button
+      type="button"
+      class="sd__item"
+      [class.sd__item--peligro]="accion.peligro"
+      [disabled]="accion.deshabilitada"
+      [style.--dy]="desplazamiento(indice)"
+      [style.transition-delay]="retardo(indice)"
+      [attr.aria-label]="accion.etiqueta"
+      (click)="elegirAccion(accion)"
+    >
+      @switch (accion.icono) {
+        @case ('nuevo') {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z" />
+            <polyline points="13.5,3.5 13.5,8.5 18.5,8.5" />
+            <line x1="12" y1="11.5" x2="12" y2="17" />
+            <line x1="9.2" y1="14.2" x2="14.8" y2="14.2" />
+          </svg>
+        }
+        @case ('lapiz') {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16.4 4.6a1.9 1.9 0 0 1 2.7 2.7L8.6 17.8 4.8 19l1.2-3.8z" />
+            <line x1="14.6" y1="6.4" x2="17.3" y2="9.1" />
+          </svg>
+        }
+        @case ('clonar') {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="8.6" y="8.6" width="11" height="11" rx="1.7" />
+            <path d="M15.4 5.4H5.9A1.5 1.5 0 0 0 4.4 6.9v9.5" />
+          </svg>
+        }
+        @case ('papelera') {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 7h14" />
+            <path d="M9.5 7V5.4A1.4 1.4 0 0 1 10.9 4h2.2a1.4 1.4 0 0 1 1.4 1.4V7" />
+            <path d="M6.7 7l.8 11.2A1.8 1.8 0 0 0 9.3 20h5.4a1.8 1.8 0 0 0 1.8-1.8L17.3 7" />
+          </svg>
+        }
+      }
+      <span class="sd__etiqueta">{{ accion.etiqueta }}</span>
+    </button>
+  }
+</div>

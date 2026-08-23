@@ -1,73 +1,243 @@
 <div class="app-tablero">
-  <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
+  <nav class="app-tablero__nav" aria-label="Ventana">
+    <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="ventana.set('editor')">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6" />
+        <line x1="12" y1="17.4" x2="12" y2="20" />
+        <line x1="8.6" y1="20" x2="15.4" y2="20" />
+        <circle cx="8.4" cy="9.2" r="1.5" />
+        <circle cx="15.6" cy="12.6" r="1.5" />
+      </svg>
+      Editor
+    </button>
+    <button type="button" [attr.aria-current]="ventana() === 'examen' ? 'page' : null" (click)="ventana.set('examen')">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4.2 21 8.6 12 13 3 8.6z" />
+        <path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4" />
+        <line x1="20.4" y1="9" x2="20.4" y2="14" />
+      </svg>
+      Examen
+    </button>
+    <button type="button" [attr.aria-current]="ventana() === 'cuenta' ? 'page' : null" (click)="ventana.set('cuenta')">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="8.6" r="3.4" />
+        <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
+      </svg>
+      Cuenta
+    </button>
+  </nav>
 
-  <app-barra-sistemas
-    [sistemas]="opcionesSistema()"
-    [sistemaActivoId]="store.sistemaActivoId()"
-    (elegir)="elegirSistema($event)"
-    (crear)="abrirCrear()"
-    (editar)="abrirEditar()"
-    (clonar)="abrirClonar()"
-    (borrar)="pedirBorrado()"
-  ></app-barra-sistemas>
+  @if (ventana() === 'editor') {
+    <div class="app-tablero__cabecera">
+      <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
+      <app-barra-sistemas
+        [sistemas]="opcionesSistema()"
+        [sistemaActivoId]="store.sistemaActivoId()"
+        (elegir)="elegirSistema($event)"
+      ></app-barra-sistemas>
+    </div>
 
-  <app-selector-rotacion
-    [rotaciones]="estadosRotacion()"
-    [rotacionActiva]="store.rotacionActiva()"
-    (seleccionar)="seleccionarRotacion($event)"
-  ></app-selector-rotacion>
+    <app-selector-rotacion
+      [rotaciones]="estadosRotacion()"
+      [rotacionActiva]="store.rotacionActiva()"
+      (seleccionar)="seleccionarRotacion($event)"
+    ></app-selector-rotacion>
 
-  @if (esDefensa()) {
-    <app-selector-via [viaActiva]="store.viaActiva()" (seleccionar)="seleccionarVia($event)"></app-selector-via>
+    @if (esDefensa()) {
+      <app-selector-via [viaActiva]="store.viaActiva()" (seleccionar)="seleccionarVia($event)"></app-selector-via>
+    }
+
+    <div class="app-tablero__campo-envoltorio">
+      <div class="app-tablero__campo">
+        <app-pista
+          [fichas]="fichas()"
+          [idArrastrada]="idArrastrada()"
+          [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
+          [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
+          [mostrarRival]="esDefensa()"
+          [viaActiva]="store.viaActiva()"
+          [mostrarZonas]="esDefensa()"
+          [celdasVistaConjunto]="celdasVistaConjunto()"
+          [indiceColorSeleccionado]="indiceColorSeleccionado()"
+          (fichaAgarrada)="onAgarrarFicha($event)"
+          (rivalAgarrado)="onAgarrarRival($event)"
+          (fondoAgarrado)="iniciarPintado($event)"
+        ></app-pista>
+        <app-speeddial [acciones]="accionesSistema()" (elegir)="elegirAccionSistema($event)"></app-speeddial>
+        <app-panel-validacion [completo]="completo()" [infracciones]="infracciones()" [avisos]="avisos()"></app-panel-validacion>
+      </div>
+    </div>
+
+    <div class="app-tablero__acciones">
+      <button type="button" class="app-boton app-boton--secundario" (click)="pedirVaciado()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5.5 12a6.5 6.5 0 1 1 2 4.7" />
+          <polyline points="5.5,16.8 5.5,12.4 9.9,12.4" />
+        </svg>
+        Vaciar
+      </button>
+      <button type="button" class="app-boton app-boton--primario" [disabled]="!store.puedeGuardar()" (click)="pedirGuardado()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z" />
+          <polyline points="7.8,4.5 7.8,9.2 14.4,9.2 14.4,4.5" />
+          <rect x="7.8" y="12.6" width="8.4" height="6.9" />
+        </svg>
+        Guardar
+      </button>
+    </div>
+
+    <section class="app-tablero__panel" [class.app-tablero__panel--plegado]="panelPlegado()">
+      <div class="app-tablero__tabs" role="tablist" aria-label="Paneles">
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'banquillo'"
+          (click)="seleccionarTab('banquillo')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="9" cy="8.4" r="3" />
+            <path d="M3.6 19.4a5.6 5.6 0 0 1 10.8 0" />
+            <path d="M16.2 6.1a3 3 0 0 1 0 5.4" />
+            <path d="M17.6 14.6a5.6 5.6 0 0 1 2.8 4.8" />
+          </svg>
+          Banquillo
+          @if (pendientesChips().length > 0) {
+            <span class="app-tablero__tabs-cuenta">{{ pendientesChips().length }}</span>
+          }
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'ensenanza'"
+          (click)="seleccionarTab('ensenanza')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z" />
+            <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z" />
+          </svg>
+          Enseñanza
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'zonas'"
+          [disabled]="!esDefensa()"
+          [attr.title]="esDefensa() ? null : 'Las zonas de responsabilidad solo existen en defensa (spec 024)'"
+          (click)="seleccionarTab('zonas')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <polygon points="12,3.5 20.5,8 12,12.5 3.5,8" />
+            <polyline points="3.5,12.6 12,17.1 20.5,12.6" />
+          </svg>
+          Zonas
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tab() === 'ajustes'"
+          (click)="seleccionarTab('ajustes')"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <circle cx="15" cy="7" r="2.3" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <circle cx="9" cy="12" r="2.3" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+            <circle cx="16" cy="17" r="2.3" />
+          </svg>
+          Ajustes
+        </button>
+      </div>
+
+      <div class="app-tablero__tabpanel" role="tabpanel">
+        @switch (tab()) {
+          @case ('banquillo') {
+            <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+          }
+          @case ('ensenanza') {
+            <app-panel-ensenanza
+              [titulo]="tituloDescripcionSistema()"
+              [texto]="store.descripcionSistemaActivo()"
+              [abierto]="false"
+              (guardar)="guardarDescripcionSistema($event)"
+            ></app-panel-ensenanza>
+            <app-panel-ensenanza
+              [titulo]="tituloEnsenanza()"
+              [texto]="store.explicacionMostrada()"
+              (guardar)="guardarExplicacion($event)"
+            ></app-panel-ensenanza>
+          }
+          @case ('zonas') {
+            @if (esDefensa()) {
+              <div class="app-tablero__leyenda-zonas">
+                @for (entrada of leyendaVistaConjunto(); track entrada.etiqueta) {
+                  <div class="app-tablero__leyenda-zonas-fila">
+                    <span
+                      class="app-tablero__leyenda-zonas-muestra"
+                      [style.background]="'var(' + paletaColores[entrada.indiceColor] + ')'"
+                    ></span>
+                    <span>{{ entrada.etiqueta }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+          @case ('ajustes') {
+            <app-panel-ajustes
+              [rotacion]="store.rotacionActiva()"
+              [tieneLibero]="tieneLibero()"
+              [opcionesLibero]="opcionesSustitutoLibero()"
+              [sustitutoActual]="sustitutoLiberoActual()"
+              [validacionDesactivada]="store.validacionDesactivada()"
+              [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
+              [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
+              [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
+              (cambiarSustituto)="cambiarSustitutoLibero($event)"
+              (alternarValidacion)="alternarValidacion()"
+              (alternarAyudaPosicion)="alternarAyudaPosicion()"
+              (alternarOrdenRotacion)="alternarOrdenRotacion()"
+              (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
+            ></app-panel-ajustes>
+          }
+        }
+      </div>
+    </section>
   }
 
-  <div class="app-tablero__campo-envoltorio">
-    <div class="app-tablero__campo">
-      <app-pista
-        [fichas]="fichas()"
-        [idArrastrada]="idArrastrada()"
-        [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
-        [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
-        [mostrarRival]="esDefensa()"
-        [viaActiva]="store.viaActiva()"
-        [mostrarZonas]="esDefensa()"
-        [celdasVistaConjunto]="celdasVistaConjunto()"
-        [leyendaVistaConjunto]="leyendaVistaConjunto()"
-        [indiceColorSeleccionado]="indiceColorSeleccionado()"
-        (fichaAgarrada)="onAgarrarFicha($event)"
-        (rivalAgarrado)="onAgarrarRival($event)"
-        (fondoAgarrado)="iniciarPintado($event)"
-        (abrirAjustes)="abrirAjustes()"
-      ></app-pista>
-      <app-panel-validacion
-        [completo]="completo()"
-        [infracciones]="infracciones()"
-        [avisos]="avisos()"
-      ></app-panel-validacion>
+  @if (ventana() === 'examen') {
+    <div class="app-tablero__futura">
+      <span class="app-tablero__futura-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4.2 21 8.6 12 13 3 8.6z" />
+          <path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4" />
+          <line x1="20.4" y1="9" x2="20.4" y2="14" />
+        </svg>
+      </span>
+      <h2>Examinarse del sistema</h2>
+      <p>
+        Colocar los jugadores de memoria y recibir una nota de perfección frente al sistema guardado, además del veredicto de
+        legalidad. Las faltas no se enseñan hasta pulsar «Confirmar».
+      </p>
+      <span class="app-tablero__futura-spec">Specs 012-013 · reservadas</span>
     </div>
-  </div>
+  }
 
-  <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
-
-  <app-panel-ensenanza
-    [titulo]="tituloDescripcionSistema()"
-    [texto]="store.descripcionSistemaActivo()"
-    [abierto]="false"
-    (guardar)="guardarDescripcionSistema($event)"
-  ></app-panel-ensenanza>
-
-  <app-panel-ensenanza
-    [titulo]="tituloEnsenanza()"
-    [texto]="store.explicacionMostrada()"
-    (guardar)="guardarExplicacion($event)"
-  ></app-panel-ensenanza>
-
-  <div class="app-tablero__acciones">
-    <button type="button" class="app-boton app-boton--secundario" (click)="vaciarRotacion()">Vaciar</button>
-    <button type="button" class="app-boton app-boton--primario" [disabled]="!store.puedeGuardar()" (click)="guardar()">
-      Guardar rotación
-    </button>
-  </div>
+  @if (ventana() === 'cuenta') {
+    <div class="app-tablero__futura">
+      <span class="app-tablero__futura-icono">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8.6" r="3.4" />
+          <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
+        </svg>
+      </span>
+      <h2>Tu cuenta</h2>
+      <p>
+        Entrar con Google o con contraseña, lista blanca de correos y tres roles de acceso. El esquema está diseñado; hoy el
+        servidor no tiene autenticación.
+      </p>
+      <span class="app-tablero__futura-spec">Specs 035-037 · aplazadas</span>
+    </div>
+  }
 
   @if (arrastre(); as a) {
     <div class="app-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">{{ a.etiqueta }}</div>
@@ -121,22 +291,24 @@
     ></app-dialogo-confirmacion>
   }
 
-  @if (ajustesAbierto()) {
-    <app-dialogo-ajustes
-      [rotacion]="store.rotacionActiva()"
-      [tieneLibero]="tieneLibero()"
-      [opcionesLibero]="opcionesSustitutoLibero()"
-      [sustitutoActual]="sustitutoLiberoActual()"
-      [validacionDesactivada]="store.validacionDesactivada()"
-      [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
-      [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
-      [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
-      (cambiarSustituto)="cambiarSustitutoLibero($event)"
-      (alternarValidacion)="alternarValidacion()"
-      (alternarAyudaPosicion)="alternarAyudaPosicion()"
-      (alternarOrdenRotacion)="alternarOrdenRotacion()"
-      (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
-      (cerrar)="cerrarAjustes()"
-    ></app-dialogo-ajustes>
+  @if (confirmandoVaciado()) {
+    <app-dialogo-confirmacion
+      titulo="Vaciar rotación"
+      [mensaje]="'Se quitarán de la pista los seis jugadores de R' + store.rotacionActiva() + '. No se puede deshacer.'"
+      textoConfirmar="Vaciar"
+      (confirmar)="confirmarVaciado()"
+      (cancelar)="cancelarVaciado()"
+    ></app-dialogo-confirmacion>
+  }
+
+  @if (confirmandoGuardado()) {
+    <app-dialogo-confirmacion
+      titulo="Guardar rotación"
+      [mensaje]="'Se guardarán las posiciones actuales de R' + store.rotacionActiva() + '.'"
+      textoConfirmar="Guardar"
+      [peligro]="false"
+      (confirmar)="confirmarGuardado()"
+      (cancelar)="cancelarGuardado()"
+    ></app-dialogo-confirmacion>
   }
 </div>

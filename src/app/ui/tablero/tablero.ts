@@ -1,15 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { Pista, type CeldaConjunto, type EntradaLeyendaColor, type FichaAgarrada, type FichaVista } from '../pista/pista';
+import { PALETA_COLORES, Pista, type CeldaConjunto, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorVia } from '../rotaciones/selector-via';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
+import { Speeddial, type AccionSpeeddial } from '../comun/speeddial';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
-import { DialogoAjustes, type OpcionLibero } from '../ajustes/dialogo-ajustes';
+import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
 import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
@@ -31,15 +32,15 @@ import type {
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
-// al orden numérico simple — ajuste del usuario, ver DialogoAjustes.
+// al orden numérico simple — ajuste del usuario, ver PanelAjustes.
 const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 
-// Límites de arrastre: algo más ajustados que el viewBox de la pista, para que la ficha
-// nunca quede recortada por el borde visible (igual que en la maqueta).
-// Nadie del propio equipo pasa de la red: `y = 0` es el suelo del rango, no el centro del
-// viewBox. El campo rival (y < 0) es solo para la ficha rival, que tiene sus propios limites.
-const LIMITE_X: readonly [number, number] = [-0.3, 9.3];
-const LIMITE_Y: readonly [number, number] = [0, 9.3];
+// Límites de arrastre: el campo propio va de 0 a 9 m en los dos ejes (pista.html,
+// `.app-pista__campo`), y nadie del propio equipo puede salirse por ningún lado — ni cruzar la
+// red (`y = 0`), ni salirse por las bandas o por el fondo. Antes los lados y el fondo tenían
+// 0,3 m de margen y se veía al jugador pisando fuera del campo; la red nunca lo tuvo.
+const LIMITE_X: readonly [number, number] = [0, 9];
+const LIMITE_Y: readonly [number, number] = [0, 9];
 
 // La ficha rival solo se mueve dentro de su propio campo (spec 021): ahí es de donde
 // `viaDeAtaque` deriva la vía, y no tiene sentido soltarla fuera de él.
@@ -72,6 +73,17 @@ const RETARDO_ARRASTRE_MS = 150;
 const UMBRAL_ARRASTRE_PX = 8;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
+
+type Ventana = 'editor' | 'examen' | 'cuenta';
+
+type PestanaTablero = 'banquillo' | 'ensenanza' | 'zonas' | 'ajustes';
+
+/** Entrada de la leyenda de colores de la vista de conjunto (spec 023): qué color le tocó a
+ * cada jugador, para la pestaña "Zonas". */
+export interface EntradaLeyendaColor {
+  readonly etiqueta: string;
+  readonly indiceColor: number;
+}
 
 interface Arrastre {
   readonly jugadorId: string;
@@ -150,10 +162,11 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     PaletaJugadores,
     PanelEnsenanza,
     DialogoConfirmacion,
+    Speeddial,
     BarraSistemas,
     DialogoSistema,
     SelectorEquipo,
-    DialogoAjustes,
+    PanelAjustes,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',
@@ -167,7 +180,19 @@ export class Tablero {
 
   protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
   protected readonly confirmandoBorrado = signal(false);
-  protected readonly ajustesAbierto = signal(false);
+  protected readonly confirmandoVaciado = signal(false);
+  protected readonly confirmandoGuardado = signal(false);
+
+  /** Navegación de ventana: hoy solo "Editor" está implementado; "Examen" y "Cuenta" son el
+   * hueco de las specs 012-013 y 035-037 (aplazadas, ADR 0028), sin funcionalidad todavía. */
+  protected readonly ventana = signal<Ventana>('editor');
+
+  protected readonly tab = signal<PestanaTablero>('banquillo');
+  protected readonly panelPlegado = signal(false);
+
+  /** Nombres de variable CSS, en el mismo orden que `CLAVES_ORDEN_COLOR`: la pestaña "Zonas"
+   * pinta cada muestra con `var(paletaColores[indiceColor])`. */
+  protected readonly paletaColores = PALETA_COLORES;
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -322,6 +347,19 @@ export class Tablero {
     this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
   );
 
+  /** Acciones del Speeddial: renombrar/clonar/borrar solo tienen sentido con un sistema activo
+   * (mismo criterio que hoy el `[disabled]` de `BarraSistemas`), así que se deshabilitan sin
+   * desaparecer — perder de vista el motivo por el que están bloqueadas sería peor. */
+  protected readonly accionesSistema = computed<readonly AccionSpeeddial[]>(() => {
+    const haySistema = this.store.sistemaActivoId() !== null;
+    return [
+      { id: 'crear', etiqueta: 'Nuevo sistema', icono: 'nuevo' },
+      { id: 'renombrar', etiqueta: 'Renombrar', icono: 'lapiz', deshabilitada: !haySistema },
+      { id: 'clonar', etiqueta: 'Clonar', icono: 'clonar', deshabilitada: !haySistema },
+      { id: 'borrar', etiqueta: 'Borrar', icono: 'papelera', peligro: true, deshabilitada: !haySistema },
+    ];
+  });
+
   protected readonly tituloDescripcionSistema = computed(() => `Sistema · ${this.store.sistemaActivo()?.nombre ?? ''}`);
 
   /** Nombre sugerido al abrir el diálogo de clonar (spec 026, E7): «‹Nombre del original›
@@ -439,12 +477,27 @@ export class Tablero {
     this.iniciarArrastre(chip.id, etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO), chip.evento, 'paleta');
   }
 
-  protected abrirAjustes(): void {
-    this.ajustesAbierto.set(true);
+  /** Pulsar la pestaña ya activa pliega el panel en vez de no hacer nada — así el entrenador
+   * recupera el alto de la pista sin tener que elegir otra pestaña primero. */
+  protected seleccionarTab(id: PestanaTablero): void {
+    if (id === this.tab()) {
+      this.panelPlegado.update((valor) => !valor);
+      return;
+    }
+    this.tab.set(id);
+    this.panelPlegado.set(false);
   }
 
-  protected cerrarAjustes(): void {
-    this.ajustesAbierto.set(false);
+  protected elegirAccionSistema(id: string): void {
+    if (id === 'crear') {
+      this.abrirCrear();
+    } else if (id === 'renombrar') {
+      this.abrirEditar();
+    } else if (id === 'clonar') {
+      this.abrirClonar();
+    } else if (id === 'borrar') {
+      this.pedirBorrado();
+    }
   }
 
   protected cambiarSustitutoLibero(sustituidoId: string | null): void {
@@ -601,11 +654,34 @@ export class Tablero {
     window.addEventListener('pointercancel', soltar);
   }
 
-  protected vaciarRotacion(): void {
+  private irAEnsenanza(): void {
+    this.tab.set('ensenanza');
+    this.panelPlegado.set(false);
+  }
+
+  protected pedirVaciado(): void {
+    this.confirmandoVaciado.set(true);
+  }
+
+  protected cancelarVaciado(): void {
+    this.confirmandoVaciado.set(false);
+  }
+
+  protected confirmarVaciado(): void {
+    this.confirmandoVaciado.set(false);
     this.store.vaciar();
   }
 
-  protected guardar(): void {
+  protected pedirGuardado(): void {
+    this.confirmandoGuardado.set(true);
+  }
+
+  protected cancelarGuardado(): void {
+    this.confirmandoGuardado.set(false);
+  }
+
+  protected confirmarGuardado(): void {
+    this.confirmandoGuardado.set(false);
     this.store.guardar();
   }
 
@@ -665,6 +741,7 @@ export class Tablero {
           // Terminar un arrastre que coloca la ficha la deja seleccionada (spec 027, E1/E2):
           // venga de la pista (se reposiciona) o del banquillo (se coloca por primera vez).
           this.store.enfocarJugador(jugadorId);
+          this.irAEnsenanza();
         } else if (origen === 'pista') {
           this.store.quitar(jugadorId);
         }
@@ -674,6 +751,11 @@ export class Tablero {
       // seleccionar (spec 010, E9/E10/E12).
       if (origen === 'pista' && !armado) {
         this.store.seleccionarJugador(jugadorId);
+        // `seleccionarJugador` alterna: un segundo toque deselecciona, y entonces no hay nada
+        // que enseñar todavía.
+        if (this.store.jugadorSeleccionadoId() === jugadorId) {
+          this.irAEnsenanza();
+        }
       }
     };
 

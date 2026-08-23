@@ -1,10 +1,10 @@
 <div class="app-barra-sistemas">
-  <select
-    class="app-barra-sistemas__select"
-    aria-label="Sistema"
-    [value]="sistemaActivoId()"
-    (change)="onElegir($event)"
-  >
+  @if (sistemaActivo(); as activo) {
+    <span class="app-barra-sistemas__tipo" [class.app-barra-sistemas__tipo--defensa]="activo.tipo === 'defensa'">
+      {{ activo.tipo === 'defensa' ? 'DEF' : 'REC' }}
+    </span>
+  }
+  <select class="app-barra-sistemas__select" aria-label="Sistema" [value]="sistemaActivoId()" (change)="onElegir($event)">
     @if (sistemas().length === 0) {
       <option value="" disabled selected>Sin sistemas todavía</option>
     }
@@ -12,33 +12,7 @@
       <option [value]="sistema.id">{{ sistema.nombre }}</option>
     }
   </select>
-
-  <button type="button" class="app-boton app-boton--primario" aria-label="Crear sistema" (click)="crear.emit()">+</button>
-  <button
-    type="button"
-    class="app-boton app-boton--secundario"
-    aria-label="Renombrar sistema"
-    [disabled]="!sistemaActivoId()"
-    (click)="editar.emit()"
-  >
-    ✎
-  </button>
-  <button
-    type="button"
-    class="app-boton app-boton--secundario"
-    aria-label="Clonar sistema"
-    [disabled]="!sistemaActivoId()"
-    (click)="clonar.emit()"
-  >
-    ⧉
-  </button>
-  <button
-    type="button"
-    class="app-boton app-boton--destructivo"
-    aria-label="Borrar sistema"
-    [disabled]="!sistemaActivoId()"
-    (click)="borrar.emit()"
-  >
-    🗑
-  </button>
+  <svg class="app-barra-sistemas__flecha" viewBox="0 0 24 24" aria-hidden="true">
+    <polyline points="7,10 12,15 17,10" />
+  </svg>
 </div>

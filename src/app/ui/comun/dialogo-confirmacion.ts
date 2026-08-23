@@ -13,6 +13,9 @@ export class DialogoConfirmacion {
   readonly mensaje = input.required<string>();
   readonly textoConfirmar = input('Descartar');
   readonly textoCancelar = input('Cancelar');
+  /** `false` para confirmar una acción normal (p. ej. guardar): borde cian y botón primario en
+   * vez del rosa de alerta, que aquí sería engañoso — nada se pierde al confirmar. */
+  readonly peligro = input(true);
 
   readonly confirmar = output<void>();
   readonly cancelar = output<void>();
