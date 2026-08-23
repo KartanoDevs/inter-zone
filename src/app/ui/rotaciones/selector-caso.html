@@ -1,0 +1,14 @@
+<div class="app-selector" role="tablist" aria-label="Caso del colocador rival">
+  @for (caso of casos; track caso) {
+    <button
+      type="button"
+      role="tab"
+      class="app-selector__boton"
+      [class.app-selector__boton--activa]="caso === casoActivo()"
+      [attr.aria-selected]="caso === casoActivo()"
+      (click)="seleccionar.emit(caso)"
+    >
+      {{ etiquetas[caso] }}
+    </button>
+  }
+</div>

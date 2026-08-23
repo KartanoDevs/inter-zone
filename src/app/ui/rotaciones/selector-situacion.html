@@ -1,0 +1,14 @@
+<div class="app-selector" role="tablist" aria-label="Situación de ataque">
+  @for (situacion of situaciones(); track situacion) {
+    <button
+      type="button"
+      role="tab"
+      class="app-selector__boton"
+      [class.app-selector__boton--activa]="situacion === situacionActiva()"
+      [attr.aria-selected]="situacion === situacionActiva()"
+      (click)="seleccionar.emit(situacion)"
+    >
+      {{ etiquetas[situacion] }}
+    </button>
+  }
+</div>

@@ -37,6 +37,25 @@ enum via_ataque {
   pipe
 }
 
+/// El caso del colocador rival (spec 038): sustituye a la rotación como eje de navegación en
+/// defensa. Determina qué situaciones de ataque son posibles (situacion_defensa).
+enum caso_colocador {
+  delantero
+  trasero
+}
+
+/// Contra qué ataca el rival, en defensa (spec 038): la postura de base, o una de las zonas de
+/// su ataque. Sustituye a `via_ataque` — el ataque por 1 solo existe cuando el colocador rival
+/// es delantero, y `via_ataque` no lo distinguía porque no dependía del caso.
+enum situacion_defensa {
+  inicial
+  z4
+  z3
+  z2
+  z1
+  pipe
+}
+
 enum estado_sistema {
   borrador
   validado
@@ -71,8 +90,9 @@ model sistema {
   creado_en      DateTime       @default(now()) @db.Timestamptz
   actualizado_en DateTime       @default(now()) @db.Timestamptz
 
-  equipo     equipo             @relation(fields: [equipo_id], references: [id], onDelete: Restrict)
-  rotaciones sistema_rotacion[]
+  equipo             equipo               @relation(fields: [equipo_id], references: [id], onDelete: Restrict)
+  rotaciones         sistema_rotacion[]
+  formaciones_defensa formacion_defensa[]
 
   @@unique([equipo_id, tipo, nombre])
   @@index([equipo_id, tipo, estado])
@@ -97,12 +117,48 @@ model formacion {
   id         String      @id @default(uuid()) @db.Uuid
   sistema_id String      @db.Uuid
   rotacion   Int         @db.SmallInt
-  via        via_ataque?
 
   rotacion_ref sistema_rotacion @relation(fields: [sistema_id, rotacion], references: [sistema_id, rotacion], onDelete: Cascade)
   colocaciones colocacion[]
 
-  @@unique([sistema_id, rotacion, via])
+  @@unique([sistema_id, rotacion])
+}
+
+/// Una defensa guardada para un caso de colocador rival, una situación de ataque y un número de
+/// bloqueadores (spec 038, ampliado por la 039). Cuelga directamente de `sistema`, no de
+/// `sistema_rotacion`: en defensa ya no hay rotación.
+model formacion_defensa {
+  id           String            @id @default(uuid()) @db.Uuid
+  sistema_id   String            @db.Uuid
+  caso         caso_colocador
+  situacion    situacion_defensa
+  bloqueadores Int               @default(0) @db.SmallInt
+  explicacion  String?
+  /// Retoque manual de la sombra de bloqueo respecto a su posición calculada (spec 040). Ambos
+  /// nulos o ambos presentes — CHECK a mano, Prisma no expresa esa condición conjunta.
+  sombra_dx    Float?
+  sombra_dy    Float?
+
+  sistema      sistema                @relation(fields: [sistema_id], references: [id], onDelete: Cascade)
+  colocaciones colocacion_defensa[]
+
+  @@unique([sistema_id, caso, situacion, bloqueadores])
+}
+
+/// Un puesto genérico ocupado en una formación de defensa (spec 038): sin jugador, sin
+/// rotación — el diagrama coloca por zona física del campo (1..6), no por quién juega.
+model colocacion_defensa {
+  formacion_id String  @db.Uuid
+  puesto       Int     @db.SmallInt
+  x            Float
+  y            Float
+  explicacion  String?
+  /// Mismos tres estados que `colocacion.celdas` (docs/modelo-de-datos.md §5).
+  celdas       Int[]
+
+  formacion formacion_defensa @relation(fields: [formacion_id], references: [id], onDelete: Cascade)
+
+  @@id([formacion_id, puesto])
 }
 
 model colocacion {

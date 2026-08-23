@@ -36,14 +36,20 @@ intermedio.
 Modelos y reglas. Aquí vive el voleibol.
 
 - `modelos.ts` — `Punto`, `Jugador`, `RolId`, `DefinicionRol`, `OrdenSaque`, `PlantillaEquipo`,
-  `TipoSistema`, `ViaAtaque`, `Celda`, `Sistema` (con `formaciones` para recepción y `defensas`
-  —por rotación y por vía, spec 021— para defensa, y `descripcion?` — descripción general
-  independiente de la rotación, spec 025), `Colocacion` (con `celdas?`, la rejilla de
-  responsabilidad de ese jugador en esa formación, solo en defensa desde la spec 024),
-  `Formacion`, `Infraccion`, `Aviso`, `ResultadoValidacion`. Desde la spec 024, `celdas`
-  distingue dos estados que antes eran indistinguibles: `undefined` es "nunca tocada" (se
-  muestra el bloque por defecto derivado del punto) y `[]` es "vaciada a propósito" (cero
-  celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada.
+  `TipoSistema`, `Celda`, `Sistema` (con `formaciones` para recepción y `defensas` — lista de
+  `VarianteDefensa` por caso, situación y número de bloqueadores, spec 038-039 — para defensa, y
+  `descripcion?` — descripción general independiente de la rotación, spec 025), `Colocacion`
+  (con `celdas?`, la rejilla de responsabilidad de ese jugador en esa formación, solo en defensa
+  desde la spec 024), `Formacion`, `Infraccion`, `Aviso`, `ResultadoValidacion`. Desde la spec
+  024, `celdas` distingue dos estados que antes eran indistinguibles: `undefined` es "nunca
+  tocada" (se muestra el bloque por defecto derivado del punto) y `[]` es "vaciada a propósito"
+  (cero celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada.
+  `CasoColocador`, `SituacionDefensa`, `PuestoDefensa`, `NumeroBloqueadores`, `ColocacionDefensa`
+  (con `puesto` en vez de `jugador`), `FormacionDefensa` y `VarianteDefensa` son la contraparte
+  de defensa desde la spec 038: la defensa deja de ir por rotación y por vía, pasa a ir por caso
+  del colocador rival y situación de ataque, y los seis puestos son genéricos — no hay jugador
+  que colocar, así que `ColocacionDefensa` es un tipo paralelo a `Colocacion`, no una unión
+  dentro de ella (ADR 0029). `ViaAtaque` desaparece.
 - `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
 - `equipos.ts` — los dos equipos fijos (spec 032, `EQUIPOS`, `NOMBRE_EQUIPO`), mismo patrón que
   `roles.ts`: el identificador es estable, el nombre visible es lo único configurable.
@@ -52,9 +58,12 @@ Modelos y reglas. Aquí vive el voleibol.
   deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
   `zaguerosEnRotacion(orden, rotacion)` deriva quiénes ocupan P1/P5/P6 en una rotación; la usan
   tanto `sustitutosLiberoPorDefecto` como la UI para filtrar el selector del líbero.
-- `defensa.ts` — `viaDeAtaque(punto): ViaAtaque`: deriva la vía de ataque (zona 4/3/2/pipe) de
-  un punto del campo rival, con el espejo de zonas ya resuelto (spec 021, ver `docs/dominio.md`
-  §3). Función pura, sin estado.
+- `defensa.ts` — `situacionesDe(caso): SituacionDefensa[]` (qué situaciones existen para cada
+  caso del colocador rival), `situacionTrasCambioDeCaso` (a qué situación cae al cambiar de caso
+  si la activa no existe en el nuevo), `situacionMasCercana(punto, caso)` (deriva la situación de
+  un punto del campo rival, con el espejo de zonas ya resuelto — spec 038, ver `docs/dominio.md`
+  §3; nunca devuelve una situación fuera de `situacionesDe(caso)`). Funciones puras, sin estado.
+  Sustituye a `viaDeAtaque` de la spec 021.
 - `rejilla.ts` — `TAMANO_CELDA` (0,5 m, ADR 0004), `celdaDe(punto): Celda | null` (`null` fuera
   de las líneas del campo propio) y `centroDe(celda): Punto` (spec 022). `bloquePorDefecto(punto):
   Celda[]` (spec 024): el bloque de hasta 2×2 celdas más cercano a un punto — cerca de una línea
@@ -63,10 +72,13 @@ Modelos y reglas. Aquí vive el voleibol.
   `celdasDeTrazo(trazo): Celda[]` (combina las dos: si el trazo se cierra, rellena; si no, lo
   devuelve tal cual) — pintado por contorno, spec 024. `cobertura.ts` (huecos y conflictos) sigue
   sin existir: llega con las specs 014–015 de la hoja de ruta.
-- `sistema-defensa.ts` — `guardarFormacionDefensa(sistema, rotacion, via, formacion)`: análogo a
-  `guardarFormacion` pero keyed por rotación y vía, y **nunca** valida posición (spec 021, en
-  defensa la validación no existe). Reutiliza `jugadoresEnPista` para el roster, igual que
-  recepción.
+- `sistema-defensa.ts` — `guardarVarianteDefensa(sistema, caso, situacion, bloqueadores,
+  formacion)`: análogo a `guardarFormacion` pero keyed por (caso, situación, bloqueadores), y
+  **nunca** valida posición (spec 021, en defensa la validación no existe). No reutiliza
+  `jugadoresEnPista`: en defensa no hay roster de jugadores que comprobar, solo que los seis
+  puestos estén cubiertos sin repetir (spec 038). `explicarVariante` y `explicarPuesto`:
+  equivalentes de `explicarRotacion`/`explicarJugador` para defensa — la explicación de conjunto
+  va por variante, no por rotación.
 - `plantilla.ts` — `validarPlantilla`: composición y coherencia de índices de los seis
   titulares. El índice de cada jugador se declara en la plantilla, no se deriva (ADR 0017); no
   hay ninguna función que lo calcule. El líbero nunca es uno de los seis (ADR 0014); si aparece
@@ -94,13 +106,13 @@ Modelos y reglas. Aquí vive el voleibol.
   `server/src/infraestructura/semilla.ts` quien siembra este mismo sistema en PostgreSQL
   (`npm run seed`), no un adaptador de `infrastructure/`. Deriva el roster de cada rotación con
   `jugadoresEnPista`; solo declara puntos y textos por posición rotacional.
-- `sistema-defensa-por-defecto.ts` — `sistemaDefensaPorDefecto(plantilla): Sistema` (spec 030):
-  el sistema defensivo de `docs/voley/sistema_defensivo_unificado.md`, sembrado junto al de
-  recepción. Coloca **por zona física del campo, derivada del rol y de la línea** (líbero a la 5,
-  receptor zaguero a la 6, colocador u opuesto a la 1; central a la 3, receptor delantero a la 4,
-  colocador u opuesto a la 2), nunca por posición rotacional — de ahí que la geometría se declare
-  una sola vez por (zona, vía) y valga para las seis rotaciones. Es lo que distingue esta spec de
-  la 029, descartada por colocar por P1..P6.
+- `sistema-defensa-por-defecto.ts` — `sistemaDefensaPorDefecto(plantilla): Sistema` (spec 030,
+  reescrito por la 038): el sistema defensivo de `docs/voley/sistema_defensivo_unificado.md`,
+  sembrado junto al de recepción. Coloca **por puesto genérico** (1..6, la geometría se declara
+  una sola vez por (situación, puesto) y no depende de ningún jugador ni rotación) para los dos
+  casos del colocador rival y las situaciones que cubre el documento (z4, z3, z2 —solo caso
+  trasero—, pipe); la posición inicial y el ataque por 1 nacen sin colocación, sin material de
+  referencia que sembrar (spec 038, E20).
 - `puertos.ts` — las interfaces `SistemaRepository` y `AjustesRepository`, sin implementación.
   Asíncronas las dos; `SistemaRepository` además es granular —`crear`/`actualizar`/`borrar` por
   sistema, nunca un `guardar` de todo el catálogo— para que una escritura no pueda arriesgar el
@@ -131,31 +143,42 @@ aplicación hasta que el catálogo y los ajustes están listos, la misma garant�
 constructor síncrono.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
-  masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `viaActiva`
-  (spec 021, solo relevante en sistemas de defensa), `borrador` (la formación en edición, antes
-  de guardar), `cambioPendiente` (aviso de cambios sin guardar al cambiar de rotación, de vía, de
-  sistema o de equipo), `jugadorSeleccionadoId`, `errorGuardado` (spec 034, ADR 0026: motivo de
-  la última escritura fallida y cómo reintentarla, o `null`).
+  masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
+  `bloqueadoresActivos` (spec 038-039, sustituyen a `viaActiva` de la spec 021 — la rotación no
+  manda nada en defensa, así que estos son los ejes de navegación ahí, no `rotacionActiva`),
+  `borrador: readonly ColocacionBorrador[]` (`ColocacionBorrador = Colocacion | ColocacionDefensa`:
+  jugador en recepción, puesto genérico en defensa — spec 038), `cambioPendiente` (aviso de
+  cambios sin guardar al cambiar de rotación, de caso, de situación, de bloqueadores, de sistema
+  o de equipo), `jugadorSeleccionadoId` (pese al nombre, guarda el id del ocupante seleccionado:
+  el del jugador en recepción, o `p${puesto}` en defensa — no se renombró para no ampliar el
+  radio de cambio de la spec 038 más de lo necesario), `errorGuardado` (spec 034, ADR 0026:
+  motivo de la última escritura fallida y cómo reintentarla, o `null`).
 - Derivados con `computed`: `catalogo` (los sistemas de `equipoActivo`, ordenados — spec 032),
   `sistemaActivo`, `posicionesActivas` (quién
-  juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`),
-  `formacionGuardadaActiva` (lee `formaciones[rotacion]` en recepción, `defensas[rotacion][via]`
-  en defensa), `hayCambiosSinGuardar`, `resultadoValidacion` (siempre `null` en defensa: no es
-  que la validación esté desactivada, es que no existe), `puedeGuardar` (en defensa, solo exige
-  los seis colocados), `explicacionMostrada` (la del jugador seleccionado, o si no hay ninguno
-  la de la rotación), `descripcionSistemaActivo` (spec 025: la descripción general del sistema
-  activo, o cadena vacía si no tiene), `celdasJugadorSeleccionado` (spec 024: las celdas del
-  jugador seleccionado, o su bloque por defecto si no tiene ninguna; siempre vacío fuera de
-  defensa).
+  juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`; solo tiene
+  sentido en recepción),
+  `formacionGuardadaActiva` (lee `formaciones[rotacion]` en recepción, la variante que coincide
+  con `(casoActivo, situacionActiva, bloqueadoresActivos)` en defensa), `hayCambiosSinGuardar`,
+  `resultadoValidacion` (siempre `null` en defensa: no es que la validación esté desactivada, es
+  que no existe), `puedeGuardar` (en defensa, solo exige los seis puestos colocados),
+  `explicacionMostrada` (la del ocupante seleccionado, o si no hay ninguno la de la rotación en
+  recepción / de la variante activa en defensa — spec 038, E18: en defensa la explicación de
+  conjunto va por caso y situación, no por rotación), `descripcionSistemaActivo` (spec 025: la
+  descripción general del sistema activo, o cadena vacía si no tiene),
+  `celdasJugadorSeleccionado` (spec 024: las celdas del ocupante seleccionado, o su bloque por
+  defecto si no tiene ninguna; siempre vacío fuera de defensa).
 - Acciones: `activarSistema`, `seleccionarEquipo` (spec 032, mismo aviso de cambios sin guardar
   que las demás; activa el primero del catálogo del equipo nuevo, o ninguno si está vacío),
-  `seleccionarRotacion`, `seleccionarVia`,
+  `seleccionarRotacion`, `seleccionarCaso`/`seleccionarSituacion`/`seleccionarBloqueadores`
+  (spec 038-039; cambiar de caso conserva la situación si sigue existiendo en el nuevo, si no
+  cae en la inicial),
   `confirmarCambio`/`cancelarCambio`, `colocarOMover` (conserva `celdas` y `explicacion` de la
-  colocación previa), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o quitan una celda
-  de la rejilla de responsabilidad de un jugador en el borrador, spec 022; si `celdas` era
-  `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que pintar o borrar
-  cualquiera de sus celdas materializa y congela la zona en vez de sustituirla), `guardar` (en
-  defensa llama a `guardarFormacionDefensa` en vez de `guardarFormacion`), `crear` (recibe el
+  colocación previa; en defensa el id que recibe tiene la forma `p${puesto}` — `puestoDeId` lo
+  distingue de un id de jugador), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o
+  quitan una celda de la rejilla de responsabilidad de un ocupante en el borrador, spec 022; si
+  `celdas` era `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que
+  pintar o borrar cualquiera de sus celdas materializa y congela la zona en vez de sustituirla),
+  `guardar` (en defensa llama a `guardarVarianteDefensa` en vez de `guardarFormacion`), `crear` (recibe el
   equipo del sistema nuevo, spec 032; cambia `equipoActivo` si es distinto del que ya estaba
   activo, para que el sistema recién creado se vea de inmediato), `clonar`
   (spec 026, mismo patrón que `crear` pero a partir del sistema activo; mantiene su equipo, sin
@@ -184,46 +207,20 @@ Nada de lógica de voleibol aquí. Si aparece un `if` sobre posiciones, pertenec
 Adaptadores hacia el mundo exterior.
 
 - `HttpSistemaRepository implements SistemaRepository` (spec 034) — **el adaptador en uso**,
-  contra la API de `server/`. `fetch` nativo, no `HttpClient` de Angular (mismo criterio que
-  `LocalStorageSistemaRepository` corriendo sin DOM: el test sustituye la función global y sigue
+  contra la API de `server/`. `fetch` nativo, no `HttpClient` de Angular (mismo criterio que ya
+  usaba el adaptador de la v1 para correr sin DOM: el test sustituye la función global y sigue
   corriendo sin `TestBed`). Traduce cualquier respuesta o excepción a uno de los tres motivos
   que declara el puerto: `ErrorDeRed` (la petición no llegó), `ErrorDelServidor` (el servidor
   respondió con error) o `ConflictoDeEdicion` (409 — alguien más modificó el sistema mientras
   tanto). El testigo de concurrencia (`actualizadoEn`, que el servidor exige como cabecera
   `If-Match` al actualizar) se guarda aquí, en memoria e indexado por id — nunca en el tipo de
   dominio, que sigue sin fechas (ADR 0012).
-- `LocalStorageSistemaRepository implements SistemaRepository` — **el adaptador de la v1**, ya
-  no cableado en `app.config.ts` desde la spec 034. No se ha retirado: exporta el tipo
-  `AlmacenClaveValor`, que `LocalStorageAjustesRepository` sigue usando, y su `.spec.ts`
-  documenta el formato persistido de la v1 dentro de la suite en verde. Sobre un
-  `AlmacenClaveValor` inyectado (que `localStorage` cumple tal cual — la inyección permite
-  testear sin DOM). Recibe también la plantilla real por constructor: en la v1 es una única
-  constante de la aplicación, no un dato de dominio (ADR 0013). `crear`, `actualizar` y `borrar`
-  (spec 031, ADR 0024) leen el almacén tal y como está en el momento de escribir, nunca desde
-  una copia en memoria: así una escritura granular no pierde de vista un sistema que otra
-  escritura hubiera guardado mientras tanto.
-- Formato persistido por `LocalStorageSistemaRepository` (histórico — así es como quedaron
-  guardados los sistemas hasta la spec 034, y así los sigue leyendo su `.spec.ts`):
-  `{ "version": 6, "data": { "sistemas": [...] } }`. Cada sistema persistido guarda
-  `creadoEn`/`actualizadoEn`, que no existen en el `Sistema` de dominio (ADR 0012), y
-  `sustitutosLibero?: Record<string, string | null>` (a quién sustituye el líbero en cada
-  rotación, ausente si no tiene) en vez de la plantilla completa (ADR 0014, forma por rotación
-  desde la ADR 0015). Desde la versión 4 (spec 021) también guarda `defensas?`, por rotación y
-  por vía — nunca la posición de la ficha rival, solo la vía ya derivada (ADR 0020). Desde la
-  versión 5 (spec 025) guarda `descripcion?`. Desde la versión 6 (spec 032) guarda `equipoId`,
-  obligatorio. Nada guardado nunca (`bruto === null`): `listar()` siembra `sistemaPorDefecto` y
-  `sistemaDefensaPorDefecto` (spec 030), del equipo masculino (spec 032: no hay guía de
-  referencia para sembrar también el femenino, que empieza vacío) **y los persiste de
-  inmediato** (spec 031), para que una escritura granular posterior los encuentre ya en el
-  almacén. Algo presente pero ilegible (JSON roto, o versión distinta a la actual): se siembra
-  igual, pero **solo en memoria**, sin tocar el almacén — sobrescribirlo rompería la garantía de
-  nunca sobrescribir a ciegas una versión futura desconocida (spec 008, E4). Un payload legible
-  con `sistemas: []` sí se respeta como catálogo vacío, no se siembra nada encima (ADR 0021).
-  Desde la spec 028, cada posición persistida guarda también `celdas?` (la zona de
-  responsabilidad, specs 022/024) — antes se perdía al recargar; no subió la versión porque es
-  una lectura/escritura nueva de un campo que antes se ignoraba del todo, no un cambio de
-  significado de datos ya existentes. El servidor de `server/` siembra por su cuenta, con su
-  propio script (`npm run seed`, ver la sección `server/` más abajo) — no reutiliza esta lógica.
+- `LocalStorageSistemaRepository` — **retirado en la spec 038** (ADR 0031), con sus 26 tests. Ya
+  no estaba cableado en `app.config.ts` desde la spec 034 (mandaba `HttpSistemaRepository`), y
+  mantenerlo al día con cada cambio de forma de `Sistema` costaba más de lo que aportaba: la
+  ADR 0023 ya había dejado escrito que `localStorage` se sustituye, no se queda como modo sin
+  conexión. El tipo `AlmacenClaveValor` que exportaba pasó a `local-storage-ajustes.repository.ts`,
+  su único usuario que queda.
 - `LocalStorageAjustesRepository implements AjustesRepository` — **excepción deliberada**: es el
   único adaptador de `localStorage` que sigue en producción. La spec 034 dejó los `Ajustes`
   fuera de alcance a propósito: son preferencias de pantalla por dispositivo (validación
@@ -231,9 +228,9 @@ Adaptadores hacia el mundo exterior.
   servidor para ellos todavía (`docs/modelo-de-datos.md` los convierte en columnas de `usuario`,
   que no existe y queda aplazado — ADR 0028, así que este adaptador deja de ser una parada
   intermedia y pasa a ser el definitivo por tiempo indefinido). Mismo patrón (versión + data) que
-  `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la app,
-  no de un sistema concreto (ADR 0015). Sigue siendo un único documento de cuatro banderas que
-  se reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
+  tenía `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la
+  app, no de un sistema concreto (ADR 0015). Sigue siendo un único documento de cuatro banderas
+  que se reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
   `SistemaRepository` pudiera arriesgar aquí, solo se volvió asíncrono.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
@@ -244,17 +241,22 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
-  defensa, también pinta la ficha rival en el punto fijo de la vía activa (ADR 0020). Expone un
-  `pointerdown` de fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la
-  ficha rival paran la propagación de su propio `pointerdown` para no disparar los dos gestos a
-  la vez. Cuando `mostrarZonas` (solo en defensa, spec 024), pinta siempre las celdas de todos
-  con una paleta fija de 7 colores (`PALETA_COLORES`) y una leyenda — ya no hay un interruptor
-  aparte para verlas (spec 023 quedó revertida por la 024): la del jugador seleccionado
+  defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
+  (ADR 0020, sigue vigente bajo el nombre nuevo — spec 038) y la ficha "C" del colocador rival,
+  fija según el caso. La leyenda gana las entradas propias de defensa cuando `mostrarRival` está
+  activo (spec 038, E21), y el botón que la abre cambia de icono (E22). Expone un `pointerdown`
+  de fondo (`fondoAgarrado`) para el modo pintar — tanto `FichaJugador` como la ficha "A" paran
+  la propagación de su propio `pointerdown` para no disparar los dos gestos a la vez. Cuando
+  `mostrarZonas` (solo en defensa, spec 024), pinta siempre las celdas de todos con una paleta
+  fija de 7 colores (`PALETA_COLORES`) y una leyenda — ya no hay un interruptor aparte para
+  verlas (spec 023 quedó revertida por la 024): la del ocupante seleccionado
   (`indiceColorSeleccionado`) se ve a plena intensidad y las demás atenuadas. Una celda
   compartida se pinta con un patrón SVG de franjas diagonales, uno por cada combinación de
   colores que aparece.
-- `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6) y `SelectorVia` (pestañas de vía,
-  solo en defensa, spec 021).
+- `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6, solo en recepción desde la spec 038),
+  `SelectorCaso` (pestañas colocador delantero/trasero) y `SelectorSituacion` (pestañas de
+  situación de ataque, dependientes del caso activo) — ambos solo en defensa, spec 038, sustituyen
+  a `SelectorVia` de la spec 021.
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
   `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable; input
   `abierto` opcional, por defecto desplegado — spec 025 lo usa plegado para el panel de
@@ -267,15 +269,17 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   componente sin cambios: `mostrarTipo` en `false` como al editar, `nombreInicial` con el nombre
   sugerido «‹Original› (copia)»; el campo de equipo, spec 032, comparte esa misma visibilidad —
   ni el tipo ni el equipo cambian una vez creado), `SelectorEquipo` (pestañas del equipo activo,
-  spec 032, mismo patrón que `SelectorVia`).
+  spec 032, mismo patrón que `SelectorCaso`).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
   el borrado de un sistema.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
-  ficha). El modo pintar (spec 022, solo en defensa desde la spec 024) es un segundo gestor de
-  `PointerEvent` en paralelo al de arrastre: con un jugador seleccionado, arrastrar sobre el
-  fondo de la pista pinta o borra celdas en vez de mover fichas — el primer punto tocado decide
-  si el trazo entero pinta o borra, según si esa celda ya era del jugador (vía
+  ficha). Trabaja con `ColocacionBorrador` de forma genérica (jugador o puesto, spec 038): las
+  funciones `idOcupanteDe`/`etiquetaOcupanteDe` distinguen los dos casos donde antes solo había
+  `Colocacion`. El modo pintar (spec 022, solo en defensa desde la spec 024) es un segundo
+  gestor de `PointerEvent` en paralelo al de arrastre: con un ocupante seleccionado, arrastrar
+  sobre el fondo de la pista pinta o borra celdas en vez de mover fichas — el primer punto tocado
+  decide si el trazo entero pinta o borra, según si esa celda ya era suya (vía
   `store.celdasJugadorSeleccionado()`, que ya incluye el bloque por defecto). Al soltar, si el
   trazo se cerró, `celdasDeTrazo` añade las celdas del interior (spec 024, E9-E11). El índice de
   color de cada jugador (`indiceColorDe`) se deriva del mismo orden fijo de roles que ya usan el
@@ -311,11 +315,17 @@ navegador, ejecutándose en Node.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
 - `src/infraestructura/semilla.ts` — siembra el equipo, el catálogo fijo de jugadores y los dos
-  sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía
-  `LocalStorageSistemaRepository.listar()` en la v1.
+  sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía el adaptador de
+  `localStorage` en la v1. La guarda de `sembrarEjemplos` es por tipo desde la spec 038, no
+  "el equipo tiene algo guardado": un equipo puede tener sistemas de recepción con trabajo real
+  del entrenador y a la vez no tener ningún sistema de defensa (por ejemplo, justo tras una
+  migración que los borró) — con una guarda por "cualquier sistema" el de defensa no volvería a
+  sembrarse nunca.
 - `prisma/schema.prisma` y `prisma/migrations/` — el esquema completo está en
   `docs/modelo-de-datos.md`. Los `CHECK` y la función `celdas_validas()` no se expresan en el
-  lenguaje de esquema de Prisma: van a mano en el SQL de la migración.
+  lenguaje de esquema de Prisma: van a mano en el SQL de la migración. Desde la spec 038,
+  `formacion_defensa` y `colocacion_defensa` sustituyen a la columna `via` de `formacion`: cuelgan
+  directamente de `sistema`, no de `sistema_rotacion` — en defensa ya no hay rotación.
 
 Arranque, tests y la lista completa de rutas están en `server/README.md`, no se duplican aquí.
 
@@ -346,7 +356,6 @@ src/app/
 │   └── sistema.store.spec.ts
 ├── infrastructure/
 │   ├── http-sistema.repository.ts          # en uso (spec 034)
-│   ├── local-storage-sistema.repository.ts  # legado de la v1, ver `infrastructure/` arriba
 │   ├── local-storage-ajustes.repository.ts  # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/

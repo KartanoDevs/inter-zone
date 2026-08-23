@@ -37,14 +37,19 @@
       ></app-barra-sistemas>
     </div>
 
-    <app-selector-rotacion
-      [rotaciones]="estadosRotacion()"
-      [rotacionActiva]="store.rotacionActiva()"
-      (seleccionar)="seleccionarRotacion($event)"
-    ></app-selector-rotacion>
-
     @if (esDefensa()) {
-      <app-selector-via [viaActiva]="store.viaActiva()" (seleccionar)="seleccionarVia($event)"></app-selector-via>
+      <app-selector-caso [casoActivo]="store.casoActivo()" (seleccionar)="seleccionarCaso($event)"></app-selector-caso>
+      <app-selector-situacion
+        [casoActivo]="store.casoActivo()"
+        [situacionActiva]="store.situacionActiva()"
+        (seleccionar)="seleccionarSituacion($event)"
+      ></app-selector-situacion>
+    } @else {
+      <app-selector-rotacion
+        [rotaciones]="estadosRotacion()"
+        [rotacionActiva]="store.rotacionActiva()"
+        (seleccionar)="seleccionarRotacion($event)"
+      ></app-selector-rotacion>
     }
 
     <div class="app-tablero__campo-envoltorio">
@@ -55,7 +60,8 @@
           [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
           [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
           [mostrarRival]="esDefensa()"
-          [viaActiva]="store.viaActiva()"
+          [casoActivo]="store.casoActivo()"
+          [situacionActiva]="store.situacionActiva()"
           [mostrarZonas]="esDefensa()"
           [celdasVistaConjunto]="celdasVistaConjunto()"
           [indiceColorSeleccionado]="indiceColorSeleccionado()"
@@ -185,7 +191,7 @@
           @case ('ajustes') {
             <app-panel-ajustes
               [rotacion]="store.rotacionActiva()"
-              [tieneLibero]="tieneLibero()"
+              [tieneLibero]="tieneLibero() && !esDefensa()"
               [opcionesLibero]="opcionesSustitutoLibero()"
               [sustitutoActual]="sustitutoLiberoActual()"
               [validacionDesactivada]="store.validacionDesactivada()"
@@ -251,7 +257,13 @@
           ? 'Esta rotación tiene cambios sin guardar. Si cambias de rotación se perderán.'
           : pendiente.tipo === 'equipo'
             ? 'Esta rotación tiene cambios sin guardar. Si cambias de equipo se perderán.'
-            : 'Esta rotación tiene cambios sin guardar. Si cambias de sistema se perderán.'
+            : pendiente.tipo === 'caso'
+              ? 'Esta defensa tiene cambios sin guardar. Si cambias de caso se perderán.'
+              : pendiente.tipo === 'situacion'
+                ? 'Esta defensa tiene cambios sin guardar. Si cambias de situación se perderán.'
+                : pendiente.tipo === 'bloqueadores'
+                  ? 'Esta defensa tiene cambios sin guardar. Si cambias el número de bloqueadores se perderán.'
+                  : 'Esta rotación tiene cambios sin guardar. Si cambias de sistema se perderán.'
       "
       textoConfirmar="Descartar y continuar"
       (confirmar)="confirmarCambio()"
@@ -293,8 +305,12 @@
 
   @if (confirmandoVaciado()) {
     <app-dialogo-confirmacion
-      titulo="Vaciar rotación"
-      [mensaje]="'Se quitarán de la pista los seis jugadores de R' + store.rotacionActiva() + '. No se puede deshacer.'"
+      titulo="Vaciar"
+      [mensaje]="
+        esDefensa()
+          ? 'Se quitarán de la pista los seis puestos de esta situación. No se puede deshacer.'
+          : ('Se quitarán de la pista los seis jugadores de R' + store.rotacionActiva() + '. No se puede deshacer.')
+      "
       textoConfirmar="Vaciar"
       (confirmar)="confirmarVaciado()"
       (cancelar)="cancelarVaciado()"
@@ -303,8 +319,12 @@
 
   @if (confirmandoGuardado()) {
     <app-dialogo-confirmacion
-      titulo="Guardar rotación"
-      [mensaje]="'Se guardarán las posiciones actuales de R' + store.rotacionActiva() + '.'"
+      titulo="Guardar"
+      [mensaje]="
+        esDefensa()
+          ? 'Se guardarán las posiciones actuales de esta situación.'
+          : ('Se guardarán las posiciones actuales de R' + store.rotacionActiva() + '.')
+      "
       textoConfirmar="Guardar"
       [peligro]="false"
       (confirmar)="confirmarGuardado()"

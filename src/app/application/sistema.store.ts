@@ -1,5 +1,20 @@
 import { computed, signal } from '@angular/core';
-import type { Celda, EquipoId, Formacion, OrdenSaque, Punto, Sistema, TipoSistema, ViaAtaque } from '../domain/modelos';
+import type {
+  CasoColocador,
+  Celda,
+  Colocacion,
+  ColocacionDefensa,
+  EquipoId,
+  Formacion,
+  FormacionDefensa,
+  NumeroBloqueadores,
+  OrdenSaque,
+  Punto,
+  PuestoDefensa,
+  Sistema,
+  SituacionDefensa,
+  TipoSistema,
+} from '../domain/modelos';
 import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
 import {
   borrarSistema,
@@ -12,18 +27,32 @@ import {
 } from '../domain/catalogo-sistemas';
 import { jugadoresEnPista } from '../domain/rotacion';
 import { bloquePorDefecto } from '../domain/rejilla';
+import { situacionTrasCambioDeCaso, situacionesDe } from '../domain/defensa';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
-import { guardarFormacionDefensa } from '../domain/sistema-defensa';
+import { explicarPuesto, explicarVariante, guardarVarianteDefensa } from '../domain/sistema-defensa';
 import { validarFormacion } from '../domain/validacion';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
 
 export type RotacionValida = 1 | 2 | 3 | 4 | 5 | 6;
 
+/** Una colocación del borrador en edición: un jugador (recepción) o un puesto genérico
+ * (defensa, spec 038) — nunca los dos a la vez. */
+export type ColocacionBorrador = Colocacion | ColocacionDefensa;
+
 type CambioPendiente =
   | { readonly tipo: 'rotacion'; readonly valor: RotacionValida }
   | { readonly tipo: 'sistema'; readonly valor: string }
-  | { readonly tipo: 'via'; readonly valor: ViaAtaque }
+  | { readonly tipo: 'caso'; readonly valor: CasoColocador }
+  | { readonly tipo: 'situacion'; readonly valor: SituacionDefensa }
+  | { readonly tipo: 'bloqueadores'; readonly valor: NumeroBloqueadores }
   | { readonly tipo: 'equipo'; readonly valor: EquipoId };
+
+/** El identificador de a quién ocupa una colocación del borrador: el id del jugador en
+ * recepción, o `p${puesto}` en defensa — nunca hay colisión entre los dos espacios porque los
+ * puestos de defensa no son jugadores reales (spec 038). */
+function idDe(colocacion: ColocacionBorrador): string {
+  return 'jugador' in colocacion ? colocacion.jugador.id : `p${colocacion.puesto}`;
+}
 
 function coincide(a: Celda, b: Celda): boolean {
   return a.columna === b.columna && a.fila === b.fila;
@@ -52,13 +81,13 @@ function mensajeDeError(error: unknown): string {
   return 'Ha ocurrido un error inesperado al guardar.';
 }
 
-function formacionesIguales(a: Formacion, b: Formacion): boolean {
+function formacionesIguales(a: readonly ColocacionBorrador[], b: readonly ColocacionBorrador[]): boolean {
   if (a.length !== b.length) {
     return false;
   }
-  const colocacionPorId = new Map(b.map((c) => [c.jugador.id, c]));
+  const colocacionPorId = new Map(b.map((c) => [idDe(c), c]));
   return a.every((c) => {
-    const otra = colocacionPorId.get(c.jugador.id);
+    const otra = colocacionPorId.get(idDe(c));
     return (
       otra !== undefined && otra.punto.x === c.punto.x && otra.punto.y === c.punto.y && celdasIguales(c.celdas, otra.celdas)
     );
@@ -77,8 +106,14 @@ export class SistemaStore {
   readonly equipoActivo = signal<EquipoId>('masculino');
   readonly sistemaActivoId = signal<string | null>(null);
   readonly rotacionActiva = signal<RotacionValida>(1);
-  readonly viaActiva = signal<ViaAtaque>('z4');
-  readonly borrador = signal<Formacion>([]);
+  /** Caso del colocador rival activo (spec 038): sustituye a la rotación como eje de navegación
+   * en defensa — la rotación no manda nada ahí. Sin efecto en recepción. */
+  readonly casoActivo = signal<CasoColocador>('delantero');
+  /** Situación de ataque activa (spec 038, sustituye a `viaActiva` de la spec 021). */
+  readonly situacionActiva = signal<SituacionDefensa>('z4');
+  /** Número de bloqueadores de la variante activa (spec 039). Siempre 0 en la situación inicial. */
+  readonly bloqueadoresActivos = signal<NumeroBloqueadores>(0);
+  readonly borrador = signal<readonly ColocacionBorrador[]>([]);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
@@ -109,15 +144,24 @@ export class SistemaStore {
     return sistema ? jugadoresEnPista(sistema.plantilla, this.rotacionActiva()) : null;
   });
 
-  /** Recepción lee `sistema.formaciones[rotacion]`; defensa lee `sistema.defensas[rotacion][vía]`
-   * (spec 021) — son dos claves de guardado distintas para el mismo borrador en edición. */
-  readonly formacionGuardadaActiva = computed<Formacion>(() => {
+  /** La variante de defensa activa: (caso, situación, bloqueadores) — spec 038, ampliado por la
+   * 039. `undefined` si esa combinación nunca se ha guardado. */
+  private readonly varianteDefensaActiva = computed(() =>
+    this.sistemaActivo()?.defensas?.find(
+      (v) => v.caso === this.casoActivo() && v.situacion === this.situacionActiva() && v.bloqueadores === this.bloqueadoresActivos(),
+    ),
+  );
+
+  /** Recepción lee `sistema.formaciones[rotacion]`; defensa lee la variante activa por
+   * (caso, situación, bloqueadores) (spec 038) — son dos claves de guardado distintas para el
+   * mismo borrador en edición. */
+  readonly formacionGuardadaActiva = computed<readonly ColocacionBorrador[]>(() => {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return [];
     }
     if (sistema.tipo === 'defensa') {
-      return sistema.defensas?.[this.rotacionActiva()]?.[this.viaActiva()] ?? [];
+      return this.varianteDefensaActiva()?.formacion ?? [];
     }
     return sistema.formaciones[this.rotacionActiva()] ?? [];
   });
@@ -135,7 +179,8 @@ export class SistemaStore {
       return null;
     }
     const posiciones = this.posicionesActivas();
-    const borrador = this.borrador();
+    // Fuera de defensa el borrador siempre contiene `Colocacion` (con `jugador`), nunca puestos.
+    const borrador = this.borrador() as Formacion;
     return posiciones && borrador.length === 6 ? validarFormacion(borrador, posiciones) : null;
   });
 
@@ -146,9 +191,15 @@ export class SistemaStore {
     return this.resultadoValidacion()?.infracciones.length === 0;
   });
 
-  readonly explicacionRotacionActiva = computed(
-    () => this.sistemaActivo()?.explicacionesRotacion[this.rotacionActiva()] ?? '',
-  );
+  /** La explicación de conjunto de la rotación (recepción) o de la variante activa (defensa,
+   * spec 038: en defensa la explicación de conjunto va por caso y situación, no por rotación). */
+  readonly explicacionRotacionActiva = computed(() => {
+    const sistema = this.sistemaActivo();
+    if (sistema?.tipo === 'defensa') {
+      return this.varianteDefensaActiva()?.explicacion ?? '';
+    }
+    return sistema?.explicacionesRotacion[this.rotacionActiva()] ?? '';
+  });
 
   /** Descripción general del sistema activo, independiente de la rotación (spec 025). */
   readonly descripcionSistemaActivo = computed(() => this.sistemaActivo()?.descripcion ?? '');
@@ -158,7 +209,7 @@ export class SistemaStore {
     if (!id) {
       return '';
     }
-    return this.formacionGuardadaActiva().find((c) => c.jugador.id === id)?.explicacion ?? '';
+    return this.formacionGuardadaActiva().find((c) => idDe(c) === id)?.explicacion ?? '';
   });
 
   readonly explicacionMostrada = computed(() =>
@@ -176,7 +227,7 @@ export class SistemaStore {
     if (!id || this.sistemaActivo()?.tipo !== 'defensa') {
       return [];
     }
-    const colocacion = this.borrador().find((c) => c.jugador.id === id);
+    const colocacion = this.borrador().find((c) => idDe(c) === id);
     if (!colocacion) {
       return [];
     }
@@ -303,15 +354,47 @@ export class SistemaStore {
     this.cambiarContexto();
   }
 
-  seleccionarVia(via: ViaAtaque): void {
-    if (via === this.viaActiva()) {
+  /** Cambia el caso del colocador rival activo (spec 038, sustituye a la rotación en defensa).
+   * La situación se conserva si sigue existiendo para el caso nuevo, y si no, cae en la inicial
+   * (E5); los bloqueadores se reinician a 0 porque son una variante de la (caso, situación)
+   * anterior, no de la nueva. */
+  seleccionarCaso(caso: CasoColocador): void {
+    if (caso === this.casoActivo()) {
       return;
     }
     if (this.hayCambiosSinGuardar()) {
-      this.cambioPendiente.set({ tipo: 'via', valor: via });
+      this.cambioPendiente.set({ tipo: 'caso', valor: caso });
       return;
     }
-    this.viaActiva.set(via);
+    this.casoActivo.set(caso);
+    this.situacionActiva.set(situacionTrasCambioDeCaso(this.situacionActiva(), caso));
+    this.bloqueadoresActivos.set(0);
+    this.cambiarContexto();
+  }
+
+  seleccionarSituacion(situacion: SituacionDefensa): void {
+    if (situacion === this.situacionActiva()) {
+      return;
+    }
+    if (this.hayCambiosSinGuardar()) {
+      this.cambioPendiente.set({ tipo: 'situacion', valor: situacion });
+      return;
+    }
+    this.situacionActiva.set(situacion);
+    this.bloqueadoresActivos.set(0);
+    this.cambiarContexto();
+  }
+
+  /** Cambia el número de bloqueadores de la variante activa (spec 039). */
+  seleccionarBloqueadores(bloqueadores: NumeroBloqueadores): void {
+    if (bloqueadores === this.bloqueadoresActivos()) {
+      return;
+    }
+    if (this.hayCambiosSinGuardar()) {
+      this.cambioPendiente.set({ tipo: 'bloqueadores', valor: bloqueadores });
+      return;
+    }
+    this.bloqueadoresActivos.set(bloqueadores);
     this.cambiarContexto();
   }
 
@@ -335,8 +418,15 @@ export class SistemaStore {
     this.cambioPendiente.set(null);
     if (pendiente.tipo === 'rotacion') {
       this.rotacionActiva.set(pendiente.valor);
-    } else if (pendiente.tipo === 'via') {
-      this.viaActiva.set(pendiente.valor);
+    } else if (pendiente.tipo === 'caso') {
+      this.casoActivo.set(pendiente.valor);
+      this.situacionActiva.set(situacionTrasCambioDeCaso(this.situacionActiva(), pendiente.valor));
+      this.bloqueadoresActivos.set(0);
+    } else if (pendiente.tipo === 'situacion') {
+      this.situacionActiva.set(pendiente.valor);
+      this.bloqueadoresActivos.set(0);
+    } else if (pendiente.tipo === 'bloqueadores') {
+      this.bloqueadoresActivos.set(pendiente.valor);
     } else if (pendiente.tipo === 'equipo') {
       this.cambiarEquipo(pendiente.valor); // ya llama a cambiarContexto()
       return;
@@ -456,10 +546,19 @@ export class SistemaStore {
     if (!sistema) {
       return;
     }
-    const jugadorId = this.jugadorSeleccionadoId();
-    const actualizado = jugadorId
-      ? explicarJugador(sistema, this.rotacionActiva(), jugadorId, texto)
-      : explicarRotacion(sistema, this.rotacionActiva(), texto);
+    const ocupanteId = this.jugadorSeleccionadoId();
+    let actualizado: Sistema | null;
+    if (sistema.tipo === 'defensa') {
+      const puesto = ocupanteId === null ? null : SistemaStore.puestoDeId(ocupanteId);
+      actualizado =
+        puesto !== null
+          ? explicarPuesto(sistema, this.casoActivo(), this.situacionActiva(), this.bloqueadoresActivos(), puesto, texto)
+          : explicarVariante(sistema, this.casoActivo(), this.situacionActiva(), this.bloqueadoresActivos(), texto);
+    } else {
+      actualizado = ocupanteId
+        ? explicarJugador(sistema, this.rotacionActiva(), ocupanteId, texto)
+        : explicarRotacion(sistema, this.rotacionActiva(), texto);
+    }
     if (!actualizado) {
       return;
     }
@@ -479,34 +578,55 @@ export class SistemaStore {
     this.cambioPendiente.set(null);
   }
 
-  colocarOMover(jugadorId: string, punto: Punto): void {
-    const jugador = this.posicionesActivas()?.find((j) => j.id === jugadorId);
+  /** El puesto de defensa que corresponde a un id sintético `p1`..`p6` (spec 038), o `null` si
+   * no tiene esa forma — así `colocarOMover` sabe si `ocupanteId` señala a un jugador (recepción)
+   * o a un puesto genérico (defensa) sin que el llamador tenga que decirlo aparte. */
+  private static puestoDeId(ocupanteId: string): PuestoDefensa | null {
+    const m = /^p([1-6])$/.exec(ocupanteId);
+    return m ? (Number(m[1]) as PuestoDefensa) : null;
+  }
+
+  colocarOMover(ocupanteId: string, punto: Punto): void {
+    const puesto = SistemaStore.puestoDeId(ocupanteId);
+    if (puesto !== null) {
+      this.borrador.update((formacion) => {
+        const previa = formacion.find((c) => idDe(c) === ocupanteId) as ColocacionDefensa | undefined;
+        const resto = formacion.filter((c) => idDe(c) !== ocupanteId);
+        const nueva: ColocacionDefensa = { ...previa, puesto, punto };
+        return [...resto, nueva];
+      });
+      return;
+    }
+    const jugador = this.posicionesActivas()?.find((j) => j.id === ocupanteId);
     if (!jugador) {
       return;
     }
     this.borrador.update((formacion) => {
-      const previa = formacion.find((c) => c.jugador.id === jugadorId);
-      return [...formacion.filter((c) => c.jugador.id !== jugadorId), { ...previa, jugador, punto }];
+      const previa = formacion.find((c) => idDe(c) === ocupanteId) as Colocacion | undefined;
+      const resto = formacion.filter((c) => idDe(c) !== ocupanteId);
+      const nueva: Colocacion = { ...previa, jugador, punto };
+      return [...resto, nueva];
     });
   }
 
-  /** Quita a `jugadorId` del borrador. Si era el seleccionado, lo deselecciona (spec 027): no
-   * tiene sentido dejar el panel de enseñanza mostrando a alguien que ya no está en la formación. */
-  quitar(jugadorId: string): void {
-    this.borrador.update((formacion) => formacion.filter((c) => c.jugador.id !== jugadorId));
-    if (this.jugadorSeleccionadoId() === jugadorId) {
+  /** Quita a `ocupanteId` del borrador (jugador en recepción, puesto genérico en defensa). Si
+   * era el seleccionado, lo deselecciona (spec 027): no tiene sentido dejar el panel de
+   * enseñanza mostrando a alguien que ya no está en la formación. */
+  quitar(ocupanteId: string): void {
+    this.borrador.update((formacion) => formacion.filter((c) => idDe(c) !== ocupanteId));
+    if (this.jugadorSeleccionadoId() === ocupanteId) {
       this.jugadorSeleccionadoId.set(null);
     }
   }
 
-  /** Marca `celda` como responsabilidad de `jugadorId` (spec 022). Si todavía no tenía ninguna
-   * celda propia, parte del bloque por defecto (spec 024, E6) en vez de partir de vacío — así
-   * pintar una celda nueva la añade a lo que ya se veía, no lo sustituye. Idempotente: pintar
-   * una celda ya suya no la duplica — para despintarla, ver `borrarCelda`. */
-  pintarCelda(jugadorId: string, celda: Celda): void {
+  /** Marca `celda` como responsabilidad de `ocupanteId` (spec 022, extendido a puestos de
+   * defensa por la 038). Si todavía no tenía ninguna celda propia, parte del bloque por defecto
+   * (spec 024, E6) en vez de partir de vacío — así pintar una celda nueva la añade a lo que ya se
+   * veía, no lo sustituye. Idempotente: pintar una celda ya suya no la duplica. */
+  pintarCelda(ocupanteId: string, celda: Celda): void {
     this.borrador.update((formacion) =>
       formacion.map((c) => {
-        if (c.jugador.id !== jugadorId) {
+        if (idDe(c) !== ocupanteId) {
           return c;
         }
         const base = c.celdas ?? bloquePorDefecto(c.punto);
@@ -518,13 +638,14 @@ export class SistemaStore {
     );
   }
 
-  /** Quita `celda` de la responsabilidad de `jugadorId` (spec 022). Si todavía no tenía ninguna
-   * celda propia, parte del bloque por defecto (spec 024, E7): borrar una de sus celdas la
-   * convierte en zona explícita con las que queden, en vez de no hacer nada. Idempotente. */
-  borrarCelda(jugadorId: string, celda: Celda): void {
+  /** Quita `celda` de la responsabilidad de `ocupanteId` (spec 022, extendido a puestos de
+   * defensa por la 038). Si todavía no tenía ninguna celda propia, parte del bloque por defecto
+   * (spec 024, E7): borrar una de sus celdas la convierte en zona explícita con las que queden,
+   * en vez de no hacer nada. Idempotente. */
+  borrarCelda(ocupanteId: string, celda: Celda): void {
     this.borrador.update((formacion) =>
       formacion.map((c) => {
-        if (c.jugador.id !== jugadorId) {
+        if (idDe(c) !== ocupanteId) {
           return c;
         }
         const base = c.celdas ?? bloquePorDefecto(c.punto);
@@ -546,8 +667,14 @@ export class SistemaStore {
     }
     const guardado =
       sistema.tipo === 'defensa'
-        ? guardarFormacionDefensa(sistema, this.rotacionActiva(), this.viaActiva(), this.borrador())
-        : guardarFormacion(sistema, this.rotacionActiva(), this.borrador(), !this.validacionDesactivada());
+        ? guardarVarianteDefensa(
+            sistema,
+            this.casoActivo(),
+            this.situacionActiva(),
+            this.bloqueadoresActivos(),
+            this.borrador() as FormacionDefensa,
+          )
+        : guardarFormacion(sistema, this.rotacionActiva(), this.borrador() as Formacion, !this.validacionDesactivada());
     if (!guardado) {
       return;
     }

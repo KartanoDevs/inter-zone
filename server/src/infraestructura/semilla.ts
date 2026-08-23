@@ -42,21 +42,26 @@ export async function sembrarCatalogoBase(): Promise<void> {
   }
 }
 
-/** Los dos sistemas de ejemplo (specs 025, 030), del equipo masculino (spec 032, spec 033 E10:
+/** Los dos sistemas de ejemplo (specs 025, 038), del equipo masculino (spec 032, spec 033 E10:
  * no hay guía de referencia para inventar contenido del femenino). Invoca las factorías del
- * dominio en vez de copiar sus datos a mano — así nunca pueden desincronizarse. Solo siembra
- * si el equipo masculino no tiene todavía ningún sistema: no sobrescribe el trabajo de nadie.
+ * dominio en vez de copiar sus datos a mano — así nunca pueden desincronizarse. La guarda es
+ * por tipo, no "el equipo tiene algo guardado": tras la spec 038, un equipo puede tener sistemas
+ * de recepción con trabajo real del entrenador (que nunca se resiembra encima) y a la vez no
+ * tener ningún sistema de defensa (por ejemplo, justo después de la migración que los borró) —
+ * si la guarda fuera "cualquier sistema", el de defensa no volvería a sembrarse nunca.
  *
  * Las factorías traen un id literal (`'sistema-por-defecto'`) pensado para `localStorage`, no
  * un UUID — aquí se sustituye por uno real antes de guardar; el resto del contenido (nombre,
  * formaciones, colocaciones, explicaciones) es exactamente el que produce el dominio. */
 export async function sembrarEjemplos(): Promise<void> {
-  const existentes = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' } } });
-  if (existentes > 0) {
-    return;
+  const recepcionExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'recepcion' } });
+  if (recepcionExistente === 0) {
+    await crear({ ...sistemaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
   }
-  await crear({ ...sistemaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
-  await crear({ ...sistemaDefensaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
+  const defensaExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'defensa' } });
+  if (defensaExistente === 0) {
+    await crear({ ...sistemaDefensaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
+  }
 }
 
 async function main(): Promise<void> {

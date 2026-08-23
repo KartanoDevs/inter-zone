@@ -1,18 +1,32 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import type { ConfiguracionRoles, Punto, ViaAtaque } from '../../domain/modelos';
+import type { CasoColocador, ConfiguracionRoles, Punto, SituacionDefensa } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { TAMANO_CELDA } from '../../domain/rejilla';
 import { Modal } from '../comun/modal';
 import { ORDEN_ROLES } from '../comun/orden-roles';
 import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador';
 
-/** Punto fijo donde se pinta al rival para cada vía (spec 021): la ficha no guarda una posición
- * exacta, solo la vía ya derivada — cada pestaña la muestra siempre en el mismo sitio. */
-const PUNTO_POR_VIA: Readonly<Record<ViaAtaque, Punto>> = {
-  z2: { x: 1.5, y: -1.5 },
-  z3: { x: 4.5, y: -1.5 },
-  z4: { x: 7.5, y: -1.5 },
+/** Punto fijo donde se pinta al atacante para cada situación (spec 038): la ficha no guarda una
+ * posición exacta, solo la situación ya derivada — cada pestaña la muestra siempre en el mismo
+ * sitio. Un poco más cerca de la red que en la spec 021 (y = -1.2 en vez de -1.5): a petición del
+ * entrenador, para que quede más claro que ataca desde la línea delantera. La postura inicial no
+ * tiene punto: no hay ficha "A" en esa situación (E11). El ataque por 1 es la zaga derecha rival:
+ * no tiene un tercio de red propio, se sitúa por detrás de la línea de ataque, en el lado
+ * derecho — el espejo de la banda de zona 4, pero desde la zaga. */
+const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
+  z2: { x: 1.5, y: -1.2 },
+  z3: { x: 4.5, y: -1.2 },
+  z4: { x: 7.5, y: -1.2 },
+  z1: { x: 7.5, y: -3.5 },
   pipe: { x: 4.5, y: -3.5 },
+};
+
+/** Punto fijo del colocador rival según el caso (spec 038, E8): delantero, en su zona 2 —que
+ * cae a nuestra izquierda, el espejo de `docs/dominio.md` §3—; trasero, en su zona 1, en el
+ * fondo de su campo. */
+const PUNTO_COLOCADOR_RIVAL: Readonly<Record<CasoColocador, Punto>> = {
+  delantero: { x: 1.5, y: -0.5 },
+  trasero: { x: 7.5, y: -3.5 },
 };
 
 /** Paleta de la vista de conjunto (spec 023), en el mismo orden que `CLAVES_ORDEN_COLOR` de
@@ -79,6 +93,18 @@ function entradasLeyendaDe(configuracion: ConfiguracionRoles): readonly EntradaL
 
 const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
 
+/** Leyenda de las etiquetas propias de defensa (spec 038, E21): el atacante, el colocador rival,
+ * y los seis puestos genéricos con su etiqueta doble según la línea. Se añade a la leyenda
+ * normal solo cuando el sistema activo es de defensa — en recepción no hay nada de esto. */
+const ENTRADAS_LEYENDA_DEFENSA: readonly EntradaLeyenda[] = [
+  { etiqueta: 'A', nombre: 'Atacante' },
+  { etiqueta: 'C', nombre: 'Colocador rival' },
+  { etiqueta: 'C/O', nombre: 'Colocador u opuesto' },
+  { etiqueta: 'R1/R2', nombre: 'Receptor' },
+  { etiqueta: 'C1/C2', nombre: 'Central' },
+  { etiqueta: 'L', nombre: 'Líbero' },
+];
+
 /**
  * El SVG de la pista. `viewBox` en metros (docs/dominio.md §3): origen en la esquina
  * red-lateral izquierda, x a la derecha, y hacia el fondo propio. Nada de píxeles ni
@@ -102,9 +128,11 @@ export class Pista {
   readonly mostrarPosicion = input(true);
   /** Ajuste global: si se pintan los números de metros a la izquierda de la rejilla. */
   readonly mostrarNumerosMetros = input(false);
-  /** Si el sistema activo es de defensa: pinta la ficha rival en la vía activa (spec 021). */
+  /** Si el sistema activo es de defensa: pinta la ficha "A" del atacante y la "C" del colocador
+   * rival (spec 038). */
   readonly mostrarRival = input(false);
-  readonly viaActiva = input<ViaAtaque | null>(null);
+  readonly casoActivo = input<CasoColocador | null>(null);
+  readonly situacionActiva = input<SituacionDefensa | null>(null);
   /** Si se pintan las zonas de responsabilidad: solo en defensa (spec 024, E1). */
   readonly mostrarZonas = input(false);
   /** Todas las celdas pintadas de la formación activa, con su color por jugador (spec 023). */
@@ -120,14 +148,27 @@ export class Pista {
 
   protected readonly lineasRejilla = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   protected readonly numerosMetros = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
-  protected readonly entradasLeyenda = ENTRADAS_LEYENDA;
   protected readonly leyendaAbierta = signal(false);
   protected readonly tamanoCelda = TAMANO_CELDA;
   protected readonly ladoPatron = LADO_PATRON;
 
-  protected readonly puntoRival = computed<Punto | null>(() => {
-    const via = this.viaActiva();
-    return via ? PUNTO_POR_VIA[via] : null;
+  /** La leyenda normal, y en defensa también las entradas propias de defensa (spec 038, E21). */
+  protected readonly entradasLeyenda = computed<readonly EntradaLeyenda[]>(() =>
+    this.mostrarRival() ? [...ENTRADAS_LEYENDA, ...ENTRADAS_LEYENDA_DEFENSA] : ENTRADAS_LEYENDA,
+  );
+
+  /** El punto de la ficha "A" para la situación activa (spec 038): `null` en la postura inicial
+   * (E11, no hay atacante) o si la situación todavía no tiene punto asignado. */
+  protected readonly puntoAtacante = computed<Punto | null>(() => {
+    const situacion = this.situacionActiva();
+    return situacion ? (PUNTO_POR_SITUACION[situacion] ?? null) : null;
+  });
+
+  /** El punto de la ficha "C" del colocador rival (spec 038, E8): siempre presente mientras el
+   * sistema sea de defensa, con independencia de la situación activa. */
+  protected readonly puntoColocadorRival = computed<Punto | null>(() => {
+    const caso = this.casoActivo();
+    return caso ? PUNTO_COLOCADOR_RIVAL[caso] : null;
   });
 
   /** Un patrón de franjas diagonales por cada combinación de colores que comparte alguna

@@ -1,5 +1,11 @@
 import type { Ajustes, AjustesRepository } from '../domain/puertos';
-import type { AlmacenClaveValor } from './local-storage-sistema.repository';
+
+/** Lo mínimo que necesita este repositorio de un almacén de clave-valor. `localStorage` lo
+ * cumple tal cual. */
+export interface AlmacenClaveValor {
+  getItem(clave: string): string | null;
+  setItem(clave: string, valor: string): void;
+}
 
 const CLAVE = 'interzone.ajustes';
 /** 4: se añadió `mostrarNumerosMetros` a la forma persistida. Sin `migrar()` real, un

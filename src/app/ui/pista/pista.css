@@ -60,6 +60,20 @@
   fill: var(--neon-pink);
 }
 
+.app-pista__colocador-rival-circulo {
+  fill: var(--bg-card);
+  stroke: var(--neon-purple);
+  stroke-width: 0.05;
+  opacity: 0.85;
+}
+
+.app-pista__colocador-rival-etiqueta {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.32px;
+  fill: var(--neon-purple);
+}
+
 .app-pista__celda-conjunto {
   fill-opacity: 0.55;
   stroke: rgba(255, 255, 255, 0.25);

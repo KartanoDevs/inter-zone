@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { PALETA_COLORES, Pista, type CeldaConjunto, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
-import { SelectorVia } from '../rotaciones/selector-via';
+import { SelectorCaso } from '../rotaciones/selector-caso';
+import { SelectorSituacion } from '../rotaciones/selector-situacion';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
@@ -11,24 +12,46 @@ import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
-import { SistemaStore, type RotacionValida } from '../../application/sistema.store';
+import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
-import { viaDeAtaque } from '../../domain/defensa';
+import { situacionMasCercana } from '../../domain/defensa';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
 import type {
+  CasoColocador,
   Celda,
   Colocacion,
   EquipoId,
   Formacion,
   Infraccion,
   Jugador,
+  PuestoDefensa,
   Punto,
   ResultadoValidacion,
-  ViaAtaque,
+  SituacionDefensa,
 } from '../../domain/modelos';
+
+/** Etiqueta doble de cada puesto de defensa, según su línea (spec 038, E12): sin depender de
+ * ninguna rotación ni de la plantilla activa — se deriva del puesto, es fijo. */
+const ETIQUETA_PUESTO: Readonly<Record<PuestoDefensa, string>> = {
+  1: 'C/O',
+  2: 'C/O',
+  3: 'C1/C2',
+  4: 'R1/R2',
+  5: 'L',
+  6: 'R1/R2',
+};
+
+function esPuestoDelantero(puesto: PuestoDefensa): boolean {
+  return puesto === 2 || puesto === 3 || puesto === 4;
+}
+
+/** Índice de color de un puesto de defensa en la vista de conjunto (spec 023/038): fijo por
+ * puesto, igual que hoy se deriva por rol — un color estable independiente de quién ocupe el
+ * puesto en la realidad, porque en defensa ya no hay "quién". */
+const INDICE_COLOR_POR_PUESTO: Readonly<Record<PuestoDefensa, number>> = { 1: 0, 2: 5, 3: 3, 4: 1, 5: 6, 6: 2 };
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
@@ -42,8 +65,8 @@ const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 const LIMITE_X: readonly [number, number] = [0, 9];
 const LIMITE_Y: readonly [number, number] = [0, 9];
 
-// La ficha rival solo se mueve dentro de su propio campo (spec 021): ahí es de donde
-// `viaDeAtaque` deriva la vía, y no tiene sentido soltarla fuera de él.
+// La ficha del atacante solo se mueve dentro del campo rival (spec 038, continúa la 021): ahí es
+// de donde `situacionMasCercana` deriva la situación, y no tiene sentido soltarla fuera de él.
 const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
 const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
 
@@ -117,13 +140,26 @@ function distanciaPantalla(a: { clientX: number; clientY: number }, b: { clientX
 }
 
 /** Ver docs/arquitectura.md: con fichas solapadas, se busca la más cercana al punto real del toque. */
-function colocacionMasCercana(formacion: Formacion, punto: Punto): Colocacion | null {
-  return formacion.reduce<Colocacion | null>((mejor, actual) => {
+function colocacionMasCercana(formacion: readonly ColocacionBorrador[], punto: Punto): ColocacionBorrador | null {
+  return formacion.reduce<ColocacionBorrador | null>((mejor, actual) => {
     if (!mejor || distancia(actual.punto, punto) < distancia(mejor.punto, punto)) {
       return actual;
     }
     return mejor;
   }, null);
+}
+
+/** El identificador de a quién ocupa una colocación del borrador, igual que en el store: el id
+ * del jugador en recepción, o `p${puesto}` en defensa (spec 038). Se repite aquí en vez de
+ * importarlo porque en el store es privado — es fontanería de UI, no una regla de dominio. */
+function idOcupanteDe(colocacion: ColocacionBorrador): string {
+  return 'jugador' in colocacion ? colocacion.jugador.id : `p${colocacion.puesto}`;
+}
+
+/** La etiqueta de una colocación del borrador: derivada del rol en recepción (`etiquetaDe`), o
+ * fija por puesto en defensa (spec 038, E12 — no depende de rol ni de plantilla). */
+function etiquetaOcupanteDe(colocacion: ColocacionBorrador): string {
+  return 'jugador' in colocacion ? etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO) : ETIQUETA_PUESTO[colocacion.puesto];
 }
 
 function estadoDe(resultado: ResultadoValidacion | null, jugadorId: string): 'falta' | 'aviso' | 'normal' {
@@ -157,7 +193,8 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
   imports: [
     Pista,
     SelectorRotacion,
-    SelectorVia,
+    SelectorCaso,
+    SelectorSituacion,
     PanelValidacion,
     PaletaJugadores,
     PanelEnsenanza,
@@ -211,44 +248,71 @@ export class Tablero {
   protected readonly infracciones = computed(() => itemsDe(this.store.resultadoValidacion()?.infracciones ?? []));
   protected readonly avisos = computed(() => itemsDe(this.store.resultadoValidacion()?.avisos ?? []));
 
+  /** En defensa un puesto delantero se pinta en línea delantera y el resto en zaga (spec 038,
+   * E12): es fijo por puesto, no depende de ninguna rotación. En recepción sigue derivándose de
+   * la posición rotacional real. */
   protected readonly fichas = computed<readonly FichaVista[]>(() => {
+    if (this.esDefensa()) {
+      const seleccionadoId = this.store.jugadorSeleccionadoId();
+      return this.store.borrador().map((colocacion) => {
+        const puesto = (colocacion as { puesto: PuestoDefensa }).puesto;
+        const id = `p${puesto}`;
+        return {
+          id,
+          punto: colocacion.punto,
+          etiqueta: ETIQUETA_PUESTO[puesto],
+          posicion: 0,
+          estado: 'normal' as const,
+          linea: esPuestoDelantero(puesto) ? ('delantera' as const) : ('zaguera' as const),
+          esLibero: puesto === 5,
+          seleccionada: id === seleccionadoId,
+        };
+      });
+    }
     const resultado = this.store.resultadoValidacion();
     const posicionPorId = this.posicionPorId();
     const seleccionadoId = this.store.jugadorSeleccionadoId();
     return this.store.borrador().map((colocacion) => {
-      const posicionRotacional = posicionPorId.get(colocacion.jugador.id) ?? 0;
+      const c = colocacion as Colocacion;
+      const posicionRotacional = posicionPorId.get(c.jugador.id) ?? 0;
       return {
-        id: colocacion.jugador.id,
-        punto: colocacion.punto,
-        etiqueta: etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+        id: c.jugador.id,
+        punto: c.punto,
+        etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
         posicion: posicionRotacional,
-        estado: estadoDe(resultado, colocacion.jugador.id),
+        estado: estadoDe(resultado, c.jugador.id),
         linea: esLineaDelantera(posicionRotacional) ? 'delantera' : 'zaguera',
-        esLibero: colocacion.jugador.rol === 'libero',
-        seleccionada: colocacion.jugador.id === seleccionadoId,
+        esLibero: c.jugador.rol === 'libero',
+        seleccionada: c.jugador.id === seleccionadoId,
       };
     });
   });
 
-  /** Índice de color del jugador seleccionado (spec 024): qué zona de `celdasVistaConjunto` se
+  /** El índice de color de una colocación del borrador: por rol en recepción, fijo por puesto en
+   * defensa (spec 038) — igual de estable, porque en defensa ya no hay "quién" que lo derive. */
+  private indiceColorDeColocacion(colocacion: ColocacionBorrador): number {
+    return 'jugador' in colocacion ? indiceColorDe(colocacion.jugador) : INDICE_COLOR_POR_PUESTO[colocacion.puesto];
+  }
+
+  /** Índice de color del ocupante seleccionado (spec 024): qué zona de `celdasVistaConjunto` se
    * pinta a plena intensidad; las de los demás se atenúan (E12). `null` si no hay nadie
    * seleccionado, y entonces ninguna se destaca (E13). */
   protected readonly indiceColorSeleccionado = computed<number | null>(() => {
     const id = this.store.jugadorSeleccionadoId();
-    const colocacion = this.store.borrador().find((c) => c.jugador.id === id);
-    return colocacion ? indiceColorDe(colocacion.jugador) : null;
+    const colocacion = this.store.borrador().find((c) => idOcupanteDe(c) === id);
+    return colocacion ? this.indiceColorDeColocacion(colocacion) : null;
   });
 
-  /** Todas las celdas pintadas de la formación activa, con el índice de color de cada jugador
+  /** Todas las celdas pintadas de la formación activa, con el índice de color de cada ocupante
    * que la cubre (spec 023, E1); varios índices en la misma celda si la comparten (E3). El
-   * jugador seleccionado aporta sus celdas efectivas (spec 024): incluye el bloque por defecto
+   * ocupante seleccionado aporta sus celdas efectivas (spec 024): incluye el bloque por defecto
    * si todavía no ha pintado nada — los demás solo lo que tengan pintado de verdad. */
   protected readonly celdasVistaConjunto = computed<readonly CeldaConjunto[]>(() => {
     const seleccionadoId = this.store.jugadorSeleccionadoId();
     const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
     for (const colocacion of this.store.borrador()) {
-      const indice = indiceColorDe(colocacion.jugador);
-      const celdas = colocacion.jugador.id === seleccionadoId ? this.store.celdasJugadorSeleccionado() : (colocacion.celdas ?? []);
+      const indice = this.indiceColorDeColocacion(colocacion);
+      const celdas = idOcupanteDe(colocacion) === seleccionadoId ? this.store.celdasJugadorSeleccionado() : (colocacion.celdas ?? []);
       for (const celda of celdas) {
         const clave = `${celda.columna},${celda.fila}`;
         const existente = porClave.get(clave);
@@ -265,17 +329,22 @@ export class Tablero {
   /** Leyenda de la vista de conjunto: los seis, con o sin zona pintada (spec 023, E2). */
   protected readonly leyendaVistaConjunto = computed<readonly EntradaLeyendaColor[]>(() =>
     this.store.borrador().map((colocacion) => ({
-      etiqueta: etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-      indiceColor: indiceColorDe(colocacion.jugador),
+      etiqueta: etiquetaOcupanteDe(colocacion),
+      indiceColor: this.indiceColorDeColocacion(colocacion),
     })),
   );
 
+  /** El banquillo de jugadores sin colocar solo existe en recepción (spec 038): en defensa los
+   * seis puestos son fijos, no hay jugadores de los que tirar. */
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() => {
+    if (this.esDefensa()) {
+      return [];
+    }
     const posiciones = this.store.posicionesActivas();
     if (!posiciones) {
       return [];
     }
-    const colocadosIds = new Set(this.store.borrador().map((c) => c.jugador.id));
+    const colocadosIds = new Set(this.store.borrador().map((c) => idOcupanteDe(c)));
     return posiciones
       .filter((jugador) => !colocadosIds.has(jugador.id))
       .sort((a, b) => claveOrdenRol(a.rol, a.indice) - claveOrdenRol(b.rol, b.indice))
@@ -369,22 +438,38 @@ export class Tablero {
     return nombre ? `${nombre} (copia)` : '';
   });
 
+  /** Etiqueta legible de la situación activa, para el título de enseñanza en defensa. */
+  private readonly ETIQUETAS_SITUACION: Readonly<Record<SituacionDefensa, string>> = {
+    inicial: 'Inicial',
+    z4: 'Ataque por 4',
+    z3: 'Ataque por 3',
+    z2: 'Ataque por 2',
+    z1: 'Ataque por 1',
+    pipe: 'Pipe',
+  };
+
   protected readonly tituloEnsenanza = computed(() => {
-    const base = `Enseñanza · R${this.store.rotacionActiva()}`;
+    const base = this.esDefensa()
+      ? `Enseñanza · ${this.ETIQUETAS_SITUACION[this.store.situacionActiva()]}`
+      : `Enseñanza · R${this.store.rotacionActiva()}`;
     const seleccionadoId = this.store.jugadorSeleccionadoId();
     if (!seleccionadoId) {
       return base;
     }
-    const jugador = this.store.borrador().find((c) => c.jugador.id === seleccionadoId)?.jugador;
-    return jugador ? `${base} · ${etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO)}` : base;
+    const colocacion = this.store.borrador().find((c) => idOcupanteDe(c) === seleccionadoId);
+    return colocacion ? `${base} · ${etiquetaOcupanteDe(colocacion)}` : base;
   });
 
   protected seleccionarRotacion(rotacion: number): void {
     this.store.seleccionarRotacion(rotacion as RotacionValida);
   }
 
-  protected seleccionarVia(via: ViaAtaque): void {
-    this.store.seleccionarVia(via);
+  protected seleccionarCaso(caso: CasoColocador): void {
+    this.store.seleccionarCaso(caso);
+  }
+
+  protected seleccionarSituacion(situacion: SituacionDefensa): void {
+    this.store.seleccionarSituacion(situacion);
   }
 
   protected elegirSistema(id: string): void {
@@ -523,27 +608,23 @@ export class Tablero {
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
     const borrador = this.store.borrador();
     const punto = this.pistaCmp().puntoDesde(agarrada.evento);
-    const colocacion = colocacionMasCercana(borrador, punto) ?? borrador.find((c) => c.jugador.id === agarrada.id);
+    const colocacion = colocacionMasCercana(borrador, punto) ?? borrador.find((c) => idOcupanteDe(c) === agarrada.id);
     if (!colocacion) {
       return;
     }
-    this.iniciarArrastre(
-      colocacion.jugador.id,
-      etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-      agarrada.evento,
-      'pista',
-    );
+    this.iniciarArrastre(idOcupanteDe(colocacion), etiquetaOcupanteDe(colocacion), agarrada.evento, 'pista');
   }
 
   /**
-   * Arrastre de la ficha rival (spec 021): mucho más simple que `iniciarArrastre` porque no
-   * hay tap-vs-drag que distinguir (la ficha no se selecciona) ni jugador que colocar — solo
-   * un fantasma que sigue al puntero y, al soltar, deriva la vía del punto de caída.
+   * Arrastre de la ficha del atacante "A" (spec 038, continúa la 021): mucho más simple que
+   * `iniciarArrastre` porque no hay tap-vs-drag que distinguir (la ficha no se selecciona) ni
+   * puesto que colocar — solo un fantasma que sigue al puntero y, al soltar, deriva la
+   * situación del punto de caída.
    */
   protected onAgarrarRival(evento: PointerEvent): void {
     evento.preventDefault();
     this.pistaCmp().capturarPuntero(evento);
-    this.arrastre.set({ jugadorId: '__rival__', etiqueta: 'Rival', clientX: evento.clientX, clientY: evento.clientY });
+    this.arrastre.set({ jugadorId: '__rival__', etiqueta: 'Atacante', clientX: evento.clientX, clientY: evento.clientY });
 
     const mover = (e: PointerEvent): void => {
       this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
@@ -560,7 +641,7 @@ export class Tablero {
       limpiar(e);
       const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
       this.arrastre.set(null);
-      this.store.seleccionarVia(viaDeAtaque(punto));
+      this.store.seleccionarSituacion(situacionMasCercana(punto, this.store.casoActivo()));
     };
 
     const cancelar = (e: PointerEvent): void => {
@@ -702,7 +783,7 @@ export class Tablero {
       window.clearTimeout(temporizador);
       this.arrastre.set({ jugadorId, etiqueta, clientX, clientY });
       if (origen === 'pista') {
-        const colocacion = this.store.borrador().find((c) => c.jugador.id === jugadorId);
+        const colocacion = this.store.borrador().find((c) => idOcupanteDe(c) === jugadorId);
         if (colocacion) {
           this.store.colocarOMover(jugadorId, colocacion.punto);
         }

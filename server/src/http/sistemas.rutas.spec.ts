@@ -97,18 +97,16 @@ function normalizarFormaciones(formaciones: Readonly<Record<string, readonly any
   return resultado;
 }
 
+/** `defensas` es una lista de variantes (spec 038), no una secuencia con orden significativo:
+ * se ordena por (caso, situación, bloqueadores) y cada formación por puesto antes de comparar. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizarDefensas(
-  defensas: Readonly<Record<string, Readonly<Record<string, readonly any[]>>>> | undefined,
-): Record<string, Record<string, unknown[]>> {
+function normalizarDefensas(defensas: readonly any[] | undefined): any[] {
   if (!defensas) {
-    return {};
+    return [];
   }
-  const resultado: Record<string, Record<string, unknown[]>> = {};
-  for (const [rotacion, porVia] of Object.entries(defensas)) {
-    resultado[rotacion] = normalizarFormaciones(porVia);
-  }
-  return resultado;
+  return [...defensas]
+    .map((v) => ({ ...v, formacion: [...v.formacion].sort((a: any, b: any) => a.puesto - b.puesto) }))
+    .sort((a, b) => `${a.caso}/${a.situacion}/${a.bloqueadores}`.localeCompare(`${b.caso}/${b.situacion}/${b.bloqueadores}`));
 }
 
 describe('API de sistemas (spec 033)', () => {
@@ -181,9 +179,9 @@ describe('API de sistemas (spec 033)', () => {
       expect(leido.formaciones[1]).toBeUndefined();
     });
 
-    it('033-E11: las celdas de una colocación sobreviven con sus tres estados', async () => {
+    it('033-E11: las celdas de una colocación de recepción sobreviven con sus tres estados', async () => {
       const id = crypto.randomUUID();
-      const { cuerpo: creado } = await postSistema(sistemaVacio(id, 'Defensa', 'defensa', 'masculino'));
+      const { cuerpo: creado } = await postSistema(sistemaVacio(id, 'Recepción', 'recepcion', 'masculino'));
       const [j1, j2, j3, j4, j5, j6] = jugadoresEnPista(PLANTILLA_GLOBAL, 1);
 
       const formacion: Formacion = [
@@ -202,12 +200,12 @@ describe('API de sistemas (spec 033)', () => {
         { jugador: j6, punto: { x: 6, y: 6 } },
       ];
 
-      const { status } = await putSistema(id, { ...creado, defensas: { 1: { z4: formacion } } }, creado.actualizadoEn);
+      const { status } = await putSistema(id, { ...creado, formaciones: { 1: formacion } }, creado.actualizadoEn);
       expect(status).toBe(200);
 
       const [leido] = await getCatalogo('masculino');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const guardadas: any[] = leido.defensas['1'].z4;
+      const guardadas: any[] = leido.formaciones['1'];
       expect(guardadas.find((c) => c.jugador.id === j1.id).celdas).toBeUndefined();
       expect(guardadas.find((c) => c.jugador.id === j2.id).celdas).toEqual([]);
       expect(guardadas.find((c) => c.jugador.id === j3.id).celdas).toEqual(
@@ -217,6 +215,45 @@ describe('API de sistemas (spec 033)', () => {
         ]),
       );
       expect(guardadas.find((c) => c.jugador.id === j3.id).celdas).toHaveLength(2);
+    });
+
+    it('038-E17 (servidor): las celdas de una colocación de defensa sobreviven con sus tres estados', async () => {
+      const id = crypto.randomUUID();
+      const { cuerpo: creado } = await postSistema(sistemaVacio(id, 'Defensa', 'defensa', 'masculino'));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formacion: any[] = [
+        { puesto: 1, punto: { x: 1, y: 1 } }, // celdas ausente: nunca tocada
+        { puesto: 2, punto: { x: 2, y: 2 }, celdas: [] }, // vaciada a propósito
+        {
+          puesto: 3,
+          punto: { x: 3, y: 3 },
+          celdas: [
+            { columna: 0, fila: 0 },
+            { columna: 17, fila: 17 },
+          ],
+        },
+        { puesto: 4, punto: { x: 4, y: 4 } },
+        { puesto: 5, punto: { x: 5, y: 5 } },
+        { puesto: 6, punto: { x: 6, y: 6 } },
+      ];
+      const defensas = [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion }];
+
+      const { status } = await putSistema(id, { ...creado, defensas }, creado.actualizadoEn);
+      expect(status).toBe(200);
+
+      const [leido] = await getCatalogo('masculino');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const guardadas: any[] = leido.defensas.find((v: any) => v.caso === 'delantero' && v.situacion === 'z4').formacion;
+      expect(guardadas.find((c) => c.puesto === 1).celdas).toBeUndefined();
+      expect(guardadas.find((c) => c.puesto === 2).celdas).toEqual([]);
+      expect(guardadas.find((c) => c.puesto === 3).celdas).toEqual(
+        expect.arrayContaining([
+          { columna: 0, fila: 0 },
+          { columna: 17, fila: 17 },
+        ]),
+      );
+      expect(guardadas.find((c) => c.puesto === 3).celdas).toHaveLength(2);
     });
   });
 

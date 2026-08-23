@@ -57,27 +57,29 @@ export type TipoSistema = 'recepcion' | 'defensa';
 export type EquipoId = 'masculino' | 'femenino';
 
 /** Por dónde ataca el rival: los tres tercios de la línea delantera, o el pipe por el centro
- * de zaga (spec 021). Se deriva de dónde se suelta la ficha rival; nunca se declara a mano. */
+ * de zaga (spec 021). Se deriva de dónde se suelta la ficha rival; nunca se declara a mano.
+ * @deprecated Sustituida por `SituacionDefensa` (spec 038): la rotación deja de mandar en
+ * defensa y las vías disponibles pasan a depender de `CasoColocador`. */
 export type ViaAtaque = 'z4' | 'z3' | 'z2' | 'pipe';
 
-/** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
-export interface Sistema {
-  readonly id: string;
-  readonly nombre: string;
-  readonly tipo: TipoSistema;
-  /** Equipo al que pertenece (spec 032). El catálogo se filtra por él; la unicidad del nombre
-   * se comprueba dentro de (equipoId, tipo), no globalmente. */
-  readonly equipoId: EquipoId;
-  readonly plantilla: PlantillaEquipo;
-  readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
-  /** Explicación general del sistema, independiente de cualquier rotación. Voluntaria (spec 025). */
-  readonly descripcion?: string;
-  /** Explicación de enseñanza de conjunto para cada rotación guardada. Voluntaria. */
-  readonly explicacionesRotacion: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>>>;
-  /** Formaciones de defensa, por rotación y por vía de ataque (spec 021). Ausente en un sistema
-   * de recepción, o mientras no se haya guardado ninguna defensa todavía. */
-  readonly defensas?: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Readonly<Partial<Record<ViaAtaque, Formacion>>>>>>;
-}
+/** Si el colocador rival está en la línea delantera o en la zaga (spec 038): determina cuántos
+ * atacantes tiene disponibles su equipo y qué situaciones de ataque existen para ese caso. */
+export type CasoColocador = 'delantero' | 'trasero';
+
+/** Contra qué ataca el rival, en defensa (spec 038): la postura de base, o una de las zonas de
+ * su ataque — las mismas cuatro que `ViaAtaque` más el ataque por 1, que solo existe cuando el
+ * colocador rival es delantero (deja libre su propia zona de zaga derecha para atacar). Qué
+ * subconjunto es válido para cada caso lo decide `situacionesDe`, no el tipo. */
+export type SituacionDefensa = 'inicial' | 'z4' | 'z3' | 'z2' | 'z1' | 'pipe';
+
+/** Una de las seis zonas físicas del campo propio (spec 038): 1, 5 y 6 en zaga; 2, 3 y 4 en la
+ * red. Sustituye al jugador concreto como ocupante de una colocación de defensa — no hay
+ * rotación que decida quién está en cada puesto, el diagrama coloca por puesto genérico. */
+export type PuestoDefensa = 1 | 2 | 3 | 4 | 5 | 6;
+
+/** Cuántos puestos delanteros bloquean en una variante de defensa (spec 039). 0 es "nadie
+ * bloquea"; el máximo son los tres puestos de la red. */
+export type NumeroBloqueadores = 0 | 1 | 2 | 3;
 
 /** Una celda de la rejilla de responsabilidad, de `TAMANO_CELDA` metros de lado (`rejilla.ts`,
  * ADR 0004). */
@@ -98,6 +100,56 @@ export interface Colocacion {
 
 /** Dónde se coloca cada jugador del orden de saque, para una rotación concreta. */
 export type Formacion = readonly Colocacion[];
+
+/** Un puesto genérico ocupado en una formación de defensa (spec 038): sin jugador, sin
+ * rotación — es la contraparte de `Colocacion` cuando no hay ocupante concreto que colocar. */
+export interface ColocacionDefensa {
+  readonly puesto: PuestoDefensa;
+  readonly punto: Punto;
+  /** Explicación de enseñanza para este puesto en esta variante. Voluntaria. */
+  readonly explicacion?: string;
+  /** Celdas de la rejilla de responsabilidad que este puesto cubre (spec 038, continúa la 022). */
+  readonly celdas?: readonly Celda[];
+}
+
+export type FormacionDefensa = readonly ColocacionDefensa[];
+
+/** Una defensa guardada para un caso de colocador rival, una situación de ataque y un número de
+ * bloqueadores (specs 038-039): solo existen las variantes que el entrenador cree. */
+export interface VarianteDefensa {
+  readonly caso: CasoColocador;
+  readonly situacion: SituacionDefensa;
+  /** Número de bloqueadores de esta variante (spec 039). Siempre 0 cuando `situacion` es
+   * `'inicial'`: la postura de base no admite variantes de bloqueo. */
+  readonly bloqueadores: NumeroBloqueadores;
+  readonly formacion: FormacionDefensa;
+  /** Explicación de enseñanza de conjunto para esta variante. Voluntaria. */
+  readonly explicacion?: string;
+  /** Retoque manual de la sombra de bloqueo respecto a su posición calculada (spec 040).
+   * Ausente si nunca se ha arrastrado la sombra de esta variante. */
+  readonly desplazamientoSombra?: Punto;
+}
+
+/** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
+export interface Sistema {
+  readonly id: string;
+  readonly nombre: string;
+  readonly tipo: TipoSistema;
+  /** Equipo al que pertenece (spec 032). El catálogo se filtra por él; la unicidad del nombre
+   * se comprueba dentro de (equipoId, tipo), no globalmente. */
+  readonly equipoId: EquipoId;
+  readonly plantilla: PlantillaEquipo;
+  readonly formaciones: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
+  /** Explicación general del sistema, independiente de cualquier rotación. Voluntaria (spec 025). */
+  readonly descripcion?: string;
+  /** Explicación de enseñanza de conjunto para cada rotación guardada. Voluntaria. Solo se usa
+   * en recepción: en defensa, la explicación de conjunto va por variante (spec 038). */
+  readonly explicacionesRotacion: Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, string>>>;
+  /** Variantes de defensa guardadas (spec 038, sustituye a la forma por rotación y vía de la
+   * spec 021). Ausente en un sistema de recepción, o mientras no se haya guardado ninguna
+   * defensa todavía. */
+  readonly defensas?: readonly VarianteDefensa[];
+}
 
 export type TipoComparacion = 'zaguero-delantero' | 'orden-lateral' | 'libero-delantero';
 

@@ -13,9 +13,10 @@ sin cubrir.
 ## Qué hace hoy
 
 - Arrancar con dos sistemas de ejemplo ya construidos: la recepción a 3 en 5-1 (seis rotaciones
-  colocadas y explicadas) y la defensa especializada por zonas (veinticuatro formaciones, con su
-  zona de responsabilidad pintada). Los siembra el servidor (`npm run seed` en `server/`) si la
-  base de datos está vacía.
+  colocadas y explicadas) y la defensa especializada por zonas (una formación por cada caso del
+  colocador rival y situación de ataque con material de referencia, con su zona de
+  responsabilidad pintada). Los siembra el servidor (`npm run seed` en `server/`) si la base de
+  datos está vacía.
 - Crear, renombrar, clonar y borrar varios sistemas con nombre —de recepción o de defensa—, cada
   uno de un equipo (masculino o femenino), y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
@@ -24,8 +25,9 @@ sin cubrir.
   formación según le toque, como en un partido real.
 - Bloquear el guardado de una rotación que cometa falta de posición — o permitirlo a propósito,
   desactivando la validación para enseñar una excepción (spec 017).
-- Crear sistemas de defensa: colocar a los seis defensores por rotación y por vía de ataque
-  del rival (zona 4, zona 3, zona 2, pipe), sin validación de posición.
+- Crear sistemas de defensa: colocar seis puestos genéricos según el caso del colocador rival
+  (delantero o trasero) y la situación de ataque que le corresponde a ese caso, sin validación
+  de posición — en defensa la rotación no manda nada.
 - Escribir por qué se coloca así una rotación, un jugador dentro de ella, o el sistema entero
   — enseñanza, no solo geometría.
 - Pintar sobre una rejilla la zona de responsabilidad de cada uno de los seis defensores, y
@@ -135,12 +137,16 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs
    014–015 — **el siguiente paso** (ADR 0028).
 6. **Exportar e importar JSON y PNG.** Compartir un sistema sin depender del servidor. Spec 016.
-7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por rotación y por vía de
-   ataque del rival (zona 4, zona 3, zona 2, pipe): se marca la vía soltando una ficha rival
-   genérica en su campo, se colocan los seis defensores (mismo roster que en recepción, líbero
-   incluido) y se guarda sin validación de posición — en defensa esa regla no existe. Spec 021.
-   La rejilla pintable del paso 5 se generaliza para activarse también aquí: pintar la zona de
-   cada defensor y verlas todas a la vez son las specs 022–023.
+7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por el caso del colocador
+   rival (delantero o trasero) y por la situación de ataque que le corresponde a ese caso — la
+   rotación no manda nada en defensa, solo cambia quién ocupa cada puesto, nunca la tarea. Se
+   marca la situación soltando la ficha "A" del atacante en el campo rival, junto a la ficha "C"
+   del colocador; se colocan seis puestos genéricos (no jugadores concretos) y se guarda sin
+   validación de posición — en defensa esa regla no existe. Specs 021 y 038 (038 sustituye la
+   rotación y la vía de ataque de la 021 por caso y situación). La rejilla pintable del paso 5 se
+   generaliza para activarse también aquí: pintar la zona de cada puesto y verlas todas a la vez
+   son las specs 022–023. **Pendientes en este mismo paso:** variantes por número de bloqueadores
+   (spec 039) y la sombra del bloqueo (spec 040).
 8. **Backend, cuentas y equipos (v2).** Los sistemas dejan de vivir en un navegador y pasan a una
    base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
    estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);

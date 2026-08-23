@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AlmacenClaveValor } from './local-storage-sistema.repository';
-import { LocalStorageAjustesRepository } from './local-storage-ajustes.repository';
+import { LocalStorageAjustesRepository, type AlmacenClaveValor } from './local-storage-ajustes.repository';
 
 class AlmacenEnMemoria implements AlmacenClaveValor {
   private readonly valores = new Map<string, string>();

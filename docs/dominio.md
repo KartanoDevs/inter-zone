@@ -125,26 +125,48 @@ Un jugador se representa por **un solo punto**. La regla real habla del pie más
 de cada jugador; para el propósito didáctico de esta herramienta, un punto por jugador es
 suficiente y evita un modelo mucho más complicado sin ganancia pedagógica.
 
-### Vía de ataque (sistemas de defensa)
+### Defensa: caso del colocador rival y situación de ataque
+
+**En defensa no hay rotación.** Lo que cambia entre rotaciones es solo quién ocupa cada zona,
+nunca la tarea; lo que sí decide cuántos ataques tiene disponibles el rival es dónde está su
+colocador (spec 038). Un sistema de defensa se organiza por:
+
+- **Caso del colocador rival**: `delantero` (ocupa una de las tres zonas de la red) o `trasero`
+  (está en zaga). Es un dato que el entrenador declara, no algo que se derive de una rotación
+  rival que no existe en el modelo.
+- **Situación de ataque**: la postura inicial (sin atacante marcado), o una de las zonas por las
+  que puede atacar el rival. Las situaciones disponibles dependen del caso:
+
+  | Caso | Situaciones |
+  |---|---|
+  | `delantero` | inicial, ataque por 4, ataque por 3, pipe, ataque por 1 |
+  | `trasero` | inicial, ataque por 4, ataque por 3, ataque por 2, pipe |
+
+  Con el colocador delante, su equipo no puede atacar por su zona 2 (ahí está él), pero el
+  zaguero derecho sí puede (ataque por 1). Con el colocador detrás, no hay ataque por 1, pero su
+  zona 2 queda libre para el opuesto.
 
 El rival mira la red desde el lado contrario, así que sus zonas salen **en espejo** respecto a
 las propias: su zona 4 (su ala izquierda) cae, vista desde nuestro fondo, a nuestra
 **derecha** — `x` alto — y su zona 2 a nuestra izquierda.
 
-| Vía | Condición | Lectura |
+| Situación | Condición (para soltar al atacante) | Lectura |
 |---|---|---|
 | `z2` | `y > -3` y `x < 3` | delantera rival, nuestro tercio izquierdo |
 | `z3` | `y > -3` y `3 ≤ x < 6` | delantera rival, tercio central |
 | `z4` | `y > -3` y `x ≥ 6` | delantera rival, nuestro tercio derecho |
 | `pipe` | `y ≤ -3` | zaga rival, cualquier `x` |
+| `z1` | — | zaguero derecho rival; solo se elige por selector, no tiene tercio propio en la red |
 
-La vía se **deriva** de dónde se coloca al rival en su campo; no se declara a mano y no se
-persiste una posición exacta — solo la vía ya resuelta (ver
-`docs/decisiones/0020-via-de-ataque-sin-posicion-persistida.md`). En defensa, el roster de cada
-rotación (titulares o líbero según toque) es el mismo que en recepción, y **no existe la
-validación de posición**: no es un ajuste desactivable, es que la falta posicional solo tiene
-sentido en el instante de la recepción del saque (§5), no en la defensa de un ataque ya en
-juego.
+La situación se **deriva** de dónde se coloca al atacante en el campo rival; no se declara a mano
+y no se persiste una posición exacta — solo la situación ya resuelta (ver
+`docs/decisiones/0020-via-de-ataque-sin-posicion-persistida.md`, que sigue vigente bajo el nombre
+nuevo). **Los seis puestos de defensa son genéricos** (1..6, la zona física del campo propio),
+nunca jugadores concretos ni posiciones rotacionales: la etiqueta que se pinta en cada uno se
+deriva de la línea, no del rol de ningún jugador — `C/O`, `R1/R2` y `C1/C2` en la red; `C/O`,
+`R1/R2` y `L` en zaga. **Sigue sin existir la validación de posición** (spec 021, sin cambios): no
+es un ajuste desactivable, es que la falta posicional solo tiene sentido en el instante de la
+recepción del saque (§5), no en la defensa de un ataque ya en juego.
 
 ---
 
