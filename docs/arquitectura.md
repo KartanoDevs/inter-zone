@@ -229,7 +229,8 @@ Adaptadores hacia el mundo exterior.
   fuera de alcance a propósito: son preferencias de pantalla por dispositivo (validación
   desactivada, ayuda de posición…), no trabajo de un entrenador que perder, y no hay tabla de
   servidor para ellos todavía (`docs/modelo-de-datos.md` los convierte en columnas de `usuario`,
-  que no existe hasta la spec 035). Mismo patrón (versión + data) que
+  que no existe y queda aplazado — ADR 0028, así que este adaptador deja de ser una parada
+  intermedia y pasa a ser el definitivo por tiempo indefinido). Mismo patrón (versión + data) que
   `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la app,
   no de un sistema concreto (ADR 0015). Sigue siendo un único documento de cuatro banderas que
   se reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
@@ -301,8 +302,10 @@ navegador, ejecutándose en Node.
   eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
-- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, sin autenticación todavía (specs
-  035-037): reciben y devuelven el `Sistema` de dominio tal cual lo serializa el cliente, sin
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, **sin autenticación y aplazada**
+  (ADR 0028: las specs 035-037 salen del camino corto, así que la API se queda abierta — vale en
+  local, no vale expuesta a internet): reciben y devuelven el `Sistema` de dominio tal cual lo
+  serializa el cliente, sin
   traducción de forma en la frontera HTTP. `PUT` exige la cabecera `If-Match` con el testigo de
   concurrencia; `409` si caducó.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el

@@ -10,31 +10,28 @@ El objetivo no es dibujar bonito: es que un jugador entienda **por qué** se col
 coloca, y que el entrenador vea al instante si una formación es **legal** y si deja **huecos**
 sin cubrir.
 
-## Qué hace (v1)
+## Qué hace hoy
 
 - Arrancar con dos sistemas de ejemplo ya construidos: la recepción a 3 en 5-1 (seis rotaciones
   colocadas y explicadas) y la defensa especializada por zonas (veinticuatro formaciones, con su
   zona de responsabilidad pintada). Los siembra el servidor (`npm run seed` en `server/`) si la
   base de datos está vacía.
-- Definir varias plantillas de equipo, cada una con sus roles y su orden de saque.
-- Crear, renombrar, clonar y borrar varios sistemas de recepción con nombre, cada uno ligado a
-  una plantilla y a un equipo (masculino o femenino), y elegir con cuál se trabaja.
+- Crear, renombrar, clonar y borrar varios sistemas con nombre —de recepción o de defensa—, cada
+  uno de un equipo (masculino o femenino), y elegir con cuál se trabaja.
 - Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
   numeradas por dónde está el colocador).
 - El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la
   formación según le toque, como en un partido real.
-- Bloquear el guardado de una rotación que cometa falta de posición.
+- Bloquear el guardado de una rotación que cometa falta de posición — o permitirlo a propósito,
+  desactivando la validación para enseñar una excepción (spec 017).
 - Crear sistemas de defensa: colocar a los seis defensores por rotación y por vía de ataque
   del rival (zona 4, zona 3, zona 2, pipe), sin validación de posición.
 - Escribir por qué se coloca así una rotación, un jugador dentro de ella, o el sistema entero
   — enseñanza, no solo geometría.
-- Pintar sobre una rejilla la zona de responsabilidad de cada receptor.
-- Detectar huecos (nadie cubre) y conflictos (dos o más se pisan).
-- Consultar un sistema guardado, rotación a rotación, en solo lectura.
-- Examinarse: colocar los jugadores y recibir una nota de perfección frente al sistema
-  guardado, además del veredicto de legalidad.
-- Guardar en un servidor propio (PostgreSQL); exportar e importar JSON y PNG. Los ajustes de
-  pantalla (validación desactivada, ayuda de posición…) siguen en el navegador, por dispositivo.
+- Pintar sobre una rejilla la zona de responsabilidad de cada uno de los seis defensores, y
+  verlas todas a la vez con su leyenda de colores. Solo en los sistemas de defensa (spec 024).
+- Guardar en un servidor propio (PostgreSQL). Los ajustes de pantalla (validación desactivada,
+  ayuda de posición…) siguen en el navegador, por dispositivo.
 
 ## Qué NO hace
 
@@ -44,9 +41,22 @@ separados por equipo masculino y femenino, y la pizarra hablando con el servidor
 varios dispositivos— se cumplió; la decisión está en
 `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
 
-**Todavía no, pero está decidido y en marcha:** login con Google o contraseña, lista blanca de
-correos y tres roles de acceso. El esquema está en `docs/modelo-de-datos.md`; las tablas de
-sistemas ya existen, las de acceso llegan con las specs 035-037.
+**Aplazado, con el diseño ya hecho:** login con Google o contraseña, lista blanca de correos y
+tres roles de acceso. El esquema sigue intacto en `docs/modelo-de-datos.md` §4, pero las specs
+035-037 salieron del camino corto (ADR 0028) y el siguiente paso son huecos y conflictos. Mientras
+tanto **el servidor no tiene autenticación**: basta en local y no basta en una máquina expuesta a
+internet.
+
+**Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 012–016 en la numeración de
+specs están guardados para esto, y hasta que no se escriban no existe ni la spec ni el código:
+
+- Consultar un sistema en solo lectura y examinarse con nota de perfección (specs 012–013).
+- Detectar huecos (nadie cubre) y conflictos (dos o más se pisan) sobre la rejilla ya pintada
+  (specs 014–015) — **el siguiente paso**, ver el paso 5 de la hoja de ruta.
+- Exportar e importar JSON y PNG (spec 016).
+- Definir varias plantillas de equipo desde la aplicación. Las reglas ya están en `domain/`
+  (`plantillas-equipo.ts`), pero hoy todos los sistemas usan la misma plantilla fija:
+  `PLANTILLA_GLOBAL`, una constante de la aplicación (ADR 0013).
 
 **Fuera a propósito, también en la v2:** PWA offline y sincronización sin conexión. `localStorage`
 no se queda como modo desconectado para los sistemas; se sustituyó por el servidor. Sí se queda,
@@ -120,8 +130,10 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    punto en que la herramienta enseña algo tocándola. Specs 006–011.
 4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
    jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 012–013.
-5. **Rejilla pintable, huecos y conflictos.** Zonas de responsabilidad de cada receptor.
-   Specs 014–015.
+5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
+   028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
+   Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs
+   014–015 — **el siguiente paso** (ADR 0028).
 6. **Exportar e importar JSON y PNG.** Compartir un sistema sin depender del servidor. Spec 016.
 7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por rotación y por vía de
    ataque del rival (zona 4, zona 3, zona 2, pipe): se marca la vía soltando una ficha rival
@@ -133,10 +145,11 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
    estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);
    cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
-   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034). **Pendiente:** se entra
-   con lista blanca, contraseña y Google (specs 035-036); y los tres roles deciden quién ve y
-   quién edita cada cosa (spec 037) — estas tres, sin fichero de spec todavía. El esquema
-   completo, en `docs/modelo-de-datos.md`.
+   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034). **Aplazado (ADR 0028):** se
+   entra con lista blanca, contraseña y Google (specs 035-036); y los tres roles deciden quién ve
+   y quién edita cada cosa (spec 037). El diseño de las tres sigue completo en
+   `docs/modelo-de-datos.md`, pero salen del camino corto: se retoman cuando alguien pida entrar
+   desde fuera, o antes de exponer el servidor a internet — lo que ocurra primero.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

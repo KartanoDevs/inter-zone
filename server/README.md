@@ -1,7 +1,9 @@
 # InterZone — servidor
 
-API REST que guarda y sirve sistemas en PostgreSQL (spec 033). Sin autenticación todavía
-(specs 035-037). Importa `src/app/domain/` directamente — ver
+API REST que guarda y sirve sistemas en PostgreSQL (spec 033). **Sin autenticación, y aplazada**
+(ADR 0028): las specs 035-037 salieron del camino corto, así que la API acepta cualquier petición
+del origen permitido. Vale en local; **no vale en una máquina expuesta a internet**.
+Importa `src/app/domain/` directamente — ver
 `docs/decisiones/0025-el-servidor-importa-el-dominio.md`.
 
 ## Arranque
@@ -61,4 +63,5 @@ server/
 
 Seis tablas de las nueve de `docs/modelo-de-datos.md` (`equipo`, `jugador`, `sistema`,
 `sistema_rotacion`, `formacion`, `colocacion`). Las tres de acceso (`usuario`, `lista_blanca`,
-`membresia`) llegan con la spec 035, en una migración nueva que no toca esta.
+`membresia`) quedan **aplazadas** (ADR 0028): su diseño sigue intacto y, cuando se retomen,
+entrarán en una migración nueva que no toca esta.

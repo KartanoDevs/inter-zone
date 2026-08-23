@@ -10,7 +10,8 @@ voleibol sin tener que discutir tablas por el camino.
 
 **Seis de las nueve tablas ya están construidas** (spec 033): `equipo`, `jugador`, `sistema`,
 `sistema_rotacion`, `formacion`, `colocacion`. Las tres de acceso —`usuario`, `lista_blanca`,
-`membresia`— siguen sin construir, y llegan con las specs 035-037. Ver la sección 9, al final.
+`membresia`— siguen sin construir y **quedan aplazadas** (ADR 0028): su diseño no se toca, pero ya
+no tienen spec asignada. Ver la sección 9, al final.
 
 ## Aviso de vocabulario: «rol» significa ahora dos cosas
 
@@ -100,7 +101,8 @@ tener que tocar el esquema.
 
 ### `usuario`
 
-**Sin construir** — llega con la spec 035.
+**Sin construir, aplazada** (ADR 0028). El diseño de abajo sigue vigente; lo que se retiró es la
+spec que iba a construirlo.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS citext;
@@ -159,7 +161,7 @@ puede cambiar sin romper nada. Mismo criterio que `RolId` frente a `DefinicionRo
 
 ### `lista_blanca`
 
-**Sin construir** — llega con la spec 035.
+**Sin construir, aplazada** (ADR 0028).
 
 ```sql
 CREATE TABLE lista_blanca (
@@ -189,7 +191,7 @@ regla acabaríamos con dos sitios que dicen cosas distintas sobre la misma perso
 
 ### `membresia`
 
-**Sin construir** — llega con la spec 037 (los tres roles de acceso).
+**Sin construir, aplazada** (ADR 0028). Era la spec 037, los tres roles de acceso.
 
 ```sql
 CREATE TABLE membresia (
@@ -212,7 +214,7 @@ porque no está acotado a ningún equipo.
 ### Matriz de permisos
 
 **Diseño, no ejecutable todavía**: las consultas de esta sección asumen `membresia` y
-`usuario.es_admin`, que no existen hasta la spec 037.
+`usuario.es_admin`, que no existen — y con la ADR 0028 tampoco tienen ya fecha de llegada.
 
 Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
 
@@ -349,7 +351,7 @@ CREATE INDEX sistema_por_equipo ON sistema (equipo_id, tipo, estado);
 **Construida con las columnas de acceso aplazadas** (spec 033): la migración real de
 `server/prisma/migrations/` omite `creado_por`, `validado_por`, `validado_en` y el `CHECK
 sistema_validado_con_fecha`, porque no hay tabla `usuario` a la que referenciar todavía. Llegan
-en la migración de la spec 035 o 037, sin tocar el resto de esta tabla.
+en la migración de acceso cuando se retome (ADR 0028), sin tocar el resto de esta tabla.
 
 - **`UNIQUE (equipo_id, tipo, nombre)`.** Hoy la unicidad es `(tipo, nombre)` —lo comprueba
   `colisiona` en `src/app/domain/catalogo-sistemas.ts`, y la spec 006 E5 acepta a propósito el mismo
@@ -601,7 +603,7 @@ Ida y vuelta entre lo que hay hoy y las tablas.
 | `Colocacion.explicacion` | `colocacion.explicacion` |
 | `Colocacion.celdas` | `colocacion.celdas` (índice lineal) |
 | `SistemaPersistido.creadoEn` / `.actualizadoEn` | `sistema.creado_en` / `.actualizado_en` |
-| `Ajustes` (los cuatro) | columnas de `usuario` (plan — hasta la spec 035 siguen en `localStorage`) |
+| `Ajustes` (los cuatro) | columnas de `usuario` (plan aplazado, ADR 0028 — siguen en `localStorage`, por tiempo indefinido) |
 
 Lo que hay que tener presente:
 
@@ -627,8 +629,8 @@ Lo que hay que tener presente:
   en infraestructura como las fechas. **`equipo` ya se resolvió** (spec 032): `Sistema` ganó el
   campo `equipoId` directamente, no un método de metadatos aparte. **`estado` sigue sin
   resolver** — la tabla `sistema` ya tiene la columna `estado_sistema`, pero nace siempre
-  `'borrador'`; nada la lee ni la cambia todavía. Queda para cuando la spec 037 dé sentido a
-  «validado».
+  `'borrador'`; nada la lee ni la cambia todavía. Solo la spec 037 le daría sentido, y está
+  aplazada (ADR 0028): la columna se queda como está, sin uso y sin borrarse.
 - **La política de versionado de la v1 dejó de valer para los sistemas.** Antes, una versión
   distinta a la esperada se trataba como payload ilegible: se descartaba todo y se sembraba de
   cero. Contra una base de datos eso habría sido borrar el trabajo de un equipo. Se sustituyó por
@@ -653,12 +655,17 @@ Lo que hay que tener presente:
 
 ---
 
-## 9. Estado: seis tablas construidas, tres pendientes
+## 9. Estado: seis tablas construidas, tres aplazadas
 
 Las seis tablas de voleibol —`equipo`, `jugador`, `sistema`, `sistema_rotacion`, `formacion`,
 `colocacion`— están construidas, migradas y con datos desde la spec 033. Las tres de acceso
-—`usuario`, `lista_blanca`, `membresia`— siguen siendo solo diseño: llegan con las specs
-035-037, en una migración aparte que no toca las seis ya existentes.
+—`usuario`, `lista_blanca`, `membresia`— siguen siendo solo diseño y **quedan aplazadas**
+(ADR 0028): las specs 035-037 salieron del camino corto, y el siguiente paso pasa a ser huecos y
+conflictos. Cuando se retomen, entrarán en una migración aparte que no toca las seis ya
+existentes — igual que estaba previsto.
+
+**Nada de este documento caduca por eso.** El diseño de la sección 4 no se ha tocado y sigue
+siendo el plan; lo único que cambia es cuándo se construye.
 
 Antes de que se construyera nada de esto, lo que había que resolver era el permiso para
 construirlo. Los tres textos que lo bloqueaban ya se reescribieron:
@@ -697,8 +704,8 @@ Lo que este documento provocó directamente y **ya está hecho**, con la suite e
 
 **Sesión, sin diseñar todavía.** Ninguna sección de este documento contempla cómo se guarda una
 sesión de acceso (cookie firmada, JWT, tabla de tokens…) — no hay ni una mención a sesión, token
-o cookie en todo el fichero. Es requisito previo de la spec 035: se decide al congelarla, con su
-propia ADR. Si la decisión resulta ser una tabla nueva, el principio 3 de la sección 1 («nueve
+o cookie en todo el fichero. Es requisito previo de la spec 035 — hoy aplazada (ADR 0028), así que
+la decisión también se aplaza: se toma al congelar esa spec, con su propia ADR. Si la decisión resulta ser una tabla nueva, el principio 3 de la sección 1 («nueve
 tablas») pasa a diez, y la tabla de la sección 7 gana una fila.
 
 **Requisito de versión:** el esquema da por hecho **PostgreSQL 15 o superior**. Lo necesita

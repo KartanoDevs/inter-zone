@@ -36,8 +36,9 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0020](0020-via-de-ataque-sin-posicion-persistida.md) | La vía de ataque se persiste como valor derivado, no como posición del rival | Aceptada |
 | [0021](0021-sistema-por-defecto-sembrado.md) | El sistema de recepción por defecto se siembra, no se guarda como dato fijo | Aceptada |
 | [0022](0022-id-de-central-alineado-con-su-etiqueta.md) | El id de un central coincide con su etiqueta: `central1` es `C1` | Aceptada |
-| [0023](0023-cierra-la-v1-entra-el-backend.md) | Se cierra la v1: entran backend, base de datos y cuentas | Aceptada |
+| [0023](0023-cierra-la-v1-entra-el-backend.md) | Se cierra la v1: entran backend, base de datos y cuentas | Precisada por 0028 |
 | [0024](0024-puerto-de-persistencia-asincrono-y-granular.md) | El puerto de persistencia es asíncrono y granular | Aceptada |
 | [0025](0025-el-servidor-importa-el-dominio.md) | El servidor importa `src/app/domain/` directamente | Aceptada |
 | [0026](0026-escritura-antes-de-mutar-estado-local.md) | El store escribe en el repositorio antes de mutar sus signals, nunca al revés | Aceptada |
 | [0027](0027-cerrar-spec-tambien-actualiza-arquitectura-y-readme.md) | Cerrar una spec también actualiza `docs/arquitectura.md` y `README.md` si tocó la estructura | Aceptada |
+| [0028](0028-se-aplaza-la-autenticacion-entran-huecos-y-conflictos.md) | Se aplaza la autenticación; el siguiente paso es huecos y conflictos | Aceptada |
