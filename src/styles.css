@@ -47,6 +47,13 @@ body {
   padding: 0;
 }
 
+html {
+  /* La app es oscura sin alternativa clara: sin esto, el navegador pinta los controles
+     nativos (el desplegable de `<select>`, su lista de opciones, la barra de scroll) con su
+     tema claro por defecto, blanco sobre negro y fuera del sistema de diseño. */
+  color-scheme: dark;
+}
+
 body {
   background: var(--bg-dark);
   color: var(--text-secondary);
