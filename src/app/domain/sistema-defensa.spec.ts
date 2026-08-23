@@ -90,6 +90,25 @@ describe('guardarVarianteDefensa', () => {
 
     expect(resultado).not.toBeNull();
   });
+
+  it('040-E10: guardar con un desplazamiento de sombra lo asocia a la variante', () => {
+    const sistema = sistemaDefensaVacio(plantillaEstandar());
+
+    const resultado = guardarVarianteDefensa(sistema, 'delantero', 'z4', 2, formacionSeisPuestos(), { x: 1, y: 0.5 })!;
+
+    expect(resultado.defensas?.[0].desplazamientoSombra).toEqual({ x: 1, y: 0.5 });
+  });
+
+  it('040-E13: guardar sin desplazamiento (recentrado) lo borra de la variante', () => {
+    const sistema: Sistema = {
+      ...sistemaDefensaVacio(plantillaEstandar()),
+      defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: formacionSeisPuestos(), desplazamientoSombra: { x: 1, y: 0.5 } }],
+    };
+
+    const resultado = guardarVarianteDefensa(sistema, 'delantero', 'z4', 2, formacionSeisPuestos())!;
+
+    expect(resultado.defensas?.[0].desplazamientoSombra).toBeUndefined();
+  });
 });
 
 describe('puestosQueBloquean', () => {

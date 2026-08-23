@@ -75,6 +75,14 @@
   <rect class="app-pista__borde-campo" x="0" y="0" width="9" height="9"></rect>
   <line class="app-pista__red" x1="0" y1="0" x2="9" y2="0"></line>
 
+  @for (poligono of sombra(); track $index) {
+    <polygon
+      class="app-pista__sombra"
+      [attr.points]="puntosSvg(poligono)"
+      (pointerdown)="onSombraPointerDown($event)"
+    ></polygon>
+  }
+
   @if (mostrarZonas()) {
     <g class="app-pista__celdas-conjunto">
       @for (celda of celdasVistaConjunto(); track celda.columna + '-' + celda.fila) {

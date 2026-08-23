@@ -787,6 +787,47 @@ describe('SistemaStore', () => {
       const variante2 = store.sistemaActivo()?.defensas?.find((v) => v.bloqueadores === 2);
       expect(variante2?.formacion).toEqual([puesto3]);
     });
+
+    it('040-E10: desplazar la sombra y guardar la asocia a la variante activa', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensaVacio()]));
+      await store.cargar();
+      seisPuestosEnCentro().forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
+      store.desplazarSombra({ x: 1, y: 0.5 });
+
+      await store.guardar();
+
+      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      expect(variante?.desplazamientoSombra).toEqual({ x: 1, y: 0.5 });
+    });
+
+    it('040-E11: al recargar el contexto, el desplazamiento guardado se recupera', async () => {
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: seisPuestosEnCentro(), desplazamientoSombra: { x: 0.5, y: -0.2 } }],
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+
+      await store.cargar();
+
+      expect(store.desplazamientoSombraEdicion()).toEqual({ x: 0.5, y: -0.2 });
+    });
+
+    it('040-E13: recentrar descarta el retoque; guardar de nuevo lo borra de la variante', async () => {
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: seisPuestosEnCentro(), desplazamientoSombra: { x: 0.5, y: -0.2 } }],
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      await store.cargar();
+
+      store.recentrarSombra();
+      expect(store.desplazamientoSombraEdicion()).toBeNull();
+
+      await store.guardar();
+
+      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      expect(variante?.desplazamientoSombra).toBeUndefined();
+    });
   });
 
   describe('zonas de responsabilidad', () => {

@@ -45,3 +45,5 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0029](0029-puestos-de-defensa-genericos.md) | Los puestos de defensa son genéricos: tipo paralelo, no jugadores | Aceptada |
 | [0030](0030-defensas-antiguas-no-se-migran.md) | Las defensas guardadas por rotación y vía no se migran | Aceptada |
 | [0031](0031-se-retira-localstorage-sistema-repository.md) | Se retira `LocalStorageSistemaRepository` | Aceptada |
+| [0032](0032-sombra-poligono-no-rejilla.md) | La sombra de bloqueo es geometría derivada: polígono, no rejilla | Aceptada |
+| [0033](0033-desplazamiento-sombra-sin-posicion-atacante.md) | Del atacante se sigue sin persistir la posición; se persiste el retoque de la sombra | Aceptada |

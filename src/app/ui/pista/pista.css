@@ -74,6 +74,16 @@
   fill: var(--neon-purple);
 }
 
+/* La sombra de bloqueo (spec 040): oscura y traslúcida, sin ningún color de la paleta de
+   jugadores — es geometría derivada, no responsabilidad de ningún puesto (E14). Un `stroke`
+   sutil la distingue del fondo del campo sin competir con la rejilla de zonas. */
+.app-pista__sombra {
+  fill: rgba(4, 6, 20, 0.55);
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.02;
+  cursor: grab;
+}
+
 .app-pista__celda-conjunto {
   fill-opacity: 0.55;
   stroke: rgba(255, 255, 255, 0.25);

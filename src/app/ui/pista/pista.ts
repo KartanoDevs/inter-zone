@@ -13,7 +13,7 @@ import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador
  * tiene punto: no hay ficha "A" en esa situación (E11). El ataque por 1 es la zaga derecha rival:
  * no tiene un tercio de red propio, se sitúa por detrás de la línea de ataque, en el lado
  * derecho — el espejo de la banda de zona 4, pero desde la zaga. */
-const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
+export const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
   z2: { x: 1.5, y: -1.2 },
   z3: { x: 4.5, y: -1.2 },
   z4: { x: 7.5, y: -1.2 },
@@ -140,9 +140,14 @@ export class Pista {
   /** Índice de color del jugador seleccionado: su zona se pinta a plena intensidad; las de los
    * demás se atenúan (spec 024, E12-E13). */
   readonly indiceColorSeleccionado = input<number | null>(null);
+  /** La sombra de bloqueo ya calculada (spec 040): uno o más polígonos, en metros. Nunca en
+   * recepción (E15) — es `Tablero` quien decide si la pasa o no. */
+  readonly sombra = input<readonly (readonly Punto[])[]>([]);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
+  /** Se agarra la sombra de bloqueo para retocarla a mano (spec 040, E10). */
+  readonly sombraAgarrada = output<PointerEvent>();
   /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
   readonly fondoAgarrado = output<PointerEvent>();
 
@@ -202,6 +207,11 @@ export class Pista {
     return activo === null || celda.indicesColor.includes(activo) ? 1 : 0.35;
   }
 
+  /** El atributo `points` de un `<polygon>` SVG a partir de un polígono en metros (spec 040). */
+  protected puntosSvg(poligono: readonly Punto[]): string {
+    return poligono.map((p) => `${p.x},${p.y}`).join(' ');
+  }
+
   private readonly svgRef = viewChild.required<ElementRef<SVGSVGElement>>('svgPista');
 
   puntoDesde(evento: PointerEvent): Punto {
@@ -247,5 +257,12 @@ export class Pista {
   protected onRivalPointerDown(evento: PointerEvent): void {
     evento.stopPropagation();
     this.rivalAgarrado.emit(evento);
+  }
+
+  /** No propaga: por el mismo motivo que `onRivalPointerDown` — si llegara al fondo, dispararía
+   * también el modo pintar. */
+  protected onSombraPointerDown(evento: PointerEvent): void {
+    evento.stopPropagation();
+    this.sombraAgarrada.emit(evento);
   }
 }

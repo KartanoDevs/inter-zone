@@ -1,6 +1,6 @@
 # 040 — La sombra del bloqueo
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 7 (sistemas de defensa)
 
 **Depende de:** specs 038 y 039 (caso de colocador, variantes por número de bloqueadores),
@@ -145,4 +145,61 @@ Ninguna. Resueltas con el usuario antes de escribir esta spec:
 
 ## Al cerrar
 
-Pendiente — se completa cuando la spec esté implementada.
+Los 15 escenarios pasan. Suite de `domain/`, `application/` e `infrastructure/`: 275 al cerrar la
+039 → 290 al cerrar esta. Suite de `server/`: 13, sin cambios de número — igual que con
+`bloqueadores` en la 039, el esquema y el repositorio ya tenían `sombra_dx`/`sombra_dy` listos
+desde la migración de la spec 038, así que no hizo falta ni migración ni código de servidor
+nuevo. `npm run typecheck` y `npm run build` limpios en las tres capas.
+
+**Único fichero de dominio nuevo: `domain/sombra-bloqueo.ts`.** El resto del trabajo real cayó en
+`application/sistema.store.ts` (una signal nueva, `desplazamientoSombraEdicion`, y tres métodos:
+`desplazarSombra`, `recentrarSombra`, y la ampliación de `cambiarContexto`/`guardar`) y en
+`ui/pista/` + `ui/tablero/` (el polígono SVG, su arrastre, y el botón de recentrar).
+
+**La fórmula geométrica se implementó de una vez, no escenario a escenario.** A diferencia del
+resto de esta sesión (rojo → mínimo → verde por escenario), aquí se escribió primero un
+escenario trivial (E2, sin bloqueadores no hay sombra, código mínimo real: `[]`) y después, para
+E1, la geometría completa —fusión de tramos, proyección cónica, recorte Sutherland–Hodgman—
+de golpe. Justificación explícita, no un atajo silencioso: fragmentar un recorte de polígono
+convexo en piezas que pasaran un test cada una habría producido código a medio hacer en los
+pasos intermedios (un recortador que solo funciona contra un borde, por ejemplo), que es
+justo lo que el protocolo de esta sesión prohíbe generar. El resto de escenarios (E5-E13) sí
+llegaron uno a uno contra esa implementación ya completa, cada uno con su rojo genuino antes de
+confirmarse en verde — dos de ellos (E5-E13 sobre el mismo cálculo) fallaron primero por
+geometría de prueba mal elegida, no por el código de producción: el test de E10-E11 tuvo que
+ajustarse dos veces (profundidad del atacante, magnitud del desplazamiento) hasta dar con una
+combinación que no tocara los bordes del campo y permitiera comparar vértice a vértice — el
+propio cono se abre más de lo intuitivo cerca de la red, y hubo que calcular el ancho real en
+`y=9` antes de fijar los números del escenario en vez de adivinarlos.
+
+**Decisiones de implementación tomadas sin devolver la pregunta al usuario**, documentadas aquí
+por transparencia, todas ya previstas y justificadas en el plan de diseño previo a esta spec:
+`ANCHO_BLOQUEADOR = 1` m (las manos de un bloqueador tapan ~1 m de red); `HOLGURA_VANO = 0.15` m
+para fusionar tramos en una pared cerrada (E6-E7); `PROFUNDIDAD_MINIMA = 0.2` m como cota inferior
+de la profundidad del atacante, para que el cono no se vuelva infinito si se coloca justo sobre
+la red; y que en `puestosQueBloquean(...)` con empate exacto de distancia a la red (ningún
+escenario lo especifica) gane el orden de aparición en la formación, por ser el comportamiento
+natural de un `sort` estable sin ninguna regla añadida encima.
+
+**El botón de recentrar solo aparece cuando hay algo que recentrar**
+(`store.desplazamientoSombraEdicion()` no nulo): no estaba en ningún escenario explícito, pero
+es la lectura directa de E13 ("recentrar descarta el retoque") — mostrarlo siempre invitaría a
+pulsarlo sobre una sombra ya calculada, sin ningún efecto visible.
+
+**`docs/dominio.md` gana una subsección nueva** ("La sombra del bloqueo", bajo la sección de
+defensa) con la simplificación geométrica explicada en lenguaje de voleibol: el bloqueo se lee
+como un tramo de red, no como una pared a la altura del jugador. `docs/arquitectura.md` gana
+`sombra-bloqueo.ts` en la lista de `domain/`, la ampliación de `application/` y `ui/`, y una nota
+sobre el esquema del servidor ya cerrado desde la spec 038.
+
+**Dos ADR nuevos**, ambos ya anticipados y redactados en el plan de diseño antes de escribir la
+spec: **0032** (la sombra es geometría derivada, un polígono SVG y no una rejilla de celdas —
+acota la ADR 0004 sin contradecirla, y deja anotado `celdasDeSombra()` como puerta futura para
+huecos y conflictos, sin implementarla) y **0033** (la posición del atacante sigue sin
+persistirse — extiende la ADR 0020 — y lo único que se guarda del retoque de sombra es el
+desplazamiento manual).
+
+**Lo que no se desvió:** las cuatro decisiones cerradas con el usuario antes de escribir la spec
+(cálculo geométrico real en vez de una forma fija, retoque manual arrastrable, posición del
+atacante nunca persistida, y polígono en vez de rejilla) se implementaron exactamente como se
+acordaron. Con esta spec se completa el trío 038-039-040 de la reestructuración de defensa.

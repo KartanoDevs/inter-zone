@@ -183,6 +183,24 @@ deja de contar como posible bloqueador, y el número declarado no cambia — cam
 Si hay menos delanteros colocados en el campo que bloqueadores declarados, bloquean los que haya;
 no se inventa uno.
 
+### La sombra del bloqueo
+
+La sombra es la superficie del campo propio que la pared de bloqueadores le esconde al atacante
+(spec 040): la pieza que une el bloqueo con la defensa de zaga, porque decide dónde tiene que
+reaccionar cada defensor. Se calcula sola, no se dibuja a mano, y se recalcula al mover al
+atacante o a un bloqueador.
+
+**Simplificación deliberada:** en planta, cada bloqueador tapa un tramo de la red (~1 m, el ancho
+de sus manos), no una pared a la altura exacta donde esté parado. Dos bloqueadores cuyos tramos
+se solapan o quedan muy cerca forman una única pared cerrada; separados, dejan un pasillo de luz
+entre sus dos sombras — el hueco que un bloqueo mal cerrado deja pasar, visible de un vistazo. La
+sombra se abre en cono desde la red hacia el fondo: cuanto más cerca de la red ataca el rival,
+más campo tapa el mismo bloqueo; cuanto más atrás (una pipe, por ejemplo), menos. Se recorta
+siempre a las líneas del campo propio; si cae por completo fuera, no hay nada que dibujar.
+
+Se puede retocar arrastrándola a mano, y solo ese retoque se guarda — nunca la posición del
+atacante (§3, la vía/situación sigue siendo lo único persistido de dónde ataca el rival).
+
 ---
 
 ## 4. Disposición de las posiciones rotacionales

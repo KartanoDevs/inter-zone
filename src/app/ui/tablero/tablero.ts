@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { PALETA_COLORES, Pista, type CeldaConjunto, type FichaAgarrada, type FichaVista } from '../pista/pista';
+import { PALETA_COLORES, PUNTO_POR_SITUACION, Pista, type CeldaConjunto, type FichaAgarrada, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorCaso } from '../rotaciones/selector-caso';
 import { SelectorSituacion } from '../rotaciones/selector-situacion';
@@ -17,6 +17,8 @@ import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../.
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
+import { puestosQueBloquean } from '../../domain/sistema-defensa';
+import { sombraDeBloqueo } from '../../domain/sombra-bloqueo';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
@@ -415,6 +417,31 @@ export class Tablero {
       .map((v) => v.bloqueadores);
   });
 
+  /** La sombra de bloqueo de la variante activa (spec 040): se recalcula sola a partir del
+   * punto del atacante (el canónico de la situación, o el punto bajo el puntero mientras se
+   * arrastra la ficha "A" — spec E3, ver `arrastreAtacante`) y de los puestos que bloquean según
+   * `puestosQueBloquean`, más el desplazamiento manual en edición. Vacía en la postura inicial
+   * (no hay atacante) y en recepción (no hay bloqueo). */
+  protected readonly sombra = computed<readonly (readonly Punto[])[]>(() => {
+    if (!this.esDefensa()) {
+      return [];
+    }
+    const puntoAtacante = this.arrastreAtacante() ?? PUNTO_POR_SITUACION[this.store.situacionActiva()];
+    if (!puntoAtacante) {
+      return [];
+    }
+    const puestosBloqueadores = puestosQueBloquean(this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[], this.store.bloqueadoresActivos());
+    const puntosBloqueadores = puestosBloqueadores
+      .map((puesto) => (this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[]).find((c) => c.puesto === puesto)?.punto)
+      .filter((p): p is Punto => p !== undefined);
+    return sombraDeBloqueo(puntoAtacante, puntosBloqueadores, this.store.desplazamientoSombraEdicion() ?? undefined);
+  });
+
+  /** Punto bajo el puntero mientras se arrastra la ficha "A" (spec 040, E3): la sombra se
+   * recalcula en vivo desde aquí, aunque la ficha en sí solo se mueve visualmente como fantasma
+   * y encaja en su punto canónico al soltar — nunca se persiste una posición libre (ADR 0020). */
+  protected readonly arrastreAtacante = signal<Punto | null>(null);
+
   /**
    * Si lo guardado ya no está entre las opciones (p. ej. quedó de antes de filtrar el
    * desplegable a solo zagueros), se ve "Ninguno" — coherente con lo que `jugadoresEnPista` ya
@@ -647,9 +674,13 @@ export class Tablero {
     evento.preventDefault();
     this.pistaCmp().capturarPuntero(evento);
     this.arrastre.set({ jugadorId: '__rival__', etiqueta: 'Atacante', clientX: evento.clientX, clientY: evento.clientY });
+    this.arrastreAtacante.set(acotarPuntoRival(this.pistaCmp().puntoDesde(evento)));
 
     const mover = (e: PointerEvent): void => {
       this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
+      // La sombra se recalcula en vivo desde el punto bajo el puntero (spec 040, E3); la ficha
+      // solo encaja en su punto canónico al soltar, nunca se persiste una posición libre.
+      this.arrastreAtacante.set(acotarPuntoRival(this.pistaCmp().puntoDesde(e)));
     };
 
     const limpiar = (e: PointerEvent): void => {
@@ -663,17 +694,60 @@ export class Tablero {
       limpiar(e);
       const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
       this.arrastre.set(null);
+      this.arrastreAtacante.set(null);
       this.store.seleccionarSituacion(situacionMasCercana(punto, this.store.casoActivo()));
     };
 
     const cancelar = (e: PointerEvent): void => {
       limpiar(e);
       this.arrastre.set(null);
+      this.arrastreAtacante.set(null);
     };
 
     window.addEventListener('pointermove', mover);
     window.addEventListener('pointerup', soltar);
     window.addEventListener('pointercancel', cancelar);
+  }
+
+  /**
+   * Arrastre de la sombra de bloqueo (spec 040, E10): mismo patrón simple que `onAgarrarRival`
+   * — sin tap-vs-drag, sin fantasma HTML — pero en vez de derivar una situación al soltar,
+   * acumula el desplazamiento respecto al punto donde se agarró y lo deja en edición para que
+   * `guardar()` lo persista.
+   */
+  protected onAgarrarSombra(evento: PointerEvent): void {
+    evento.preventDefault();
+    this.pistaCmp().capturarPuntero(evento);
+    const inicio = this.pistaCmp().puntoDesde(evento);
+    const desplazamientoInicial = this.store.desplazamientoSombraEdicion() ?? { x: 0, y: 0 };
+
+    const mover = (e: PointerEvent): void => {
+      const actual = this.pistaCmp().puntoDesde(e);
+      this.store.desplazarSombra({
+        x: desplazamientoInicial.x + (actual.x - inicio.x),
+        y: desplazamientoInicial.y + (actual.y - inicio.y),
+      });
+    };
+
+    const limpiar = (e: PointerEvent): void => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', soltar);
+      this.pistaCmp().liberarPuntero(e);
+    };
+
+    const soltar = (e: PointerEvent): void => {
+      limpiar(e);
+    };
+
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
+  }
+
+  /** Descarta el retoque de la sombra y vuelve a la calculada (spec 040, E13). */
+  protected recentrarSombra(): void {
+    this.store.recentrarSombra();
   }
 
   /**

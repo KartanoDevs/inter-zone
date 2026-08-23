@@ -114,6 +114,11 @@ export class SistemaStore {
   /** Número de bloqueadores de la variante activa (spec 039). Siempre 0 en la situación inicial. */
   readonly bloqueadoresActivos = signal<NumeroBloqueadores>(0);
   readonly borrador = signal<readonly ColocacionBorrador[]>([]);
+  /** Retoque de la sombra de bloqueo en edición (spec 040): `null` si nunca se ha desplazado.
+   * Se carga desde `VarianteDefensa.desplazamientoSombra` al cambiar de contexto, igual que
+   * `borrador` se carga desde la formación guardada — pero es un desplazamiento, no una lista de
+   * colocaciones, así que necesita su propia signal. */
+  readonly desplazamientoSombraEdicion = signal<Punto | null>(null);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
@@ -673,6 +678,7 @@ export class SistemaStore {
             this.situacionActiva(),
             this.bloqueadoresActivos(),
             this.borrador() as FormacionDefensa,
+            this.desplazamientoSombraEdicion() ?? undefined,
           )
         : guardarFormacion(sistema, this.rotacionActiva(), this.borrador() as Formacion, !this.validacionDesactivada());
     if (!guardado) {
@@ -681,6 +687,7 @@ export class SistemaStore {
     const exito = await this.reemplazarSistema(guardado, () => void this.guardar());
     if (exito) {
       this.borrador.set(this.formacionGuardadaActiva());
+      this.desplazamientoSombraEdicion.set(this.varianteDefensaActiva()?.desplazamientoSombra ?? null);
     }
   }
 
@@ -698,5 +705,19 @@ export class SistemaStore {
   private cambiarContexto(): void {
     this.borrador.set(this.formacionGuardadaActiva());
     this.jugadorSeleccionadoId.set(null);
+    this.desplazamientoSombraEdicion.set(this.varianteDefensaActiva()?.desplazamientoSombra ?? null);
+  }
+
+  /** Retoca el desplazamiento de la sombra de bloqueo en edición (spec 040, E10): se llama
+   * mientras se arrastra, y el valor final se persiste al guardar. */
+  desplazarSombra(desplazamiento: Punto): void {
+    this.desplazamientoSombraEdicion.set(desplazamiento);
+  }
+
+  /** Descarta el retoque y vuelve a la sombra calculada (spec 040, E13). El desplazamiento
+   * guardado no se borra hasta que se guarda de nuevo — igual que cualquier otro cambio en el
+   * borrador. */
+  recentrarSombra(): void {
+    this.desplazamientoSombraEdicion.set(null);
   }
 }

@@ -72,10 +72,25 @@
           [mostrarZonas]="esDefensa()"
           [celdasVistaConjunto]="celdasVistaConjunto()"
           [indiceColorSeleccionado]="indiceColorSeleccionado()"
+          [sombra]="sombra()"
           (fichaAgarrada)="onAgarrarFicha($event)"
           (rivalAgarrado)="onAgarrarRival($event)"
+          (sombraAgarrada)="onAgarrarSombra($event)"
           (fondoAgarrado)="iniciarPintado($event)"
         ></app-pista>
+        @if (esDefensa() && store.desplazamientoSombraEdicion()) {
+          <button
+            type="button"
+            class="app-tablero__recentrar-sombra"
+            title="Recentrar la sombra del bloqueo"
+            (click)="recentrarSombra()"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 12a8 8 0 1 1 2.3 5.6" />
+              <polyline points="4,17 4,12 9,12" />
+            </svg>
+          </button>
+        }
         <app-speeddial [acciones]="accionesSistema()" (elegir)="elegirAccionSistema($event)"></app-speeddial>
         <app-panel-validacion [completo]="completo()" [infracciones]="infracciones()" [avisos]="avisos()"></app-panel-validacion>
       </div>

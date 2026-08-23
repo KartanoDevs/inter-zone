@@ -1,4 +1,4 @@
-import type { CasoColocador, ColocacionDefensa, FormacionDefensa, NumeroBloqueadores, PuestoDefensa, SituacionDefensa, Sistema } from './modelos';
+import type { CasoColocador, ColocacionDefensa, FormacionDefensa, NumeroBloqueadores, Punto, PuestoDefensa, SituacionDefensa, Sistema } from './modelos';
 
 const PUESTOS = [1, 2, 3, 4, 5, 6] as const;
 const PUESTOS_DELANTEROS: readonly PuestoDefensa[] = [2, 3, 4];
@@ -23,6 +23,7 @@ export function guardarVarianteDefensa(
   situacion: SituacionDefensa,
   bloqueadores: NumeroBloqueadores,
   formacion: FormacionDefensa,
+  desplazamientoSombra?: Punto,
 ): Sistema | null {
   if (situacion === 'inicial' && bloqueadores !== 0) {
     return null;
@@ -33,7 +34,7 @@ export function guardarVarianteDefensa(
   const otras = (sistema.defensas ?? []).filter(
     (v) => !(v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores),
   );
-  const defensas = [...otras, { caso, situacion, bloqueadores, formacion }];
+  const defensas = [...otras, { caso, situacion, bloqueadores, formacion, ...(desplazamientoSombra ? { desplazamientoSombra } : {}) }];
   return { ...sistema, defensas };
 }
 

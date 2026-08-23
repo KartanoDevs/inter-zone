@@ -142,11 +142,13 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    rotación no manda nada en defensa, solo cambia quién ocupa cada puesto, nunca la tarea. Se
    marca la situación soltando la ficha "A" del atacante en el campo rival, junto a la ficha "C"
    del colocador; se colocan seis puestos genéricos (no jugadores concretos) y se guarda sin
-   validación de posición — en defensa esa regla no existe. Specs 021 y 038 (038 sustituye la
+   validación de posición — en defensa esa regla no existe. Cada situación admite variantes según
+   cuántos jugadores llegan al bloqueo (0 a 3), con quién bloquea derivado de la posición de los
+   puestos delanteros; y se ve, calculada y retocable a mano, la sombra que ese bloqueo le
+   proyecta al atacante sobre el campo propio. Specs 021, 038, 039 y 040 (038 sustituye la
    rotación y la vía de ataque de la 021 por caso y situación). La rejilla pintable del paso 5 se
    generaliza para activarse también aquí: pintar la zona de cada puesto y verlas todas a la vez
-   son las specs 022–023. **Pendientes en este mismo paso:** variantes por número de bloqueadores
-   (spec 039) y la sombra del bloqueo (spec 040).
+   son las specs 022–023.
 8. **Backend, cuentas y equipos (v2).** Los sistemas dejan de vivir en un navegador y pasan a una
    base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
    estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);

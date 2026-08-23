@@ -79,9 +79,16 @@ Modelos y reglas. Aquí vive el voleibol.
   puestos estén cubiertos sin repetir (spec 038); rechaza declarar bloqueadores en la situación
   `'inicial'` (spec 039). `puestosQueBloquean(formacion, bloqueadores)` (spec 039): deriva quién
   bloquea de la distancia a la red de los puestos delanteros, sin pasar de la línea de 3 metros —
-  nunca se declara puesto a puesto. `explicarVariante` y `explicarPuesto`: equivalentes de
+  nunca se declara puesto a puesto. Acepta un `desplazamientoSombra?: Punto` opcional (spec 040)
+  que se asocia a la variante guardada. `explicarVariante` y `explicarPuesto`: equivalentes de
   `explicarRotacion`/`explicarJugador` para defensa — la explicación de conjunto va por variante,
   no por rotación.
+- `sombra-bloqueo.ts` — `sombraDeBloqueo(atacante, bloqueadores, desplazamiento?)` (spec 040):
+  calcula la sombra que el bloqueo le proyecta al atacante, como una lista de polígonos (uno por
+  pared de bloqueo cerrada; varios si hay un pasillo de luz entre bloqueadores separados). Fusiona
+  tramos de red cercanos en una pared, proyecta un cono desde el atacante hasta el fondo del
+  campo, y recorta con Sutherland–Hodgman al rectángulo `[0,9]×[0,9]`. El desplazamiento se
+  aplica antes de recortar, nunca después. Función pura, sin estado.
 - `plantilla.ts` — `validarPlantilla`: composición y coherencia de índices de los seis
   titulares. El índice de cada jugador se declara en la plantilla, no se deriva (ADR 0017); no
   hay ninguna función que lo calcule. El líbero nunca es uno de los seis (ADR 0014); si aparece
@@ -150,12 +157,15 @@ constructor síncrono.
   `bloqueadoresActivos` (spec 038-039, sustituyen a `viaActiva` de la spec 021 — la rotación no
   manda nada en defensa, así que estos son los ejes de navegación ahí, no `rotacionActiva`),
   `borrador: readonly ColocacionBorrador[]` (`ColocacionBorrador = Colocacion | ColocacionDefensa`:
-  jugador en recepción, puesto genérico en defensa — spec 038), `cambioPendiente` (aviso de
-  cambios sin guardar al cambiar de rotación, de caso, de situación, de bloqueadores, de sistema
-  o de equipo), `jugadorSeleccionadoId` (pese al nombre, guarda el id del ocupante seleccionado:
-  el del jugador en recepción, o `p${puesto}` en defensa — no se renombró para no ampliar el
-  radio de cambio de la spec 038 más de lo necesario), `errorGuardado` (spec 034, ADR 0026:
-  motivo de la última escritura fallida y cómo reintentarla, o `null`).
+  jugador en recepción, puesto genérico en defensa — spec 038), `desplazamientoSombraEdicion`
+  (spec 040: el retoque de la sombra de bloqueo en edición, `null` si nunca se ha desplazado; se
+  carga desde `VarianteDefensa.desplazamientoSombra` igual que `borrador` se carga desde la
+  formación guardada, pero necesita su propia signal porque no es una lista de colocaciones),
+  `cambioPendiente` (aviso de cambios sin guardar al cambiar de rotación, de caso, de situación,
+  de bloqueadores, de sistema o de equipo), `jugadorSeleccionadoId` (pese al nombre, guarda el id
+  del ocupante seleccionado: el del jugador en recepción, o `p${puesto}` en defensa — no se
+  renombró para no ampliar el radio de cambio de la spec 038 más de lo necesario), `errorGuardado`
+  (spec 034, ADR 0026: motivo de la última escritura fallida y cómo reintentarla, o `null`).
 - Derivados con `computed`: `catalogo` (los sistemas de `equipoActivo`, ordenados — spec 032),
   `sistemaActivo`, `posicionesActivas` (quién
   juega de verdad en la rotación activa — titular o líbero, vía `jugadoresEnPista`; solo tiene
@@ -181,7 +191,9 @@ constructor síncrono.
   quitan una celda de la rejilla de responsabilidad de un ocupante en el borrador, spec 022; si
   `celdas` era `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que
   pintar o borrar cualquiera de sus celdas materializa y congela la zona en vez de sustituirla),
-  `guardar` (en defensa llama a `guardarVarianteDefensa` en vez de `guardarFormacion`), `crear` (recibe el
+  `guardar` (en defensa llama a `guardarVarianteDefensa` en vez de `guardarFormacion`, incluyendo
+  `desplazamientoSombraEdicion` si lo hay), `desplazarSombra`/`recentrarSombra` (spec 040: retocan
+  o descartan el desplazamiento en edición; se persiste al llamar a `guardar`), `crear` (recibe el
   equipo del sistema nuevo, spec 032; cambia `equipoActivo` si es distinto del que ya estaba
   activo, para que el sistema recién creado se vea de inmediato), `clonar`
   (spec 026, mismo patrón que `crear` pero a partir del sistema activo; mantiene su equipo, sin
@@ -255,7 +267,12 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   verlas (spec 023 quedó revertida por la 024): la del ocupante seleccionado
   (`indiceColorSeleccionado`) se ve a plena intensidad y las demás atenuadas. Una celda
   compartida se pinta con un patrón SVG de franjas diagonales, uno por cada combinación de
-  colores que aparece.
+  colores que aparece. `Pista` también pinta la sombra de bloqueo (spec 040) como uno o más
+  `<polygon>` — `PUNTO_POR_SITUACION` se exporta desde aquí para que `Tablero` calcule el punto
+  canónico del atacante sin duplicarlo. Un `pointerdown` propio (`sombraAgarrada`) para
+  retocarla, con el mismo `stopPropagation` que la ficha "A" y `FichaJugador`. La sombra se
+  dibuja con relleno oscuro traslúcido, sin ningún color de la paleta de jugadores (E14): es
+  geometría de otra naturaleza, no responsabilidad de ningún puesto.
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6, solo en recepción desde la spec 038),
   `SelectorCaso` (pestañas colocador delantero/trasero) y `SelectorSituacion` (pestañas de
   situación de ataque, dependientes del caso activo) — ambos solo en defensa, spec 038, sustituyen
@@ -290,6 +307,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   trazo se cerró, `celdasDeTrazo` añade las celdas del interior (spec 024, E9-E11). El índice de
   color de cada jugador (`indiceColorDe`) se deriva del mismo orden fijo de roles que ya usan el
   banquillo y la leyenda de etiquetas (`claveOrdenRol`) — nunca se declara ni se guarda.
+  `Tablero.sombra` (spec 040) recalcula la sombra de bloqueo en cada cambio de estado: el punto
+  del atacante es el canónico de la situación activa, o el punto bajo el puntero mientras se
+  arrastra la ficha "A" (`arrastreAtacante`, spec E3) — un tercer gestor de `PointerEvent`,
+  `onAgarrarSombra`, acumula el desplazamiento respecto al punto donde se agarró la sombra y lo
+  deja en `store.desplazamientoSombraEdicion` para que `guardar()` lo persista.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
 la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un
