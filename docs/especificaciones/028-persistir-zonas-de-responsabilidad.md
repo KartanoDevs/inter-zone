@@ -1,6 +1,6 @@
 # 028 — Persistir la zona de responsabilidad de un jugador
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** Corrige un defecto de las specs 022/024, descubierto al preparar la
 spec 029. No añade funcionalidad nueva.
 
