@@ -1,0 +1,1378 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InterZone — 3 propuestas de interfaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — copiados literalmente de src/styles.css.
+   Ni un color fuera de docs/voley/design-guidelines.md.
+   ============================================================ */
+:root {
+  --bg-darker: #05050a;
+  --bg-dark: #090b14;
+  --bg-card-alt: #0a0a1a;
+  --bg-card: #12162d;
+
+  --neon-cyan: #00e5ff;
+  --neon-magenta: #ff00ff;
+
+  --neon-green: #39ff14;
+  --neon-teal: #00ffaa;
+  --neon-amber: #ffaa00;
+  --neon-purple: #aa88ff;
+  --neon-pink: #ff0055;
+
+  --text-main: #ffffff;
+  --text-secondary: #e0e6ed;
+  --text-muted: #8aa4c8;
+  --text-muted-alt: #8b9bb4;
+
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+
+  --linea-sutil: rgba(255, 255, 255, 0.1);
+  --linea-tenue: rgba(255, 255, 255, 0.06);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-darker);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   CARCASA DE COMPARACIÓN (no forma parte de las propuestas)
+   ============================================================ */
+.hoja {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-2) var(--space-6);
+}
+
+.hoja__cinta {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: var(--space-1);
+}
+
+.hoja__titulo {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(24px, 5vw, 38px);
+  letter-spacing: 0.02em;
+  color: var(--text-main);
+}
+
+.hoja__entradilla {
+  margin: 0 0 var(--space-4);
+  max-width: 68ch;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.hoja__entradilla strong { color: var(--text-secondary); font-weight: 600; }
+
+.rejilla {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 820px)  { .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1180px) { .rejilla { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.caso { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+
+.caso__cabecera { display: flex; align-items: baseline; gap: var(--space-1); flex-wrap: wrap; }
+
+.caso__letra {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 13px;
+  color: var(--bg-darker);
+  background: var(--neon-cyan);
+  border-radius: 4px;
+  padding: 1px 7px;
+  line-height: 1.6;
+}
+
+.caso__nombre {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  color: var(--text-main);
+}
+
+.caso__eje { font-size: 13px; color: var(--text-muted); margin: 0; }
+.caso__eje b { color: var(--neon-teal); font-weight: 600; }
+
+.caso__contra {
+  font-size: 12.5px;
+  color: var(--text-muted-alt);
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--linea-sutil);
+}
+
+.marco {
+  position: relative;
+  width: 100%;
+  max-width: 390px;
+  height: 760px;
+  margin: 0 auto;
+  border: 1px solid var(--linea-sutil);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--bg-dark);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Al ampliar, el prototipo abandona el marco y ocupa la ventana entera: así se
+   comprueba de verdad que es responsivo. */
+.marco--amplio {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.marco__salir {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 950;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 999px;
+  color: var(--neon-cyan);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.marco--amplio .marco__salir { display: inline-flex; }
+
+.caso__pie { display: flex; gap: var(--space-1); }
+
+.ampliar {
+  flex: 1;
+  min-height: 44px;
+  background: transparent;
+  border: 1px solid var(--linea-sutil);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.ampliar:hover, .ampliar:focus-visible { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
+.nota {
+  margin: var(--space-6) 0 0;
+  padding: var(--space-3);
+  background: var(--bg-card-alt);
+  border: 1px solid var(--linea-tenue);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.nota h2 {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.nota ul { margin: 0; padding-left: 18px; }
+.nota li { margin-bottom: 5px; }
+.nota code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--neon-teal);
+}
+
+/* ============================================================
+   BASE COMÚN A LAS TRES PROPUESTAS
+   ============================================================ */
+.app {
+  position: relative;   /* todo overlay interno es `absolute`, nunca `fixed`:
+                           así el prototipo no se escapa de su marco */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-dark);
+  font-family: var(--font-body);
+  isolation: isolate;
+  /* Los cortes responsivos son `@container`, no `@media`: dentro del marco de
+     390 px el ancho de la ventana no dice nada del ancho real del prototipo. */
+  container-type: inline-size;
+  container-name: app;
+}
+
+.app svg { display: block; }
+
+/* --- la pista, común en geometría, distinta en tratamiento por propuesta --- */
+.pista-host {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.pista {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.p-zona-libre { fill: var(--bg-card-alt); }
+.p-campo      { fill: var(--bg-card); }
+.p-rival      { fill: var(--bg-darker); opacity: 0.75; }
+
+.p-rival-ataque {
+  stroke: var(--neon-purple); stroke-opacity: 0.35;
+  stroke-width: 0.03; stroke-dasharray: 0.12 0.1;
+}
+.p-borde-rival { fill: none; stroke: var(--neon-purple); stroke-opacity: 0.5; stroke-width: 0.05; }
+.p-rejilla     { stroke: rgba(255, 255, 255, 0.05); stroke-width: 0.02; }
+.p-ataque      { stroke: rgba(0, 229, 255, 0.35); stroke-width: 0.03; stroke-dasharray: 0.12 0.1; }
+.p-borde-campo { fill: none; stroke: rgba(224, 230, 237, 0.4); stroke-width: 0.05; }
+.p-red         { stroke: var(--neon-cyan); stroke-width: 0.06; }
+
+.p-metro {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.3px;
+  fill: var(--text-muted); text-anchor: end; dominant-baseline: middle;
+}
+
+/* --- fichas de jugador (radio real 0.45 m) --- */
+.ficha { cursor: pointer; transition: transform 200ms ease; }
+.ficha__c {
+  fill: var(--bg-card); stroke: var(--neon-cyan); stroke-width: 0.05;
+  transition: stroke 200ms ease, stroke-width 200ms ease;
+}
+.ficha--zaguera .ficha__c { stroke-width: 0.09; }
+.ficha__t {
+  font-family: var(--font-display); font-weight: 700; font-size: 0.38px;
+  fill: var(--text-main); pointer-events: none;
+}
+.ficha__p {
+  font-family: var(--font-display); font-weight: 700;
+  fill: var(--text-muted); pointer-events: none;
+}
+.ficha__p .l { font-size: 0.18px; }
+.ficha__p .n { font-size: 0.28px; }
+
+.ficha--sel .ficha__c {
+  stroke: var(--neon-purple); stroke-width: 0.09;
+  filter: drop-shadow(0 0 0.22px var(--neon-purple));
+}
+.ficha--sel .ficha__t { fill: var(--neon-purple); }
+
+/* --- botón facetado: la firma visual de la marca (§4.1) --- */
+.btn {
+  --facet: 10px;
+  --relleno: var(--bg-dark);
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px var(--space-2);
+  background: var(--text-muted);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  border: 0;
+  cursor: pointer;
+  clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+  transition: box-shadow 150ms ease, background 150ms ease, opacity 150ms ease;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--relleno);
+  clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  transition: background 150ms ease;
+}
+.btn--primario {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  color: var(--text-main);
+  --relleno: var(--bg-card);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
+}
+.btn--secundario { background: var(--text-muted); color: var(--text-muted); --relleno: var(--bg-dark); }
+.btn--secundario:hover { background: var(--text-secondary); color: var(--text-secondary); }
+.btn:disabled { background: var(--text-muted); color: var(--text-muted-alt); box-shadow: none; cursor: not-allowed; }
+
+/* --- botón de icono circular --- */
+.ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.ico:hover, .ico:focus-visible { color: var(--neon-cyan); border-color: rgba(0, 229, 255, 0.4); }
+.ico svg { width: 20px; height: 20px; }
+
+/* --- chip de banquillo --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 44px;
+  padding: 8px 14px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 999px;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: grab;
+  touch-action: none;
+}
+.chip:hover { background: rgba(0, 229, 255, 0.1); }
+
+/* --- badge de validación, flotando sobre la pista --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(18, 22, 45, 0.92);
+  border: 1px solid var(--neon-amber);
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(255, 170, 0, 0.2);
+  pointer-events: none;
+}
+.badge__i {
+  display: flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--neon-amber); color: var(--bg-darker);
+  font-family: var(--font-display); font-weight: 700; font-size: 12px; flex: 0 0 auto;
+}
+.badge__t {
+  font-family: var(--font-display); font-weight: 700; font-size: 11px;
+  letter-spacing: 0.04em; color: var(--text-main);
+}
+.badge__s {
+  display: block; font-family: var(--font-body); font-weight: 400; font-size: 11px;
+  letter-spacing: normal; color: var(--text-secondary); margin-top: 1px;
+}
+
+/* --- scrim compartido de overlays --- */
+.scrim {
+  position: absolute; inset: 0; z-index: 30;
+  background: rgba(5, 5, 10, 0.72);
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.scrim--visible { opacity: 1; pointer-events: auto; }
+
+.pill-rot {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-width: 44px; min-height: 44px;
+  background: var(--bg-card);
+  border: 1px solid var(--linea-sutil);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-display); font-size: 14px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.pill-rot:hover { border-color: rgba(0, 229, 255, 0.4); color: var(--text-main); }
+.pill-rot[aria-selected="true"] {
+  border-color: var(--neon-cyan); color: var(--text-main); background: rgba(0, 229, 255, 0.12);
+}
+.pill-rot__punto { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-pink); }
+
+/* ============================================================
+   A — CABECERA COMPACTA + HOJA INFERIOR
+   ============================================================ */
+.a-cab {
+  flex: 0 0 auto;
+  padding: 6px var(--space-1) 0;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--linea-tenue);
+}
+.a-cab__fila { display: flex; align-items: center; gap: 6px; }
+
+.a-marca {
+  font-family: var(--font-display); font-weight: 900; font-size: 12px;
+  letter-spacing: 0.14em; color: var(--text-main); flex: 0 0 auto;
+}
+.a-marca span { color: var(--neon-cyan); }
+
+.a-equipo { display: flex; background: var(--bg-card-alt); border-radius: 999px; padding: 2px; flex: 0 0 auto; }
+.a-equipo button {
+  min-width: 30px; min-height: 30px; padding: 0 10px;
+  background: transparent; border: 0; border-radius: 999px;
+  color: var(--text-muted); font-family: var(--font-display); font-weight: 700; font-size: 11px;
+  cursor: pointer; transition: background 150ms ease, color 150ms ease;
+}
+.a-equipo button[aria-pressed="true"] { background: rgba(0, 229, 255, 0.14); color: var(--neon-cyan); }
+
+.a-sistema {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 10px;
+  background: var(--bg-card); border: 1px solid var(--linea-sutil); border-radius: 8px;
+  color: var(--text-secondary); font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  cursor: pointer; text-align: left;
+}
+.a-sistema__n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.a-sistema svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--text-muted); }
+
+.a-rots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; padding: 6px 0; }
+.a-rots .pill-rot { min-width: 0; font-size: 13px; }
+
+.a-pista { padding: 0 var(--space-1); }
+
+.a-badge-host {
+  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+  z-index: 10; max-width: calc(100% - 24px);
+}
+
+.a-flotantes { position: absolute; top: 8px; right: 12px; z-index: 12; display: flex; flex-direction: column; gap: 6px; }
+.a-flotantes .ico { width: 34px; height: 34px; background: rgba(18, 22, 45, 0.85); border-color: var(--linea-sutil); }
+.a-flotantes .ico svg { width: 16px; height: 16px; }
+
+/* hoja inferior en tres alturas */
+.a-hoja {
+  position: relative; z-index: 40;
+  flex: 0 0 auto;
+  background: var(--bg-card);
+  border-top: 1px solid var(--linea-sutil);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -10px 30px rgba(5, 5, 10, 0.5);
+  transition: max-height 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 96px;
+  overflow: hidden;
+}
+.a-hoja[data-altura="media"] { max-height: 230px; }
+.a-hoja[data-altura="alta"]  { max-height: 430px; }
+
+.a-hoja__asa {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 100%; padding: 7px 0 3px; background: transparent; border: 0; cursor: pointer;
+}
+.a-hoja__asa i { display: block; width: 38px; height: 4px; border-radius: 999px; background: var(--text-muted-alt); opacity: 0.55; }
+.a-hoja__asa span {
+  font-family: var(--font-display); font-weight: 700; font-size: 9.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+}
+
+.a-hoja__acciones { display: flex; gap: var(--space-1); padding: 0 var(--space-2) var(--space-1); }
+.a-hoja__acciones .btn { flex: 1; }
+.a-hoja__acciones .btn--primario { flex: 2; }
+
+.a-hoja__cuerpo { padding: 0 var(--space-2) var(--space-2); overflow-y: auto; max-height: 330px; }
+
+.a-bloque + .a-bloque { margin-top: var(--space-2); }
+.a-bloque__t {
+  font-family: var(--font-display); font-weight: 700; font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+  margin: 0 0 6px; display: flex; align-items: center; gap: 6px;
+}
+.a-bloque__t b {
+  font-family: var(--font-body); font-weight: 600; font-size: 10px; letter-spacing: normal;
+  text-transform: none; color: var(--text-muted); background: var(--bg-card-alt);
+  border-radius: 999px; padding: 1px 7px;
+}
+.a-chips { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.a-texto { margin: 0; font-size: 13.5px; color: var(--text-secondary); }
+
+/* ============================================================
+   B — PISTA A SANGRE + CONTROLES ORBITALES (HUD)
+   ============================================================ */
+.b-app { background: var(--bg-darker); }
+.b-pista { padding: 0; }
+
+/* velos que garantizan legibilidad de los controles sobre la pista */
+.b-velo { position: absolute; left: 0; right: 0; z-index: 5; pointer-events: none; }
+.b-velo--arriba { top: 0; height: 110px; background: linear-gradient(180deg, rgba(5, 5, 10, 0.9), transparent); }
+.b-velo--abajo  { bottom: 0; height: 200px; background: linear-gradient(0deg, rgba(5, 5, 10, 0.92), transparent); }
+
+.b-hud-marca {
+  position: absolute; top: 12px; left: 12px; z-index: 12;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 12px 0 10px;
+  background: rgba(18, 22, 45, 0.82);
+  border: 1px solid var(--linea-sutil);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+}
+.b-hud-marca__eq {
+  font-family: var(--font-display); font-weight: 900; font-size: 10px;
+  letter-spacing: 0.08em; color: var(--bg-darker); background: var(--neon-cyan);
+  border-radius: 3px; padding: 1px 5px;
+}
+.b-hud-marca__n {
+  font-family: var(--font-body); font-weight: 600; font-size: 12.5px; color: var(--text-secondary);
+  max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.b-hud-iconos { position: absolute; top: 12px; right: 12px; z-index: 12; display: flex; flex-direction: column; gap: 8px; }
+.b-hud-iconos .ico {
+  width: 40px; height: 40px;
+  background: rgba(18, 22, 45, 0.82);
+  border-color: var(--linea-sutil);
+  backdrop-filter: blur(6px);
+}
+
+/* riel vertical de rotaciones, pegado al borde izquierdo */
+.b-riel {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  z-index: 12; display: flex; flex-direction: column; gap: 6px;
+}
+.b-riel button {
+  position: relative;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(18, 22, 45, 0.8);
+  border: 1px solid var(--linea-sutil);
+  backdrop-filter: blur(6px);
+  color: var(--text-muted);
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  cursor: pointer;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+.b-riel button:hover { color: var(--text-main); }
+.b-riel button[aria-selected="true"] {
+  background: rgba(0, 229, 255, 0.16);
+  color: var(--neon-cyan);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.3);
+}
+.b-riel__punto { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--neon-pink); }
+
+.b-badge-host { position: absolute; left: 50%; top: 68px; transform: translateX(-50%); z-index: 12; max-width: calc(100% - 130px); }
+
+.b-banquillo {
+  position: absolute; left: 0; right: 0; bottom: 100px; z-index: 12;
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: 0 14px; overflow-x: auto; scrollbar-width: none;
+}
+.b-banquillo::-webkit-scrollbar { display: none; }
+.b-banquillo__et {
+  font-family: var(--font-display); font-weight: 700; font-size: 9.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+  flex: 0 0 auto; margin-right: 2px;
+}
+
+.b-acciones { position: absolute; right: 14px; bottom: 26px; z-index: 14; display: flex; align-items: center; gap: 10px; }
+.b-acciones .btn--primario { --facet: 12px; padding: 12px 20px; font-size: 14px; }
+
+.b-explica {
+  position: absolute; left: 14px; bottom: 26px; z-index: 14;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 14px;
+  background: rgba(18, 22, 45, 0.85);
+  border: 1px solid var(--linea-sutil);
+  backdrop-filter: blur(6px);
+  color: var(--text-secondary);
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  cursor: pointer;
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+}
+.b-explica svg { width: 16px; height: 16px; color: var(--neon-cyan); }
+
+/* overlay de enseñanza */
+.b-panel {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+  transform: translateY(101%);
+  background: var(--bg-card);
+  border-top: 1px solid var(--neon-cyan);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 229, 255, 0.1);
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 72%;
+  display: flex; flex-direction: column;
+}
+.b-panel--abierto { transform: translateY(0); }
+.b-panel__cab { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-2) var(--space-1); }
+.b-panel__t {
+  flex: 1; margin: 0;
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  letter-spacing: 0.05em; color: var(--text-main);
+}
+.b-panel__cuerpo { padding: 0 var(--space-2) var(--space-3); overflow-y: auto; }
+.b-panel__cuerpo p { margin: 0 0 var(--space-2); font-size: 14px; color: var(--text-secondary); }
+.b-panel__et {
+  font-family: var(--font-display); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--neon-cyan); margin: 0 0 5px;
+}
+
+/* ============================================================
+   C — RAIL LATERAL + PISTA CENTRADA
+   ============================================================ */
+.c-app { flex-direction: row; }
+
+.c-rail {
+  flex: 0 0 58px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 0;
+  background: var(--bg-card-alt);
+  border-right: 1px solid var(--linea-tenue);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.c-rail::-webkit-scrollbar { display: none; }
+
+.c-rail__marca {
+  font-family: var(--font-display); font-weight: 900; font-size: 15px;
+  color: var(--neon-cyan); line-height: 1; padding: 6px 0 10px; flex: 0 0 auto;
+}
+
+.c-rail__rots { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.c-rail__rots button {
+  position: relative;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent; border-radius: 8px;
+  color: var(--text-muted); font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  cursor: pointer; transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+.c-rail__rots button:hover { color: var(--text-main); }
+.c-rail__rots button[aria-selected="true"] {
+  background: rgba(0, 229, 255, 0.12); border-color: var(--neon-cyan); color: var(--neon-cyan);
+}
+.c-rail__rots .p { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--neon-pink); }
+
+.c-rail__sep { width: 24px; height: 1px; background: var(--linea-sutil); margin: 8px 0; flex: 0 0 auto; }
+.c-rail__pie { margin-top: auto; display: flex; flex-direction: column; gap: 2px; flex: 0 0 auto; }
+.c-rail__et { display: none; }
+
+.c-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.c-centro { display: contents; }
+
+.c-barra {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: 6px var(--space-1) 6px 10px;
+  border-bottom: 1px solid var(--linea-tenue);
+}
+.c-barra__eq {
+  font-family: var(--font-display); font-weight: 900; font-size: 9.5px;
+  letter-spacing: 0.08em; color: var(--bg-darker); background: var(--neon-cyan);
+  border-radius: 3px; padding: 2px 6px; flex: 0 0 auto;
+}
+.c-barra__n {
+  flex: 1; min-width: 0; font-weight: 600; font-size: 13px; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.c-barra .ico { width: 36px; height: 36px; }
+.c-barra .ico svg { width: 17px; height: 17px; }
+
+.c-pista { padding: var(--space-1) var(--space-1) 0; }
+
+.c-badge-host { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 10; max-width: calc(100% - 20px); }
+
+.c-pie {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1);
+  border-top: 1px solid var(--linea-tenue);
+  background: var(--bg-card-alt);
+}
+.c-pie__banquillo {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.c-pie__banquillo::-webkit-scrollbar { display: none; }
+.c-pie__et {
+  font-family: var(--font-display); font-weight: 700; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); flex: 0 0 auto;
+}
+.c-pie .btn { flex: 0 0 auto; }
+
+/* panel de enseñanza: cajón inferior en móvil, columna fija en ancho */
+.c-panel {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 40;
+  transform: translateY(101%);
+  background: var(--bg-card);
+  border-top: 1px solid var(--linea-sutil);
+  border-radius: 12px 12px 0 0;
+  transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-height: 70%; display: flex; flex-direction: column;
+}
+.c-panel--abierto { transform: translateY(0); }
+.c-panel__cab { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-2) var(--space-1); }
+.c-panel__t { flex: 1; margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--text-main); }
+.c-panel__cuerpo { padding: 0 var(--space-2) var(--space-3); overflow-y: auto; }
+.c-panel__cuerpo p { margin: 0 0 var(--space-2); font-size: 14px; color: var(--text-secondary); }
+.c-panel__et {
+  font-family: var(--font-display); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--neon-cyan); margin: 0 0 5px;
+}
+
+/* A partir de tablet el rail se ensancha y la enseñanza pasa a columna fija:
+   es la propuesta que mejor aprovecha una pantalla grande. */
+@container app (min-width: 760px) {
+  .c-rail { flex-basis: 190px; align-items: stretch; padding: 12px 10px; }
+  .c-rail__marca { text-align: left; padding-left: 6px; font-size: 17px; letter-spacing: 0.06em; }
+  .c-rail__rots { gap: 5px; }
+  .c-rail__rots button { justify-content: flex-start; gap: 10px; width: 100%; padding: 0 12px; }
+  .c-rail__et { display: inline; font-family: var(--font-body); font-weight: 600; font-size: 12.5px; color: inherit; }
+  .c-rail__pie .ico { width: 100%; justify-content: flex-start; padding: 0 12px; border-radius: 8px; gap: 10px; }
+
+  .c-main { flex-direction: row; }
+  .c-centro { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+  .c-panel {
+    position: static; transform: none; max-height: none;
+    flex: 0 0 300px; border-top: 0; border-left: 1px solid var(--linea-tenue); border-radius: 0;
+  }
+  .c-abrir-panel { display: none; }
+}
+
+/* En ancho, la hoja de A reparte banquillo y enseñanza en dos columnas en vez
+   de crecer hacia arriba, y la pista deja de ser lo único que se estira. */
+@container app (min-width: 760px) {
+  .a-cab { padding: var(--space-1) var(--space-2) 0; }
+  .a-rots { max-width: 520px; }
+  .a-hoja__acciones { max-width: 520px; }
+  .a-hoja__cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-3); }
+  .a-hoja__cuerpo .a-bloque + .a-bloque { margin-top: 0; }
+  .a-hoja[data-altura="alta"] { max-height: 300px; }
+
+  /* B: en ancho el riel deja de pisar la pista y los flotantes se separan */
+  .b-riel { left: 18px; }
+  .b-banquillo { padding: 0 22px; }
+  .b-acciones { right: 22px; }
+  .b-explica { left: 22px; }
+  .b-panel { left: auto; right: 0; width: 420px; border-left: 1px solid var(--neon-cyan); border-radius: 14px 0 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== sprite de iconos: SVG, nunca emoji (la app usa hoy ⚙ ✎ ⧉ 🗑) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="i-ajustes" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <line x1="4" y1="7" x2="20" y2="7"/><circle cx="15" cy="7" r="2.3" fill="none"/>
+      <line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="12" r="2.3" fill="none"/>
+      <line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2.3" fill="none"/>
+    </g>
+    <g id="i-ayuda" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.6"/>
+      <path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.5"/>
+      <line x1="12" y1="16.6" x2="12" y2="16.7"/>
+    </g>
+    <g id="i-chevron" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="7,10 12,15 17,10"/>
+    </g>
+    <g id="i-libro" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z"/>
+      <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z"/>
+    </g>
+    <g id="i-cerrar" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="7" y1="7" x2="17" y2="17"/><line x1="17" y1="7" x2="7" y2="17"/>
+    </g>
+    <g id="i-capas" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12,3.5 20.5,8 12,12.5 3.5,8"/>
+      <polyline points="3.5,12.6 12,17.1 20.5,12.6"/>
+    </g>
+    <g id="i-vaciar" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 7h14"/><path d="M9.5 7V5.4A1.4 1.4 0 0 1 10.9 4h2.2a1.4 1.4 0 0 1 1.4 1.4V7"/>
+      <path d="M6.7 7l.8 11.2A1.8 1.8 0 0 0 9.3 20h5.4a1.8 1.8 0 0 0 1.8-1.8L17.3 7"/>
+    </g>
+  </defs>
+</svg>
+
+<main class="hoja">
+  <p class="hoja__cinta">InterZone · rama diseno/estilos-visuales</p>
+  <h1 class="hoja__titulo">Tres distribuciones para la pizarra</h1>
+  <p class="hoja__entradilla">
+    Tres formas distintas de que <strong>la pista sea la protagonista</strong> en vertical, sin salir
+    nunca de la página. Los tres prototipos son <strong>clicables</strong>: cambia de rotación, toca una
+    ficha, abre los paneles. Usan los tokens reales de
+    <code>src/styles.css</code>, la geometría real del SVG de la pista y las seis rotaciones sembradas
+    del sistema de recepción a 3 en 5-1. No hay ni un color fuera de la guía de marca.
+  </p>
+
+  <div class="rejilla">
+
+    <!-- ============ A ============ -->
+    <section class="caso">
+      <div class="caso__cabecera">
+        <span class="caso__letra">A</span>
+        <h2 class="caso__nombre">Cinta + hoja inferior</h2>
+      </div>
+      <p class="caso__eje">Menús <b>arriba</b>, todo lo demás en una hoja de tres alturas. El patrón más reconocible.</p>
+
+      <div class="marco" data-marco="a">
+        <button class="marco__salir" data-salir>Cerrar</button>
+
+        <div class="app a-app" id="app-a">
+          <header class="a-cab">
+            <div class="a-cab__fila">
+              <span class="a-marca">INTER<span>ZONE</span></span>
+              <div class="a-equipo" role="group" aria-label="Equipo">
+                <button type="button" aria-pressed="true">M</button>
+                <button type="button" aria-pressed="false">F</button>
+              </div>
+              <button type="button" class="a-sistema">
+                <span class="a-sistema__n">Recepción 5-1</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"/></svg>
+              </button>
+            </div>
+            <div class="a-rots" role="tablist" aria-label="Rotaciones" data-rots="a"></div>
+          </header>
+
+          <div class="pista-host a-pista" data-pista="a">
+            <div class="a-flotantes">
+              <button type="button" class="ico" aria-label="Leyenda de etiquetas">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ayuda"/></svg>
+              </button>
+              <button type="button" class="ico" aria-label="Ajustes">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ajustes"/></svg>
+              </button>
+            </div>
+            <div class="a-badge-host" data-badge="a"></div>
+          </div>
+
+          <section class="a-hoja" data-hoja="a" data-altura="baja">
+            <button type="button" class="a-hoja__asa" data-asa="a">
+              <i aria-hidden="true"></i>
+              <span data-asa-et="a">Banquillo · Enseñanza</span>
+            </button>
+            <div class="a-hoja__acciones">
+              <button type="button" class="btn btn--secundario">Vaciar</button>
+              <button type="button" class="btn btn--primario">Guardar rotación</button>
+            </div>
+            <div class="a-hoja__cuerpo">
+              <div class="a-bloque">
+                <p class="a-bloque__t">Banquillo <b data-cuenta="a">1</b></p>
+                <div class="a-chips" data-banquillo="a"></div>
+              </div>
+              <div class="a-bloque">
+                <p class="a-bloque__t" data-titulo="a">Rotación 1</p>
+                <p class="a-texto" data-texto="a"></p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <p class="caso__contra">A favor: nada oculto de forma sorpresiva, el CTA siempre a la vista.
+        En contra: cabecera y hoja se comen ~200 px, la pista es la más pequeña de las tres.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="a">Ver a pantalla completa</button></div>
+    </section>
+
+    <!-- ============ B ============ -->
+    <section class="caso">
+      <div class="caso__cabecera">
+        <span class="caso__letra">B</span>
+        <h2 class="caso__nombre">Pista a sangre · HUD</h2>
+      </div>
+      <p class="caso__eje">La pista ocupa la <b>pantalla entera</b>; los controles flotan sobre ella en los bordes.</p>
+
+      <div class="marco" data-marco="b">
+        <button class="marco__salir" data-salir>Cerrar</button>
+
+        <div class="app b-app" id="app-b">
+          <div class="pista-host b-pista" data-pista="b"></div>
+
+          <div class="b-velo b-velo--arriba" aria-hidden="true"></div>
+          <div class="b-velo b-velo--abajo" aria-hidden="true"></div>
+
+          <button type="button" class="b-hud-marca">
+            <span class="b-hud-marca__eq">MASC</span>
+            <span class="b-hud-marca__n">Recepción 5-1</span>
+            <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" style="color:var(--text-muted)"><use href="#i-chevron"/></svg>
+          </button>
+
+          <div class="b-hud-iconos">
+            <button type="button" class="ico" aria-label="Leyenda de etiquetas">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ayuda"/></svg>
+            </button>
+            <button type="button" class="ico" aria-label="Capas y zonas">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-capas"/></svg>
+            </button>
+            <button type="button" class="ico" aria-label="Ajustes">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ajustes"/></svg>
+            </button>
+          </div>
+
+          <div class="b-riel" role="tablist" aria-label="Rotaciones" data-rots="b"></div>
+          <div class="b-badge-host" data-badge="b"></div>
+
+          <div class="b-banquillo">
+            <span class="b-banquillo__et">Banq.</span>
+            <span data-banquillo="b" style="display:flex;gap:8px"></span>
+          </div>
+
+          <button type="button" class="b-explica" data-abrir="b">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-libro"/></svg>
+            Por qué
+          </button>
+
+          <div class="b-acciones">
+            <button type="button" class="ico" aria-label="Vaciar rotación"
+              style="background:rgba(18,22,45,.85);border-color:var(--linea-sutil)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-vaciar"/></svg>
+            </button>
+            <button type="button" class="btn btn--primario">Guardar</button>
+          </div>
+
+          <div class="scrim" data-scrim="b"></div>
+          <section class="b-panel" data-panel="b" aria-hidden="true">
+            <div class="b-panel__cab">
+              <h3 class="b-panel__t" data-titulo="b">Rotación 1</h3>
+              <button type="button" class="ico" aria-label="Cerrar" data-cerrar="b">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"/></svg>
+              </button>
+            </div>
+            <div class="b-panel__cuerpo">
+              <p class="b-panel__et" data-et="b">De conjunto</p>
+              <p data-texto="b"></p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <p class="caso__contra">A favor: la pista más grande con diferencia, y la que mejor lleva la firma
+        facetada de la marca. En contra: controles sobre el campo — hay que vigilar que un dedo grande no
+        tape una ficha del borde.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="b">Ver a pantalla completa</button></div>
+    </section>
+
+    <!-- ============ C ============ -->
+    <section class="caso">
+      <div class="caso__cabecera">
+        <span class="caso__letra">C</span>
+        <h2 class="caso__nombre">Rail lateral técnico</h2>
+      </div>
+      <p class="caso__eje">Rotaciones en un <b>rail vertical</b>; en tablet se ensancha y la enseñanza pasa a columna.</p>
+
+      <div class="marco" data-marco="c">
+        <button class="marco__salir" data-salir>Cerrar</button>
+
+        <div class="app c-app" id="app-c">
+          <nav class="c-rail" aria-label="Navegación">
+            <span class="c-rail__marca">IZ</span>
+            <div class="c-rail__rots" role="tablist" aria-label="Rotaciones" data-rots="c"></div>
+            <span class="c-rail__sep" aria-hidden="true"></span>
+            <div class="c-rail__pie">
+              <button type="button" class="ico" aria-label="Leyenda de etiquetas">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ayuda"/></svg>
+                <span class="c-rail__et">Leyenda</span>
+              </button>
+              <button type="button" class="ico" aria-label="Ajustes">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ajustes"/></svg>
+                <span class="c-rail__et">Ajustes</span>
+              </button>
+            </div>
+          </nav>
+
+          <div class="c-main">
+            <div class="c-centro">
+              <div class="c-barra">
+                <span class="c-barra__eq">MASC</span>
+                <span class="c-barra__n">Recepción 5-1</span>
+                <button type="button" class="ico" aria-label="Sistemas">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-capas"/></svg>
+                </button>
+              </div>
+
+              <div class="pista-host c-pista" data-pista="c">
+                <div class="c-badge-host" data-badge="c"></div>
+              </div>
+
+              <div class="c-pie">
+                <span class="c-pie__et">Banq.</span>
+                <span class="c-pie__banquillo" data-banquillo="c"></span>
+                <button type="button" class="ico c-abrir-panel" aria-label="Ver explicación" data-abrir="c">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-libro"/></svg>
+                </button>
+                <button type="button" class="btn btn--primario" style="--facet:8px;padding:8px 12px;font-size:13px">Guardar</button>
+              </div>
+            </div>
+
+            <aside class="c-panel" data-panel="c">
+              <div class="c-panel__cab">
+                <h3 class="c-panel__t" data-titulo="c">Rotación 1</h3>
+                <button type="button" class="ico c-abrir-panel" aria-label="Cerrar" data-cerrar="c">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cerrar"/></svg>
+                </button>
+              </div>
+              <div class="c-panel__cuerpo">
+                <p class="c-panel__et" data-et="c">De conjunto</p>
+                <p data-texto="c"></p>
+              </div>
+            </aside>
+          </div>
+
+          <div class="scrim" data-scrim="c"></div>
+        </div>
+      </div>
+
+      <p class="caso__contra">A favor: escala a tablet y escritorio sin rediseñar nada, y el rail deja el
+        alto entero para la pista. En contra: se come ~58 px de ancho, que en un móvil estrecho es justo
+        lo que más escasea.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="c">Ver a pantalla completa</button></div>
+    </section>
+
+  </div>
+
+  <div class="nota">
+    <h2>Lo que hay que saber para juzgarlas</h2>
+    <ul>
+      <li><b>Datos reales, no relleno.</b> Las seis formaciones, el líbero que sustituye al central de zaga
+        y los textos de enseñanza salen de <code>src/app/domain/sistema-por-defecto.ts</code>.</li>
+      <li><b>El aviso «AL LÍMITE» aparece en R5</b> solo para enseñar dónde cae ese estado en cada
+        distribución. El sistema sembrado es legal en las seis rotaciones; ahí no hay falta real.</li>
+      <li><b>Iconos en SVG.</b> Hoy la app usa <code>⚙ ✎ ⧉ 🗑</code> como iconos; los emoji cambian de forma
+        según el dispositivo y no se pueden teñir con los tokens. Las tres propuestas los sustituyen por
+        SVG de trazo consistente.</li>
+      <li><b>Objetivos táctiles ≥44 px</b> en las tres, incluidos los del rail y los del riel flotante.</li>
+      <li><b>Sin arrastre.</b> Tocar una ficha la selecciona y muestra su explicación; moverla por la pista
+        es cosa de la app real, no de la maqueta.</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   DATOS — las seis rotaciones tal y como las siembra
+   src/app/domain/sistema-por-defecto.ts. El líbero ocupa el punto
+   del central que cae en zaga (jugadoresEnPista), por eso en cada
+   rotación hay una L en pista y un central en el banquillo.
+   ============================================================ */
+var ROT = {
+  1: {
+    banquillo: 'C1', complejidad: 'Media-baja',
+    texto: 'Colocador en P1, escondido en el fondo derecho: no recibe. Ruta corta, una diagonal de 6-7 m hacia la red. Complejidad baja-moderada.',
+    fichas: [
+      { p: 1, et: 'C',  x: 7.8, y: 7.6, zag: true,  e: 'Zaguero, escondido en el fondo derecho: no recibe. Ruta corta, una diagonal de 6-7 m hacia la red.' },
+      { p: 2, et: 'R1', x: 7.0, y: 4.2, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 3, et: 'C2', x: 4.5, y: 0.8, zag: false, e: 'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 4, et: 'O',  x: 1.5, y: 0.8, zag: false, e: 'En la red, escondido en su zona: liberado de recibir, prepara su aproximación de ataque.' },
+      { p: 5, et: 'R2', x: 1.6, y: 5.6, zag: true,  e: 'Cubre la franja izquierda-profunda de la recepción.' },
+      { p: 6, et: 'L',  x: 4.4, y: 6.2, zag: true,  e: 'Recibe en el centro-profundo, la zona de mayor tráfico; dirige los ajustes de R1 y R2.' }
+    ]
+  },
+  2: {
+    banquillo: 'C1', complejidad: 'Cómoda',
+    texto: 'Colocador en P2, ya en la zona de armado: apenas necesita desplazarse. La rotación más cómoda, con el máximo potencial ofensivo inmediato.',
+    fichas: [
+      { p: 1, et: 'L',  x: 7.6, y: 6.2, zag: true,  e: 'Recibe en el fondo derecho, ya casi en la zona donde se preparará el ataque.' },
+      { p: 2, et: 'C',  x: 8.0, y: 1.0, zag: false, e: 'Delantero, ya en la zona de armado: apenas necesita desplazarse. La rotación más cómoda.' },
+      { p: 3, et: 'R1', x: 5.0, y: 3.6, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 4, et: 'C2', x: 1.4, y: 0.8, zag: false, e: 'Delantero, en red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 5, et: 'O',  x: 1.0, y: 6.6, zag: true,  e: 'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.' },
+      { p: 6, et: 'R2', x: 3.0, y: 6.0, zag: true,  e: 'Recibe sin descender: cubre su franja habitual.' }
+    ]
+  },
+  3: {
+    banquillo: 'C2', complejidad: 'Baja',
+    texto: 'Colocador en P3, ya en el centro de la red: solo un paso lateral de ~2 m hasta la zona de armado. Complejidad baja y gran comodidad ofensiva.',
+    fichas: [
+      { p: 1, et: 'R2', x: 7.8, y: 5.6, zag: true,  e: 'Recibe sin descender: cubre su franja habitual.' },
+      { p: 2, et: 'C1', x: 8.2, y: 0.8, zag: false, e: 'Delantero, en red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 3, et: 'C',  x: 5.6, y: 0.8, zag: false, e: 'Delantero, ya en el centro de la red: solo un paso lateral de ~2 m hasta la zona de armado. Puede rematar en segunda mano.' },
+      { p: 4, et: 'R1', x: 2.6, y: 3.6, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 5, et: 'L',  x: 4.0, y: 6.2, zag: true,  e: 'Recibe cerca del colocador, en la zona de mayor tráfico.' },
+      { p: 6, et: 'O',  x: 5.6, y: 7.4, zag: true,  e: 'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.' }
+    ]
+  },
+  4: {
+    banquillo: 'C2', complejidad: 'Crítica',
+    texto: 'Colocador en P4, en la red pero lejos de la zona de armado: ruta lateral larga (~5 m), cruzándose con el central delantero. Rotación crítica.',
+    fichas: [
+      { p: 1, et: 'O',  x: 8.2, y: 7.0, zag: true,  e: 'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.' },
+      { p: 2, et: 'R2', x: 7.4, y: 3.6, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 3, et: 'C1', x: 4.2, y: 0.8, zag: false, e: 'Delantero, en el centro de la red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 4, et: 'C',  x: 0.8, y: 0.8, zag: false, e: 'Delantero, lejos de la zona de armado: ruta lateral larga (~5 m), cruzándose con el central sin estorbarlo. Puede rematar en segunda mano.' },
+      { p: 5, et: 'R1', x: 2.0, y: 5.6, zag: true,  e: 'Recibe sin descender: cubre su franja habitual.' },
+      { p: 6, et: 'L',  x: 5.0, y: 6.2, zag: true,  e: 'Recibe en el fondo; su zona linda con la ruta lateral del colocador.' }
+    ]
+  },
+  5: {
+    banquillo: 'C2', complejidad: 'Crítica', aviso: 'C · R2',
+    texto: 'Colocador en P5, la rotación más exigente: penetración diagonal completa de 10-11 m desde la esquina inferior izquierda, con riesgo de colisión con los receptores. Rotación crítica.',
+    fichas: [
+      { p: 1, et: 'L',  x: 8.0, y: 5.8, zag: true,  e: 'Recibe en la esquina inferior izquierda; cubre lo que el colocador dejaría descubierto si jugara él.' },
+      { p: 2, et: 'O',  x: 8.2, y: 0.8, zag: false, e: 'Delantero, en red: liberado de recibir, prepara su aproximación de ataque.' },
+      { p: 3, et: 'R2', x: 3.2, y: 3.6, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 4, et: 'C1', x: 1.0, y: 0.8, zag: false, e: 'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 5, et: 'C',  x: 0.6, y: 7.6, zag: true,  e: 'Zaguero, en la esquina inferior izquierda: no recibe. Penetración diagonal completa de 10-11 m, con riesgo de colisión con los receptores.' },
+      { p: 6, et: 'R1', x: 5.4, y: 6.0, zag: true,  e: 'Recibe sin descender: cubre su franja habitual.' }
+    ]
+  },
+  6: {
+    banquillo: 'C1', complejidad: 'Moderada',
+    texto: 'Colocador en P6, fondo-centro: ruta media, una diagonal frontal-derecha de unos 6 m hacia la red. Complejidad moderada.',
+    fichas: [
+      { p: 1, et: 'R1', x: 7.6, y: 5.6, zag: true,  e: 'Zaguero, recibe en su franja habitual sin descender.' },
+      { p: 2, et: 'C2', x: 8.2, y: 0.8, zag: false, e: 'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.' },
+      { p: 3, et: 'O',  x: 5.2, y: 0.8, zag: false, e: 'En la red, escondido en su zona: liberado de recibir, prepara su aproximación de ataque.' },
+      { p: 4, et: 'R2', x: 2.2, y: 3.6, zag: false, e: 'Desciende adelantado para cubrir los saques cortos y medios de su lado.' },
+      { p: 5, et: 'L',  x: 4.2, y: 6.2, zag: true,  e: 'Recibe junto al colocador; riesgo de cruzarse con su ruta si no se coordinan.' },
+      { p: 6, et: 'C',  x: 5.8, y: 7.6, zag: true,  e: 'Zaguero, fondo-centro: no recibe. Ruta media, una diagonal frontal-derecha de unos 6 m hacia la red.' }
+    ]
+  }
+};
+
+/* Cada propuesta dibuja la misma pista con un encuadre distinto.
+   B recorta la zona libre lateral: por eso su campo se ve ~12% mayor
+   en un móvil, donde el ancho es el límite real, no el alto. */
+var ENCUADRE = {
+  a: '-0.75 -4.05 10.5 13.8',
+  b: '-0.20 -4.05 9.40 13.8',
+  c: '-0.95 -4.05 10.7 13.8'
+};
+
+var estado = { a: { rot: 1, sel: null }, b: { rot: 1, sel: null }, c: { rot: 1, sel: null } };
+
+function svgPista(v) {
+  var s = '<svg class="pista" viewBox="' + ENCUADRE[v] + '" preserveAspectRatio="xMidYMid meet" ' +
+          'role="img" aria-label="Media pista de voleibol con la formación de la rotación activa">';
+  s += '<rect class="p-zona-libre" x="-2.5" y="0" width="14" height="12"/>';
+  s += '<rect class="p-rival" x="0" y="-4" width="9" height="4"/>';
+  s += '<line class="p-rival-ataque" x1="0" y1="-3" x2="9" y2="-3"/>';
+  s += '<rect class="p-borde-rival" x="0" y="-4" width="9" height="4"/>';
+  s += '<rect class="p-campo" x="0" y="0" width="9" height="9"/>';
+  for (var i = 1; i <= 8; i++) {
+    s += '<line class="p-rejilla" x1="' + i + '" y1="0" x2="' + i + '" y2="9"/>';
+    s += '<line class="p-rejilla" x1="0" y1="' + i + '" x2="9" y2="' + i + '"/>';
+  }
+  if (v === 'c') {
+    for (var m = 1; m <= 8; m++) s += '<text class="p-metro" x="-0.15" y="' + m + '">' + m + '</text>';
+  }
+  s += '<line class="p-ataque" x1="0" y1="3" x2="9" y2="3"/>';
+  s += '<rect class="p-borde-campo" x="0" y="0" width="9" height="9"/>';
+  s += '<line class="p-red" x1="0" y1="0" x2="9" y2="0"/>';
+  if (v === 'b') {
+    /* corchetes de esquina y mira central: el tratamiento HUD del campo */
+    var br = [[0, 0, 1, 1], [9, 0, -1, 1], [0, 9, 1, -1], [9, 9, -1, -1]];
+    for (var k = 0; k < br.length; k++) {
+      var q = br[k];
+      s += '<path d="M' + (q[0] + q[2] * 0.9) + ' ' + q[1] + ' H' + q[0] + ' V' + (q[1] + q[3] * 0.9) + '" ' +
+           'fill="none" stroke="var(--neon-cyan)" stroke-width="0.09" stroke-linecap="square" opacity="0.85"/>';
+    }
+    s += '<g opacity="0.3" stroke="var(--neon-cyan)" stroke-width="0.03">' +
+         '<line x1="4.5" y1="4.15" x2="4.5" y2="4.85"/><line x1="4.15" y1="4.5" x2="4.85" y2="4.5"/></g>';
+  }
+  s += '<g data-fichas="' + v + '"></g></svg>';
+  return s;
+}
+
+function svgFichas(v) {
+  var st = estado[v], r = ROT[st.rot], s = '';
+  for (var i = 0; i < r.fichas.length; i++) {
+    var f = r.fichas[i];
+    var cls = 'ficha' + (f.zag ? ' ficha--zaguera' : '') + (st.sel === i ? ' ficha--sel' : '');
+    s += '<g class="' + cls + '" transform="translate(' + f.x + ',' + f.y + ')" data-ficha="' + i + '" ' +
+         'tabindex="0" role="button" aria-label="' + f.et + ', posición P' + f.p + '">' +
+         /* círculo transparente de 0.62 m ≈ 46 px: el objetivo táctil, mayor que el dibujo */
+         '<circle r="0.62" fill="transparent"/>' +
+         '<circle class="ficha__c" r="0.45"/>' +
+         '<text class="ficha__t" text-anchor="middle" dominant-baseline="central">' + f.et + '</text>' +
+         '<text class="ficha__p" x="0" y="0.55" text-anchor="middle" dominant-baseline="hanging">' +
+         '<tspan class="l">P</tspan><tspan class="n">' + f.p + '</tspan></text></g>';
+  }
+  return s;
+}
+
+function q(sel, raiz) { return (raiz || document).querySelector(sel); }
+
+function pintar(v) {
+  var st = estado[v], r = ROT[st.rot];
+
+  var g = q('[data-fichas="' + v + '"]');
+  if (g) g.innerHTML = svgFichas(v);
+
+  var tabs = q('[data-rots="' + v + '"]').children;
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute('aria-selected', String(i + 1 === st.rot));
+  }
+
+  var banq = q('[data-banquillo="' + v + '"]');
+  if (banq) banq.innerHTML = '<button type="button" class="chip">' + r.banquillo + '</button>';
+  var cuenta = q('[data-cuenta="' + v + '"]');
+  if (cuenta) cuenta.textContent = '1';
+
+  var elegida = st.sel === null ? null : r.fichas[st.sel];
+  var tit = q('[data-titulo="' + v + '"]');
+  if (tit) tit.textContent = elegida ? ('P' + elegida.p + ' · ' + elegida.et) : ('Rotación ' + st.rot);
+  var et = q('[data-et="' + v + '"]');
+  if (et) et.textContent = elegida ? 'Por qué se coloca ahí' : 'De conjunto';
+  var txt = q('[data-texto="' + v + '"]');
+  if (txt) txt.textContent = elegida ? elegida.e : r.texto;
+
+  var badge = q('[data-badge="' + v + '"]');
+  if (badge) {
+    badge.innerHTML = r.aviso
+      ? '<div class="badge" role="status"><span class="badge__i" aria-hidden="true">!</span>' +
+        '<span class="badge__t">AL LÍMITE<span class="badge__s">' + r.aviso + '</span></span></div>'
+      : '';
+  }
+}
+
+function construir(v) {
+  /* pestañas de rotación, con la forma que pide cada propuesta */
+  var cont = q('[data-rots="' + v + '"]'), s = '';
+  for (var n = 1; n <= 6; n++) {
+    if (v === 'a') {
+      s += '<button type="button" role="tab" class="pill-rot" data-rot="' + n + '">R' + n + '</button>';
+    } else if (v === 'b') {
+      s += '<button type="button" role="tab" data-rot="' + n + '">R' + n + '</button>';
+    } else {
+      s += '<button type="button" role="tab" data-rot="' + n + '">R' + n +
+           '<span class="c-rail__et">' + ROT[n].complejidad + '</span></button>';
+    }
+  }
+  cont.innerHTML = s;
+
+  q('[data-pista="' + v + '"]').insertAdjacentHTML('afterbegin', svgPista(v));
+
+  cont.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-rot]');
+    if (!b) return;
+    estado[v].rot = Number(b.dataset.rot);
+    estado[v].sel = null;
+    pintar(v);
+  });
+
+  q('[data-pista="' + v + '"]').addEventListener('click', function (ev) {
+    var f = ev.target.closest('[data-ficha]');
+    if (!f) { estado[v].sel = null; pintar(v); return; }
+    var i = Number(f.dataset.ficha);
+    estado[v].sel = estado[v].sel === i ? null : i;
+    pintar(v);
+    if (v === 'a') abrirHoja('media');
+    if (estado[v].sel !== null && v !== 'a') abrirPanel(v, true);
+  });
+
+  pintar(v);
+}
+
+/* --- A: hoja inferior de tres alturas --- */
+var ALTURAS = ['baja', 'media', 'alta'];
+function abrirHoja(nivel) {
+  var h = q('[data-hoja="a"]');
+  h.dataset.altura = nivel;
+  q('[data-asa-et="a"]').textContent =
+    nivel === 'baja' ? 'Banquillo · Enseñanza' : nivel === 'media' ? 'Desliza para leer más' : 'Cerrar';
+}
+
+/* --- B y C: panel de enseñanza como overlay --- */
+function abrirPanel(v, abrir) {
+  var p = q('[data-panel="' + v + '"]');
+  var scrim = q('[data-scrim="' + v + '"]');
+  var clase = v === 'b' ? 'b-panel--abierto' : 'c-panel--abierto';
+  p.classList.toggle(clase, abrir);
+  p.setAttribute('aria-hidden', String(!abrir));
+  if (scrim) scrim.classList.toggle('scrim--visible', abrir);
+}
+
+['a', 'b', 'c'].forEach(construir);
+
+q('[data-asa="a"]').addEventListener('click', function () {
+  var actual = q('[data-hoja="a"]').dataset.altura;
+  abrirHoja(ALTURAS[(ALTURAS.indexOf(actual) + 1) % 3]);
+});
+
+['b', 'c'].forEach(function (v) {
+  var abrirBtn = q('[data-abrir="' + v + '"]');
+  if (abrirBtn) abrirBtn.addEventListener('click', function () { abrirPanel(v, true); });
+  document.querySelectorAll('[data-cerrar="' + v + '"]').forEach(function (b) {
+    b.addEventListener('click', function () { abrirPanel(v, false); });
+  });
+  var scrim = q('[data-scrim="' + v + '"]');
+  if (scrim) scrim.addEventListener('click', function () { abrirPanel(v, false); });
+});
+
+/* --- carcasa: ampliar un prototipo a la ventana entera --- */
+document.querySelectorAll('[data-ampliar]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var marco = q('[data-marco="' + b.dataset.ampliar + '"]');
+    marco.classList.add('marco--amplio');
+    document.body.style.overflow = 'hidden';
+    q('[data-salir]', marco).focus();
+  });
+});
+document.querySelectorAll('[data-salir]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    b.closest('.marco').classList.remove('marco--amplio');
+    document.body.style.overflow = '';
+  });
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Escape') return;
+  var abierto = q('.marco--amplio');
+  if (abierto) {
+    abierto.classList.remove('marco--amplio');
+    document.body.style.overflow = '';
+  }
+});
+</script>
+</body>
+</html>

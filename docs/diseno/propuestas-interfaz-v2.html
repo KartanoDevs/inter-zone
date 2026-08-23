@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InterZone — propuestas v2 (sobre la A)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* Tokens copiados de src/styles.css — ni un color fuera de la guía de marca. */
+:root {
+  --bg-darker:#05050a; --bg-dark:#090b14; --bg-card-alt:#0a0a1a; --bg-card:#12162d;
+  --neon-cyan:#00e5ff; --neon-magenta:#ff00ff;
+  --neon-green:#39ff14; --neon-teal:#00ffaa; --neon-amber:#ffaa00; --neon-purple:#aa88ff; --neon-pink:#ff0055;
+  --text-main:#fff; --text-secondary:#e0e6ed; --text-muted:#8aa4c8; --text-muted-alt:#8b9bb4;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-display:'Orbitron','Segoe UI',system-ui,sans-serif;
+  --space-1:8px; --space-2:16px; --space-3:24px; --space-4:32px; --space-6:48px;
+  --linea-sutil:rgba(255,255,255,.1); --linea-tenue:rgba(255,255,255,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg-darker);color:var(--text-secondary);font-family:var(--font-body);line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* ---------- carcasa de comparación ---------- */
+.hoja{max-width:1400px;margin:0 auto;padding:var(--space-4) var(--space-2) var(--space-6)}
+.hoja__cinta{font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--neon-cyan);margin-bottom:var(--space-1)}
+.hoja__titulo{margin:0 0 var(--space-1);font-family:var(--font-display);font-weight:900;font-size:clamp(24px,5vw,38px);color:var(--text-main)}
+.hoja__entradilla{margin:0 0 var(--space-3);max-width:70ch;font-size:15px;color:var(--text-muted)}
+.hoja__entradilla strong{color:var(--text-secondary);font-weight:600}
+.hoja__entradilla code{font-family:ui-monospace,'Cascadia Code',Consolas,monospace;font-size:12.5px;color:var(--neon-teal)}
+
+.cambios{display:grid;gap:var(--space-1);grid-template-columns:1fr;margin:0 0 var(--space-4);padding:var(--space-2);background:var(--bg-card-alt);border:1px solid var(--linea-tenue);border-radius:10px}
+@media(min-width:760px){.cambios{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cambios__t{grid-column:1/-1;margin:0 0 2px;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.cambios p{margin:0;font-size:13.5px;color:var(--text-muted)}
+.cambios b{color:var(--neon-teal);font-weight:600}
+
+.rejilla{display:grid;gap:var(--space-4);grid-template-columns:1fr}
+@media(min-width:820px){.rejilla{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1180px){.rejilla{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.caso{display:flex;flex-direction:column;gap:var(--space-2);min-width:0}
+.caso__cabecera{display:flex;align-items:baseline;gap:var(--space-1);flex-wrap:wrap}
+.caso__letra{font-family:var(--font-display);font-weight:900;font-size:13px;color:var(--bg-darker);background:var(--neon-cyan);border-radius:4px;padding:1px 7px;line-height:1.6}
+.caso__nombre{margin:0;font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--text-main)}
+.caso__eje{font-size:13px;color:var(--text-muted);margin:0}
+.caso__eje b{color:var(--neon-teal);font-weight:600}
+.caso__contra{font-size:12.5px;color:var(--text-muted-alt);margin:0;padding-left:10px;border-left:2px solid var(--linea-sutil)}
+.marco{position:relative;width:100%;max-width:390px;height:772px;margin:0 auto;border:1px solid var(--linea-sutil);border-radius:18px;overflow:hidden;background:var(--bg-dark);box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.marco--amplio{position:fixed;inset:0;z-index:900;width:100vw;max-width:none;height:100dvh;margin:0;border:0;border-radius:0}
+.marco__salir{position:absolute;top:10px;right:10px;z-index:950;display:none;align-items:center;min-height:44px;padding:0 14px;background:var(--bg-card);border:1px solid var(--neon-cyan);border-radius:999px;color:var(--neon-cyan);font-family:var(--font-display);font-weight:700;font-size:12px;cursor:pointer}
+.marco--amplio .marco__salir{display:inline-flex}
+.caso__pie{display:flex;gap:var(--space-1)}
+.ampliar{flex:1;min-height:44px;background:transparent;border:1px solid var(--linea-sutil);border-radius:8px;color:var(--text-muted);font-weight:600;font-size:13px;cursor:pointer;transition:border-color 150ms ease,color 150ms ease}
+.ampliar:hover,.ampliar:focus-visible{border-color:var(--neon-cyan);color:var(--neon-cyan)}
+.nota{margin:var(--space-6) 0 0;padding:var(--space-3);background:var(--bg-card-alt);border:1px solid var(--linea-tenue);border-radius:10px;font-size:14px;color:var(--text-muted)}
+.nota h2{margin:0 0 var(--space-1);font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary)}
+.nota ul{margin:0;padding-left:18px}.nota li{margin-bottom:6px}
+.nota code{font-family:ui-monospace,'Cascadia Code',Consolas,monospace;font-size:12.5px;color:var(--neon-teal)}
+
+/* ============ BASE DEL PROTOTIPO ============ */
+.app{position:relative;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;background:var(--bg-dark);font-family:var(--font-body);isolation:isolate;container-type:inline-size;container-name:app}
+.app svg{display:block}
+
+/* pista */
+.pista-host{position:relative;flex:1;min-height:0;display:flex;align-items:stretch;padding:0 var(--space-1)}
+.pista{display:block;flex:1;min-width:0;width:100%;height:100%;touch-action:none}
+.p-zona-libre{fill:var(--bg-card-alt)}
+.p-campo{fill:var(--bg-card)}
+.p-rival{fill:var(--bg-darker);opacity:.75}
+.p-rival-ataque{stroke:var(--neon-purple);stroke-opacity:.35;stroke-width:.03;stroke-dasharray:.12 .1}
+.p-borde-rival{fill:none;stroke:var(--neon-purple);stroke-opacity:.5;stroke-width:.05}
+.p-rejilla{stroke:rgba(255,255,255,.05);stroke-width:.02}
+.p-ataque{stroke:rgba(0,229,255,.35);stroke-width:.03;stroke-dasharray:.12 .1}
+.p-borde-campo{fill:none;stroke:rgba(224,230,237,.4);stroke-width:.05}
+.p-red{stroke:var(--neon-cyan);stroke-width:.06}
+.p-celda{fill-opacity:.55;stroke:rgba(255,255,255,.25);stroke-width:.015;pointer-events:none}
+.p-rival-circulo{fill:var(--bg-card);stroke:var(--neon-pink);stroke-width:.05}
+.p-rival-et{font-family:var(--font-display);font-weight:700;font-size:.38px;fill:var(--neon-pink)}
+
+.ficha{cursor:pointer;transition:transform 200ms ease}
+.ficha__c{fill:var(--bg-card);stroke:var(--neon-cyan);stroke-width:.05;transition:stroke 200ms ease,stroke-width 200ms ease}
+.ficha--zaguera .ficha__c{stroke-width:.09}
+.ficha__t{font-family:var(--font-display);font-weight:700;font-size:.38px;fill:var(--text-main);pointer-events:none}
+.ficha__p{font-family:var(--font-display);font-weight:700;fill:var(--text-muted);pointer-events:none}
+.ficha__p .l{font-size:.18px}.ficha__p .n{font-size:.28px}
+.ficha--sel .ficha__c{stroke:var(--neon-purple);stroke-width:.09;filter:drop-shadow(0 0 .22px var(--neon-purple))}
+.ficha--sel .ficha__t{fill:var(--neon-purple)}
+
+/* botón facetado, firma de la marca */
+.btn{--facet:9px;--relleno:var(--bg-dark);position:relative;z-index:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px var(--space-2);background:var(--text-muted);color:var(--text-secondary);font-family:var(--font-body);font-weight:600;font-size:14px;border:0;cursor:pointer;clip-path:polygon(var(--facet) 0,100% 0,100% calc(100% - var(--facet)),calc(100% - var(--facet)) 100%,0 100%,0 var(--facet));transition:box-shadow 150ms ease,background 150ms ease,opacity 150ms ease}
+.btn::before{content:'';position:absolute;inset:1px;z-index:-1;background:var(--relleno);clip-path:polygon(calc(var(--facet) - 1.4px) 0,100% 0,100% calc(100% - var(--facet) + 1.4px),calc(100% - var(--facet) + 1.4px) 100%,0 100%,0 calc(var(--facet) - 1.4px));transition:background 150ms ease}
+.btn--primario{background:linear-gradient(90deg,var(--neon-cyan),var(--neon-magenta));color:var(--text-main);--relleno:var(--bg-card);box-shadow:0 0 14px rgba(0,229,255,.22)}
+.btn--secundario{background:var(--text-muted);color:var(--text-muted);--relleno:var(--bg-dark)}
+.btn--secundario:hover{background:var(--text-secondary);color:var(--text-secondary)}
+.btn--destructivo{background:var(--neon-pink);color:var(--neon-pink);--relleno:var(--bg-dark)}
+.btn--destructivo:hover{--relleno:rgba(255,0,85,.1)}
+.btn:disabled{background:var(--text-muted);color:var(--text-muted-alt);box-shadow:none;cursor:not-allowed}
+
+.ico{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;background:transparent;border:1px solid transparent;border-radius:50%;color:var(--text-muted);cursor:pointer;transition:color 150ms ease,border-color 150ms ease,background 150ms ease}
+.ico:hover,.ico:focus-visible{color:var(--neon-cyan);border-color:rgba(0,229,255,.4)}
+.ico svg{width:20px;height:20px}
+
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:46px;min-height:44px;padding:8px 14px;background:var(--bg-card-alt);border:1px solid var(--neon-cyan);border-radius:999px;color:var(--text-main);font-family:var(--font-display);font-weight:700;font-size:13px;cursor:grab;touch-action:none}
+.chip:hover{background:rgba(0,229,255,.1)}
+
+.badge-host{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:10;max-width:calc(100% - 24px)}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(18,22,45,.92);border:1px solid var(--neon-amber);border-radius:999px;box-shadow:0 0 16px rgba(255,170,0,.2);pointer-events:none}
+.badge__i{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--neon-amber);color:var(--bg-darker);font-family:var(--font-display);font-weight:700;font-size:12px;flex:0 0 auto}
+.badge__t{font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.04em;color:var(--text-main)}
+.badge__s{display:block;font-family:var(--font-body);font-weight:400;font-size:11px;letter-spacing:normal;color:var(--text-secondary);margin-top:1px}
+
+.scrim{position:absolute;inset:0;z-index:60;background:rgba(5,5,10,.72);opacity:0;pointer-events:none;transition:opacity 200ms ease}
+.scrim--visible{opacity:1;pointer-events:auto}
+
+/* ============ NAVEGACIÓN DE VENTANA (Editor · Examen · Cuenta) ============ */
+
+/* v1 — segmentado en la cabecera */
+.nav-seg{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin:6px var(--space-1) 0;padding:3px;background:var(--bg-card-alt);border:1px solid var(--linea-tenue);border-radius:9px}
+.nav-seg button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;background:transparent;border:0;border-radius:6px;color:var(--text-muted);font-family:var(--font-display);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background 150ms ease,color 150ms ease}
+.nav-seg button svg{width:15px;height:15px}
+.nav-seg button[aria-current="page"]{background:rgba(0,229,255,.14);color:var(--neon-cyan)}
+.nav-seg button:disabled{opacity:.45;cursor:not-allowed}
+
+/* v2 — barra inferior de navegación */
+.nav-bar{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--linea-sutil);background:var(--bg-card-alt)}
+.nav-bar button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;background:transparent;border:0;color:var(--text-muted);font-family:var(--font-body);font-weight:600;font-size:10.5px;cursor:pointer;transition:color 150ms ease}
+.nav-bar button svg{width:21px;height:21px}
+.nav-bar button[aria-current="page"]{color:var(--neon-cyan)}
+.nav-bar button[aria-current="page"]::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:36px;height:2px;background:var(--neon-cyan);box-shadow:0 0 8px var(--neon-cyan)}
+.nav-bar button:disabled{opacity:.45;cursor:not-allowed}
+
+/* v3 — cajón lateral */
+.cajon{position:absolute;top:0;bottom:0;left:0;z-index:70;width:264px;transform:translateX(-101%);display:flex;flex-direction:column;gap:2px;padding:var(--space-2) var(--space-1);background:var(--bg-card);border-right:1px solid var(--neon-cyan);box-shadow:12px 0 40px rgba(0,229,255,.08);transition:transform 260ms cubic-bezier(.2,.8,.2,1)}
+.cajon--abierto{transform:translateX(0)}
+.cajon__marca{font-family:var(--font-display);font-weight:900;font-size:14px;letter-spacing:.12em;color:var(--text-main);padding:0 var(--space-1) var(--space-2)}
+.cajon__marca span{color:var(--neon-cyan)}
+.cajon__et{font-family:var(--font-display);font-weight:700;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);padding:var(--space-2) var(--space-1) 5px}
+.cajon button{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 var(--space-1);background:transparent;border:0;border-radius:8px;color:var(--text-secondary);font-weight:600;font-size:14px;text-align:left;cursor:pointer;transition:background 150ms ease,color 150ms ease}
+.cajon button svg{width:19px;height:19px;flex:0 0 auto;color:var(--text-muted)}
+.cajon button:hover{background:var(--bg-card-alt)}
+.cajon button[aria-current="page"]{background:rgba(0,229,255,.12);color:var(--neon-cyan)}
+.cajon button[aria-current="page"] svg{color:var(--neon-cyan)}
+.cajon button:disabled{opacity:.45;cursor:not-allowed}
+.cajon__pie{margin-top:auto;font-size:11.5px;color:var(--text-muted-alt);padding:var(--space-1)}
+
+/* ============ CABECERA ============ */
+.cab{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:6px var(--space-1)}
+.marca{font-family:var(--font-display);font-weight:900;font-size:12px;letter-spacing:.14em;color:var(--text-main);flex:0 0 auto}
+.marca span{color:var(--neon-cyan)}
+.equipo{display:flex;background:var(--bg-card-alt);border-radius:999px;padding:2px;flex:0 0 auto}
+.equipo button{min-width:32px;min-height:30px;padding:0 10px;background:transparent;border:0;border-radius:999px;color:var(--text-muted);font-family:var(--font-display);font-weight:700;font-size:11px;cursor:pointer;transition:background 150ms ease,color 150ms ease}
+.equipo button[aria-pressed="true"]{background:rgba(0,229,255,.14);color:var(--neon-cyan)}
+.sistema{flex:1;min-width:0;display:flex;align-items:center;gap:7px;min-height:40px;padding:0 10px;background:var(--bg-card);border:1px solid var(--linea-sutil);border-radius:8px;color:var(--text-secondary);font-weight:600;font-size:13px;cursor:pointer;text-align:left}
+.sistema__tipo{font-family:var(--font-display);font-weight:700;font-size:9px;letter-spacing:.08em;border-radius:3px;padding:2px 5px;flex:0 0 auto}
+.sistema__tipo--rec{background:rgba(0,229,255,.16);color:var(--neon-cyan)}
+.sistema__tipo--def{background:rgba(170,136,255,.18);color:var(--neon-purple)}
+.sistema__n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sistema svg{width:14px;height:14px;flex:0 0 auto;color:var(--text-muted)}
+
+/* ============ TIRAS DE ROTACIÓN Y VÍA ============ */
+.tiras{flex:0 0 auto;padding:0 var(--space-1) 5px;display:flex;flex-direction:column;gap:4px}
+.rots{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.rots button{position:relative;display:flex;align-items:center;justify-content:center;min-height:38px;background:var(--bg-card);border:1px solid var(--linea-sutil);border-radius:6px;color:var(--text-secondary);font-family:var(--font-display);font-size:13px;cursor:pointer;transition:border-color 150ms ease,color 150ms ease,background 150ms ease}
+.rots button:hover{border-color:rgba(0,229,255,.4);color:var(--text-main)}
+.rots button[aria-selected="true"]{border-color:var(--neon-cyan);color:var(--text-main);background:rgba(0,229,255,.12)}
+.vias{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.vias button{display:flex;align-items:center;justify-content:center;min-height:34px;background:var(--bg-card-alt);border:1px solid var(--linea-tenue);border-radius:6px;color:var(--text-muted);font-family:var(--font-body);font-weight:600;font-size:12px;cursor:pointer;transition:border-color 150ms ease,color 150ms ease,background 150ms ease}
+.vias button:hover{color:var(--text-main)}
+.vias button[aria-selected="true"]{border-color:var(--neon-purple);color:var(--neon-purple);background:rgba(170,136,255,.12)}
+
+/* ============ SPEEDDIAL (inspirado en el de PrimeNG, con nuestra faceta) ============ */
+.sd{position:absolute;z-index:25;width:52px;height:52px}
+.sd--pista{top:10px;right:14px}
+.sd--cab{position:relative;flex:0 0 auto;width:46px;height:46px;z-index:25}
+.sd__fab{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--neon-cyan),var(--neon-magenta));border:0;border-radius:50%;color:var(--bg-darker);cursor:pointer;box-shadow:0 0 16px rgba(0,229,255,.35);transition:transform 220ms cubic-bezier(.2,.8,.2,1),box-shadow 200ms ease}
+.sd__fab svg{width:22px;height:22px;transition:transform 220ms cubic-bezier(.2,.8,.2,1)}
+.sd--cab .sd__fab svg{width:19px;height:19px}
+.sd--abierto .sd__fab{box-shadow:0 0 24px rgba(255,0,255,.45)}
+.sd--abierto .sd__fab svg{transform:rotate(135deg)}
+/* 44 px reales de objetivo táctil, centrados sobre el FAB pasen por donde pasen */
+.sd__item{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;display:flex;align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--neon-cyan);border-radius:50%;color:var(--neon-cyan);cursor:pointer;opacity:0;transform:translate(0,0) scale(.4);pointer-events:none;transition:transform 260ms cubic-bezier(.2,.8,.2,1),opacity 180ms ease,background 150ms ease}
+.sd__item svg{width:18px;height:18px}
+.sd__item:hover{background:rgba(0,229,255,.12)}
+.sd__item--peligro{border-color:var(--neon-pink);color:var(--neon-pink)}
+.sd__item--peligro:hover{background:rgba(255,0,85,.12)}
+.sd--abierto .sd__item{opacity:1;pointer-events:auto;transform:translate(var(--dx),var(--dy)) scale(1)}
+.sd__et{position:absolute;top:50%;transform:translateY(-50%);white-space:nowrap;padding:4px 9px;background:rgba(18,22,45,.95);border:1px solid var(--linea-sutil);border-radius:5px;font-family:var(--font-body);font-weight:600;font-size:11px;color:var(--text-secondary);opacity:0;pointer-events:none;transition:opacity 160ms ease}
+.sd__et--izq{right:calc(100% + 8px)}
+.sd__et--der{left:calc(100% + 8px)}
+.sd--abierto .sd__item .sd__et{opacity:1}
+
+/* ============ ACCIONES COMPACTAS (38 px, con confirmación las dos) ============ */
+.acciones{flex:0 0 auto;display:flex;gap:6px;padding:0 var(--space-1) 6px}
+.acciones--flota{position:absolute;left:0;right:0;bottom:10px;z-index:20;padding:0 14px}
+/* en la 3 las acciones flotan justo donde iría el badge: se sube para no pisarlo */
+.app[data-v="3"] .badge-host{bottom:58px}
+
+/* leyenda de etiquetas: esquina libre de la pista, la contraria al SpeedDial */
+.pista-btn{position:absolute;top:10px;left:14px;z-index:20;display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:rgba(18,22,45,.85);border:1px solid var(--linea-sutil);border-radius:50%;color:var(--text-muted);cursor:pointer;backdrop-filter:blur(6px);transition:color 150ms ease,border-color 150ms ease}
+.pista-btn:hover,.pista-btn:focus-visible{color:var(--neon-cyan);border-color:rgba(0,229,255,.45)}
+.pista-btn svg{width:18px;height:18px}
+.cajon__x{position:absolute;top:10px;right:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;border-radius:50%;color:var(--text-muted);cursor:pointer}
+.cajon__x:hover{color:var(--neon-cyan)}
+.cajon__x svg{width:18px;height:18px}
+.dl{margin:0;display:flex;flex-direction:column;gap:7px}
+.dl__f{display:flex;align-items:baseline;gap:10px}
+.dl__f dt{min-width:26px;font-family:var(--font-display);font-weight:700;font-size:12.5px;color:var(--neon-cyan)}
+.dl__f dd{margin:0;font-size:13.5px;color:var(--text-secondary)}
+.acc{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 12px;background:var(--bg-card);border:1px solid var(--linea-sutil);border-radius:7px;color:var(--text-secondary);font-family:var(--font-body);font-weight:600;font-size:13px;cursor:pointer;transition:border-color 150ms ease,color 150ms ease,background 150ms ease}
+.acc svg{width:16px;height:16px}
+.acc--flota{background:rgba(18,22,45,.9);backdrop-filter:blur(6px)}
+.acc--vaciar:hover{border-color:var(--neon-pink);color:var(--neon-pink)}
+.acc--guardar{flex:1.6;border-color:transparent;background:linear-gradient(90deg,rgba(0,229,255,.18),rgba(255,0,255,.18));color:var(--text-main);position:relative}
+.acc--guardar::after{content:'';position:absolute;inset:0;border-radius:7px;padding:1px;background:linear-gradient(90deg,var(--neon-cyan),var(--neon-magenta));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.acc--guardar:hover{box-shadow:0 0 14px rgba(0,229,255,.22)}
+
+/* ============ TABS INFERIORES ============ */
+.panel{flex:0 0 auto;background:var(--bg-card);border-top:1px solid var(--linea-sutil);border-radius:12px 12px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.tabs{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px 5px 0}
+.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:44px;background:transparent;border:0;border-radius:7px 7px 0 0;color:var(--text-muted);font-family:var(--font-body);font-weight:600;font-size:10.5px;cursor:pointer;transition:color 150ms ease,background 150ms ease}
+.tabs button svg{width:17px;height:17px}
+.tabs button:hover{color:var(--text-secondary)}
+.tabs button[aria-selected="true"]{color:var(--neon-cyan);background:var(--bg-card-alt)}
+.tabs button[aria-selected="true"]::after{content:'';position:absolute;bottom:0;left:12%;right:12%;height:2px;background:var(--neon-cyan);box-shadow:0 0 8px var(--neon-cyan)}
+.tabs button:disabled{opacity:.4;cursor:not-allowed}
+.tabs__cuenta{position:absolute;top:4px;right:calc(50% - 20px);min-width:15px;height:15px;padding:0 4px;border-radius:999px;background:var(--neon-cyan);color:var(--bg-darker);font-family:var(--font-display);font-weight:700;font-size:9px;line-height:15px}
+
+.tabpanel{background:var(--bg-card-alt);padding:var(--space-2);overflow-y:auto;transition:height 240ms cubic-bezier(.2,.8,.2,1);height:158px}
+.panel--plegado .tabpanel{height:0;padding-top:0;padding-bottom:0;overflow:hidden}
+.tabpanel__t{margin:0 0 7px;font-family:var(--font-display);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--neon-cyan)}
+.tabpanel p{margin:0 0 var(--space-1);font-size:13.5px;color:var(--text-secondary)}
+.tabpanel p:last-child{margin-bottom:0}
+.tabpanel__vacio{font-size:13px;color:var(--text-muted)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--space-1)}
+
+/* leyenda de zonas (solo defensa) */
+.leyenda{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.leyenda__f{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);min-width:0}
+.leyenda__m{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.leyenda__z{font-family:var(--font-display);font-weight:700;font-size:10px;color:var(--text-muted);flex:0 0 auto}
+
+/* interruptores de ajustes */
+.sw{display:flex;align-items:center;gap:10px;min-height:40px;width:100%;background:transparent;border:0;padding:0;color:var(--text-secondary);font-size:13.5px;text-align:left;cursor:pointer}
+.sw__c{position:relative;flex:0 0 auto;width:38px;height:22px;border-radius:999px;background:var(--bg-card);border:1px solid var(--linea-sutil);transition:background 160ms ease,border-color 160ms ease}
+.sw__c::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);transition:transform 160ms ease,background 160ms ease}
+.sw[aria-pressed="true"] .sw__c{background:rgba(0,229,255,.2);border-color:var(--neon-cyan)}
+.sw[aria-pressed="true"] .sw__c::after{transform:translateX(16px);background:var(--neon-cyan)}
+.sw__t{flex:1;min-width:0}
+
+/* ============ VENTANAS FUTURAS (Examen / Cuenta) ============ */
+.futura{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-1);padding:var(--space-4) var(--space-3);text-align:center}
+.futura__i{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;border:1px solid var(--linea-sutil);background:var(--bg-card);color:var(--neon-cyan);margin-bottom:var(--space-1)}
+.futura__i svg{width:28px;height:28px}
+.futura h2{margin:0;font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.05em;color:var(--text-main)}
+.futura p{margin:0;max-width:34ch;font-size:13.5px;color:var(--text-muted)}
+.futura__spec{font-family:var(--font-display);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted-alt);border:1px solid var(--linea-tenue);border-radius:999px;padding:4px 11px;margin-top:var(--space-1)}
+
+/* ============ DIÁLOGO DE CONFIRMACIÓN ============ */
+.dlg-host{position:absolute;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:var(--space-2);background:rgba(5,5,10,.75)}
+.dlg-host--visible{display:flex}
+.dlg{width:100%;max-width:300px;padding:var(--space-3);background:var(--bg-card);border:1px solid var(--neon-cyan);border-radius:8px;box-shadow:0 0 24px rgba(0,229,255,.15)}
+.dlg--peligro{border-color:var(--neon-pink);box-shadow:0 0 24px rgba(255,0,85,.15)}
+.dlg__t{margin:0 0 var(--space-1);font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.04em;color:var(--text-main)}
+.dlg__m{margin:0 0 var(--space-3);font-size:13.5px;color:var(--text-secondary)}
+.dlg__a{display:flex;justify-content:flex-end;gap:var(--space-1)}
+.dlg__a .btn{min-height:40px;font-size:13px}
+
+.aviso{position:absolute;left:50%;bottom:14px;transform:translateX(-50%) translateY(14px);z-index:90;display:flex;align-items:center;gap:8px;padding:9px 15px;background:var(--bg-card);border:1px solid var(--neon-teal);border-radius:999px;color:var(--text-main);font-size:12.5px;font-weight:600;box-shadow:0 0 18px rgba(0,255,170,.18);opacity:0;pointer-events:none;transition:opacity 200ms ease,transform 200ms ease}
+.aviso--visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.aviso svg{width:16px;height:16px;color:var(--neon-teal)}
+
+@container app (min-width:700px){
+  .tabpanel{height:180px}
+  .leyenda{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .nav-seg{max-width:460px;margin-inline:auto}
+  .acciones{max-width:520px;margin-inline:auto;width:100%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <g id="i-mas" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>
+  <g id="i-nuevo" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8.5z"/><polyline points="13.5,3.5 13.5,8.5 18.5,8.5"/><line x1="12" y1="11.5" x2="12" y2="17"/><line x1="9.2" y1="14.2" x2="14.8" y2="14.2"/></g>
+  <g id="i-lapiz" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 4.6a1.9 1.9 0 0 1 2.7 2.7L8.6 17.8 4.8 19l1.2-3.8z"/><line x1="14.6" y1="6.4" x2="17.3" y2="9.1"/></g>
+  <g id="i-clonar" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8.6" y="8.6" width="11" height="11" rx="1.7"/><path d="M15.4 5.4H5.9A1.5 1.5 0 0 0 4.4 6.9v9.5"/></g>
+  <g id="i-papelera" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M9.5 7V5.4A1.4 1.4 0 0 1 10.9 4h2.2a1.4 1.4 0 0 1 1.4 1.4V7"/><path d="M6.7 7l.8 11.2A1.8 1.8 0 0 0 9.3 20h5.4a1.8 1.8 0 0 0 1.8-1.8L17.3 7"/></g>
+  <g id="i-ajustes" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="15" cy="7" r="2.3"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="12" r="2.3"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="16" cy="17" r="2.3"/></g>
+  <g id="i-ayuda" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.5"/><line x1="12" y1="16.6" x2="12" y2="16.7"/></g>
+  <g id="i-chevron" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="7,10 12,15 17,10"/></g>
+  <g id="i-libro" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z"/></g>
+  <g id="i-banquillo" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.4" r="3"/><path d="M3.6 19.4a5.6 5.6 0 0 1 10.8 0"/><path d="M16.2 6.1a3 3 0 0 1 0 5.4"/><path d="M17.6 14.6a5.6 5.6 0 0 1 2.8 4.8"/></g>
+  <g id="i-capas" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,3.5 20.5,8 12,12.5 3.5,8"/><polyline points="3.5,12.6 12,17.1 20.5,12.6"/></g>
+  <g id="i-editor" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6"/><line x1="12" y1="17.4" x2="12" y2="20"/><line x1="8.6" y1="20" x2="15.4" y2="20"/><circle cx="8.4" cy="9.2" r="1.5"/><circle cx="15.6" cy="12.6" r="1.5"/></g>
+  <g id="i-examen" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2 21 8.6 12 13 3 8.6z"/><path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4"/><line x1="20.4" y1="9" x2="20.4" y2="14"/></g>
+  <g id="i-cuenta" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.4"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></g>
+  <g id="i-menu" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></g>
+  <g id="i-guardar" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z"/><polyline points="7.8,4.5 7.8,9.2 14.4,9.2 14.4,4.5"/><rect x="7.8" y="12.6" width="8.4" height="6.9"/></g>
+  <g id="i-vaciar" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 8.4h10.2"/><path d="M8.2 8.4V6.8A1.4 1.4 0 0 1 9.6 5.4h1.8A1.4 1.4 0 0 1 12.8 6.8v1.6"/><path d="M6.2 8.4l.7 9.6a1.8 1.8 0 0 0 1.8 1.6h2.6"/><line x1="15.2" y1="14" x2="20.4" y2="19.2"/><line x1="20.4" y1="14" x2="15.2" y2="19.2"/></g>
+  <g id="i-check" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,12.6 10,17.4 19,7.2"/></g>
+  <g id="i-cerrar" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="7" y1="7" x2="17" y2="17"/><line x1="17" y1="7" x2="7" y2="17"/></g>
+</defs></svg>
+
+<main class="hoja">
+  <p class="hoja__cinta">InterZone · v2 sobre la propuesta A</p>
+  <h1 class="hoja__titulo">Tres evoluciones de la A</h1>
+  <p class="hoja__entradilla">
+    Las tres parten de la <strong>A</strong> y llevan las cuatro mejoras que pediste. Se diferencian
+    en <strong>dónde vive la navegación de ventana</strong>, que es la decisión que condiciona el resto
+    cuando lleguen el examen y el login. Todas manejan <strong>recepción y defensa</strong>: cambia el
+    sistema desde la cabecera y aparecen las vías de ataque y las zonas de responsabilidad, con los
+    datos reales de <code>sistema-defensa-por-defecto.ts</code>.
+  </p>
+
+  <div class="cambios">
+    <p class="cambios__t">Lo que cambia respecto a la A</p>
+    <p><b>SpeedDial</b> — el CRUD de sistemas (nuevo, renombrar, clonar, borrar) sale de la barra y se pliega en un FAB que se despliega al pulsarlo.</p>
+    <p><b>Tabs abajo</b> — banquillo, enseñanza, zonas y ajustes, todo a la vista en una fila. Pulsa la pestaña activa y el panel se pliega para dejarle el alto a la pista.</p>
+    <p><b>Acciones de 38 px</b> — guardar y vaciar bajan de 44 a 38 px de alto y comparten una sola fila; las dos piden confirmación.</p>
+    <p><b>Navegación de ventana</b> — Editor · Examen · Cuenta. Examen y Cuenta están en su hueco de la hoja de ruta, sin spec escrita todavía.</p>
+  </div>
+
+  <div class="rejilla">
+    <section class="caso">
+      <div class="caso__cabecera"><span class="caso__letra">1</span><h2 class="caso__nombre">Segmentado arriba</h2></div>
+      <p class="caso__eje">Navegación como <b>segmented control</b> en lo más alto. SpeedDial flotando sobre la pista.</p>
+      <div class="marco" data-marco="1"><button class="marco__salir" data-salir>Cerrar</button><div class="app" data-v="1"></div></div>
+      <p class="caso__contra">A favor: las tres ventanas siempre visibles y el pulgar no las roza sin querer.
+        En contra: 40 px permanentes arriba, y un segmented de tres no escala si algún día hay una cuarta ventana.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="1">Ver a pantalla completa</button></div>
+    </section>
+
+    <section class="caso">
+      <div class="caso__cabecera"><span class="caso__letra">2</span><h2 class="caso__nombre">Barra inferior</h2></div>
+      <p class="caso__eje">Navegación en una <b>tab bar inferior</b>, al alcance del pulgar. SpeedDial anclado en la cabecera.</p>
+      <div class="marco" data-marco="2"><button class="marco__salir" data-salir>Cerrar</button><div class="app" data-v="2"></div></div>
+      <p class="caso__contra">A favor: el patrón móvil que todo el mundo ya sabe usar, y admite hasta cinco ventanas.
+        En contra: 54 px abajo que se suman a los tabs de contenido — dos filas de pestañas apiladas piden disciplina para no confundirlas.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="2">Ver a pantalla completa</button></div>
+    </section>
+
+    <section class="caso">
+      <div class="caso__cabecera"><span class="caso__letra">3</span><h2 class="caso__nombre">Cajón lateral</h2></div>
+      <p class="caso__eje">Navegación en un <b>cajón</b> desde la cabecera; acciones flotando sobre la pista. La pista más grande.</p>
+      <div class="marco" data-marco="3"><button class="marco__salir" data-salir>Cerrar</button><div class="app" data-v="3"></div></div>
+      <p class="caso__contra">A favor: cero píxeles permanentes gastados en navegar, y el cajón crece sin límite.
+        En contra: lo que no se ve no se descubre — el examen tarda más en encontrarse que en las otras dos.</p>
+      <div class="caso__pie"><button type="button" class="ampliar" data-ampliar="3">Ver a pantalla completa</button></div>
+    </section>
+  </div>
+
+  <div class="nota">
+    <h2>Detalles que conviene mirar de cerca</h2>
+    <ul>
+      <li><b>Cambia a defensa</b> desde el botón del sistema en la cabecera: aparecen las cuatro vías (Zona 2, Zona 3, Zona 4, Pipe), la ficha rival en su campo, las seis zonas de responsabilidad pintadas y su leyenda en el tab «Zonas». Todo con los repartos y celdas reales de la spec 030.</li>
+      <li><b>El tab «Zonas» está deshabilitado en recepción</b>, no oculto. Desde la spec 024 las zonas solo existen en defensa; esconder la pestaña haría pensar que falta algo.</li>
+      <li><b>Las celdas compartidas se pintan a franjas diagonales</b>, igual que en la app: en defensa los dos bloqueadores siempre comparten una columna, y ver esa costura es justo lo que el documento del equipo pide vigilar.</li>
+      <li><b>Guardar también confirma.</b> Lo pediste así; ten en cuenta que es poco habitual para una acción no destructiva y añade un toque a cada guardado — si se hace pesado, la alternativa es guardar directo con un aviso y opción de deshacer.</li>
+      <li><b>El aviso «AL LÍMITE» sale en R5</b> solo para enseñar dónde cae ese estado. El sistema sembrado es legal en las seis rotaciones.</li>
+    </ul>
+  </div>
+</main>
+
+<script>
+/* ==========================================================================
+   DATOS — todo sale del dominio real:
+   recepción  -> src/app/domain/sistema-por-defecto.ts
+   defensa    -> src/app/domain/sistema-defensa-por-defecto.ts (spec 030)
+   ========================================================================== */
+
+var REC = {
+  1: { texto:'Colocador en P1, escondido en el fondo derecho: no recibe. Ruta corta, una diagonal de 6-7 m hacia la red. Complejidad baja-moderada.', fichas:[
+    {p:1,et:'C', x:7.8,y:7.6,zag:1,e:'Zaguero, escondido en el fondo derecho: no recibe. Ruta corta, una diagonal de 6-7 m hacia la red.'},
+    {p:2,et:'R1',x:7.0,y:4.2,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:3,et:'C2',x:4.5,y:0.8,zag:0,e:'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.'},
+    {p:4,et:'O', x:1.5,y:0.8,zag:0,e:'En la red, escondido en su zona: liberado de recibir, prepara su aproximación de ataque.'},
+    {p:5,et:'R2',x:1.6,y:5.6,zag:1,e:'Cubre la franja izquierda-profunda de la recepción.'},
+    {p:6,et:'L', x:4.4,y:6.2,zag:1,e:'Recibe en el centro-profundo, la zona de mayor tráfico; dirige los ajustes de R1 y R2.'}]},
+  2: { texto:'Colocador en P2, ya en la zona de armado: apenas necesita desplazarse. La rotación más cómoda, con el máximo potencial ofensivo inmediato.', fichas:[
+    {p:1,et:'L', x:7.6,y:6.2,zag:1,e:'Recibe en el fondo derecho, ya casi en la zona donde se preparará el ataque.'},
+    {p:2,et:'C', x:8.0,y:1.0,zag:0,e:'Delantero, ya en la zona de armado: apenas necesita desplazarse. La rotación más cómoda.'},
+    {p:3,et:'R1',x:5.0,y:3.6,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:4,et:'C2',x:1.4,y:0.8,zag:0,e:'Delantero, en red: liberado de recibir, listo para el primer tiempo.'},
+    {p:5,et:'O', x:1.0,y:6.6,zag:1,e:'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.'},
+    {p:6,et:'R2',x:3.0,y:6.0,zag:1,e:'Recibe sin descender: cubre su franja habitual.'}]},
+  3: { texto:'Colocador en P3, ya en el centro de la red: solo un paso lateral de ~2 m hasta la zona de armado. Complejidad baja y gran comodidad ofensiva.', fichas:[
+    {p:1,et:'R2',x:7.8,y:5.6,zag:1,e:'Recibe sin descender: cubre su franja habitual.'},
+    {p:2,et:'C1',x:8.2,y:0.8,zag:0,e:'Delantero, en red: liberado de recibir, listo para el primer tiempo.'},
+    {p:3,et:'C', x:5.6,y:0.8,zag:0,e:'Delantero, ya en el centro de la red: solo un paso lateral de ~2 m hasta la zona de armado. Puede rematar en segunda mano.'},
+    {p:4,et:'R1',x:2.6,y:3.6,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:5,et:'L', x:4.0,y:6.2,zag:1,e:'Recibe cerca del colocador, en la zona de mayor tráfico.'},
+    {p:6,et:'O', x:5.6,y:7.4,zag:1,e:'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.'}]},
+  4: { texto:'Colocador en P4, en la red pero lejos de la zona de armado: ruta lateral larga (~5 m), cruzándose con el central delantero. Rotación crítica.', fichas:[
+    {p:1,et:'O', x:8.2,y:7.0,zag:1,e:'Zaguero, se esconde en el fondo para preparar un ataque de segunda línea por el pipe.'},
+    {p:2,et:'R2',x:7.4,y:3.6,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:3,et:'C1',x:4.2,y:0.8,zag:0,e:'Delantero, en el centro de la red: liberado de recibir, listo para el primer tiempo.'},
+    {p:4,et:'C', x:0.8,y:0.8,zag:0,e:'Delantero, lejos de la zona de armado: ruta lateral larga (~5 m), cruzándose con el central sin estorbarlo. Puede rematar en segunda mano.'},
+    {p:5,et:'R1',x:2.0,y:5.6,zag:1,e:'Recibe sin descender: cubre su franja habitual.'},
+    {p:6,et:'L', x:5.0,y:6.2,zag:1,e:'Recibe en el fondo; su zona linda con la ruta lateral del colocador.'}]},
+  5: { texto:'Colocador en P5, la rotación más exigente: penetración diagonal completa de 10-11 m desde la esquina inferior izquierda, con riesgo de colisión con los receptores. Rotación crítica.', aviso:'C · R2', fichas:[
+    {p:1,et:'L', x:8.0,y:5.8,zag:1,e:'Recibe en la esquina inferior izquierda; cubre lo que el colocador dejaría descubierto si jugara él.'},
+    {p:2,et:'O', x:8.2,y:0.8,zag:0,e:'Delantero, en red: liberado de recibir, prepara su aproximación de ataque.'},
+    {p:3,et:'R2',x:3.2,y:3.6,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:4,et:'C1',x:1.0,y:0.8,zag:0,e:'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.'},
+    {p:5,et:'C', x:0.6,y:7.6,zag:1,e:'Zaguero, en la esquina inferior izquierda: no recibe. Penetración diagonal completa de 10-11 m, con riesgo de colisión con los receptores.'},
+    {p:6,et:'R1',x:5.4,y:6.0,zag:1,e:'Recibe sin descender: cubre su franja habitual.'}]},
+  6: { texto:'Colocador en P6, fondo-centro: ruta media, una diagonal frontal-derecha de unos 6 m hacia la red. Complejidad moderada.', fichas:[
+    {p:1,et:'R1',x:7.6,y:5.6,zag:1,e:'Zaguero, recibe en su franja habitual sin descender.'},
+    {p:2,et:'C2',x:8.2,y:0.8,zag:0,e:'Delantero, pegado a la red: liberado de recibir, listo para el primer tiempo.'},
+    {p:3,et:'O', x:5.2,y:0.8,zag:0,e:'En la red, escondido en su zona: liberado de recibir, prepara su aproximación de ataque.'},
+    {p:4,et:'R2',x:2.2,y:3.6,zag:0,e:'Desciende adelantado para cubrir los saques cortos y medios de su lado.'},
+    {p:5,et:'L', x:4.2,y:6.2,zag:1,e:'Recibe junto al colocador; riesgo de cruzarse con su ruta si no se coordinan.'},
+    {p:6,et:'C', x:5.8,y:7.6,zag:1,e:'Zaguero, fondo-centro: no recibe. Ruta media, una diagonal frontal-derecha de unos 6 m hacia la red.'}]}
+};
+
+var VIAS = ['z2','z3','z4','pipe'];
+var ET_VIA = { z2:'Zona 2', z3:'Zona 3', z4:'Zona 4', pipe:'Pipe' };
+var RIVAL = { z2:{x:1.5,y:-1.5}, z3:{x:4.5,y:-1.5}, z4:{x:7.5,y:-1.5}, pipe:{x:4.5,y:-3.5} };
+
+var DEF_PUNTOS = {
+  z2:{4:{x:1.4,y:0.4},3:{x:2.9,y:0.4},2:{x:4.0,y:2.9},5:{x:0.9,y:6.4},6:{x:5.4,y:8.0},1:{x:7.4,y:4.8}},
+  z4:{2:{x:7.6,y:0.4},3:{x:6.1,y:0.4},4:{x:5.0,y:2.9},1:{x:8.1,y:6.4},6:{x:3.6,y:8.0},5:{x:1.6,y:4.8}},
+  z3:{3:{x:4.4,y:0.4},4:{x:3.2,y:0.4},2:{x:5.8,y:2.9},5:{x:2.4,y:6.0},6:{x:4.5,y:8.2},1:{x:6.6,y:6.0}},
+  pipe:{3:{x:4.5,y:0.4},4:{x:2.6,y:2.9},2:{x:6.4,y:2.9},5:{x:1.7,y:6.6},6:{x:4.0,y:8.2},1:{x:7.2,y:5.4}}
+};
+/* bloque(colIni, colFin, filaIni, filaFin) — rejilla 0..17, celdas de 0,5 m */
+var DEF_CELDAS = {
+  z2:{4:[0,5,0,1],3:[5,9,0,1],2:[5,10,4,6],5:[0,3,8,17],6:[6,15,13,17],1:[12,17,7,12]},
+  z4:{2:[12,17,0,1],3:[8,12,0,1],4:[7,12,4,6],1:[14,17,8,17],6:[2,11,13,17],5:[0,5,7,12]},
+  z3:{3:[7,11,0,1],4:[4,7,0,1],2:[10,14,4,6],5:[2,7,10,14],6:[5,12,15,17],1:[10,15,10,14]},
+  pipe:{3:[7,11,0,1],4:[3,8,4,6],2:[9,14,4,6],5:[0,6,11,17],6:[6,10,15,17],1:[12,17,8,14]}
+};
+var DEF_EXPL = {
+  z2:{4:'Bloqueo exterior: salta con el central y cierra la línea y la diagonal principal. Ojo: no tapar del todo la paralela, el líbero necesita ver el brazo del atacante.',3:'El central siempre va al bloqueo en los extremos. Paso cruzado rápido para cerrar el doble; si llega tarde, se abre una brecha por el medio.',2:'Único delantero libre: se descuelga a la línea de 3 metros, detrás del hueco del bloqueo, a por las fintas y los toques suaves.',5:'Líbero, fijo en la 5: cubre la línea. Es un ataque duro y directo, así que juega la paralela sin anticipar de más.',6:'Receptor, fijo en la 6: cubre la diagonal larga por el centro-fondo, atento a los rebotes del bloqueo.',1:'Sube ligeramente para cubrir la diagonal corta, el cruzado fuerte que cae por delante de la zona 1.'},
+  z4:{2:'Bloqueo exterior: salta con el central y cierra la paralela y la diagonal principal.',3:'El central siempre va al bloqueo en los extremos. Paso cruzado rápido para cerrar el doble por fuera.',4:'Único delantero libre: se descuelga a la línea de 3 metros a barrer fintas y toques suaves detrás del bloqueo.',5:'Líbero, fijo en la 5: aquí no puede quedarse anclado. Primer paso explosivo hacia adelante para interceptar la diagonal corta.',6:'Receptor, fijo en la 6: cubre la diagonal larga por el centro-fondo y los block-outs.',1:'Cubre la línea, la paralela que baja por nuestra banda derecha.'},
+  z3:{3:'Salta frente al atacante de primer tiempo, sin esperar a leer nada más.',4:'Asiste al central lo más rápido posible para que el bloqueo llegue a ser doble.',2:'No entra al bloqueo: se cierra hacia el centro en la línea de 3 metros.',5:'Líbero: se cierra hacia el centro-izquierda.',6:'Receptor: se queda profundo en el fondo, a por los balones bombeados y los block-outs largos.',1:'Se cierra hacia el centro-derecha.'},
+  pipe:{3:'Contra la pipe el bloqueo es individual: solo salta el central, en el centro de la red.',4:'Con bloqueo individual las dos bandas quedan libres: se descuelga a los 3 metros a barrer cualquier finta o toque suave.',2:'Con bloqueo individual las dos bandas quedan libres: se descuelga a los 3 metros para tapar lo que pase por encima o por el lado del central.',5:'Toda la zaga pivota a la 5: el líbero se coloca a absorber el remate fuerte, que es lo que el sistema anticipa contra la pipe.',6:'Receptor: profundo, pero basculando a la izquierda para apoyar la zona de mayor probabilidad de impacto.',1:'Mucho más agresivo de lo normal en la diagonal corta y media derecha: el resto de la zaga ha pivotado a la izquierda y este lado queda solo.'}
+};
+
+/* Paleta de la vista de conjunto, en el orden de CLAVES_ORDEN_COLOR de Tablero. */
+var COLOR = { C:'--neon-cyan', R1:'--neon-green', R2:'--neon-teal', C1:'--neon-magenta', C2:'--neon-amber', O:'--neon-purple', L:'--neon-pink' };
+var PLANTILLA = ['C','R1','C2','O','R2','C1'];
+
+/* Reparto por zonas: líbero a la 5, receptor zaguero a la 6, el que quede en zaga a la 1;
+   central a la 3, receptor delantero a la 4, el que quede a la 2. Se deriva, no se declara. */
+function repartirZonas(et) {
+  var zaga = [et[0], et[4], et[5]], del = [et[1], et[2], et[3]];
+  function tomar(g, f) { for (var i = 0; i < g.length; i++) if (f(g[i])) return g.splice(i, 1)[0]; return null; }
+  var libero = tomar(zaga, function (x) { return x === 'L'; });
+  var recZ = tomar(zaga, function (x) { return x.charAt(0) === 'R'; });
+  var cen = tomar(del, function (x) { return x === 'C1' || x === 'C2'; });
+  var recD = tomar(del, function (x) { return x.charAt(0) === 'R'; });
+  var r = {};
+  r[5] = libero || zaga.shift(); r[6] = recZ || zaga.shift(); r[1] = zaga.shift();
+  r[3] = cen || del.shift(); r[4] = recD || del.shift(); r[2] = del.shift();
+  return r;
+}
+
+function formacionDefensa(rot, via) {
+  var porZona = repartirZonas(REC[rot].fichas.map(function (f) { return f.et; }));
+  var fichas = [1, 2, 3, 4, 5, 6].map(function (z) {
+    var pt = DEF_PUNTOS[via][z];
+    return { p: z, et: porZona[z], x: pt.x, y: pt.y, zag: (z === 1 || z === 5 || z === 6) ? 1 : 0, e: DEF_EXPL[via][z], zona: z };
+  });
+  var t = function (z) { return porZona[z]; };
+  var texto = 'En zaga defienden ' + t(5) + ' en la zona 5, ' + t(6) + ' en la zona 6 y ' + t(1) + ' en la zona 1. ' +
+              'En la red, ' + t(3) + ' bloquea por el centro, ' + t(4) + ' cubre la banda izquierda y ' + t(2) + ' la derecha.';
+  return { fichas: fichas, texto: texto, porZona: porZona };
+}
+
+var SISTEMAS = [
+  { id: 'rec', tipo: 'recepcion', nombre: 'Recepción 5-1', badge: 'REC' },
+  { id: 'def', tipo: 'defensa', nombre: 'Defensa 2-1-3', badge: 'DEF' }
+];
+
+var TABS = [
+  { id: 'banquillo', et: 'Banquillo', ic: 'i-banquillo' },
+  { id: 'ensenanza', et: 'Enseñanza', ic: 'i-libro' },
+  { id: 'zonas', et: 'Zonas', ic: 'i-capas' },
+  { id: 'ajustes', et: 'Ajustes', ic: 'i-ajustes' }
+];
+
+var VENTANAS = [
+  { id: 'editor', et: 'Editor', ic: 'i-editor' },
+  { id: 'examen', et: 'Examen', ic: 'i-examen' },
+  { id: 'cuenta', et: 'Cuenta', ic: 'i-cuenta' }
+];
+
+var ACCIONES_SD = [
+  { id: 'nuevo', et: 'Nuevo sistema', ic: 'i-nuevo' },
+  { id: 'renombrar', et: 'Renombrar', ic: 'i-lapiz' },
+  { id: 'clonar', et: 'Clonar', ic: 'i-clonar' },
+  { id: 'borrar', et: 'Borrar', ic: 'i-papelera', peligro: 1 }
+];
+
+/* Config por propuesta: lo único que las separa de verdad. */
+var CFG = {
+  '1': { nav: 'seg', sd: 'pista', sdDir: 'abajo', accFlota: false },
+  '2': { nav: 'bar', sd: 'cab', sdDir: 'abajo', accFlota: false },
+  '3': { nav: 'cajon', sd: 'pista', sdDir: 'arco', accFlota: true }
+};
+
+var S = {};
+['1', '2', '3'].forEach(function (v) {
+  S[v] = { ventana: 'editor', sis: 'rec', rot: 1, via: 'z2', sel: null, tab: 'banquillo',
+           plegado: false, equipo: 'M', vaciadas: {},
+           aj: { validacion: true, ayuda: true, metros: false, conjunto: true } };
+});
+
+function ico(id, cls) { return '<svg viewBox="0 0 24 24" aria-hidden="true"' + (cls ? ' class="' + cls + '"' : '') + '><use href="#' + id + '"/></svg>'; }
+function esDef(v) { return S[v].sis === 'def'; }
+function claveForm(v) { var s = S[v]; return s.sis + '-' + s.rot + (esDef(v) ? '-' + s.via : ''); }
+function formacion(v) {
+  var s = S[v];
+  return esDef(v) ? formacionDefensa(s.rot, s.via) : { fichas: REC[s.rot].fichas, texto: REC[s.rot].texto, porZona: null };
+}
+function enPista(v) { return S[v].vaciadas[claveForm(v)] ? [] : formacion(v).fichas; }
+function banquillo(v) {
+  var dentro = enPista(v).map(function (f) { return f.et; });
+  var todos = PLANTILLA.concat(['L']);
+  var fuera = todos.filter(function (x) { return dentro.indexOf(x) === -1; });
+  /* con el líbero dentro, su sustituido se queda fuera; nunca están los dos en pista */
+  if (dentro.length) { var cen = dentro.indexOf('C1') === -1 ? 'C1' : 'C2'; return fuera.filter(function (x) { return x === cen; }); }
+  return fuera;
+}
+
+/* ---------- la pista ---------- */
+function svgPista(v) {
+  var s = S[v], def = esDef(v), sel = s.sel, f = formacion(v), fichas = enPista(v);
+  var out = '<svg class="pista" viewBox="-0.75 -4.05 10.5 13.8" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Media pista de voleibol con la formación activa">';
+
+  var patrones = '', mapa = null;
+  if (def && s.aj.conjunto) {
+    mapa = {};
+    [1, 2, 3, 4, 5, 6].forEach(function (z) {
+      var b = DEF_CELDAS[s.via][z], col = 'var(' + COLOR[f.porZona[z]] + ')';
+      for (var fi = b[2]; fi <= b[3]; fi++) for (var c = b[0]; c <= b[1]; c++) {
+        var k = c + '-' + fi; (mapa[k] = mapa[k] || []); if (mapa[k].indexOf(col) === -1) mapa[k].push(col);
+      }
+    });
+    var combos = {};
+    Object.keys(mapa).forEach(function (k) { if (mapa[k].length > 1) combos[mapa[k].join('|')] = mapa[k]; });
+    var ids = Object.keys(combos);
+    if (ids.length) {
+      patrones = '<defs>';
+      ids.forEach(function (c, i) {
+        var cols = combos[c], lado = 0.28, alto = lado / cols.length;
+        patrones += '<pattern id="pat-' + v + '-' + i + '" patternUnits="userSpaceOnUse" width="' + lado + '" height="' + lado + '" patternTransform="rotate(45)">';
+        cols.forEach(function (col, j) { patrones += '<rect y="' + (j * alto) + '" width="' + lado + '" height="' + alto + '" fill="' + col + '"/>'; });
+        patrones += '</pattern>';
+      });
+      patrones += '</defs>';
+      mapa.__ids = ids;
+    }
+  }
+  out += patrones;
+
+  out += '<rect class="p-zona-libre" x="-2.5" y="0" width="14" height="12"/>';
+  out += '<rect class="p-rival" x="0" y="-4" width="9" height="4"/>';
+  out += '<line class="p-rival-ataque" x1="0" y1="-3" x2="9" y2="-3"/>';
+  out += '<rect class="p-borde-rival" x="0" y="-4" width="9" height="4"/>';
+  if (def) {
+    var r = RIVAL[s.via];
+    out += '<g transform="translate(' + r.x + ',' + r.y + ')"><circle class="p-rival-circulo" r="0.35"/>' +
+           '<text class="p-rival-et" text-anchor="middle" dominant-baseline="central">R</text></g>';
+  }
+  out += '<rect class="p-campo" x="0" y="0" width="9" height="9"/>';
+  for (var i = 1; i <= 8; i++) {
+    out += '<line class="p-rejilla" x1="' + i + '" y1="0" x2="' + i + '" y2="9"/><line class="p-rejilla" x1="0" y1="' + i + '" x2="9" y2="' + i + '"/>';
+  }
+  if (s.aj.metros) for (var m = 1; m <= 8; m++) out += '<text class="p-metro" x="-0.15" y="' + m + '" style="font-family:var(--font-display);font-weight:700;font-size:.3px;fill:var(--text-muted);text-anchor:end;dominant-baseline:middle">' + m + '</text>';
+  out += '<line class="p-ataque" x1="0" y1="3" x2="9" y2="3"/>';
+  out += '<rect class="p-borde-campo" x="0" y="0" width="9" height="9"/>';
+  out += '<line class="p-red" x1="0" y1="0" x2="9" y2="0"/>';
+
+  if (mapa) {
+    var idsPat = mapa.__ids || [];
+    Object.keys(mapa).forEach(function (k) {
+      if (k === '__ids') return;
+      var cols = mapa[k], p = k.split('-'), relleno;
+      if (cols.length === 1) relleno = cols[0];
+      else relleno = 'url(#pat-' + v + '-' + idsPat.indexOf(cols.join('|')) + ')';
+      out += '<rect class="p-celda" x="' + (p[0] * 0.5) + '" y="' + (p[1] * 0.5) + '" width="0.5" height="0.5" fill="' + relleno + '"/>';
+    });
+  }
+
+  fichas.forEach(function (fi, idx) {
+    var cls = 'ficha' + (fi.zag ? ' ficha--zaguera' : '') + (sel === idx ? ' ficha--sel' : '');
+    out += '<g class="' + cls + '" transform="translate(' + fi.x + ',' + fi.y + ')" data-ficha="' + idx + '" tabindex="0" role="button" aria-label="' + fi.et + '">' +
+           '<circle r="0.62" fill="transparent"/><circle class="ficha__c" r="0.45"/>' +
+           '<text class="ficha__t" text-anchor="middle" dominant-baseline="central">' + fi.et + '</text>' +
+           (s.aj.ayuda ? '<text class="ficha__p" x="0" y="0.55" text-anchor="middle" dominant-baseline="hanging">' +
+             (def ? '<tspan class="n">Z' + fi.zona + '</tspan>' : '<tspan class="l">P</tspan><tspan class="n">' + fi.p + '</tspan>') +
+             '</text>' : '') + '</g>';
+  });
+  return out + '</svg>';
+}
+
+/* ---------- montaje del esqueleto (una sola vez) ---------- */
+function speeddial(v) {
+  var c = CFG[v], clase = c.sd === 'cab' ? 'sd sd--cab' : 'sd sd--pista';
+  var h = '<div class="' + clase + '" data-sd="' + v + '"><button type="button" class="sd__fab" aria-label="Acciones del sistema" aria-expanded="false">' + ico('i-mas') + '</button>';
+  ACCIONES_SD.forEach(function (a, i) {
+    var dx, dy, lado = 'izq';
+    if (c.sdDir === 'arco') {
+      /* cuarto de círculo de 84 px, del oeste al sur: el FAB vive arriba a la
+         derecha de la pista, así que los ítems se abren hacia dentro del campo */
+      var ang = Math.PI / 2 * (i / (ACCIONES_SD.length - 1));
+      dx = -Math.round(Math.cos(ang) * 84);
+      dy = Math.round(Math.sin(ang) * 84);
+    } else {
+      dx = 0; dy = 58 + i * 52;
+    }
+    h += '<button type="button" class="sd__item' + (a.peligro ? ' sd__item--peligro' : '') + '" data-sda="' + a.id + '" aria-label="' + a.et + '" ' +
+         'style="--dx:' + dx + 'px;--dy:' + dy + 'px;transition-delay:' + (i * 35) + 'ms">' + ico(a.ic) +
+         '<span class="sd__et sd__et--' + lado + '">' + a.et + '</span></button>';
+  });
+  return h + '</div>';
+}
+
+function navHTML(v) {
+  var c = CFG[v];
+  if (c.nav === 'seg') {
+    return '<div class="nav-seg" data-nav="' + v + '">' + VENTANAS.map(function (w) {
+      return '<button type="button" data-w="' + w.id + '"' + (w.id === 'editor' ? ' aria-current="page"' : '') + '>' + ico(w.ic) + w.et + '</button>';
+    }).join('') + '</div>';
+  }
+  if (c.nav === 'bar') {
+    return '<nav class="nav-bar" data-nav="' + v + '">' + VENTANAS.map(function (w) {
+      return '<button type="button" data-w="' + w.id + '"' + (w.id === 'editor' ? ' aria-current="page"' : '') + '>' + ico(w.ic) + '<span>' + w.et + '</span></button>';
+    }).join('') + '</nav>';
+  }
+  return '<aside class="cajon" data-cajon="' + v + '">' +
+    '<button type="button" class="cajon__x" data-cerrar-cajon aria-label="Cerrar menú">' + ico('i-cerrar') + '</button>' +
+    '<p class="cajon__marca">INTER<span>ZONE</span></p>' +
+    '<p class="cajon__et">Ventanas</p><div data-nav="' + v + '">' + VENTANAS.map(function (w) {
+      return '<button type="button" data-w="' + w.id + '"' + (w.id === 'editor' ? ' aria-current="page"' : '') + '>' + ico(w.ic) + w.et + '</button>';
+    }).join('') + '</div><p class="cajon__pie">Equipo masculino · sesión sin iniciar</p></aside>';
+}
+
+function futura(v, id, titulo, texto, spec, iconoId) {
+  var cab = CFG[v].nav === 'cajon'
+    ? '<header class="cab"><button type="button" class="ico" data-menu="' + v + '" aria-label="Abrir menú">' + ico('i-menu') + '</button><span class="marca">INTER<span>ZONE</span></span></header>'
+    : '';
+  return '<div data-pantalla="' + id + '" style="flex:1;min-height:0;display:none;flex-direction:column">' + cab +
+    '<div class="futura"><span class="futura__i">' + ico(iconoId) + '</span><h2>' + titulo + '</h2><p>' + texto + '</p>' +
+    '<span class="futura__spec">' + spec + '</span></div></div>';
+}
+
+function montar(v) {
+  var c = CFG[v], app = document.querySelector('.app[data-v="' + v + '"]');
+  var h = '';
+  if (c.nav === 'seg') h += navHTML(v);
+  h += '<div style="flex:1;min-height:0;display:flex;flex-direction:column">';
+
+  h += '<div data-pantalla="editor" style="flex:1;min-height:0;display:flex;flex-direction:column">';
+  h += '<header class="cab">';
+  if (c.nav === 'cajon') h += '<button type="button" class="ico" data-menu="' + v + '" aria-label="Abrir menú">' + ico('i-menu') + '</button>';
+  else h += '<span class="marca">INTER<span>ZONE</span></span>';
+  h += '<div class="equipo" role="group" aria-label="Equipo"><button type="button" data-eq="M" aria-pressed="true">M</button><button type="button" data-eq="F" aria-pressed="false">F</button></div>';
+  h += '<button type="button" class="sistema" data-sis="' + v + '"><span class="sistema__tipo sistema__tipo--rec" data-badge>REC</span><span class="sistema__n" data-nombre>Recepción 5-1</span>' + ico('i-chevron') + '</button>';
+  if (c.sd === 'cab') h += speeddial(v);
+  h += '</header>';
+
+  h += '<div class="tiras"><div class="rots" role="tablist" aria-label="Rotaciones" data-rots></div><div class="vias" role="tablist" aria-label="Vía de ataque" data-vias hidden></div></div>';
+
+  h += '<div class="pista-host" data-pista>' + (c.sd === 'pista' ? speeddial(v) : '') +
+       '<button type="button" class="pista-btn" data-leyenda aria-label="Leyenda de etiquetas">' + ico('i-ayuda') + '</button>' +
+       '<div class="badge-host" data-badge-host></div>';
+  if (c.accFlota) h += acciones(v, true);
+  h += '</div>';
+  if (!c.accFlota) h += acciones(v, false);
+
+  h += '<section class="panel" data-panel><div class="tabs" role="tablist" aria-label="Paneles" data-tabs></div><div class="tabpanel" data-tabpanel role="tabpanel"></div></section>';
+  h += '</div>';
+
+  h += futura(v, 'examen', 'Examinarse del sistema', 'Colocar los jugadores de memoria y recibir una nota de perfección frente al sistema guardado, más el veredicto de legalidad. Las faltas no se enseñan hasta pulsar «Confirmar».', 'Specs 012-013 · reservadas', 'i-examen');
+  h += futura(v, 'cuenta', 'Tu cuenta', 'Entrar con Google o contraseña, lista blanca de correos y tres roles de acceso. El esquema está diseñado; hoy el servidor no tiene autenticación.', 'Specs 035-037 · aplazadas', 'i-cuenta');
+  h += '</div>';
+
+  if (c.nav === 'bar') h += navHTML(v);
+  if (c.nav === 'cajon') h += navHTML(v);
+  h += '<div class="scrim" data-scrim></div><div class="dlg-host" data-dlg></div>';
+  h += '<div class="aviso" data-aviso>' + ico('i-check') + '<span data-aviso-t></span></div>';
+
+  app.innerHTML = h;
+  cablear(v);
+  pinta(v);
+}
+
+function acciones(v, flota) {
+  return '<div class="acciones' + (flota ? ' acciones--flota' : '') + '">' +
+    '<button type="button" class="acc acc--vaciar' + (flota ? ' acc--flota' : '') + '" data-acc="vaciar">' + ico('i-vaciar') + 'Vaciar</button>' +
+    '<button type="button" class="acc acc--guardar' + (flota ? ' acc--flota' : '') + '" data-acc="guardar">' + ico('i-guardar') + 'Guardar rotación</button></div>';
+}
+
+/* ---------- pintado ---------- */
+function pinta(v) {
+  var s = S[v], app = document.querySelector('.app[data-v="' + v + '"]'), def = esDef(v);
+  var sis = SISTEMAS.filter(function (x) { return x.id === s.sis; })[0];
+  var f = formacion(v), fichas = enPista(v), banq = banquillo(v);
+
+  app.querySelector('[data-nombre]').textContent = sis.nombre;
+  var badge = app.querySelector('[data-badge]');
+  badge.textContent = sis.badge;
+  badge.className = 'sistema__tipo sistema__tipo--' + (def ? 'def' : 'rec');
+
+  app.querySelector('[data-rots]').innerHTML = [1, 2, 3, 4, 5, 6].map(function (n) {
+    return '<button type="button" role="tab" data-rot="' + n + '" aria-selected="' + (n === s.rot) + '">R' + n + '</button>';
+  }).join('');
+
+  var vias = app.querySelector('[data-vias]');
+  vias.hidden = !def;
+  vias.innerHTML = !def ? '' : VIAS.map(function (x) {
+    return '<button type="button" role="tab" data-via="' + x + '" aria-selected="' + (x === s.via) + '">' + ET_VIA[x] + '</button>';
+  }).join('');
+
+  var host = app.querySelector('[data-pista]');
+  var viejo = host.querySelector('svg.pista');
+  if (viejo) viejo.remove();
+  host.insertAdjacentHTML('afterbegin', svgPista(v));
+
+  /* en defensa la validación no existe, y si el entrenador la desactiva (spec 017) tampoco */
+  var av = (!def && s.aj.validacion && REC[s.rot].aviso && fichas.length) ? REC[s.rot].aviso : null;
+  app.querySelector('[data-badge-host]').innerHTML = av
+    ? '<div class="badge" role="status"><span class="badge__i" aria-hidden="true">!</span><span class="badge__t">AL LÍMITE<span class="badge__s">' + av + '</span></span></div>' : '';
+
+  app.querySelector('[data-tabs]').innerHTML = TABS.map(function (t) {
+    var off = t.id === 'zonas' && !def;
+    return '<button type="button" role="tab" data-tab="' + t.id + '" aria-selected="' + (t.id === s.tab) + '"' + (off ? ' disabled title="Las zonas solo existen en defensa (spec 024)"' : '') + '>' +
+      ico(t.ic) + t.et + (t.id === 'banquillo' && banq.length ? '<span class="tabs__cuenta">' + banq.length + '</span>' : '') + '</button>';
+  }).join('');
+
+  app.querySelector('[data-panel]').classList.toggle('panel--plegado', s.plegado);
+  app.querySelector('[data-tabpanel]').innerHTML = contenidoTab(v, f, fichas, banq);
+
+  app.querySelectorAll('[data-nav] [data-w]').forEach(function (b) {
+    if (b.dataset.w === s.ventana) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  app.querySelectorAll('[data-pantalla]').forEach(function (p) {
+    p.style.display = p.dataset.pantalla === s.ventana ? 'flex' : 'none';
+  });
+  app.querySelectorAll('[data-eq]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.eq === s.equipo)); });
+}
+
+function contenidoTab(v, f, fichas, banq) {
+  var s = S[v], def = esDef(v);
+  if (s.tab === 'banquillo') {
+    if (!banq.length) return '<p class="tabpanel__vacio">Los siete jugadores están colocados. El líbero ocupa el puesto del central de zaga, así que siempre queda uno fuera.</p>';
+    return '<p class="tabpanel__t">Fuera de pista</p><div class="chips">' +
+      banq.map(function (x) { return '<button type="button" class="chip">' + x + '</button>'; }).join('') + '</div>' +
+      '<p class="tabpanel__vacio" style="margin-top:10px">Arrástralos a la pista para colocarlos.</p>';
+  }
+  if (s.tab === 'ensenanza') {
+    var sel = s.sel === null ? null : fichas[s.sel];
+    return '<p class="tabpanel__t">' + (sel ? (def ? 'Zona ' + sel.zona + ' · ' + sel.et : 'P' + sel.p + ' · ' + sel.et) : 'De conjunto · R' + s.rot + (def ? ' · ' + ET_VIA[s.via] : '')) + '</p>' +
+      '<p>' + (sel ? sel.e : f.texto) + '</p>' +
+      (sel ? '' : '<p class="tabpanel__vacio">Toca un jugador en la pista para leer por qué se coloca ahí.</p>');
+  }
+  if (s.tab === 'zonas') {
+    if (!def) return '<p class="tabpanel__vacio">Las zonas de responsabilidad solo existen en los sistemas de defensa (spec 024). Cambia de sistema en la cabecera para verlas.</p>';
+    return '<p class="tabpanel__t">Reparto contra ' + ET_VIA[s.via] + '</p><div class="leyenda">' +
+      [4, 3, 2, 5, 6, 1].map(function (z) {
+        var et = f.porZona[z];
+        return '<span class="leyenda__f"><span class="leyenda__m" style="background:var(' + COLOR[et] + ')"></span><span class="leyenda__z">Z' + z + '</span>' + et + '</span>';
+      }).join('') + '</div>' +
+      '<button type="button" class="sw" data-aj="conjunto" aria-pressed="' + s.aj.conjunto + '" style="margin-top:10px"><span class="sw__c"></span><span class="sw__t">Ver todas las zonas a la vez</span></button>';
+  }
+  return [
+    ['validacion', 'Validar falta de posición'],
+    ['ayuda', 'Ayuda de posición bajo la ficha'],
+    ['metros', 'Números de metros en la pista']
+  ].map(function (a) {
+    return '<button type="button" class="sw" data-aj="' + a[0] + '" aria-pressed="' + s.aj[a[0]] + '"><span class="sw__c"></span><span class="sw__t">' + a[1] + '</span></button>';
+  }).join('') + (def ? '<p class="tabpanel__vacio" style="margin-top:8px">En defensa la validación no se aplica: la falta de posición solo existe en el saque.</p>' : '');
+}
+
+/* ---------- diálogo de confirmación y aviso ---------- */
+function confirmar(v, cfg, alAceptar) {
+  var host = document.querySelector('.app[data-v="' + v + '"] [data-dlg]');
+  var cuerpo = cfg.html || '<p class="dlg__m">' + cfg.mensaje + '</p>';
+  var acciones = cfg.soloCerrar
+    ? '<button type="button" class="btn btn--secundario" data-dlg-no>Cerrar</button>'
+    : '<button type="button" class="btn btn--secundario" data-dlg-no>Cancelar</button>' +
+      '<button type="button" class="btn ' + (cfg.peligro ? 'btn--destructivo' : 'btn--primario') + '" data-dlg-si>' + cfg.ok + '</button>';
+  host.innerHTML = '<div class="dlg' + (cfg.peligro ? ' dlg--peligro' : '') + '" role="' + (cfg.soloCerrar ? 'dialog' : 'alertdialog') + '" aria-modal="true">' +
+    '<h3 class="dlg__t">' + cfg.titulo + '</h3>' + cuerpo + '<div class="dlg__a">' + acciones + '</div></div>';
+  host.classList.add('dlg-host--visible');
+  host.querySelector('[data-dlg-no]').onclick = function () { host.classList.remove('dlg-host--visible'); };
+  var si = host.querySelector('[data-dlg-si]');
+  if (si) { si.onclick = function () { host.classList.remove('dlg-host--visible'); alAceptar(); }; si.focus(); }
+  else host.querySelector('[data-dlg-no]').focus();
+}
+
+/* La leyenda cambia con el tipo de sistema: en recepción se lee por posición
+   rotacional, en defensa por zona física del campo. */
+function leyenda(v) {
+  var filas = esDef(v)
+    ? [['Z1', 'Zaga derecha — colocador u opuesto'], ['Z2', 'Red derecha'], ['Z3', 'Red centro — central, siempre al bloqueo'],
+       ['Z4', 'Red izquierda — receptor delantero'], ['Z5', 'Zaga izquierda — líbero, fijo'], ['Z6', 'Zaga centro — receptor zaguero']]
+    : [['C', 'Colocador'], ['C1', 'Central contiguo al colocador'], ['C2', 'El otro central'],
+       ['R1', 'Receptor 1'], ['R2', 'Receptor 2'], ['O', 'Opuesto'], ['L', 'Líbero']];
+  confirmar(v, { titulo: 'Leyenda', soloCerrar: 1,
+    html: '<dl class="dl">' + filas.map(function (f) {
+      return '<div class="dl__f"><dt>' + f[0] + '</dt><dd>' + f[1] + '</dd></div>';
+    }).join('') + '</dl><div style="height:16px"></div>' }, function () {});
+}
+
+var temporizadores = {};
+function avisar(v, texto) {
+  var el = document.querySelector('.app[data-v="' + v + '"] [data-aviso]');
+  el.querySelector('[data-aviso-t]').textContent = texto;
+  el.classList.add('aviso--visible');
+  clearTimeout(temporizadores[v]);
+  temporizadores[v] = setTimeout(function () { el.classList.remove('aviso--visible'); }, 2600);
+}
+
+/* ---------- interacción ---------- */
+function cablear(v) {
+  var app = document.querySelector('.app[data-v="' + v + '"]'), s = S[v];
+
+  app.addEventListener('click', function (ev) {
+    var t = ev.target;
+    var sdFab = t.closest('.sd__fab');
+    var sd = app.querySelector('[data-sd="' + v + '"]');
+
+    if (sdFab) {
+      var abierto = sd.classList.toggle('sd--abierto');
+      sdFab.setAttribute('aria-expanded', String(abierto));
+      return;
+    }
+    var sda = t.closest('[data-sda]');
+    if (sda) {
+      sd.classList.remove('sd--abierto');
+      sd.querySelector('.sd__fab').setAttribute('aria-expanded', 'false');
+      var id = sda.dataset.sda;
+      if (id === 'borrar') {
+        confirmar(v, { titulo: 'Borrar sistema', peligro: 1, ok: 'Borrar',
+          mensaje: '¿Borrar «' + SISTEMAS.filter(function (x) { return x.id === s.sis; })[0].nombre + '»? No se puede deshacer.' },
+          function () { avisar(v, 'Sistema borrado'); });
+      } else {
+        avisar(v, { nuevo: 'Se abriría el alta de sistema', renombrar: 'Se abriría el renombrado', clonar: 'Sistema clonado' }[id]);
+      }
+      return;
+    }
+    if (sd && !t.closest('.sd')) { sd.classList.remove('sd--abierto'); sd.querySelector('.sd__fab').setAttribute('aria-expanded', 'false'); }
+
+    var w = t.closest('[data-w]');
+    if (w) { s.ventana = w.dataset.w; cerrarCajon(v); pinta(v); return; }
+
+    var menu = t.closest('[data-menu]');
+    if (menu) { abrirCajon(v); return; }
+
+    if (t.closest('[data-cerrar-cajon]')) { cerrarCajon(v); return; }
+    if (t.closest('[data-scrim]')) { cerrarCajon(v); return; }
+
+    if (t.closest('[data-leyenda]')) { leyenda(v); return; }
+
+    var eq = t.closest('[data-eq]');
+    if (eq) { s.equipo = eq.dataset.eq; pinta(v); return; }
+
+    if (t.closest('[data-sis]')) {
+      s.sis = s.sis === 'rec' ? 'def' : 'rec';
+      s.sel = null;
+      if (s.tab === 'zonas' && !esDef(v)) s.tab = 'banquillo';
+      pinta(v);
+      avisar(v, 'Sistema activo: ' + SISTEMAS.filter(function (x) { return x.id === s.sis; })[0].nombre);
+      return;
+    }
+
+    var rot = t.closest('[data-rot]');
+    if (rot) { s.rot = Number(rot.dataset.rot); s.sel = null; pinta(v); return; }
+
+    var via = t.closest('[data-via]');
+    if (via) { s.via = via.dataset.via; s.sel = null; pinta(v); return; }
+
+    var tab = t.closest('[data-tab]');
+    if (tab && !tab.disabled) {
+      if (tab.dataset.tab === s.tab) s.plegado = !s.plegado;
+      else { s.tab = tab.dataset.tab; s.plegado = false; }
+      pinta(v);
+      return;
+    }
+
+    var aj = t.closest('[data-aj]');
+    if (aj) { s.aj[aj.dataset.aj] = !s.aj[aj.dataset.aj]; pinta(v); return; }
+
+    var acc = t.closest('[data-acc]');
+    if (acc) {
+      var clave = claveForm(v), etiqueta = 'R' + s.rot + (esDef(v) ? ' · ' + ET_VIA[s.via] : '');
+      if (acc.dataset.acc === 'vaciar') {
+        confirmar(v, { titulo: 'Vaciar ' + etiqueta, peligro: 1, ok: 'Vaciar',
+          mensaje: 'Se quitarán de la pista los seis jugadores de esta formación. No se puede deshacer.' },
+          function () { s.vaciadas[clave] = true; s.sel = null; pinta(v); avisar(v, etiqueta + ' vaciada'); });
+      } else {
+        confirmar(v, { titulo: 'Guardar ' + etiqueta, ok: 'Guardar',
+          mensaje: 'Se guardarán las seis posiciones' + (esDef(v) ? ' y las zonas de responsabilidad' : '') + ' de esta formación.' },
+          function () { delete s.vaciadas[clave]; pinta(v); avisar(v, etiqueta + ' guardada'); });
+      }
+      return;
+    }
+
+    var ficha = t.closest('[data-ficha]');
+    if (ficha) {
+      var i = Number(ficha.dataset.ficha);
+      s.sel = s.sel === i ? null : i;
+      if (s.sel !== null) { s.tab = 'ensenanza'; s.plegado = false; }
+      pinta(v);
+      return;
+    }
+    if (t.closest('[data-pista]') && !t.closest('.sd') && !t.closest('.acciones')) { s.sel = null; pinta(v); }
+  });
+}
+
+function abrirCajon(v) {
+  var app = document.querySelector('.app[data-v="' + v + '"]');
+  var c = app.querySelector('[data-cajon="' + v + '"]');
+  if (!c) return;
+  c.classList.add('cajon--abierto');
+  app.querySelector('[data-scrim]').classList.add('scrim--visible');
+}
+function cerrarCajon(v) {
+  var app = document.querySelector('.app[data-v="' + v + '"]');
+  var c = app.querySelector('[data-cajon="' + v + '"]');
+  if (c) c.classList.remove('cajon--abierto');
+  app.querySelector('[data-scrim]').classList.remove('scrim--visible');
+}
+
+['1', '2', '3'].forEach(montar);
+
+/* ---------- carcasa ---------- */
+document.querySelectorAll('[data-ampliar]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var m = document.querySelector('[data-marco="' + b.dataset.ampliar + '"]');
+    m.classList.add('marco--amplio');
+    document.body.style.overflow = 'hidden';
+    m.querySelector('[data-salir]').focus();
+  });
+});
+document.querySelectorAll('[data-salir]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    b.closest('.marco').classList.remove('marco--amplio');
+    document.body.style.overflow = '';
+  });
+});
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Escape') return;
+  var m = document.querySelector('.marco--amplio');
+  if (m) { m.classList.remove('marco--amplio'); document.body.style.overflow = ''; }
+});
+</script>
+</body>
+</html>
