@@ -212,4 +212,15 @@ describe('sistemaDefensaPorDefecto', () => {
 
     expect(celdasReflejadas).toEqual(celdasEnZ4);
   });
+
+  it('039-E13: el sembrado trae doble bloqueo contra bandas y centro, e individual contra la pipe', () => {
+    for (const caso of CASOS) {
+      for (const situacion of SITUACIONES_CON_MATERIAL) {
+        if (caso === 'delantero' && situacion === 'z2') continue;
+        const variante = SISTEMA.defensas?.find((v) => v.caso === caso && v.situacion === situacion);
+        const esperado = situacion === 'pipe' ? 1 : 2;
+        expect(variante?.bloqueadores, `${caso}/${situacion}`).toBe(esperado);
+      }
+    }
+  });
 });

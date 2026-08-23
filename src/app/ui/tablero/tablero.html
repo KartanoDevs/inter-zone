@@ -44,6 +44,13 @@
         [situacionActiva]="store.situacionActiva()"
         (seleccionar)="seleccionarSituacion($event)"
       ></app-selector-situacion>
+      @if (admiteBloqueadores()) {
+        <app-selector-bloqueadores
+          [bloqueadoresActivos]="store.bloqueadoresActivos()"
+          [bloqueadoresCreados]="bloqueadoresCreados()"
+          (seleccionar)="seleccionarBloqueadores($event)"
+        ></app-selector-bloqueadores>
+      }
     } @else {
       <app-selector-rotacion
         [rotaciones]="estadosRotacion()"

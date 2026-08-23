@@ -1,6 +1,6 @@
 # 039 — Variantes de defensa por número de bloqueadores
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 7 (sistemas de defensa)
 
 **Depende de:** spec 038 (defensa por caso de colocador), congelada e implementada antes de
@@ -128,4 +128,46 @@ Ninguna. Resueltas con el usuario antes de escribir esta spec:
 
 ## Al cerrar
 
-Pendiente — se completa cuando la spec esté implementada.
+Los 13 escenarios pasan. Suite de `domain/`, `application/` e `infrastructure/`: 262 al cerrar la
+038 → 275 al cerrar esta. Suite de `server/`: 13, sin cambios de número — ver más abajo por qué.
+`npm run typecheck` y `npm run build` limpios.
+
+**El servidor no necesitó ni migración nueva ni código nuevo.** Al diseñar la tabla
+`formacion_defensa` en la migración de la spec 038 se incluyó ya la columna `bloqueadores` (con
+su `DEFAULT 0`, su CHECK 0-3, el CHECK "inicial sin bloqueo" y el `UNIQUE` que la incluye) y el
+repositorio ya la leía y escribía — anticipando esta spec en vez de añadirla ahora. El único test
+de servidor que toca el sembrado (`033-E10`, comparación de igualdad estructural completa contra
+`sistemaDefensaPorDefecto`) ya verificaba `bloqueadores` sin que hiciera falta escribir un test
+nuevo: pasó en verde nada más cambiar el sembrado en `domain/`. Es el mismo patrón que ya
+describieron las specs 009, 011 y 021 sobre este proyecto — un mecanismo general bien diseñado
+hace que el caso derivado salga solo —, pero esta vez la generalización se hizo *antes* de que la
+spec que la necesitaba se escribiera, no durante ella. Vale la pena anotarlo como riesgo, no solo
+como suerte: adelantar una columna sin que ningún test la pida todavía se salió con la suya
+porque el escenario de la 038 (`033-E10`, comparación estructural completa) ya la iba a cazar en
+cuanto tuviera un valor no trivial; con un test menos genérico, ese adelanto habría quedado sin
+verificar durante toda la spec 038.
+
+**Lo mismo pasó, en menor medida, con `application/sistema.store.ts`.** `bloqueadoresActivos`,
+`seleccionarBloqueadores` y el enganche en `formacionGuardadaActiva`/`guardar`/`guardarExplicacion`
+se escribieron durante la spec 038, dejando preparado el terreno para ésta. Todos los tests de
+E1-E3 y E6, E8 pasaron en verde nada más escribirlos, sin tocar código de aplicación.
+
+**Único código nuevo real: `puestosQueBloquean` en `domain/sistema-defensa.ts` (E9-E11) y el
+rechazo de `inicial` con bloqueadores en `guardarVarianteDefensa` (E5).** Los dos se escribieron
+con el ciclo rojo-verde completo, sin adelantos previos.
+
+**Decisiones de implementación tomadas sin devolver la pregunta al usuario**, documentadas aquí
+por transparencia: el desempate de `puestosQueBloquean` cuando dos puestos delanteros están a la
+misma distancia de la red no está especificado por ningún escenario (ninguno lo plantea) — el
+`sort` de JavaScript es estable, así que en ese caso gana el que aparezca antes en la formación;
+no se ha escrito ninguna regla explícita porque ningún test la exige todavía. El límite de "línea
+de 3 metros" que saca a un puesto del bloqueo se fijó en `y < 3` de forma literal (spec: "más
+allá de la línea de 3 metros"), coherente con `docs/dominio.md` §3 (línea de ataque en `y = 3`).
+Y la marca visual de "variante ya creada" en el selector (E7) es un punto discreto en la esquina
+del botón, sin especificar en la spec más allá de "se puede distinguir (por ejemplo,
+visualmente)".
+
+**Lo que no se desvió:** las cuatro decisiones cerradas con el usuario antes de escribir la spec
+(variante guardada aparte por número, la postura inicial sin variantes, quién bloquea derivado
+nunca declarado, y el sembrado ciñéndose solo a lo que cubre el documento de referencia) se
+implementaron exactamente como se acordaron.

@@ -1,0 +1,15 @@
+<div class="app-selector" role="tablist" aria-label="Número de bloqueadores">
+  @for (bloqueadores of opciones; track bloqueadores) {
+    <button
+      type="button"
+      role="tab"
+      class="app-selector__boton"
+      [class.app-selector__boton--activa]="bloqueadores === bloqueadoresActivos()"
+      [class.app-selector__boton--creada]="estaCreado(bloqueadores)"
+      [attr.aria-selected]="bloqueadores === bloqueadoresActivos()"
+      (click)="seleccionar.emit(bloqueadores)"
+    >
+      {{ bloqueadores }}
+    </button>
+  }
+</div>

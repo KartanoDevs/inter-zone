@@ -76,9 +76,12 @@ Modelos y reglas. Aquí vive el voleibol.
   formacion)`: análogo a `guardarFormacion` pero keyed por (caso, situación, bloqueadores), y
   **nunca** valida posición (spec 021, en defensa la validación no existe). No reutiliza
   `jugadoresEnPista`: en defensa no hay roster de jugadores que comprobar, solo que los seis
-  puestos estén cubiertos sin repetir (spec 038). `explicarVariante` y `explicarPuesto`:
-  equivalentes de `explicarRotacion`/`explicarJugador` para defensa — la explicación de conjunto
-  va por variante, no por rotación.
+  puestos estén cubiertos sin repetir (spec 038); rechaza declarar bloqueadores en la situación
+  `'inicial'` (spec 039). `puestosQueBloquean(formacion, bloqueadores)` (spec 039): deriva quién
+  bloquea de la distancia a la red de los puestos delanteros, sin pasar de la línea de 3 metros —
+  nunca se declara puesto a puesto. `explicarVariante` y `explicarPuesto`: equivalentes de
+  `explicarRotacion`/`explicarJugador` para defensa — la explicación de conjunto va por variante,
+  no por rotación.
 - `plantilla.ts` — `validarPlantilla`: composición y coherencia de índices de los seis
   titulares. El índice de cada jugador se declara en la plantilla, no se deriva (ADR 0017); no
   hay ninguna función que lo calcule. El líbero nunca es uno de los seis (ADR 0014); si aparece
@@ -256,7 +259,10 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 - `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6, solo en recepción desde la spec 038),
   `SelectorCaso` (pestañas colocador delantero/trasero) y `SelectorSituacion` (pestañas de
   situación de ataque, dependientes del caso activo) — ambos solo en defensa, spec 038, sustituyen
-  a `SelectorVia` de la spec 021.
+  a `SelectorVia` de la spec 021. `SelectorBloqueadores` (spec 039): pestañas 0-3, con una marca
+  visual de qué números ya tienen variante guardada para la (caso, situación) activos —
+  `Tablero.bloqueadoresCreados`, derivado de `sistema.defensas`; no se ofrece en la situación
+  `'inicial'` (`Tablero.admiteBloqueadores`).
 - `ui/panel/` — `PaletaJugadores` (banquillo), `PanelValidacion` (badge de falta/aviso),
   `PanelEnsenanza` (explicación de la rotación o del jugador seleccionado, editable; input
   `abierto` opcional, por defecto desplegado — spec 025 lo usa plegado para el panel de

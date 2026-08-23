@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { FormacionDefensa, PlantillaEquipo, Sistema } from './modelos';
-import { explicarPuesto, explicarVariante, guardarVarianteDefensa } from './sistema-defensa';
+import type { ColocacionDefensa, FormacionDefensa, PlantillaEquipo, Sistema } from './modelos';
+import { explicarPuesto, explicarVariante, guardarVarianteDefensa, puestosQueBloquean } from './sistema-defensa';
 
 function plantillaEstandar(): PlantillaEquipo {
   return {
@@ -73,6 +73,60 @@ describe('guardarVarianteDefensa', () => {
     expect(resultado.defensas).toHaveLength(2);
     expect(resultado.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4')?.formacion).toEqual(formacionZ4);
     expect(resultado.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z3')?.formacion).toEqual(formacionZ3);
+  });
+
+  it('039-E5: guardar la posición inicial con bloqueadores declarados se rechaza', () => {
+    const sistema = sistemaDefensaVacio(plantillaEstandar());
+
+    const resultado = guardarVarianteDefensa(sistema, 'delantero', 'inicial', 2, formacionSeisPuestos());
+
+    expect(resultado).toBeNull();
+  });
+
+  it('039-E5 (contraejemplo): guardar la posición inicial con 0 bloqueadores se acepta', () => {
+    const sistema = sistemaDefensaVacio(plantillaEstandar());
+
+    const resultado = guardarVarianteDefensa(sistema, 'delantero', 'inicial', 0, formacionSeisPuestos());
+
+    expect(resultado).not.toBeNull();
+  });
+});
+
+describe('puestosQueBloquean', () => {
+  function conPuesto(puesto: 1 | 2 | 3 | 4 | 5 | 6, y: number): ColocacionDefensa {
+    return { puesto, punto: { x: 4.5, y } };
+  }
+
+  it('039-E9: con 2 bloqueadores declarados, bloquean los dos delanteros más pegados a la red', () => {
+    const formacion: FormacionDefensa = [conPuesto(2, 1.5), conPuesto(3, 0.4), conPuesto(4, 0.8), conPuesto(1, 6), conPuesto(5, 6), conPuesto(6, 8)];
+
+    const puestos = puestosQueBloquean(formacion, 2);
+
+    expect([...puestos].sort()).toEqual([3, 4]);
+  });
+
+  it('039-E10: descolgar a un bloqueador a los 3 metros lo saca del bloqueo, sin tocar el número declarado', () => {
+    // Mismo escenario que E9, pero el puesto 4 se descuelga a 3.5 m: ahora el 2 es el segundo
+    // más cercano a la red.
+    const formacion: FormacionDefensa = [conPuesto(2, 1.5), conPuesto(3, 0.4), conPuesto(4, 3.5), conPuesto(1, 6), conPuesto(5, 6), conPuesto(6, 8)];
+
+    const puestos = puestosQueBloquean(formacion, 2);
+
+    expect([...puestos].sort()).toEqual([2, 3]);
+  });
+
+  it('039-E11: declarar 3 bloqueadores con solo dos delanteros colocados no inventa un tercero', () => {
+    const formacion: FormacionDefensa = [conPuesto(3, 0.4), conPuesto(4, 0.8), conPuesto(1, 6), conPuesto(5, 6), conPuesto(6, 8)];
+
+    const puestos = puestosQueBloquean(formacion, 3);
+
+    expect([...puestos].sort()).toEqual([3, 4]);
+  });
+
+  it('039: con 0 bloqueadores declarados, nadie bloquea', () => {
+    const formacion: FormacionDefensa = [conPuesto(2, 1.5), conPuesto(3, 0.4), conPuesto(4, 0.8), conPuesto(1, 6), conPuesto(5, 6), conPuesto(6, 8)];
+
+    expect(puestosQueBloquean(formacion, 0)).toEqual([]);
   });
 });
 

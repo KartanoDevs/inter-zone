@@ -168,6 +168,21 @@ deriva de la línea, no del rol de ningún jugador — `C/O`, `R1/R2` y `C1/C2` 
 es un ajuste desactivable, es que la falta posicional solo tiene sentido en el instante de la
 recepción del saque (§5), no en la defensa de un ataque ya en juego.
 
+### Variantes por número de bloqueadores
+
+Contra la misma situación de ataque, la defensa cambia según cuántos jugadores llegan al bloqueo
+(spec 039): no es lo mismo defender un ataque por 4 con doble bloqueo que sin ninguno. Cada
+combinación de (caso, situación, número de bloqueadores de 0 a 3) es una defensa guardada
+independiente, con su propia colocación de los seis puestos. La postura inicial nunca admite
+variantes: siempre 0 bloqueadores, porque no tiene ataque marcado contra el que bloquear.
+
+**Quién bloquea se deriva, nunca se declara jugador a jugador.** Con `n` bloqueadores anunciados,
+bloquean los `n` puestos de la línea delantera (zonas 2, 3, 4) con menor distancia a la red, sin
+pasar de la línea de 3 metros (`y = 3`, §3): un puesto que se descuelga a esa línea o más allá
+deja de contar como posible bloqueador, y el número declarado no cambia — cambia quién lo cumple.
+Si hay menos delanteros colocados en el campo que bloqueadores declarados, bloquean los que haya;
+no se inventa uno.
+
 ---
 
 ## 4. Disposición de las posiciones rotacionales

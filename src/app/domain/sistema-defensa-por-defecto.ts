@@ -191,7 +191,9 @@ export function sistemaDefensaPorDefecto(plantilla: PlantillaEquipo, equipoId: E
       defensas.push({
         caso,
         situacion,
-        bloqueadores: 0,
+        // Doble bloqueo contra los extremos y el centro; individual contra la pipe (spec 039,
+        // E13; docs/voley/sistema_defensivo_unificado.md, reglas 3-4).
+        bloqueadores: situacion === 'pipe' ? 1 : 2,
         formacion: formacionDe(situacion),
         explicacion: explicacionDeVariante(),
       });

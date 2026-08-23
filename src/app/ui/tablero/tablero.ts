@@ -3,6 +3,7 @@ import { PALETA_COLORES, Pista, type CeldaConjunto, type FichaAgarrada, type Fic
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorCaso } from '../rotaciones/selector-caso';
 import { SelectorSituacion } from '../rotaciones/selector-situacion';
+import { SelectorBloqueadores } from '../rotaciones/selector-bloqueadores';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
@@ -27,6 +28,7 @@ import type {
   Formacion,
   Infraccion,
   Jugador,
+  NumeroBloqueadores,
   PuestoDefensa,
   Punto,
   ResultadoValidacion,
@@ -195,6 +197,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     SelectorRotacion,
     SelectorCaso,
     SelectorSituacion,
+    SelectorBloqueadores,
     PanelValidacion,
     PaletaJugadores,
     PanelEnsenanza,
@@ -397,6 +400,21 @@ export class Tablero {
 
   protected readonly esDefensa = computed(() => this.store.sistemaActivo()?.tipo === 'defensa');
 
+  /** La situación inicial no admite variantes de bloqueo (spec 039, E4): siempre 0. */
+  protected readonly admiteBloqueadores = computed(() => this.esDefensa() && this.store.situacionActiva() !== 'inicial');
+
+  /** Qué números de bloqueadores ya tienen una variante guardada para el (caso, situación)
+   * activos (spec 039, E7) — el selector distingue las creadas de las vacías. */
+  protected readonly bloqueadoresCreados = computed<readonly NumeroBloqueadores[]>(() => {
+    const sistema = this.store.sistemaActivo();
+    if (!sistema) {
+      return [];
+    }
+    return (sistema.defensas ?? [])
+      .filter((v) => v.caso === this.store.casoActivo() && v.situacion === this.store.situacionActiva())
+      .map((v) => v.bloqueadores);
+  });
+
   /**
    * Si lo guardado ya no está entre las opciones (p. ej. quedó de antes de filtrar el
    * desplegable a solo zagueros), se ve "Ninguno" — coherente con lo que `jugadoresEnPista` ya
@@ -470,6 +488,10 @@ export class Tablero {
 
   protected seleccionarSituacion(situacion: SituacionDefensa): void {
     this.store.seleccionarSituacion(situacion);
+  }
+
+  protected seleccionarBloqueadores(bloqueadores: NumeroBloqueadores): void {
+    this.store.seleccionarBloqueadores(bloqueadores);
   }
 
   protected elegirSistema(id: string): void {

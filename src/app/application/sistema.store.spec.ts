@@ -438,6 +438,25 @@ describe('SistemaStore', () => {
     expect(store.catalogo().map((s) => s.nombre)).toEqual(['Uno', 'Uno (copia)']);
   });
 
+  it('039-E12: clonar un sistema de defensa se lleva todas sus variantes', async () => {
+    const original: Sistema = {
+      ...sistemaBase('d1', 'Defensa'),
+      tipo: 'defensa',
+      defensas: [
+        { caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: [{ puesto: 1, punto: { x: 1, y: 1 } }] },
+        { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: [{ puesto: 1, punto: { x: 2, y: 2 } }] },
+        { caso: 'trasero', situacion: 'pipe', bloqueadores: 1, formacion: [{ puesto: 1, punto: { x: 3, y: 3 } }] },
+      ],
+    };
+    const store = new SistemaStore(new RepositorioFake([original]));
+    await store.cargar();
+
+    await store.clonar('Defensa (copia)');
+
+    const clon = store.catalogo().find((s) => s.nombre === 'Defensa (copia)');
+    expect(clon?.defensas).toEqual(original.defensas);
+  });
+
   it('026-E12 (aplicación): un nombre inválido no clona nada', async () => {
     const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
     await store.cargar();
@@ -697,6 +716,76 @@ describe('SistemaStore', () => {
       expect(store.casoActivo()).toBe('trasero');
       expect(store.cambioPendiente()).toBeNull();
       expect(store.borrador()).toEqual([]);
+    });
+
+    it('039-E2: cada número de bloqueadores guarda su propia colocación, sin arrastrar nada de otra', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensaVacio()]));
+      await store.cargar();
+      seisPuestosEnCentro().forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
+      await store.guardar(); // variante 0 bloqueadores, todos en el centro
+
+      store.seleccionarBloqueadores(2);
+      const otraFormacion = seisPuestosEnCentro().map((c) => ({ ...c, punto: { x: 1, y: 1 } }));
+      otraFormacion.forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
+      await store.guardar();
+
+      const variante0 = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 0);
+      const variante2 = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 2);
+      expect(variante0?.formacion[0].punto).toEqual({ x: 4.5, y: 4.5 });
+      expect(variante2?.formacion[0].punto).toEqual({ x: 1, y: 1 });
+    });
+
+    it('039-E3: cambiar a un número de bloqueadores nunca guardado deja el campo vacío', async () => {
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() }],
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      await store.cargar();
+
+      store.seleccionarBloqueadores(1);
+
+      expect(store.borrador()).toEqual([]);
+    });
+
+    it('039-E4: la situación inicial siempre tiene 0 bloqueadores, incluso tras seleccionar otro número antes', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensaVacio()]));
+      await store.cargar();
+      store.seleccionarBloqueadores(2);
+
+      store.seleccionarSituacion('inicial');
+
+      expect(store.bloqueadoresActivos()).toBe(0);
+    });
+
+    it('039-E6: cambiar de número de bloqueadores con cambios sin guardar pide confirmar', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensaVacio()]));
+      await store.cargar();
+      store.colocarOMover('p3', { x: 1, y: 1 });
+
+      store.seleccionarBloqueadores(2);
+
+      expect(store.bloqueadoresActivos()).toBe(0);
+      expect(store.cambioPendiente()).toEqual({ tipo: 'bloqueadores', valor: 2 });
+    });
+
+    it('039-E8: rehacer una variante no toca las demás de la misma situación', async () => {
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: seisPuestosEnCentro() },
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: [puesto3] },
+        ],
+      };
+      const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
+      await store.cargar();
+      const nueva = seisPuestosEnCentro().map((c) => ({ ...c, punto: { x: 7, y: 7 } }));
+      nueva.forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
+
+      await store.guardar();
+
+      const variante2 = store.sistemaActivo()?.defensas?.find((v) => v.bloqueadores === 2);
+      expect(variante2?.formacion).toEqual([puesto3]);
     });
   });
 
