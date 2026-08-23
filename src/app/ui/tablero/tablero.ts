@@ -40,12 +40,12 @@ import type {
 /** Etiqueta doble de cada puesto de defensa, según su línea (spec 038, E12): sin depender de
  * ninguna rotación ni de la plantilla activa — se deriva del puesto, es fijo. */
 const ETIQUETA_PUESTO: Readonly<Record<PuestoDefensa, string>> = {
-  1: 'C/O',
-  2: 'C/O',
-  3: 'C1/C2',
-  4: 'R1/R2',
+  1: 'CO',
+  2: 'CO',
+  3: 'C',
+  4: 'R',
   5: 'L',
-  6: 'R1/R2',
+  6: 'R',
 };
 
 function esPuestoDelantero(puesto: PuestoDefensa): boolean {
@@ -104,6 +104,15 @@ type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 type Ventana = 'editor' | 'examen' | 'cuenta';
 
 type PestanaTablero = 'banquillo' | 'ensenanza' | 'zonas' | 'ajustes';
+
+/** Nombre de cada pestaña en la cabecera del panel: con la barra de pestañas al fondo y el
+ * cuerpo plegable, hace falta decir qué se está viendo (o qué se recupera al desplegar). */
+const ETIQUETA_PESTANA: Readonly<Record<PestanaTablero, string>> = {
+  banquillo: 'Banquillo',
+  ensenanza: 'Enseñanza',
+  zonas: 'Zonas',
+  ajustes: 'Ajustes',
+};
 
 /** Entrada de la leyenda de colores de la vista de conjunto (spec 023): qué color le tocó a
  * cada jugador, para la pestaña "Zonas". */
@@ -231,6 +240,8 @@ export class Tablero {
 
   protected readonly tab = signal<PestanaTablero>('banquillo');
   protected readonly panelPlegado = signal(false);
+
+  protected readonly tituloPanel = computed(() => ETIQUETA_PESTANA[this.tab()]);
 
   /** Nombres de variable CSS, en el mismo orden que `CLAVES_ORDEN_COLOR`: la pestaña "Zonas"
    * pinta cada muestra con `var(paletaColores[indiceColor])`. */
@@ -612,7 +623,8 @@ export class Tablero {
   }
 
   /** Pulsar la pestaña ya activa pliega el panel en vez de no hacer nada — así el entrenador
-   * recupera el alto de la pista sin tener que elegir otra pestaña primero. */
+   * recupera el alto de la pista sin tener que elegir otra pestaña primero. Es un atajo, no la
+   * única vía: el botón de la cabecera hace lo mismo y sí se ve (`alternarPlegado`). */
   protected seleccionarTab(id: PestanaTablero): void {
     if (id === this.tab()) {
       this.panelPlegado.update((valor) => !valor);
@@ -620,6 +632,12 @@ export class Tablero {
     }
     this.tab.set(id);
     this.panelPlegado.set(false);
+  }
+
+  /** Pliega o despliega el cuerpo del panel desde el chevron de la cabecera. La barra de
+   * pestañas nunca se va: plegado, el panel se queda en cabecera + pestañas. */
+  protected alternarPlegado(): void {
+    this.panelPlegado.update((valor) => !valor);
   }
 
   protected elegirAccionSistema(id: string): void {
@@ -915,10 +933,13 @@ export class Tablero {
         const pista = this.pistaCmp();
         if (pista.contiene(e)) {
           this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
-          // Terminar un arrastre que coloca la ficha la deja seleccionada (spec 027, E1/E2):
-          // venga de la pista (se reposiciona) o del banquillo (se coloca por primera vez).
-          this.store.enfocarJugador(jugadorId);
-          this.irAEnsenanza();
+          // Terminar un arrastre que reposiciona una ficha ya en pista la deja seleccionada
+          // (spec 027, E1). Desde el banquillo no: así se pueden colocar varios jugadores
+          // seguidos sin que el panel salte a Enseñanza en cada uno.
+          if (origen === 'pista') {
+            this.store.enfocarJugador(jugadorId);
+            this.irAEnsenanza();
+          }
         } else if (origen === 'pista') {
           this.store.quitar(jugadorId);
         }

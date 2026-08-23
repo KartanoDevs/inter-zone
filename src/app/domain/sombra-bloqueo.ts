@@ -3,13 +3,17 @@ import type { Punto } from './modelos';
 /** Medio ancho de red que tapa un bloqueador, en metros (spec 040): un bloqueador cierra
  * aproximadamente 1 m de red con sus manos. En planta, el bloqueo se lee como un tramo de red,
  * no como una pared a la altura exacta donde esté el jugador — simplificación deliberada del
- * modelo (ver `docs/decisiones/`). */
-const ANCHO_BLOQUEADOR = 1;
+ * modelo (ver `docs/decisiones/`). Reducido un 60% (de 1 a 0.4) a petición del entrenador: la
+ * sombra resultante de 1 m se veía desproporcionada respecto al bloqueo real. */
+const ANCHO_BLOQUEADOR = 0.4;
 
 /** Dos tramos de red separados por esta distancia o menos se consideran el mismo bloqueo
  * cerrado y se fusionan en una sola pared (spec 040, E7); más separados que esto, el bloqueo
- * deja pasar un pasillo de luz entre ellos (E6). */
-const HOLGURA_VANO = 0.15;
+ * deja pasar un pasillo de luz entre ellos (E6). Subida junto con la reducción de
+ * `ANCHO_BLOQUEADOR` (de 1 a 0.4) para que dos jugadores a la distancia de referencia de "manos
+ * casi tocándose" (spec 040, E7: bloqueadores a 1 m de separación entre sí) sigan formando una
+ * única pared, aunque cada tramo individual tape menos red. */
+const HOLGURA_VANO = 0.6;
 
 /** Cota inferior de la profundidad del atacante respecto a la red, para que el cono de sombra
  * nunca se vuelva infinitamente ancho si se coloca justo sobre la línea `y = 0`. */

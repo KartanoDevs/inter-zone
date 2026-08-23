@@ -14,18 +14,18 @@ import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador
  * no tiene un tercio de red propio, se sitúa por detrás de la línea de ataque, en el lado
  * derecho — el espejo de la banda de zona 4, pero desde la zaga. */
 export const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
-  z2: { x: 1.5, y: -1.2 },
+  z2: { x: 1, y: -1.2 },
   z3: { x: 4.5, y: -1.2 },
-  z4: { x: 7.5, y: -1.2 },
-  z1: { x: 7.5, y: -3.5 },
+  z4: { x: 8, y: -1.2 },
+  z1: { x: 1, y: -3.5 },
   pipe: { x: 4.5, y: -3.5 },
 };
 
-/** Punto fijo del colocador rival según el caso (spec 038, E8): delantero, en su zona 2 —que
- * cae a nuestra izquierda, el espejo de `docs/dominio.md` §3—; trasero, en su zona 1, en el
- * fondo de su campo. */
+/** Punto fijo del colocador rival según el caso (spec 038, E8): delantero, cerca de la red y en
+ * el límite entre las zonas 2 y 3 rivales, a petición del entrenador; trasero, en su zona 1, en
+ * el fondo de su campo. */
 const PUNTO_COLOCADOR_RIVAL: Readonly<Record<CasoColocador, Punto>> = {
-  delantero: { x: 1.5, y: -0.5 },
+  delantero: { x: 3.0, y: -0.5 },
   trasero: { x: 7.5, y: -3.5 },
 };
 
@@ -99,9 +99,9 @@ const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
 const ENTRADAS_LEYENDA_DEFENSA: readonly EntradaLeyenda[] = [
   { etiqueta: 'A', nombre: 'Atacante' },
   { etiqueta: 'C', nombre: 'Colocador rival' },
-  { etiqueta: 'C/O', nombre: 'Colocador u opuesto' },
-  { etiqueta: 'R1/R2', nombre: 'Receptor' },
-  { etiqueta: 'C1/C2', nombre: 'Central' },
+  { etiqueta: 'CO', nombre: 'Colocador u opuesto' },
+  { etiqueta: 'R', nombre: 'Receptor' },
+  { etiqueta: 'C', nombre: 'Central' },
   { etiqueta: 'L', nombre: 'Líbero' },
 ];
 

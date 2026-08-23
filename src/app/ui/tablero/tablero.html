@@ -115,6 +115,75 @@
     </div>
 
     <section class="app-tablero__panel" [class.app-tablero__panel--plegado]="panelPlegado()">
+      <div class="app-tablero__panel-cabecera">
+        <span class="app-tablero__panel-titulo">{{ tituloPanel() }}</span>
+        <button
+          type="button"
+          class="app-tablero__panel-plegar"
+          [attr.aria-expanded]="!panelPlegado()"
+          [attr.aria-label]="panelPlegado() ? 'Desplegar panel' : 'Plegar panel'"
+          [attr.title]="panelPlegado() ? 'Desplegar panel' : 'Plegar panel'"
+          (click)="alternarPlegado()"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <polyline points="6,9 12,15 18,9" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="app-tablero__tabpanel" role="tabpanel">
+        @switch (tab()) {
+          @case ('banquillo') {
+            <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+          }
+          @case ('ensenanza') {
+            <app-panel-ensenanza
+              [titulo]="tituloDescripcionSistema()"
+              [texto]="store.descripcionSistemaActivo()"
+              [abierto]="false"
+              (guardar)="guardarDescripcionSistema($event)"
+            ></app-panel-ensenanza>
+            <app-panel-ensenanza
+              [titulo]="tituloEnsenanza()"
+              [texto]="store.explicacionMostrada()"
+              (guardar)="guardarExplicacion($event)"
+            ></app-panel-ensenanza>
+          }
+          @case ('zonas') {
+            @if (esDefensa()) {
+              <div class="app-tablero__leyenda-zonas">
+                @for (entrada of leyendaVistaConjunto(); track entrada.etiqueta) {
+                  <div class="app-tablero__leyenda-zonas-fila">
+                    <span
+                      class="app-tablero__leyenda-zonas-muestra"
+                      [style.background]="'var(' + paletaColores[entrada.indiceColor] + ')'"
+                    ></span>
+                    <span>{{ entrada.etiqueta }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+          @case ('ajustes') {
+            <app-panel-ajustes
+              [rotacion]="store.rotacionActiva()"
+              [tieneLibero]="tieneLibero() && !esDefensa()"
+              [opcionesLibero]="opcionesSustitutoLibero()"
+              [sustitutoActual]="sustitutoLiberoActual()"
+              [validacionDesactivada]="store.validacionDesactivada()"
+              [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
+              [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
+              [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
+              (cambiarSustituto)="cambiarSustitutoLibero($event)"
+              (alternarValidacion)="alternarValidacion()"
+              (alternarAyudaPosicion)="alternarAyudaPosicion()"
+              (alternarOrdenRotacion)="alternarOrdenRotacion()"
+              (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
+            ></app-panel-ajustes>
+          }
+        }
+      </div>
+
       <div class="app-tablero__tabs" role="tablist" aria-label="Paneles">
         <button
           type="button"
@@ -175,59 +244,6 @@
           </svg>
           Ajustes
         </button>
-      </div>
-
-      <div class="app-tablero__tabpanel" role="tabpanel">
-        @switch (tab()) {
-          @case ('banquillo') {
-            <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
-          }
-          @case ('ensenanza') {
-            <app-panel-ensenanza
-              [titulo]="tituloDescripcionSistema()"
-              [texto]="store.descripcionSistemaActivo()"
-              [abierto]="false"
-              (guardar)="guardarDescripcionSistema($event)"
-            ></app-panel-ensenanza>
-            <app-panel-ensenanza
-              [titulo]="tituloEnsenanza()"
-              [texto]="store.explicacionMostrada()"
-              (guardar)="guardarExplicacion($event)"
-            ></app-panel-ensenanza>
-          }
-          @case ('zonas') {
-            @if (esDefensa()) {
-              <div class="app-tablero__leyenda-zonas">
-                @for (entrada of leyendaVistaConjunto(); track entrada.etiqueta) {
-                  <div class="app-tablero__leyenda-zonas-fila">
-                    <span
-                      class="app-tablero__leyenda-zonas-muestra"
-                      [style.background]="'var(' + paletaColores[entrada.indiceColor] + ')'"
-                    ></span>
-                    <span>{{ entrada.etiqueta }}</span>
-                  </div>
-                }
-              </div>
-            }
-          }
-          @case ('ajustes') {
-            <app-panel-ajustes
-              [rotacion]="store.rotacionActiva()"
-              [tieneLibero]="tieneLibero() && !esDefensa()"
-              [opcionesLibero]="opcionesSustitutoLibero()"
-              [sustitutoActual]="sustitutoLiberoActual()"
-              [validacionDesactivada]="store.validacionDesactivada()"
-              [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
-              [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
-              [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
-              (cambiarSustituto)="cambiarSustitutoLibero($event)"
-              (alternarValidacion)="alternarValidacion()"
-              (alternarAyudaPosicion)="alternarAyudaPosicion()"
-              (alternarOrdenRotacion)="alternarOrdenRotacion()"
-              (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
-            ></app-panel-ajustes>
-          }
-        }
       </div>
     </section>
   }

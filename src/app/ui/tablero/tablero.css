@@ -1,6 +1,8 @@
 :host {
   display: block;
-  height: 100vh;
+  /* `dvh`, no `vh`: en móvil `100vh` cuenta también la barra del navegador, así que la última
+     fila —la de pestañas— quedaba por debajo del borde visible de la pantalla. */
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg-dark);
 }
@@ -40,6 +42,11 @@
 }
 
 .app-tablero {
+  /* Alto de la pestaña del panel, idéntico para las cuatro (banquillo, enseñanza, zonas y
+     ajustes): lo fija el contenedor, nunca el contenido. Varía con la pantalla, no con la
+     pestaña — que es lo que significa "que siempre ocupe lo mismo". */
+  --alto-panel: clamp(140px, 24dvh, 210px);
+
   height: 100%;
   max-width: 720px;
   margin: 0 auto;
@@ -48,15 +55,10 @@
   min-height: 0;
   gap: 4px;
   padding: 4px 0 0;
-  overflow-y: auto;
-  /* Scroll sí, barra no: en una pizarra táctil la barra solo come ancho — el gesto de
-     deslizar sigue funcionando igual sin ella. */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.app-tablero::-webkit-scrollbar {
-  display: none;
+  /* La página ya no scrollea: el alto lo reparte este flex y quien cede espacio es la pista.
+     Antes, con `overflow-y: auto`, la columna crecía más que la ventana en defensa (tres filas
+     de selectores que en recepción no existen) y la barra de pestañas se salía de la pantalla. */
+  overflow: hidden;
 }
 
 .app-tablero > app-selector-rotacion,
@@ -124,16 +126,24 @@
 .app-tablero__campo-envoltorio {
   display: flex;
   justify-content: center;
-  /* Nunca `flex: 1`: eso reservaba todo el alto sobrante del flex column y dejaba a Vaciar/
-     Guardar colgando muy por debajo de la pista. El alto de la pista lo decide su ancho (vía
-     `aspect-ratio`), no el espacio disponible. */
-  flex: 0 0 auto;
+  /* Ahora sí `flex: 1`: la pista es lo único elástico de la columna, así que es ella la que
+     cede espacio cuando el panel está desplegado y la que lo recupera al plegarlo. Todo lo
+     demás (nav, cabecera, selectores, acciones, panel) tiene alto propio y no se comprime.
+     `min-height: 0` es imprescindible: sin él un hijo flex no baja de su alto de contenido y
+     la columna volvería a desbordar. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .app-tablero__campo {
   position: relative;
-  width: 100%;
-  aspect-ratio: 10.5 / 13.8;
+  /* El alto manda y el ancho sale de la proporción, al revés que antes: así la pista se ajusta
+     al hueco que le deje el panel en vez de imponer su alto a la columna. `max-width` la acota
+     en pantallas anchas y bajas; si llega a ese tope, el `preserveAspectRatio` del SVG hace el
+     resto sin deformar nada. */
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 10.5 / 13.35;
 }
 
 /* Recentrar la sombra de bloqueo (spec 040, E13): mismo patrón visual que el botón de leyenda de
@@ -202,24 +212,78 @@
 /* ---- panel de pestañas: Banquillo · Enseñanza · Zonas · Ajustes ---- */
 
 .app-tablero__panel {
-  /* Pegado al fondo del scroll, no al fondo de la ventana: si el resto del contenido no cabe
-     en pantalla, esto es lo único que tiene que verse siempre — es lo que abre y cierra
-     banquillo, enseñanza, zonas y ajustes. */
-  position: sticky;
-  bottom: 0;
-  z-index: 15;
+  /* Ya no necesita `position: sticky`: es el último hijo de una columna que no scrollea, así
+     que su sitio al fondo de la pantalla se lo da el propio flex. */
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-card);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px 12px 0 0;
-  overflow: hidden;
+}
+
+/* Cabecera del panel: qué pestaña se está viendo y el botón de plegar. Sustituye al gesto
+   escondido de "pulsar la pestaña ya activa", que sigue funcionando pero que nadie descubría. */
+.app-tablero__panel-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: 6px 10px 2px;
+  flex: 0 0 auto;
+}
+
+.app-tablero__panel-titulo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.app-tablero__panel-plegar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.app-tablero__panel-plegar:hover,
+.app-tablero__panel-plegar:focus-visible {
+  color: var(--neon-cyan);
+  border-color: rgba(0, 229, 255, 0.45);
+}
+
+.app-tablero__panel-plegar svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 200ms ease;
+}
+
+.app-tablero__panel--plegado .app-tablero__panel-plegar svg {
+  transform: rotate(180deg);
 }
 
 .app-tablero__tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2px;
-  padding: 5px 5px 0;
+  padding: 0 5px 4px;
+  flex: 0 0 auto;
 }
 
 .app-tablero__tabs button {
@@ -232,7 +296,9 @@
   min-height: 44px;
   background: transparent;
   border: 0;
-  border-radius: 7px 7px 0 0;
+  /* Redondeo abajo y marca activa arriba: la pestaña queda colgando del contenido, que ahora
+     está encima de ella y no debajo. */
+  border-radius: 0 0 7px 7px;
   color: var(--text-muted);
   font-family: var(--font-body);
   font-weight: 600;
@@ -255,7 +321,7 @@
 .app-tablero__tabs button[aria-selected='true']::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 14%;
   right: 14%;
   height: 2px;
@@ -287,15 +353,31 @@
 .app-tablero__tabpanel {
   background: var(--bg-card-alt);
   padding: var(--space-2);
+  /* `height`, no `max-height`: un máximo dejaba que cada pestaña se encogiera a su contenido
+     —zonas ocupaba un tercio de lo que ocupaba enseñanza— y que la que se pasaba quedara
+     cortada. Con alto fijo, las cuatro miden igual y la que se pasa scrollea aquí dentro. */
+  height: var(--alto-panel);
   overflow-y: auto;
-  max-height: 220px;
+  flex: 0 0 auto;
   transition:
-    max-height 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
     padding 220ms ease;
+  /* La barra de scroll se ve a propósito: es la señal de que ahí abajo queda contenido. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 229, 255, 0.35) transparent;
+}
+
+.app-tablero__tabpanel::-webkit-scrollbar {
+  width: 5px;
+}
+
+.app-tablero__tabpanel::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.35);
+  border-radius: 4px;
 }
 
 .app-tablero__panel--plegado .app-tablero__tabpanel {
-  max-height: 0;
+  height: 0;
   padding-top: 0;
   padding-bottom: 0;
   overflow: hidden;
@@ -409,7 +491,9 @@ app-panel-ensenanza + app-panel-ensenanza {
 @media (prefers-reduced-motion: reduce) {
   .app-tablero__nav button,
   .app-tablero__tabs button,
-  .app-tablero__tabpanel {
+  .app-tablero__tabpanel,
+  .app-tablero__panel-plegar,
+  .app-tablero__panel-plegar svg {
     transition: none;
   }
 }
