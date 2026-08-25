@@ -35,6 +35,21 @@
         [sistemaActivoId]="store.sistemaActivoId()"
         (elegir)="elegirSistema($event)"
       ></app-barra-sistemas>
+      @if (store.sistemaActivo(); as sistema) {
+        <span
+          class="app-tablero__estado"
+          [class.app-tablero__estado--validado]="store.estadoActivo() === 'validado'"
+        >
+          {{ store.estadoActivo() === 'validado' ? 'Validado' : 'Borrador' }}
+        </span>
+        <button
+          type="button"
+          class="app-boton app-boton--secundario"
+          (click)="store.cambiarEstadoActivo(store.estadoActivo() === 'validado' ? 'borrador' : 'validado')"
+        >
+          {{ store.estadoActivo() === 'validado' ? 'Quitar validación' : 'Validar' }}
+        </button>
+      }
     </div>
 
     @if (esDefensa()) {

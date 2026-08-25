@@ -5,6 +5,7 @@ import type {
   Colocacion,
   ColocacionDefensa,
   EquipoId,
+  EstadoSistema,
   Formacion,
   FormacionDefensa,
   NumeroBloqueadores,
@@ -22,6 +23,7 @@ import {
   clonarSistema,
   crearSistema,
   describirSistema,
+  estadoDe,
   ordenarCatalogo,
   renombrarSistema,
 } from '../domain/catalogo-sistemas';
@@ -147,6 +149,12 @@ export class SistemaStore {
   );
 
   readonly sistemaActivo = computed(() => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null);
+  /** "borrador" o "validado" del sistema activo (spec 051). Ausente en el sistema equivale a
+   * "borrador" — ver `estadoDe`. */
+  readonly estadoActivo = computed(() => {
+    const sistema = this.sistemaActivo();
+    return sistema ? estadoDe(sistema) : 'borrador';
+  });
 
   /**
    * Quién juega de verdad en la rotación activa — los seis titulares, o el líbero en su lugar
@@ -603,6 +611,23 @@ export class SistemaStore {
         }
       },
       () => void this.borrar(id),
+    );
+  }
+
+  /** Valida o quita la validación del sistema activo (spec 051). El servidor decide si quien
+   * pregunta tiene permiso — si lo rechaza, `errorGuardado` recoge el motivo igual que
+   * cualquier otra escritura. */
+  async cambiarEstadoActivo(estado: EstadoSistema): Promise<void> {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return;
+    }
+    await this.ejecutarEscritura(
+      async () => {
+        await this.repositorio.cambiarEstado(sistema.id, estado);
+        this.sistemas.update((lista) => lista.map((s) => (s.id === sistema.id ? { ...s, estado } : s)));
+      },
+      () => void this.cambiarEstadoActivo(estado),
     );
   }
 

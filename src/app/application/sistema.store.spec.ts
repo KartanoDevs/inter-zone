@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ColocacionDefensa, EquipoId, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
+import type { ColocacionDefensa, EquipoId, EstadoSistema, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
 import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type Ajustes, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
 import { SistemaStore, type ColocacionBorrador } from './sistema.store';
 import { formacionDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
@@ -58,6 +58,7 @@ function sistemaConLibero(id: string, nombre: string): Sistema {
 type Llamada =
   | { readonly metodo: 'crear'; readonly argumento: Sistema }
   | { readonly metodo: 'actualizar'; readonly argumento: Sistema }
+  | { readonly metodo: 'cambiarEstado'; readonly argumento: { readonly id: string; readonly estado: EstadoSistema } }
   | { readonly metodo: 'borrar'; readonly argumento: string };
 
 /** Doble en memoria, granular (spec 031): un mapa por id en vez de un array reemplazado entero,
@@ -100,6 +101,15 @@ class RepositorioFake implements SistemaRepository {
     this.comprobarFallo();
     this.llamadas.push({ metodo: 'actualizar', argumento: sistema });
     this.mapa.set(sistema.id, sistema);
+  }
+
+  async cambiarEstado(id: string, estado: EstadoSistema): Promise<void> {
+    this.comprobarFallo();
+    this.llamadas.push({ metodo: 'cambiarEstado', argumento: { id, estado } });
+    const sistema = this.mapa.get(id);
+    if (sistema) {
+      this.mapa.set(id, { ...sistema, estado });
+    }
   }
 
   async borrar(id: string): Promise<void> {
@@ -547,6 +557,18 @@ describe('SistemaStore', () => {
 
     expect(store.catalogo().map((s) => s.id)).toEqual(['r2']);
     expect(store.sistemaActivoId()).toBe('r2');
+  });
+
+  it('051-E2: validar el sistema activo cambia su estado y lo persiste', async () => {
+    const repositorio = new RepositorioFake([sistemaBase('r1', 'Recepción A')]);
+    const store = new SistemaStore(repositorio);
+    await store.cargar();
+    store.activarSistema('r1');
+
+    await store.cambiarEstadoActivo('validado');
+
+    expect(store.sistemaActivo()?.estado).toBe('validado');
+    expect(repositorio.llamadas).toContainEqual({ metodo: 'cambiarEstado', argumento: { id: 'r1', estado: 'validado' } });
   });
 
   it('010-E8: sin jugador seleccionado, el panel muestra la explicación de la rotación', async () => {

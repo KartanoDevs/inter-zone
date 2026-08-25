@@ -1,4 +1,4 @@
-import type { EquipoId, Sistema } from '../domain/modelos';
+import type { EquipoId, EstadoSistema, Sistema } from '../domain/modelos';
 import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type SistemaRepository } from '../domain/puertos';
 
 const EQUIPOS: readonly EquipoId[] = ['masculino', 'femenino'];
@@ -69,6 +69,16 @@ export class HttpSistemaRepository implements SistemaRepository {
     this.actualizadoEnPorId.set(sistema.id, actualizadoEn);
   }
 
+  /** Validar o quitar la validación (spec 051): exige sesión y rol, a diferencia del resto de
+   * este adaptador — por eso manda `credentials: 'include'`, igual que `HttpAccesoRepository`. */
+  async cambiarEstado(id: string, estado: EstadoSistema): Promise<void> {
+    await this.peticion(`/sistemas/${id}/estado`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ estado }),
+    });
+  }
+
   async borrar(id: string): Promise<void> {
     await this.peticion(`/sistemas/${id}`, { method: 'DELETE' });
     this.actualizadoEnPorId.delete(id);
@@ -76,11 +86,13 @@ export class HttpSistemaRepository implements SistemaRepository {
 
   /** Hace la petición y traduce cualquier fallo a uno de los tres motivos que declara el
    * puerto (spec 034) — nunca deja pasar un `Response` con error sin traducir, ni una excepción
-   * de red sin envolver. */
+   * de red sin envolver. `credentials: 'include'` (spec 051): sin sesión, `cambiarEstado` la
+   * necesita; el resto de rutas la ignora hoy, y la seguirá necesitando cuando la spec 037
+   * las cierre a todas. */
   private async peticion(ruta: string, init: RequestInit): Promise<Response> {
     let respuesta: Response;
     try {
-      respuesta = await this.fetchFn(`${this.baseUrl}${ruta}`, init);
+      respuesta = await this.fetchFn(`${this.baseUrl}${ruta}`, { ...init, credentials: 'include' });
     } catch {
       throw new ErrorDeRed('No se pudo conectar con el servidor');
     }

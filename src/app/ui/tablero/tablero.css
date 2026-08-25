@@ -121,6 +121,23 @@
   min-width: 0;
 }
 
+/* ---- estado del sistema: borrador / validado (spec 051) ---- */
+
+.app-tablero__estado {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: var(--bg-card-alt);
+  color: var(--text-muted);
+}
+
+.app-tablero__estado--validado {
+  background: rgba(57, 255, 20, 0.14);
+  color: var(--neon-green);
+}
+
 /* ---- pista ---- */
 
 .app-tablero__campo-envoltorio {
