@@ -297,19 +297,8 @@
   }
 
   @if (ventana() === 'cuenta') {
-    <div class="app-tablero__futura">
-      <span class="app-tablero__futura-icono">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8.6" r="3.4" />
-          <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
-        </svg>
-      </span>
-      <h2>Tu cuenta</h2>
-      <p>{{ acceso.usuario()?.email }}</p>
-      <p>
-        Nombre, posición favorita, dorsal y cambiar contraseña llegan con la spec 053. Lista
-        blanca y roles de acceso, con la 037/054.
-      </p>
+    <app-perfil-cuenta></app-perfil-cuenta>
+    <div class="app-tablero__cuenta-salir">
       <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
     </div>
   }

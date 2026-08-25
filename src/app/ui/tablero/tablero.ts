@@ -17,6 +17,7 @@ import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
 import { AccesoStore } from '../../application/acceso.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { TeoriaTablero } from '../teoria/teoria-tablero';
+import { PerfilCuenta } from '../acceso/perfil-cuenta';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
@@ -183,6 +184,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     SelectorEquipo,
     PanelAjustes,
     TeoriaTablero,
+    PerfilCuenta,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',

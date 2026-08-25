@@ -1,0 +1,70 @@
+.app-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-3);
+}
+
+.app-perfil__cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.app-perfil__correo {
+  font-size: 15px;
+  color: var(--text-main);
+}
+
+.app-perfil__rol {
+  align-self: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.14);
+  color: var(--neon-cyan);
+  font-size: 12px;
+}
+
+.app-perfil__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.app-perfil__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.app-perfil__campo input,
+.app-perfil__campo select {
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-main);
+  font: inherit;
+}
+
+.app-perfil__error {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(255, 0, 85, 0.12);
+  border: 1px solid rgba(255, 0, 85, 0.35);
+  border-radius: 8px;
+  color: var(--neon-pink);
+  font-size: 13px;
+}
+
+.app-perfil__exito {
+  margin: 0;
+  color: var(--neon-green);
+  font-size: 13px;
+}

@@ -1,0 +1,76 @@
+@if (acceso.usuario(); as usuario) {
+  <div class="app-perfil">
+    <div class="app-perfil__cabecera">
+      <span class="app-perfil__correo">{{ usuario.email }}</span>
+      <span class="app-perfil__rol">{{ etiquetaRol() }}</span>
+    </div>
+
+    <form
+      class="app-perfil__form"
+      (submit)="$event.preventDefault(); guardarPerfil(nombreCampo.value, posicionCampo.value, dorsalCampo.value)"
+    >
+      <label class="app-perfil__campo">
+        Nombre o apodo
+        <input #nombreCampo type="text" [value]="usuario.nombre ?? ''" maxlength="60" />
+      </label>
+
+      <label class="app-perfil__campo">
+        Posición favorita
+        <select #posicionCampo [value]="usuario.posicionFavorita ?? ''">
+          <option value="">Sin elegir</option>
+          @for (opcion of opcionesRol; track opcion.id) {
+            <option [value]="opcion.id">{{ opcion.nombre }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="app-perfil__campo">
+        Dorsal
+        <input #dorsalCampo type="number" min="1" max="99" [value]="usuario.dorsal ?? ''" />
+      </label>
+
+      @if (acceso.error(); as error) {
+        <p class="app-perfil__error" role="alert">{{ error }}</p>
+      }
+      @if (guardado()) {
+        <p class="app-perfil__exito">Perfil guardado.</p>
+      }
+
+      <button type="submit" class="app-boton app-boton--primario" [disabled]="guardando()">Guardar</button>
+    </form>
+
+    <button type="button" class="app-boton app-boton--secundario" (click)="abrirCambioContrasena()">Cambiar contraseña</button>
+  </div>
+
+  @if (cambiandoContrasena()) {
+    <app-modal titulo="Cambiar contraseña" (cerrar)="cerrarCambioContrasena()">
+      <form
+        id="app-perfil-form-contrasena"
+        class="app-perfil__form"
+        (submit)="$event.preventDefault(); guardarContrasena(actualCampo.value, nuevaCampo.value, repetirCampo.value)"
+      >
+        <label class="app-perfil__campo">
+          Contraseña actual
+          <input #actualCampo type="password" required autocomplete="current-password" />
+        </label>
+        <label class="app-perfil__campo">
+          Contraseña nueva
+          <input #nuevaCampo type="password" required minlength="8" autocomplete="new-password" />
+        </label>
+        <label class="app-perfil__campo">
+          Repetir contraseña nueva
+          <input #repetirCampo type="password" required minlength="8" autocomplete="new-password" />
+        </label>
+
+        @if (errorContrasena(); as error) {
+          <p class="app-perfil__error" role="alert">{{ error }}</p>
+        }
+      </form>
+
+      <ng-container acciones>
+        <button type="button" class="app-boton app-boton--secundario" (click)="cerrarCambioContrasena()">Cancelar</button>
+        <button type="submit" form="app-perfil-form-contrasena" class="app-boton app-boton--primario">Cambiar</button>
+      </ng-container>
+    </app-modal>
+  }
+}
