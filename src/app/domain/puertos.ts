@@ -1,4 +1,5 @@
 import type { Sistema } from './modelos';
+import type { SesionUsuario } from './acceso';
 
 /** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
  * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). */
@@ -41,3 +42,21 @@ export interface AjustesRepository {
   leer(): Promise<Ajustes>;
   guardar(ajustes: Ajustes): Promise<void>;
 }
+
+/** Entrar, crear cuenta, salir y preguntar quién ha entrado (spec 050). `quienSoy` nunca lanza
+ * por falta de sesión: `null` es una respuesta válida, no un fallo. */
+export interface AccesoRepository {
+  registrar(email: string, contrasena: string): Promise<void>;
+  entrar(email: string, contrasena: string): Promise<SesionUsuario>;
+  quienSoy(): Promise<SesionUsuario | null>;
+  salir(): Promise<void>;
+}
+
+/** Dos motivos de fallo propios de `AccesoRepository` (spec 050), parte del contrato del
+ * puerto: `CredencialesInvalidas` cubre a la vez contraseña incorrecta y correo inexistente
+ * (spec 035, E11 — la respuesta del servidor ya es la misma a propósito) y
+ * `InvitacionNoDisponible` cubre un correo sin invitación o con la invitación ya usada. Un
+ * fallo que no sea ninguno de los dos (por ejemplo, contraseña demasiado corta) se señala con
+ * `ErrorDelServidor`, el mismo que ya usa `SistemaRepository`. */
+export class CredencialesInvalidas extends Error {}
+export class InvitacionNoDisponible extends Error {}

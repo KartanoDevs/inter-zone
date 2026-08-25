@@ -22,6 +22,14 @@ export interface AltaResuelta {
   readonly membresias: readonly Membresia[];
 }
 
+/** Quién ha entrado (spec 050): lo que devuelve el servidor tras identificarse, o al preguntar
+ * "quién soy". Sin contraseña ni testigo de sesión — eso no sale nunca de `server/`. */
+export interface SesionUsuario {
+  readonly email: string;
+  readonly esAdmin: boolean;
+  readonly membresias: readonly Membresia[];
+}
+
 /** Mínimo exigido al darse de alta (spec 035, E9). No hay una regla de voleibol detrás: es un
  * mínimo de seguridad razonable, igual de arbitrario en cualquier aplicación con contraseña. */
 export const LONGITUD_MINIMA_CONTRASENA = 8;
