@@ -33,6 +33,11 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
+/** Sesión de admin válida para cualquier equipo (spec 037): las rutas de escritura la exigen
+ * desde esta spec, y la mayoría de los tests de aquí solo quieren un catálogo que manipular,
+ * no ejercitar el permiso en sí — eso lo hace el describe "permisos" con sus propias sesiones. */
+let cookieAdmin: string;
+
 beforeEach(async () => {
   // Cascada de FK: borra sistema_rotacion, formacion y colocacion también. equipo y jugador,
   // el catálogo base, se quedan.
@@ -40,6 +45,7 @@ beforeEach(async () => {
   // Spec 051: las cuentas que crean los tests de "validar" no deben arrastrarse de un test a otro.
   await prisma.usuario.deleteMany({});
   await prisma.lista_blanca.deleteMany({});
+  cookieAdmin = await entrarComo('admin@club.com', 'admin');
 });
 
 /** Da de alta y entra con un correo nuevo, invitado con el rol y equipo que se le pida (spec
@@ -90,19 +96,19 @@ interface RespuestaJson {
   readonly cuerpo: any;
 }
 
-async function postSistema(sistema: Sistema): Promise<RespuestaJson> {
+async function postSistema(sistema: Sistema, cookie: string | null = cookieAdmin): Promise<RespuestaJson> {
   const respuesta = await fetch(`${base}/api/sistemas`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) },
     body: JSON.stringify(sistema),
   });
   return { status: respuesta.status, cuerpo: await respuesta.json().catch(() => null) };
 }
 
-async function putSistema(id: string, sistema: object, testigoIfMatch: string): Promise<RespuestaJson> {
+async function putSistema(id: string, sistema: object, testigoIfMatch: string, cookie: string | null = cookieAdmin): Promise<RespuestaJson> {
   const respuesta = await fetch(`${base}/api/sistemas/${id}`, {
     method: 'PUT',
-    headers: { 'content-type': 'application/json', 'If-Match': testigoIfMatch },
+    headers: { 'content-type': 'application/json', 'If-Match': testigoIfMatch, ...(cookie ? { cookie } : {}) },
     body: JSON.stringify(sistema),
   });
   return { status: respuesta.status, cuerpo: await respuesta.json().catch(() => null) };
@@ -114,8 +120,8 @@ async function getCatalogo(equipoId: EquipoId): Promise<any[]> {
   return (await respuesta.json()) as any[];
 }
 
-async function borrarSistema(id: string): Promise<RespuestaJson> {
-  const respuesta = await fetch(`${base}/api/sistemas/${id}`, { method: 'DELETE' });
+async function borrarSistema(id: string, cookie: string | null = cookieAdmin): Promise<RespuestaJson> {
+  const respuesta = await fetch(`${base}/api/sistemas/${id}`, { method: 'DELETE', headers: cookie ? { cookie } : {} });
   return { status: respuesta.status, cuerpo: null };
 }
 
@@ -421,9 +427,8 @@ describe('API de sistemas (spec 033)', () => {
 
     it('051-E3: el admin puede validar un sistema de cualquier equipo', async () => {
       const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De masculino', 'recepcion', 'masculino'));
-      const cookie = await entrarComo('admin@club.com', 'admin');
 
-      const { status } = await ponerEstado(creado.id, 'validado', cookie);
+      const { status } = await ponerEstado(creado.id, 'validado', cookieAdmin);
 
       expect(status).toBe(200);
     });
@@ -455,6 +460,79 @@ describe('API de sistemas (spec 033)', () => {
 
       expect(status).toBe(200);
       expect((await getCatalogo('masculino')).find((s) => s.id === creado.id)?.estado).toBe('borrador');
+    });
+  });
+
+  describe('permisos de escritura (spec 037)', () => {
+    it('037-E1: un entrenador crea, edita y borra sistemas de su equipo', async () => {
+      const cookie = await entrarComo('entrenadora@club.com', 'entrenador', 'masculino');
+      const id = crypto.randomUUID();
+
+      const { status: creado, cuerpo } = await postSistema(sistemaVacio(id, 'De masculino', 'recepcion', 'masculino'), cookie);
+      expect(creado).toBe(201);
+
+      const { status: editado } = await putSistema(id, { ...sistemaVacio(id, 'Renombrado', 'recepcion', 'masculino') }, cuerpo.actualizadoEn, cookie);
+      expect(editado).toBe(200);
+
+      const { status: borrado } = await borrarSistema(id, cookie);
+      expect(borrado).toBe(204);
+    });
+
+    it('037-E3: un entrenador no puede crear un sistema en un equipo donde no tiene membresía', async () => {
+      const cookie = await entrarComo('entrenador-masculino@club.com', 'entrenador', 'masculino');
+
+      const { status } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De femenino', 'recepcion', 'femenino'), cookie);
+
+      expect(status).toBe(403);
+    });
+
+    it('037-E3: un entrenador no puede editar ni borrar un sistema de otro equipo', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De femenino', 'recepcion', 'femenino'));
+      const cookie = await entrarComo('entrenador-masculino@club.com', 'entrenador', 'masculino');
+
+      const { status: editado } = await putSistema(creado.id, creado, creado.actualizadoEn, cookie);
+      const { status: borrado } = await borrarSistema(creado.id, cookie);
+
+      expect(editado).toBe(403);
+      expect(borrado).toBe(403);
+    });
+
+    it('037-E4: un usuario no puede crear, editar ni borrar ningún sistema', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De masculino', 'recepcion', 'masculino'));
+      const cookie = await entrarComo('jugador@club.com', 'usuario', 'masculino');
+
+      const { status: creacion } = await postSistema(sistemaVacio(crypto.randomUUID(), 'Otro', 'recepcion', 'masculino'), cookie);
+      const { status: edicion } = await putSistema(creado.id, creado, creado.actualizadoEn, cookie);
+      const { status: borrado } = await borrarSistema(creado.id, cookie);
+
+      expect(creacion).toBe(403);
+      expect(edicion).toBe(403);
+      expect(borrado).toBe(403);
+    });
+
+    it('037-E5: sin sesión no se puede crear, editar ni borrar', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De masculino', 'recepcion', 'masculino'));
+
+      const { status: creacion } = await postSistema(sistemaVacio(crypto.randomUUID(), 'Otro', 'recepcion', 'masculino'), null);
+      const { status: edicion } = await putSistema(creado.id, creado, creado.actualizadoEn, null);
+      const { status: borrado } = await borrarSistema(creado.id, null);
+
+      expect(creacion).toBe(401);
+      expect(edicion).toBe(401);
+      expect(borrado).toBe(401);
+    });
+
+    it('037-E1: sigue exigiendo If-Match aunque el permiso sea correcto', async () => {
+      const cookie = await entrarComo('entrenadora2@club.com', 'entrenador', 'masculino');
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De masculino', 'recepcion', 'masculino'), cookie);
+
+      const respuesta = await fetch(`${base}/api/sistemas/${creado.id}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', cookie },
+        body: JSON.stringify(creado),
+      });
+
+      expect(respuesta.status).toBe(400);
     });
   });
 });
