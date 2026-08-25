@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { dorsalValido, normalizarEmail, normalizarNombre, puedeEditarAlgo, puedeGestionarEquipo, resolverAltaDesdeInvitacion } from './acceso';
+import {
+  dorsalValido,
+  esRolAccesoValido,
+  normalizarEmail,
+  normalizarNombre,
+  puedeEditarAlgo,
+  puedeGestionarEquipo,
+  resolverAltaDesdeInvitacion,
+} from './acceso';
 
 const EQUIPOS = ['masculino', 'femenino'] as const;
 
@@ -87,5 +95,16 @@ describe('acceso', () => {
 
   it('053-E2: un nombre con contenido se conserva sin los espacios de sobra', () => {
     expect(normalizarNombre('  Ana  ')).toBe('Ana');
+  });
+
+  it('054-E1: admin, entrenador y usuario son roles de acceso válidos', () => {
+    expect(esRolAccesoValido('admin')).toBe(true);
+    expect(esRolAccesoValido('entrenador')).toBe(true);
+    expect(esRolAccesoValido('usuario')).toBe(true);
+  });
+
+  it('054-E1: cualquier otro valor no es un rol de acceso válido', () => {
+    expect(esRolAccesoValido('colocador')).toBe(false);
+    expect(esRolAccesoValido('')).toBe(false);
   });
 });

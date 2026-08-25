@@ -4,6 +4,14 @@ import type { EquipoId, RolId } from './modelos';
  * vía membresía. Distinto del rol de voleibol (`RolId`) y de la posición rotacional. */
 export type RolAcceso = 'admin' | 'entrenador' | 'usuario';
 
+const ROLES_ACCESO_VALIDOS: readonly RolAcceso[] = ['admin', 'entrenador', 'usuario'];
+
+/** Si un valor es uno de los tres roles de acceso (spec 054, E1): usado al invitar un correo a
+ * la lista blanca, para no dejar que Prisma sea el único que lo comprueba. */
+export function esRolAccesoValido(valor: unknown): valor is RolAcceso {
+  return typeof valor === 'string' && (ROLES_ACCESO_VALIDOS as readonly string[]).includes(valor);
+}
+
 /** Lo que fija una invitación de la lista blanca: con qué rol nace la cuenta y en qué equipo
  * queda de alta. `equipoId` nulo significa "los dos equipos" — no aplica a `admin`, que no se
  * acota a ninguno. */
@@ -44,6 +52,17 @@ export interface DatosPerfil {
   readonly nombre: string | null;
   readonly posicionFavorita: RolId | null;
   readonly dorsal: number | null;
+}
+
+/** Una fila de la lista blanca, tal como la ve el admin (spec 054): pendiente si `usadaEn` es
+ * `null`, ya usada si no. Las fechas llegan como texto ISO — son metadato de esta frontera, ni
+ * `Sistema` ni `SesionUsuario` guardan fechas tampoco (ADR 0012). */
+export interface InvitacionListada {
+  readonly email: string;
+  readonly rol: RolAcceso;
+  readonly equipoId: EquipoId | null;
+  readonly creadaEn: string;
+  readonly usadaEn: string | null;
 }
 
 /** Quién puede gestionar los sistemas de un equipo — crearlos, editarlos, borrarlos o validarlos
