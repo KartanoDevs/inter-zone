@@ -1,7 +1,7 @@
-// Espejo de docs/modelo-de-datos.md — solo las seis tablas que necesita la spec 033
-// (equipo, jugador, sistema, sistema_rotacion, formacion, colocacion). Las tres de acceso
-// (usuario, lista_blanca, membresia) llegan con la spec 035, en una migración nueva que no
-// toca esta.
+// Espejo de docs/modelo-de-datos.md. Las seis tablas de voleibol (equipo, jugador, sistema,
+// sistema_rotacion, formacion, colocacion) llegaron con la spec 033. Las de acceso (usuario,
+// lista_blanca, membresia) llegan con la spec 035, en una migración nueva que no toca esas
+// seis; añade además `sesion`, sin diseñar en el documento original (ver su §9, nota final).
 //
 // Los CHECK y la función celdas_validas() no se declaran aquí: Prisma no los expresa en su
 // lenguaje de esquema (docs/modelo-de-datos.md §6, "Nota sobre Prisma"). Van a mano en
@@ -30,13 +30,6 @@ enum rol_jugador {
   libero
 }
 
-enum via_ataque {
-  z4
-  z3
-  z2
-  pipe
-}
-
 /// El caso del colocador rival (spec 038): sustituye a la rotación como eje de navegación en
 /// defensa. Determina qué situaciones de ataque son posibles (situacion_defensa).
 enum caso_colocador {
@@ -61,12 +54,81 @@ enum estado_sistema {
   validado
 }
 
+/// Rol de acceso (spec 035): admin es global (no lleva membresia); entrenador y usuario se
+/// acotan por equipo, vía `membresia`. Distinto de `rol_jugador` (docs/modelo-de-datos.md,
+/// "aviso de vocabulario").
+enum rol_acceso {
+  admin
+  entrenador
+  usuario
+}
+
 model equipo {
   id     String @id @default(uuid()) @db.Uuid
   clave  String @unique
   nombre String
 
-  sistemas sistema[]
+  sistemas      sistema[]
+  membresias    membresia[]
+  lista_blanca  lista_blanca[]
+}
+
+/// Cuenta con contraseña (spec 035). `es_admin` es global; el resto del rol vive en
+/// `membresia`, acotado por equipo.
+model usuario {
+  id                String        @id @default(uuid()) @db.Uuid
+  email             String        @unique
+  contrasena_hash   String
+  es_admin          Boolean       @default(false)
+  nombre            String?
+  posicion_favorita rol_jugador?
+  dorsal            Int?          @db.SmallInt
+  creado_en         DateTime      @default(now()) @db.Timestamptz
+  actualizado_en    DateTime      @default(now()) @db.Timestamptz
+  ultimo_acceso_en  DateTime?     @db.Timestamptz
+
+  membresias          membresia[]
+  sesiones            sesion[]
+  invitaciones_hechas lista_blanca[]
+}
+
+/// La única puerta de entrada (spec 035, ADR 0039): sin una fila aquí no se crea cuenta. Fija
+/// el rol y el equipo con el que nace. `equipo_id` nulo = ambos equipos.
+model lista_blanca {
+  email        String      @id
+  rol          rol_acceso  @default(usuario)
+  equipo_id    String?     @db.Uuid
+  invitado_por String?     @db.Uuid
+  creado_en    DateTime    @default(now()) @db.Timestamptz
+  usada_en     DateTime?   @db.Timestamptz
+
+  equipo    equipo?  @relation(fields: [equipo_id], references: [id], onDelete: Restrict)
+  invitador usuario? @relation(fields: [invitado_por], references: [id], onDelete: SetNull)
+}
+
+/// Permiso de una cuenta sobre un equipo concreto (spec 035): `admin` no aparece aquí porque
+/// no está acotado a ningún equipo.
+model membresia {
+  usuario_id String     @db.Uuid
+  equipo_id  String     @db.Uuid
+  rol        rol_acceso
+
+  usuario usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  equipo  equipo  @relation(fields: [equipo_id], references: [id], onDelete: Cascade)
+
+  @@id([usuario_id, equipo_id])
+}
+
+/// Sesión de acceso (spec 035): testigo opaco, guardado solo como huella (`testigo_hash`) —
+/// nunca el valor que viaja en la cookie del navegador.
+model sesion {
+  id           String   @id @default(uuid()) @db.Uuid
+  usuario_id   String   @db.Uuid
+  testigo_hash String   @unique
+  creada_en    DateTime @default(now()) @db.Timestamptz
+  expira_en    DateTime @db.Timestamptz
+
+  usuario usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 }
 
 /// Catálogo fijo de siete huecos del dominio, no personas (docs/modelo-de-datos.md §5).
