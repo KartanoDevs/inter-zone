@@ -41,6 +41,10 @@ sin cubrir.
 - La pizarra misma pide entrar (spec 050): sin sesión, solo se ve la pantalla de entrar o crear
   cuenta, y no se pide el catálogo. Con sesión, el editor funciona igual que siempre — todavía
   cualquier cuenta puede editar, sin distinguir por rol (eso es la spec 037).
+- Validar un sistema (spec 051): el entrenador del equipo dueño, o el admin, lo marca como listo
+  para que un jugador lo estudie — y puede quitarle la marca si hace falta corregirlo. Es la
+  única acción de `/api/sistemas` que ya exige sesión y rol; el resto sigue abierto hasta la
+  spec 037.
 
 ## Qué NO hace
 
@@ -165,8 +169,9 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
    PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034); la autenticación,
    aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
-   sesión (spec 035); y la propia pizarra pide entrar antes de mostrar nada (spec 050). **Sin
-   hacer todavía:** login con Google, sin spec asignada; y que los tres
+   sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); y un
+   entrenador o el admin pueden validar un sistema (spec 051, ADR 0038 — la única acción que ya
+   exige rol). **Sin hacer todavía:** login con Google, sin spec asignada; y que los tres
    roles decidan quién ve y quién edita cada cosa (spec 037) — hasta entonces, `/api/sistemas`
    sigue abierto a cualquiera con sesión o sin ella.
 

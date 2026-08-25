@@ -114,7 +114,10 @@ Modelos y reglas. Aquí vive el voleibol.
   formación con el roster que le toca en su propia rotación — ADR 0014), `describirSistema`
   (descripción general del sistema, spec 025; texto en blanco la borra, igual que
   `explicarRotacion`), `clonarSistema` (spec 026: duplica un sistema entero bajo un id y un
-  nombre nuevos; mismas reglas de nombre que `crearSistema`/`renombrarSistema`).
+  nombre nuevos; mismas reglas de nombre que `crearSistema`/`renombrarSistema`), `estadoDe`
+  (spec 051: `Sistema.estado` es opcional, ausente equivale a `'borrador'`),
+  `validarSistema`/`invalidarSistema` (cambian ese estado; quién puede hacerlo es
+  `puedeValidar` en `acceso.ts`, no algo que decida este fichero).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
@@ -132,9 +135,11 @@ Modelos y reglas. Aquí vive el voleibol.
   referencia que sembrar (spec 038, E20).
 - `acceso.ts` — el rol de acceso (spec 035): `normalizarEmail` (el correo se compara siempre en
   minúsculas y sin espacios), `resolverAltaDesdeInvitacion` (traduce una invitación de la lista
-  blanca en si la cuenta nace admin o en qué equipos nace con membresía) y
-  `LONGITUD_MINIMA_CONTRASENA`. Nada de contraseñas ni de sesión aquí: eso necesita `node:crypto`
-  y vive en `server/`, que es quien lo usa (invariante 2).
+  blanca en si la cuenta nace admin o en qué equipos nace con membresía),
+  `LONGITUD_MINIMA_CONTRASENA` y `puedeValidar` (spec 051: admin, o entrenador con membresía en
+  el equipo del sistema — la única regla de permisos que ya se aplica en `server/`, desde antes
+  de que la spec 037 cierre el resto). Nada de contraseñas ni de sesión aquí: eso necesita
+  `node:crypto` y vive en `server/`, que es quien lo usa (invariante 2).
 - `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository` y `AccesoRepository`,
   sin implementación. Asíncronas todas; `SistemaRepository` además es granular —
   `crear`/`actualizar`/`borrar` por sistema, nunca un `guardar` de todo el catálogo— para que una
@@ -170,7 +175,10 @@ Angular, las dos testeables sin `TestBed`.
   (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031): `cargar()` es un
   método aparte, asíncrono. Desde la spec 050, ya no lo dispara `app.config.ts`: `App` lo llama
   en cuanto `AccesoStore.usuario()` deja de ser `null` — al arrancar con una sesión ya viva, o
-  justo después de entrar o crear cuenta.
+  justo después de entrar o crear cuenta. `estadoActivo` (computed, spec 051) y
+  `cambiarEstadoActivo(estado)` (acción) validan o quitan la validación del sistema activo; el
+  servidor decide si quien lo pide tiene permiso (ADR 0038), y un rechazo llega por
+  `errorGuardado`, igual que cualquier otra escritura.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -374,15 +382,21 @@ navegador, ejecutándose en Node.
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
 - `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, **todavía sin exigir sesión**
-  (spec 037, sin hacer): reciben y devuelven el `Sistema` de dominio tal cual lo serializa el
-  cliente, sin traducción de forma en la frontera HTTP. `PUT` exige la cabecera `If-Match` con
-  el testigo de concurrencia; `409` si caducó.
+  (spec 037, sin hacer) salvo una: reciben y devuelven el `Sistema` de dominio tal cual lo
+  serializa el cliente, sin traducción de forma en la frontera HTTP. `PUT` exige la cabecera
+  `If-Match` con el testigo de concurrencia; `409` si caducó. `PUT /sistemas/:id/estado`
+  (spec 051, ADR 0038) es la excepción: valida o quita la validación, y sí exige sesión y rol
+  (`acceso.repositorio.quienSoy` + `domain/acceso.puedeValidar`) — adelanta, para esta única
+  acción, el mecanismo que la 037 aplicará al resto.
 - `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro contra la
-  lista blanca, entrar, salir y "quién soy". Lee y escribe la cookie de sesión a mano (parseo de
-  `Cookie`/`Set-Cookie`), mismo criterio que el CORS escrito a mano en `servidor.ts` — no hace
-  falta más para esto.
+  lista blanca, entrar, salir y "quién soy".
+- `src/http/cookies.ts` — `leerTestigoSesion` (spec 035, factorizado en la 051 al necesitarlo
+  también `sistemas.rutas.ts`): parseo de `Cookie` a mano, mismo criterio que el CORS escrito a
+  mano en `servidor.ts` — no hace falta más para esto.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
+  `cambiarEstadoSistema` y `equipoDelSistema` (spec 051) son para la ruta de validar: la segunda
+  resuelve el equipo dueño sin traer el sistema entero, solo para decidir el permiso.
 - `src/infraestructura/acceso.repositorio.ts` — `registrar`, `entrar`, `quienSoy` y `salir` (spec
   035): compone `domain/acceso.ts` con Prisma — valida la invitación, resuelve en qué equipos
   nace la membresía, abre y renueva la sesión. `contrasena.ts` (hash y verificación con `scrypt`,

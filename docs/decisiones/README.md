@@ -51,3 +51,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0035](0035-zona-de-finta-campo-paralelo.md) | La zona de finta es un campo paralelo, no un discriminador dentro de `Celda` | Aceptada |
 | [0036](0036-se-retoma-la-autenticacion.md) | Se retoma la autenticación: sustituye a la 0028 | Aceptada |
 | [0037](0037-sesion-opaca-y-scrypt.md) | Sesión opaca en base de datos y contraseña con scrypt | Aceptada |
+| [0038](0038-validar-se-protege-antes-que-el-resto.md) | Validar un sistema se protege antes que el resto de `/api/sistemas` | Aceptada |

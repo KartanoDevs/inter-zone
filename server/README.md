@@ -1,9 +1,10 @@
 # InterZone — servidor
 
 API REST que guarda y sirve sistemas en PostgreSQL (spec 033), con cuentas, lista blanca y
-sesión (spec 035, ADR 0036/0037). **`/api/sistemas` todavía no exige sesión ni mira el rol**:
-cerrar esa puerta es la spec 037, sin escribir. Vale en local; **no vale en una máquina expuesta
-a internet** hasta que esa spec cierre esa puerta.
+sesión (spec 035, ADR 0036/0037). **`/api/sistemas` todavía no exige sesión ni mira el rol**,
+salvo validar un sistema (spec 051, ADR 0038): cerrar la puerta del resto es la spec 037, sin
+escribir. Vale en local; **no vale en una máquina expuesta a internet** hasta que esa spec
+cierre esa puerta.
 Importa `src/app/domain/` directamente — ver
 `docs/decisiones/0025-el-servidor-importa-el-dominio.md`.
 
@@ -43,6 +44,7 @@ lo serializa el cliente — sin traducción de forma en la frontera HTTP.
 | `GET` | `/sistemas?equipoId=masculino\|femenino` | catálogo de ese equipo |
 | `POST` | `/sistemas` | crea; `409` si el nombre ya existe en ese equipo y tipo |
 | `PUT` | `/sistemas/:id` | requiere cabecera `If-Match` con `actualizadoEn`; `409` si caducó |
+| `PUT` | `/sistemas/:id/estado` | `{ estado: 'validado'\|'borrador' }`; exige sesión y rol (admin, o entrenador del equipo dueño) — `401` sin sesión, `403` sin permiso, `404` si no existe |
 | `DELETE` | `/sistemas/:id` | `404` si no existe |
 
 `GET`/`POST`/`PUT` devuelven el sistema con un campo `actualizadoEn` añadido — metadato de esta

@@ -359,10 +359,12 @@ CREATE TABLE sistema (
 CREATE INDEX sistema_por_equipo ON sistema (equipo_id, tipo, estado);
 ```
 
-**Construida con las columnas de acceso aplazadas** (spec 033): la migración real de
-`server/prisma/migrations/` omite `creado_por`, `validado_por`, `validado_en` y el `CHECK
-sistema_validado_con_fecha`, porque no hay tabla `usuario` a la que referenciar todavía. Llegan
-en la migración de acceso cuando se retome (ADR 0028), sin tocar el resto de esta tabla.
+**`validado_por`, `validado_en` y el `CHECK sistema_validado_con_fecha` están construidos**
+(spec 051, ADR 0038): llegaron en cuanto existió `usuario` al que referenciar (spec 035), sin
+tocar el resto de la tabla. **`creado_por` sigue sin construirse**, a propósito: nadie lo lee ni
+lo escribe todavía (ninguna ruta de creación conoce la sesión de quien crea), y añadirlo ahora
+sería la columna especulativa que el principio 3 de la sección 1 prohíbe. Llega el día que algo
+lo necesite — probablemente la spec 037.
 
 - **`UNIQUE (equipo_id, tipo, nombre)`.** Hoy la unicidad es `(tipo, nombre)` —lo comprueba
   `colisiona` en `src/app/domain/catalogo-sistemas.ts`, y la spec 006 E5 acepta a propósito el mismo
@@ -638,10 +640,12 @@ Lo que hay que tener presente:
 - **`equipo` y `estado`, en cambio, sí son visibles para quien usa la aplicación**: uno es el
   desplegable al crear un sistema, el otro decide qué ve un usuario normal. No se pueden esconder
   en infraestructura como las fechas. **`equipo` ya se resolvió** (spec 032): `Sistema` ganó el
-  campo `equipoId` directamente, no un método de metadatos aparte. **`estado` sigue sin
-  resolver** — la tabla `sistema` ya tiene la columna `estado_sistema`, pero nace siempre
-  `'borrador'`; nada la lee ni la cambia todavía. Solo la spec 037 le daría sentido, y está
-  aplazada (ADR 0028): la columna se queda como está, sin uso y sin borrarse.
+  campo `equipoId` directamente, no un método de metadatos aparte. **`estado` también se
+  resolvió** (spec 051): `Sistema.estado?` es opcional en el tipo de dominio —ausente equivale a
+  `'borrador'`, mismo criterio que `descripcion?` o `defensas?`, para no obligar a todos los
+  `Sistema` de test ya escritos a declarar un campo que no existía— y `PUT
+  /api/sistemas/:id/estado` lo cambia, con sesión y rol (ADR 0038: la única acción de
+  `/api/sistemas` que ya exige los dos, antes de que la spec 037 lo haga con el resto).
 - **La política de versionado de la v1 dejó de valer para los sistemas.** Antes, una versión
   distinta a la esperada se trataba como payload ilegible: se descartaba todo y se sembraba de
   cero. Contra una base de datos eso habría sido borrar el trabajo de un equipo. Se sustituyó por
