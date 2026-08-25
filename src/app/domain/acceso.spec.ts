@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizarEmail, puedeValidar, resolverAltaDesdeInvitacion } from './acceso';
+import { normalizarEmail, puedeEditarAlgo, puedeGestionarEquipo, resolverAltaDesdeInvitacion } from './acceso';
 
 const EQUIPOS = ['masculino', 'femenino'] as const;
 
@@ -30,21 +30,41 @@ describe('acceso', () => {
   });
 
   it('051-E3: el admin puede validar un sistema de cualquier equipo', () => {
-    expect(puedeValidar({ esAdmin: true, membresias: [] }, 'femenino')).toBe(true);
+    expect(puedeGestionarEquipo({ esAdmin: true, membresias: [] }, 'femenino')).toBe(true);
   });
 
   it('051-E2: un entrenador del equipo dueño puede validar el sistema', () => {
     const entrenador = { esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'entrenador' }] } as const;
-    expect(puedeValidar(entrenador, 'femenino')).toBe(true);
+    expect(puedeGestionarEquipo(entrenador, 'femenino')).toBe(true);
   });
 
   it('051-E4: un entrenador de otro equipo no puede validar ese sistema', () => {
     const entrenador = { esAdmin: false, membresias: [{ equipoId: 'masculino', rol: 'entrenador' }] } as const;
-    expect(puedeValidar(entrenador, 'femenino')).toBe(false);
+    expect(puedeGestionarEquipo(entrenador, 'femenino')).toBe(false);
   });
 
   it('051-E4: un usuario (no entrenador) de ese mismo equipo no puede validar', () => {
     const usuario = { esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'usuario' }] } as const;
-    expect(puedeValidar(usuario, 'femenino')).toBe(false);
+    expect(puedeGestionarEquipo(usuario, 'femenino')).toBe(false);
+  });
+
+  it('037-E7: el admin puede editar algo, sin necesitar ninguna membresía', () => {
+    expect(puedeEditarAlgo({ esAdmin: true, membresias: [] })).toBe(true);
+  });
+
+  it('037-E7: un entrenador de al menos un equipo puede editar algo', () => {
+    const entrenador = { esAdmin: false, membresias: [{ equipoId: 'masculino', rol: 'entrenador' }] } as const;
+    expect(puedeEditarAlgo(entrenador)).toBe(true);
+  });
+
+  it('037-E6: un usuario sin ninguna membresía de entrenador no puede editar nada', () => {
+    const usuario = {
+      esAdmin: false,
+      membresias: [
+        { equipoId: 'masculino', rol: 'usuario' },
+        { equipoId: 'femenino', rol: 'usuario' },
+      ],
+    } as const;
+    expect(puedeEditarAlgo(usuario)).toBe(false);
   });
 });

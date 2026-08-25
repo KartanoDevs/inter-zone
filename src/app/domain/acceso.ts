@@ -30,11 +30,19 @@ export interface SesionUsuario {
   readonly membresias: readonly Membresia[];
 }
 
-/** Quién puede validar un sistema de un equipo (spec 051, docs/modelo-de-datos.md §4, «quién
- * valida»): el admin, o un entrenador con membresía en ese equipo — nunca un `usuario`, y nunca
- * un entrenador de otro equipo. */
-export function puedeValidar(usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>, equipoId: EquipoId): boolean {
+/** Quién puede gestionar los sistemas de un equipo — crearlos, editarlos, borrarlos o validarlos
+ * (specs 037 y 051, docs/modelo-de-datos.md §4): el admin, o un entrenador con membresía en ese
+ * equipo — nunca un `usuario`, y nunca un entrenador de otro equipo. Es la misma regla para las
+ * dos acciones: la matriz de permisos les da idéntica respuesta por rol. */
+export function puedeGestionarEquipo(usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>, equipoId: EquipoId): boolean {
   return usuario.esAdmin || usuario.membresias.some((m) => m.equipoId === equipoId && m.rol === 'entrenador');
+}
+
+/** Si la cuenta puede editar el sistema de algún equipo, sea cual sea (spec 037): decide si se
+ * le muestra la pestaña Editor. `admin` siempre; un `entrenador` con al menos una membresía;
+ * `usuario`, nunca — no tiene ninguna membresía de entrenador por construcción (spec 035). */
+export function puedeEditarAlgo(usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>): boolean {
+  return usuario.esAdmin || usuario.membresias.some((m) => m.rol === 'entrenador');
 }
 
 /** Mínimo exigido al darse de alta (spec 035, E9). No hay una regla de voleibol detrás: es un
