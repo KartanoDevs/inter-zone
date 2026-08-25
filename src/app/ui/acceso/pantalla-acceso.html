@@ -1,0 +1,34 @@
+<div class="app-acceso">
+  <form class="app-acceso__tarjeta" (submit)="$event.preventDefault(); enviar(emailCampo.value, contrasenaCampo.value)">
+    <h1 class="app-acceso__titulo">InterZone</h1>
+
+    <div class="app-acceso__tabs" role="tablist">
+      <button type="button" role="tab" [attr.aria-selected]="modo() === 'entrar'" (click)="cambiarModo('entrar')">Entrar</button>
+      <button type="button" role="tab" [attr.aria-selected]="modo() === 'crear-cuenta'" (click)="cambiarModo('crear-cuenta')">
+        Crear cuenta
+      </button>
+    </div>
+
+    <label class="app-acceso__campo">
+      Correo
+      <input #emailCampo type="email" required autocomplete="username" />
+    </label>
+
+    <label class="app-acceso__campo">
+      Contraseña
+      <input #contrasenaCampo type="password" required autocomplete="current-password" minlength="8" />
+    </label>
+
+    @if (modo() === 'crear-cuenta') {
+      <p class="app-acceso__ayuda">Hace falta que tu entrenador te haya invitado antes con este correo.</p>
+    }
+
+    @if (store.error(); as error) {
+      <p class="app-acceso__error" role="alert">{{ error }}</p>
+    }
+
+    <button type="submit" class="app-boton app-boton--primario" [disabled]="enviando()">
+      {{ modo() === 'entrar' ? 'Entrar' : 'Crear cuenta' }}
+    </button>
+  </form>
+</div>

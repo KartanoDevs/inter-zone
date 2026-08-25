@@ -1,1 +1,7 @@
-<app-tablero></app-tablero>
+@if (acceso.cargando()) {
+  <div class="app-cargando" aria-busy="true">Cargando…</div>
+} @else if (acceso.usuario()) {
+  <app-tablero></app-tablero>
+} @else {
+  <app-pantalla-acceso></app-pantalla-acceso>
+}

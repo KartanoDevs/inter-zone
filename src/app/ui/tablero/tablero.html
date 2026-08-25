@@ -277,11 +277,12 @@
         </svg>
       </span>
       <h2>Tu cuenta</h2>
+      <p>{{ acceso.usuario()?.email }}</p>
       <p>
-        Entrar con Google o con contraseña, lista blanca de correos y tres roles de acceso. El esquema está diseñado; hoy el
-        servidor no tiene autenticación.
+        Nombre, posición favorita, dorsal y cambiar contraseña llegan con la spec 053. Lista
+        blanca y roles de acceso, con la 037/054.
       </p>
-      <span class="app-tablero__futura-spec">Specs 035-037 · aplazadas</span>
+      <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
     </div>
   }
 

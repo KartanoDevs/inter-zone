@@ -1,5 +1,7 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { AccesoStore } from './application/acceso.store';
 import { SistemaStore } from './application/sistema.store';
+import { HttpAccesoRepository } from './infrastructure/http-acceso.repository';
 import { HttpSistemaRepository } from './infrastructure/http-sistema.repository';
 import { LocalStorageAjustesRepository } from './infrastructure/local-storage-ajustes.repository';
 
@@ -11,11 +13,17 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     {
+      provide: AccesoStore,
+      useFactory: () => new AccesoStore(new HttpAccesoRepository(URL_API)),
+    },
+    {
       provide: SistemaStore,
       useFactory: () => new SistemaStore(new HttpSistemaRepository(URL_API), new LocalStorageAjustesRepository(localStorage)),
     },
-    // El catálogo se carga antes de que se muestre la pizarra (spec 031): en ningún momento
-    // se ve vacío antes de poblarse, igual que cuando la carga era síncrona en el constructor.
-    provideAppInitializer(() => inject(SistemaStore).cargar()),
+    // Al arrancar solo se comprueba la sesión (spec 050) — nunca el catálogo de sistemas, que
+    // ahora depende de haber entrado (E1). `App` dispara `SistemaStore.cargar()` en cuanto
+    // `AccesoStore.usuario()` deja de ser null, sea porque ya había sesión o porque se acaba
+    // de entrar desde la pantalla de acceso.
+    provideAppInitializer(() => inject(AccesoStore).comprobarSesion()),
   ],
 };

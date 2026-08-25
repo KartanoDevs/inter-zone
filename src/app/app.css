@@ -1,0 +1,9 @@
+.app-cargando {
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  color: var(--text-muted);
+  font-size: 14px;
+}

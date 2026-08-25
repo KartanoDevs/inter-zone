@@ -14,6 +14,7 @@ import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
+import { AccesoStore } from '../../application/acceso.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
@@ -237,6 +238,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 })
 export class Tablero {
   protected readonly store = inject(SistemaStore);
+  protected readonly acceso = inject(AccesoStore);
 
   protected readonly arrastre = signal<Arrastre | null>(null);
   protected readonly idArrastrada = computed(() => this.arrastre()?.jugadorId ?? null);
@@ -597,6 +599,12 @@ export class Tablero {
 
   protected cerrarErrorGuardado(): void {
     this.store.cerrarError();
+  }
+
+  /** Mínimo de la spec 050: la ventana "Cuenta" real (nombre, posición favorita, dorsal,
+   * cambiar contraseña) es la spec 053. Aquí solo hace falta poder salir. */
+  protected salir(): void {
+    void this.acceso.salir();
   }
 
   protected abrirCrear(): void {
