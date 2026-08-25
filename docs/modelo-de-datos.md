@@ -235,7 +235,7 @@ Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
 | Ver borradores | sí | de sus equipos | **no** | Diseño, igual que arriba |
 | Crear, editar, clonar, borrar | sí | de sus equipos | no | **Construido** (spec 037) |
 | Validar un sistema | sí | de sus equipos | no | **Construido** (spec 051, ADR 0038) |
-| Gestionar lista blanca, usuarios y equipos | sí | no | no | Diseño — spec 054 |
+| Gestionar la lista blanca | sí | no | no | **Construido** (spec 054) — "usuarios y equipos" queda para cuando alguien lo pida: hoy solo se invita, se cambia el rol de una invitación pendiente y se retira |
 | Examinarse *(futuro)* | sí | sí | sí | Diseño — specs 012-013 |
 
 Las dos filas construidas comparten una única función de dominio,

@@ -194,6 +194,11 @@ Angular, las tres testeables sin `TestBed`.
   guardar del editor. `formacionActiva` es `null` cuando esa rotación o variante nunca se
   guardó — a diferencia de `SistemaStore`, no rellena con una formación de partida, porque no
   hay nada que "empezar a colocar" en una vista de solo lectura.
+- `ListaBlancaStore` (spec 054) — `new ListaBlancaStore(repositorio)`
+  (`lista-blanca.store.spec.ts`): `invitaciones`, `cargando`, `error`. `cargar()`, `invitar(email,
+  rol, equipoClave)` y `retirar(email)` recargan la lista entera tras cada escritura en vez de
+  parchear en local — la lista es corta (una fila por correo invitado) y así el estado nunca
+  puede divergir del servidor tras un reintento o un fallo a medias.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -308,6 +313,10 @@ Adaptadores hacia el mundo exterior.
   porque `/auth/entrar` no devuelve quién ha entrado (spec 035: esa ruta solo abre la sesión).
   `actualizarPerfil()` y `cambiarContrasena()` (spec 053) van a `/auth/perfil` y
   `/auth/contrasena`.
+- `HttpListaBlancaRepository implements ListaBlancaRepository` (spec 054) — **el adaptador en
+  uso**. Mismo criterio que los otros dos: `fetch` nativo con `credentials: 'include'` contra
+  `/api/lista-blanca` (`GET`/`POST`/`DELETE /lista-blanca/:email`). Traduce el 409 del servidor a
+  `CorreoYaRegistrado` (E3).
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -318,9 +327,12 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 - `ui/acceso/` — `PantallaAcceso` (spec 050): entrar o crear cuenta, con una pestaña para cada
   modo. Es lo que `App` muestra cuando `AccesoStore.usuario()` es `null`. `PerfilCuenta`
   (spec 053): la ventana "Cuenta" real — correo y rol de solo lectura, los tres campos de
-  perfil, y cambiar la contraseña en un `Modal` aparte (`ui/comun/modal.ts`). Ninguno de los dos
-  lleva test de componente, como el resto de `ui/` — la lógica que importa ya está probada en
-  `AccesoStore`.
+  perfil, y cambiar la contraseña en un `Modal` aparte (`ui/comun/modal.ts`). `ListaBlancaAdmin`
+  (spec 054): formulario de invitar (correo, rol, equipo si no es `admin`) más tabla de
+  invitaciones pendientes con botón de retirar tras confirmar en `DialogoConfirmacion`
+  (`ui/comun/`) — solo visible en la pestaña "Lista blanca", que `Tablero` solo muestra si
+  `esAdmin()`. Ninguno de los tres lleva test de componente, como el resto de `ui/` — la lógica
+  que importa ya está probada en `AccesoStore`/`ListaBlancaStore`.
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
@@ -426,6 +438,11 @@ navegador, ejecutándose en Node.
 - `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro, entrar,
   salir, "quién soy", y guardar el perfil o cambiar la contraseña de la propia sesión
   (spec 053) — nunca de otra cuenta, porque el id sale de la sesión, no de la petición.
+- `src/http/lista-blanca.rutas.ts` — las rutas de `/api/lista-blanca` (spec 054): `GET` (listar),
+  `POST` (invitar o reinvitar con otro rol) y `DELETE /:email` (retirar). `exigirAdmin`, un
+  helper local, resuelve la sesión con `resolverSesion` y rechaza si el rol no es `admin` — a
+  diferencia de `exigirPermisoDeEquipo`, aquí no hay equipo que comprobar: gestionar la lista
+  blanca es cosa exclusiva del admin.
 - `src/http/cookies.ts` — `leerTestigoSesion` (spec 035) y `resolverSesion` (spec 037,
   factorizados aquí al necesitarlos también `sistemas.rutas.ts`, y desde la 053 las dos rutas
   de perfil): parseo de `Cookie` a mano, mismo criterio que el CORS escrito a mano en
@@ -439,7 +456,12 @@ navegador, ejecutándose en Node.
   nace la membresía, abre y renueva la sesión. `actualizarPerfil` y `cambiarContrasena`
   (spec 053): la primera rechaza antes de tocar la base si la posición o el dorsal no son
   válidos (`esRolIdValido`, `dorsalValido`); la segunda exige acertar la actual
-  (`verificarContrasena`) antes de aceptar la nueva. `contrasena.ts` (hash y verificación con
+  (`verificarContrasena`) antes de aceptar la nueva. `listarInvitaciones`, `invitar` y
+  `retirarInvitacion` (spec 054): `invitar` hace un `upsert` por correo normalizado — reinvitar
+  uno pendiente actualiza su rol en la misma fila (E2) — y rechaza con `CorreoYaRegistrado` si el
+  correo ya tiene cuenta (E3); `retirarInvitacion` borra la fila de `lista_blanca` sin tocar la
+  `usuario`/`membresia` que haya podido salir de ella (E5). `contrasena.ts` (hash y verificación
+  con
   `scrypt`, ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días)
   son los dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/`
   (invariante 2).
@@ -491,14 +513,17 @@ src/app/
 │   ├── sistema.store.ts
 │   ├── sistema.store.spec.ts
 │   ├── teoria.store.ts
-│   └── teoria.store.spec.ts
+│   ├── teoria.store.spec.ts
+│   ├── lista-blanca.store.ts
+│   └── lista-blanca.store.spec.ts
 ├── infrastructure/
 │   ├── http-acceso.repository.ts             # en uso (spec 050)
 │   ├── http-sistema.repository.ts            # en uso (spec 034)
+│   ├── http-lista-blanca.repository.ts       # en uso (spec 054)
 │   ├── local-storage-ajustes.repository.ts   # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/
-│   ├── acceso/
+│   ├── acceso/         # PantallaAcceso, PerfilCuenta, ListaBlancaAdmin
 │   ├── teoria/
 │   ├── tablero/
 │   ├── pista/
@@ -515,7 +540,7 @@ server/
 │   └── migrations/       # los CHECK y celdas_validas() están a mano en el SQL
 └── src/
     ├── infraestructura/   # Prisma, repositorios (sistemas, acceso), contraseña, sesión, semilla
-    ├── http/               # Express: rutas (sistemas, auth) y la fábrica del servidor
+    ├── http/               # Express: rutas (sistemas, auth, lista-blanca) y la fábrica del servidor
     └── main.ts
 ```
 

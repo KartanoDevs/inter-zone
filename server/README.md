@@ -68,6 +68,15 @@ propio perfil):
 | `PUT` | `/auth/perfil` | `{ nombre, posicionFavorita, dorsal }` (los tres, siempre juntos; `null` vacía el campo); exige sesión; `400` si la posición o el dorsal no son válidos |
 | `PUT` | `/auth/contrasena` | `{ actual, nueva }`; exige sesión; `401` si `actual` no coincide, `400` si `nueva` es demasiado corta |
 
+Las tres rutas de `/lista-blanca` (spec 054) exigen sesión con rol `admin` — `403` para
+cualquier otro rol, `401` sin sesión:
+
+| Método | Ruta | |
+|---|---|---|
+| `GET` | `/lista-blanca` | lista las invitaciones (pendientes y usadas) con su rol y equipo |
+| `POST` | `/lista-blanca` | `{ email, rol, equipoClave? }`; invita, o si el correo ya estaba invitado y sin usar, cambia su rol en la misma fila; `409` si el correo ya tiene cuenta, `400` si el rol o el equipo no son válidos |
+| `DELETE` | `/lista-blanca/:email` | retira la invitación; no toca la cuenta si el correo ya se dio de alta desde ella |
+
 ## Estructura
 
 ```
@@ -77,7 +86,7 @@ server/
 │   └── migrations/       # los CHECK y la función celdas_validas() están a mano en el SQL
 └── src/
     ├── infraestructura/   # Prisma, los repositorios (sistemas y acceso), la semilla
-    ├── http/               # Express: rutas (sistemas, auth) y la fábrica del servidor
+    ├── http/               # Express: rutas (sistemas, auth, lista-blanca) y la fábrica del servidor
     └── main.ts
 ```
 

@@ -53,6 +53,11 @@ sin cubrir.
 - La ventana "Cuenta" es real (spec 053): correo y rol de solo lectura, más nombre o apodo,
   posición favorita y dorsal —los tres opcionales, y en blanco es un estado válido— y cambiar
   la contraseña, exigiendo acertar la actual.
+- El admin gestiona la lista blanca desde la propia aplicación (spec 054): invitar un correo con
+  un rol y, si no es `admin`, un equipo; reinvitar un correo ya invitado y sin usar cambia su rol
+  en vez de duplicar la fila; invitar un correo que ya tiene cuenta se rechaza; retirar una
+  invitación pendiente la borra sin tocar cuentas ya creadas a partir de ella. Solo `admin` ve
+  esta pestaña.
 
 ## Qué NO hace
 
@@ -186,11 +191,11 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    entrenador o el admin pueden validar un sistema (spec 051, ADR 0038); "Teoría" deja
    consultar en solo lectura los sistemas validados (spec 052, ADR 0039); los tres roles
    deciden quién edita — crear, editar, clonar y borrar exigen sesión y rol; un `usuario` no ve
-   el editor (spec 037); y la ventana "Cuenta" guarda el perfil y cambia la contraseña
-   (spec 053). **Sin hacer todavía:** login con Google, sin spec asignada; que el rol también
-   decida qué se **lee** (hoy `GET /sistemas` sigue abierto a cualquiera, borradores incluidos);
-   y la gestión de la lista blanca desde la aplicación (spec 054) — sin spec asignada la
-   primera, reservada la segunda.
+   el editor (spec 037); la ventana "Cuenta" guarda el perfil y cambia la contraseña
+   (spec 053); y el admin gestiona la lista blanca —invitar, reinvitar con otro rol, retirar—
+   desde la propia aplicación (spec 054). **Sin hacer todavía:** login con Google, sin spec
+   asignada; y que el rol también decida qué se **lee** (hoy `GET /sistemas` sigue abierto a
+   cualquiera, borradores incluidos), sin spec asignada.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.
