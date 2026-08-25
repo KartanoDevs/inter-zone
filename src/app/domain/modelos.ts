@@ -51,6 +51,12 @@ export interface PlantillaEquipo {
 
 export type TipoSistema = 'recepcion' | 'defensa';
 
+/** Si un sistema ya está listo para que un jugador lo estudie (spec 051). Ausente = "borrador":
+ * mismo criterio que `descripcion?` o `defensas?`, para no obligar a todos los `Sistema`
+ * escritos a mano en los tests de specs anteriores a declarar un campo que no existía cuando se
+ * escribieron. `estadoDe` en `catalogo-sistemas.ts` resuelve ese valor por defecto. */
+export type EstadoSistema = 'borrador' | 'validado';
+
 /** El equipo al que pertenece un sistema (spec 032). Fijos por ahora, igual que la plantilla es
  * hoy una única constante de la aplicación (ADR 0013); equipos de verdad llegan con la base de
  * datos. */
@@ -158,6 +164,8 @@ export interface Sistema {
    * spec 021). Ausente en un sistema de recepción, o mientras no se haya guardado ninguna
    * defensa todavía. */
   readonly defensas?: readonly VarianteDefensa[];
+  /** Ausente equivale a "borrador" — ver `EstadoSistema` y `estadoDe` (spec 051). */
+  readonly estado?: EstadoSistema;
 }
 
 export type TipoComparacion = 'zaguero-delantero' | 'orden-lateral' | 'libero-delantero';

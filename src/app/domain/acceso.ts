@@ -30,6 +30,13 @@ export interface SesionUsuario {
   readonly membresias: readonly Membresia[];
 }
 
+/** Quién puede validar un sistema de un equipo (spec 051, docs/modelo-de-datos.md §4, «quién
+ * valida»): el admin, o un entrenador con membresía en ese equipo — nunca un `usuario`, y nunca
+ * un entrenador de otro equipo. */
+export function puedeValidar(usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>, equipoId: EquipoId): boolean {
+  return usuario.esAdmin || usuario.membresias.some((m) => m.equipoId === equipoId && m.rol === 'entrenador');
+}
+
 /** Mínimo exigido al darse de alta (spec 035, E9). No hay una regla de voleibol detrás: es un
  * mínimo de seguridad razonable, igual de arbitrario en cualquier aplicación con contraseña. */
 export const LONGITUD_MINIMA_CONTRASENA = 8;

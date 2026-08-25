@@ -1,12 +1,15 @@
-import type { Sistema } from './modelos';
+import type { EstadoSistema, Sistema } from './modelos';
 import type { SesionUsuario } from './acceso';
 
 /** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
- * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). */
+ * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). `cambiarEstado` (spec 051) es
+ * su propia acción, no un `actualizar` más: valida o quita la validación, y solo eso — exige
+ * sesión y rol, a diferencia del resto de este puerto (spec 037, todavía sin cerrar esa puerta). */
 export interface SistemaRepository {
   listar(): Promise<readonly Sistema[]>;
   crear(sistema: Sistema): Promise<void>;
   actualizar(sistema: Sistema): Promise<void>;
+  cambiarEstado(id: string, estado: EstadoSistema): Promise<void>;
   borrar(id: string): Promise<void>;
 }
 

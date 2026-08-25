@@ -6,8 +6,11 @@ import {
   clonarSistema,
   crearSistema,
   describirSistema,
+  estadoDe,
+  invalidarSistema,
   ordenarCatalogo,
   renombrarSistema,
+  validarSistema,
 } from './catalogo-sistemas';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
@@ -458,5 +461,27 @@ describe('cambiarSustitutoLibero', () => {
 
     expect(resultado.formaciones[3]).toBeUndefined();
     expect(resultado.plantilla.libero?.sustitutosPorRotacion[3]).toBe('opuesto');
+  });
+});
+
+describe('validarSistema / invalidarSistema (spec 051)', () => {
+  it('051-E1: un sistema recién creado nace en borrador', () => {
+    const nuevo = crearSistema('s1', 'Recepción', 'recepcion', 'masculino', plantilla(), []);
+
+    expect(estadoDe(nuevo!)).toBe('borrador');
+  });
+
+  it('validarSistema deja el sistema en estado validado', () => {
+    const resultado = validarSistema(sistema('s1', 'Recepción'));
+
+    expect(estadoDe(resultado)).toBe('validado');
+  });
+
+  it('051-E6: invalidarSistema devuelve un sistema validado a borrador', () => {
+    const validado = validarSistema(sistema('s1', 'Recepción'));
+
+    const resultado = invalidarSistema(validado);
+
+    expect(estadoDe(resultado)).toBe('borrador');
   });
 });

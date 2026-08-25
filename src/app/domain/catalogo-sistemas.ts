@@ -1,4 +1,4 @@
-import type { EquipoId, Jugador, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
+import type { EquipoId, EstadoSistema, Jugador, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
 import { jugadoresEnPista } from './rotacion';
 
 function nombreValido(nombre: string): boolean {
@@ -61,6 +61,20 @@ export function clonarSistema(sistema: Sistema, id: string, nuevoNombre: string,
     return null;
   }
   return { ...sistema, id, nombre: nuevoNombre };
+}
+
+/** Ausente equivale a "borrador" (spec 051) — ver el comentario de `Sistema.estado`. */
+export function estadoDe(sistema: Sistema): EstadoSistema {
+  return sistema.estado ?? 'borrador';
+}
+
+export function validarSistema(sistema: Sistema): Sistema {
+  return { ...sistema, estado: 'validado' };
+}
+
+/** Vuelve un sistema validado a borrador, por ejemplo para corregirlo (spec 051, E6). */
+export function invalidarSistema(sistema: Sistema): Sistema {
+  return { ...sistema, estado: 'borrador' };
 }
 
 const ORDEN_TIPO: Readonly<Record<TipoSistema, number>> = { recepcion: 0, defensa: 1 };
