@@ -1,8 +1,10 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { AccesoStore } from './application/acceso.store';
+import { ListaBlancaStore } from './application/lista-blanca.store';
 import { SistemaStore } from './application/sistema.store';
 import { TeoriaStore } from './application/teoria.store';
 import { HttpAccesoRepository } from './infrastructure/http-acceso.repository';
+import { HttpListaBlancaRepository } from './infrastructure/http-lista-blanca.repository';
 import { HttpSistemaRepository } from './infrastructure/http-sistema.repository';
 import { LocalStorageAjustesRepository } from './infrastructure/local-storage-ajustes.repository';
 
@@ -26,6 +28,10 @@ export const appConfig: ApplicationConfig = {
     {
       provide: TeoriaStore,
       useFactory: () => new TeoriaStore(inject(SistemaStore)),
+    },
+    {
+      provide: ListaBlancaStore,
+      useFactory: () => new ListaBlancaStore(new HttpListaBlancaRepository(URL_API)),
     },
     // Al arrancar solo se comprueba la sesión (spec 050) — nunca el catálogo de sistemas, que
     // ahora depende de haber entrado (E1). `App` dispara `SistemaStore.cargar()` en cuanto

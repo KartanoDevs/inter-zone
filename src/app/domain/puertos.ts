@@ -1,5 +1,5 @@
-import type { EstadoSistema, Sistema } from './modelos';
-import type { DatosPerfil, SesionUsuario } from './acceso';
+import type { EquipoId, EstadoSistema, Sistema } from './modelos';
+import type { DatosPerfil, InvitacionListada, RolAcceso, SesionUsuario } from './acceso';
 
 /** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
  * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). `cambiarEstado` (spec 051) es
@@ -67,3 +67,15 @@ export interface AccesoRepository {
  * `ErrorDelServidor`, el mismo que ya usa `SistemaRepository`. */
 export class CredencialesInvalidas extends Error {}
 export class InvitacionNoDisponible extends Error {}
+
+/** Invitar, listar y retirar de la lista blanca (spec 054) — solo para el admin; el servidor
+ * rechaza a cualquier otro rol. */
+export interface ListaBlancaRepository {
+  listar(): Promise<readonly InvitacionListada[]>;
+  invitar(email: string, rol: RolAcceso, equipoId: EquipoId | null): Promise<void>;
+  retirar(email: string): Promise<void>;
+}
+
+/** El correo ya tiene cuenta (spec 054, E3): su rol se cambia desde la cuenta, no desde la
+ * lista blanca. Un rechazo que no sea este se señala con `ErrorDelServidor`. */
+export class CorreoYaRegistrado extends Error {}
