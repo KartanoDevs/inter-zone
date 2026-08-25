@@ -2,6 +2,7 @@ import { PLANTILLA_GLOBAL } from '../../../src/app/domain/plantilla-global';
 import { sistemaPorDefecto } from '../../../src/app/domain/sistema-por-defecto';
 import { sistemaDefensaPorDefecto } from '../../../src/app/domain/sistema-defensa-por-defecto';
 import type { EquipoId } from '../../../src/app/domain/modelos';
+import { normalizarEmail } from '../../../src/app/domain/acceso';
 import { prisma } from './prisma';
 import { crear } from './sistema.repositorio';
 
@@ -64,9 +65,27 @@ export async function sembrarEjemplos(): Promise<void> {
   }
 }
 
+/** El primer admin nace de una invitación sembrada, no de una fila escrita a mano (spec 035,
+ * E17): `ADMIN_EMAIL_INICIAL` fija el correo, que queda invitado con rol `admin` y completa su
+ * alta por el registro normal — su contraseña nunca pasa por ningún fichero. Idempotente: si
+ * ya hay una invitación para ese correo (usada o no), no la toca. Sin la variable, no hace nada. */
+export async function sembrarPrimerAdmin(): Promise<void> {
+  const emailBruto = process.env['ADMIN_EMAIL_INICIAL'];
+  if (!emailBruto) {
+    return;
+  }
+  const email = normalizarEmail(emailBruto);
+  const yaInvitado = await prisma.lista_blanca.findUnique({ where: { email } });
+  if (yaInvitado) {
+    return;
+  }
+  await prisma.lista_blanca.create({ data: { email, rol: 'admin', equipo_id: null } });
+}
+
 async function main(): Promise<void> {
   await sembrarCatalogoBase();
   await sembrarEjemplos();
+  await sembrarPrimerAdmin();
 }
 
 // Solo se ejecuta como script (`npm run seed` / `prisma db seed`), nunca al importar desde

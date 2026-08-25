@@ -1,13 +1,16 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+import { authRutas } from './auth.rutas';
 import { sistemasRutas } from './sistemas.rutas';
 
-/** CORS mínimo (spec 034): un origen permitido y configurable, sin la dependencia `cors` —
- * no hace falta más que estas cabeceras para que el navegador deje llamar a la API desde el
- * puerto de desarrollo de Angular (4200), distinto del suyo. No es un sistema de configuración
- * de entornos: es la línea imprescindible para que la pizarra pueda hablar con el servidor. */
+/** CORS mínimo (spec 034, cookies desde la spec 035): un origen permitido y configurable, sin
+ * la dependencia `cors` — no hace falta más que estas cabeceras para que el navegador deje
+ * llamar a la API desde el puerto de desarrollo de Angular (4200), distinto del suyo, y mande
+ * la cookie de sesión. `Access-Control-Allow-Credentials` exige un origen concreto, nunca `*`
+ * — ya lo era, `ORIGEN_PERMITIDO` nunca ha sido un comodín. */
 function cors(req: Request, res: Response, next: NextFunction): void {
   const origen = process.env['ORIGEN_PERMITIDO'] ?? 'http://localhost:4200';
   res.setHeader('Access-Control-Allow-Origin', origen);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,If-Match');
   if (req.method === 'OPTIONS') {
@@ -18,12 +21,13 @@ function cors(req: Request, res: Response, next: NextFunction): void {
 }
 
 /** Fábrica del servidor Express, sin escuchar puerto (`main.ts` lo hace, los tests de
- * integración levantan su propia instancia efímera). Sin autenticación todavía (spec 033);
- * llega con la spec 035. */
+ * integración levantan su propia instancia efímera). `/api/auth` (spec 035) da cuenta,
+ * contraseña y sesión; `/api/sistemas` sigue sin exigir sesión todavía (llega con la spec 037). */
 export function crearServidor(): Express {
   const app = express();
   app.use(cors);
   app.use(express.json());
+  app.use('/api', authRutas);
   app.use('/api', sistemasRutas);
 
   // Express 5 reenvía los rechazos de las rutas async aquí solo; no hace falta try/catch en
