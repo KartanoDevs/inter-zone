@@ -127,10 +127,13 @@ partir de una spec en `Borrador`.
 7. **Sin Fabric.js, sin Canvas, sin librerías de gráficos.** SVG nativo desde signals.
 8. **`server/` solo importa de `src/app/domain/`.** Nunca de `application/`, `infrastructure/`
    ni `ui/`, y jamás al revés: el dominio no sabe que existe un servidor. Desde la v2 hay
-   backend y base de datos (decisión 0023, que sustituye a la 0001); la autenticación que esa
-   misma decisión anunciaba está **aplazada** (decisión 0028), así que hoy la API está abierta.
-   Lo que permite compartir el dominio entre navegador y servidor es el invariante 2, así que
-   romperlo ahora cuesta el doble que antes.
+   backend y base de datos (decisión 0023, que sustituye a la 0001). La autenticación, que esa
+   misma decisión anunciaba y la 0028 aplazó, se retoma en la decisión 0036: lista blanca,
+   cuentas con contraseña y sesión (spec 035) ya existen en `/api/auth`. **`/api/sistemas`
+   sigue sin exigir sesión** — cerrar esa puerta según el rol de quien pregunta es la spec 037,
+   todavía sin hacer, así que hoy sigue siendo pertinente no exponer el servidor a una red que
+   no sea de confianza. Lo que permite compartir el dominio entre navegador y servidor es el
+   invariante 2, así que romperlo ahora cuesta el doble que antes.
 
 ## Errores que ya se han cometido y no hay que repetir
 
@@ -182,10 +185,24 @@ partir de una spec en `Borrador`.
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+This project has a knowledge graph at `graphify-out/` (incluye `graph.json`) con god nodes,
+estructura de comunidades y relaciones entre ficheros.
+
+**Obligatorio: consulta graphify antes de explorar el código a mano.** Antes de leer código
+fuente para responder una pregunta sobre el proyecto —qué depende de qué, dónde vive algo,
+cómo se relacionan dos piezas—, usa graphify primero. No sustituye a `docs/`, pero sí a
+explorar el repo a ciegas con grep o abriendo ficheros al azar.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- Para preguntas sobre el código, ejecuta primero `graphify query "<pregunta>"` (existe
+  `graphify-out/graph.json`). Usa `graphify path "<A>" "<B>"` para relaciones entre dos
+  piezas y `graphify explain "<concepto>"` para un concepto concreto. Devuelven un subgrafo
+  acotado, normalmente mucho más pequeño que GRAPH_REPORT.md o que grep en crudo.
+- Si existe `graphify-out/wiki/index.md`, úsalo para navegación amplia en vez de explorar el
+  código fuente directamente.
+- Lee `graphify-out/GRAPH_REPORT.md` solo para revisión de arquitectura amplia o cuando
+  query/path/explain no den suficiente contexto.
+- Después de modificar código, ejecuta `graphify update .` para mantener el grafo al día
+  (solo AST, sin coste de API).
+- Esta regla también aplica a subagentes: si delegas exploración de código en un Agent,
+  incluye esta instrucción de graphify en su prompt.

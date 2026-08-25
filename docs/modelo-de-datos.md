@@ -8,10 +8,10 @@ es justo lo que `docs/flujo-de-trabajo.md` prohíbe en una spec. Es un documento
 fija la forma de los datos para que la spec que venga después pueda escribirse en lenguaje de
 voleibol sin tener que discutir tablas por el camino.
 
-**Seis de las nueve tablas ya están construidas** (spec 033): `equipo`, `jugador`, `sistema`,
-`sistema_rotacion`, `formacion`, `colocacion`. Las tres de acceso —`usuario`, `lista_blanca`,
-`membresia`— siguen sin construir y **quedan aplazadas** (ADR 0028): su diseño no se toca, pero ya
-no tienen spec asignada. Ver la sección 9, al final.
+**Las diez tablas están construidas.** Las seis de voleibol —`equipo`, `jugador`, `sistema`,
+`sistema_rotacion`, `formacion`, `colocacion`— desde la spec 033; las tres de acceso —`usuario`,
+`lista_blanca`, `membresia`— más `sesion` (no prevista aquí), desde la spec 035 (ADR 0036,
+sustituye a la 0028). Ver la sección 9, al final.
 
 ## Aviso de vocabulario: «rol» significa ahora dos cosas
 
@@ -34,7 +34,8 @@ mira la tabla antes de suponer cuál es.
 1. **Nada derivado se almacena.** Es el invariante que más fácil se rompe al pasar a SQL. La lista
    completa está en la sección 6.
 2. **Metros, nunca píxeles.** ADR 0002, y no cambia porque ahora haya una base de datos.
-3. **Sencillo, pero sin condenarse a rehacerlo.** Nueve tablas, ninguna columna especulativa. Todo
+3. **Sencillo, pero sin condenarse a rehacerlo.** Diez tablas (nueve en el diseño original, más
+   `sesion` — spec 035, ver §9), ninguna columna especulativa. Todo
    lo previsible a futuro (un tercer equipo, jugadores con nombre, el modo examen, la IA que redacta
    sistemas) entra como fila nueva o tabla nueva, jamás como `ALTER` de lo ya escrito. La sección 7
    lo detalla caso por caso.
@@ -101,42 +102,46 @@ tener que tocar el esquema.
 
 ### `usuario`
 
-**Sin construir, aplazada** (ADR 0028). El diseño de abajo sigue vigente; lo que se retiró es la
-spec que iba a construirlo.
+**Construida (spec 035, ADR 0036/0037)**, con tres desviaciones deliberadas respecto al diseño
+de abajo — documentadas en la propia spec, no rehacen este documento entero:
+
+1. Sin `citext`: el email es `text`, comparado siempre ya normalizado (minúsculas, sin
+   espacios) por `domain/acceso.ts` antes de tocar la base, más un `CHECK` que lo exige. Evita
+   la extensión sin perder la garantía.
+2. Sin `google_sub` ni el `CHECK usuario_tiene_forma_de_entrar`: no hay login de Google en esta
+   fase (sigue reservado, sin spec), así que `contrasena_hash` es `NOT NULL` a secas.
+3. Sin los cuatro booleanos de `Ajustes`: siguen en `localStorage` por dispositivo (ADR 0028),
+   sin fecha de migración.
+
+El resto —`nombre` (aquí opcional, no `NOT NULL`: el encargo que trajo la spec 035 lo dejó
+voluntario), `es_admin`, `posicion_favorita` (`rol_jugador`, nuevo respecto a este diseño),
+`dorsal`, `creado_en`, `ultimo_acceso_en`— se construyó como sigue:
 
 ```sql
-CREATE EXTENSION IF NOT EXISTS citext;
-
 CREATE TABLE usuario (
-  id                          uuid        PRIMARY KEY,
-  email                       citext      NOT NULL UNIQUE,
-  nombre                      text        NOT NULL,
-  es_admin                    boolean     NOT NULL DEFAULT false,
-  google_sub                  text        UNIQUE,
-  contrasena_hash             text,
-  creado_en                   timestamptz NOT NULL DEFAULT now(),
-  ultimo_acceso_en            timestamptz,
+  id                uuid         PRIMARY KEY,
+  email             text         NOT NULL UNIQUE,
+  contrasena_hash   text         NOT NULL,
+  es_admin          boolean      NOT NULL DEFAULT false,
+  nombre            text,
+  posicion_favorita rol_jugador,
+  dorsal            smallint,
+  creado_en         timestamptz  NOT NULL DEFAULT now(),
+  actualizado_en    timestamptz  NOT NULL DEFAULT now(),
+  ultimo_acceso_en  timestamptz,
 
-  -- Ajustes de la app (hoy globales; con cuentas pasan a ser de la persona)
-  validacion_desactivada      boolean     NOT NULL DEFAULT false,
-  ayuda_posicion_desactivada  boolean     NOT NULL DEFAULT false,
-  orden_rotacion_cronologico  boolean     NOT NULL DEFAULT false,
-  mostrar_numeros_metros      boolean     NOT NULL DEFAULT false,
-
-  CONSTRAINT usuario_tiene_forma_de_entrar
-    CHECK (google_sub IS NOT NULL OR contrasena_hash IS NOT NULL)
+  CONSTRAINT usuario_email_normalizado CHECK (email = lower(btrim(email))),
+  CONSTRAINT usuario_nombre_no_vacio   CHECK (nombre IS NULL OR btrim(nombre) <> ''),
+  CONSTRAINT usuario_dorsal_valido     CHECK (dorsal IS NULL OR dorsal BETWEEN 1 AND 99)
 );
 ```
 
-- `citext` para el email: nadie debería quedarse fuera por escribir su correo en mayúsculas. Si se
-  prefiere no depender de la extensión, la alternativa es `text` con
-  `CREATE UNIQUE INDEX ON usuario (lower(email))`.
-- **Las dos vías de entrada conviven.** `google_sub` y `contrasena_hash` son ambos opcionales, pero
-  al menos uno tiene que estar. Así, quien se registró con contraseña puede enlazar su cuenta de
-  Google después sin acabar con dos usuarios y dos catálogos.
-- Los cuatro booleanos son `Ajustes` de `src/app/domain/puertos.ts`, aquí como columnas y no como
-  tabla aparte: son cuatro banderas de una fila, y una tabla `1:1` no aportaría nada. La ADR 0015
-  los sacó de `SistemaRepository` porque no pertenecen a ningún sistema; ahora pertenecen a la
+- El `CHECK` sobre el email es el cinturón: la comparación real ya llega normalizada desde
+  `domain/acceso.ts` (spec 035, E1) antes de tocar la base.
+- `posicion_favorita` y `dorsal` no estaban en el diseño original de esta tabla: los trajo el
+  encargo de la spec 035 como campos de perfil opcionales, sin dueño en ninguna otra tabla.
+- Los cuatro booleanos de `Ajustes` (`src/app/domain/puertos.ts`) siguen **sin** columna aquí:
+  la spec 035 los dejó fuera de alcance a propósito, y siguen en la
   persona, que es donde encajan de verdad.
 
 ### `equipo`
@@ -161,21 +166,25 @@ puede cambiar sin romper nada. Mismo criterio que `RolId` frente a `DefinicionRo
 
 ### `lista_blanca`
 
-**Sin construir, aplazada** (ADR 0028).
+**Construida (spec 035)**, sin `citext` por el mismo motivo que `usuario` (`text` + `CHECK` de
+normalización):
 
 ```sql
 CREATE TABLE lista_blanca (
-  email        citext      PRIMARY KEY,
+  email        text        PRIMARY KEY,
   rol          rol_acceso  NOT NULL DEFAULT 'usuario',
   equipo_id    uuid        REFERENCES equipo (id) ON DELETE RESTRICT,
   invitado_por uuid        REFERENCES usuario (id) ON DELETE SET NULL,
   creado_en    timestamptz NOT NULL DEFAULT now(),
-  usada_en     timestamptz
+  usada_en     timestamptz,
+
+  CONSTRAINT lista_blanca_email_normalizado CHECK (email = lower(btrim(email)))
 );
 ```
 
-Es **la única puerta**. Si al registrarse —da igual que sea por Google o por email y contraseña— el
-correo no está en esta tabla, no se crea usuario. No hay registro abierto.
+Es **la única puerta**. Si al registrarse —hoy solo por email y contraseña; Google sigue
+reservado, sin spec— el correo no está en esta tabla, no se crea usuario. No hay registro
+abierto.
 
 `equipo_id` nulo significa «ambos equipos». Al entrar por primera vez, la fila se traduce:
 
@@ -191,7 +200,8 @@ regla acabaríamos con dos sitios que dicen cosas distintas sobre la misma perso
 
 ### `membresia`
 
-**Sin construir, aplazada** (ADR 0028). Era la spec 037, los tres roles de acceso.
+**Construida (spec 035)**, exactamente como estaba diseñada — el registro (spec 035) ya la
+puebla al dar de alta una cuenta; que decida qué se puede editar sigue siendo la spec 037.
 
 ```sql
 CREATE TABLE membresia (
@@ -213,8 +223,9 @@ porque no está acotado a ningún equipo.
 
 ### Matriz de permisos
 
-**Diseño, no ejecutable todavía**: las consultas de esta sección asumen `membresia` y
-`usuario.es_admin`, que no existen — y con la ADR 0028 tampoco tienen ya fecha de llegada.
+**`membresia` y `usuario.es_admin` ya existen (spec 035), pero nada las consulta todavía**: las
+rutas de abajo son diseño de la matriz de permisos, ejecutable en cuanto la spec 037 las cablee
+contra `/api/sistemas`.
 
 Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
 
@@ -655,17 +666,22 @@ Lo que hay que tener presente:
 
 ---
 
-## 9. Estado: seis tablas construidas, tres aplazadas
+## 9. Estado: diez tablas construidas
 
 Las seis tablas de voleibol —`equipo`, `jugador`, `sistema`, `sistema_rotacion`, `formacion`,
 `colocacion`— están construidas, migradas y con datos desde la spec 033. Las tres de acceso
-—`usuario`, `lista_blanca`, `membresia`— siguen siendo solo diseño y **quedan aplazadas**
-(ADR 0028): las specs 035-037 salieron del camino corto, y el siguiente paso pasa a ser huecos y
-conflictos. Cuando se retomen, entrarán en una migración aparte que no toca las seis ya
-existentes — igual que estaba previsto.
+—`usuario`, `lista_blanca`, `membresia`— se construyeron con la spec 035 (ADR 0036, sustituye a
+la 0028), casi exactamente como estaban diseñadas en la sección 4 — las desviaciones concretas
+están anotadas junto a cada tabla. Se les suma `sesion`, no prevista en este documento (ver más
+abajo): diez tablas en total.
 
-**Nada de este documento caduca por eso.** El diseño de la sección 4 no se ha tocado y sigue
-siendo el plan; lo único que cambia es cuándo se construye.
+**Lo que la spec 035 no hizo:** aplicar los permisos. `membresia` y `usuario.es_admin` ya
+existen y ya se pueblan al registrarse, pero ninguna ruta de `/api/sistemas` los consulta
+todavía — eso sigue siendo la spec 037, sin escribir.
+
+**El resto del diseño de la sección 4 no ha cambiado.** Las desviaciones de `usuario` y
+`lista_blanca` (sin `citext`, sin `google_sub`, sin los booleanos de `Ajustes`) están anotadas
+en su sitio; todo lo demás se construyó tal cual.
 
 Antes de que se construyera nada de esto, lo que había que resolver era el permiso para
 construirlo. Los tres textos que lo bloqueaban ya se reescribieron:
@@ -702,11 +718,27 @@ Lo que este documento provocó directamente y **ya está hecho**, con la suite e
   se pinta `C2`»* dejó de ser cierto, aunque su decisión de fondo (el índice se declara, no se
   deriva) sigue vigente.
 
-**Sesión, sin diseñar todavía.** Ninguna sección de este documento contempla cómo se guarda una
-sesión de acceso (cookie firmada, JWT, tabla de tokens…) — no hay ni una mención a sesión, token
-o cookie en todo el fichero. Es requisito previo de la spec 035 — hoy aplazada (ADR 0028), así que
-la decisión también se aplaza: se toma al congelar esa spec, con su propia ADR. Si la decisión resulta ser una tabla nueva, el principio 3 de la sección 1 («nueve
-tablas») pasa a diez, y la tabla de la sección 7 gana una fila.
+**Sesión: decidida en la spec 035 (ADR 0037).** Testigo opaco de alta entropía, entregado como
+cookie `HttpOnly`; en la base solo se guarda su huella SHA-256, nunca el valor de la cookie —
+tabla `sesion`, no prevista en el diseño original de este documento, tal como avisaba el párrafo
+que este sustituye: el principio 3 de la sección 1 («nueve tablas») pasa a diez.
+
+```sql
+CREATE TABLE sesion (
+  id           uuid        PRIMARY KEY,
+  usuario_id   uuid        NOT NULL REFERENCES usuario (id) ON DELETE CASCADE,
+  testigo_hash text        NOT NULL UNIQUE,
+  creada_en    timestamptz NOT NULL DEFAULT now(),
+  expira_en    timestamptz NOT NULL
+);
+```
+
+Nace con `expira_en` a 30 días vista y se renueva otros 30 en cada uso (`quienSoy` en
+`server/src/infraestructura/acceso.repositorio.ts`). Deliberadamente **sin** un `CHECK` del
+estilo «`expira_en > creada_en`»: esa comparación solo es cierta en el instante de creación, y
+como un `CHECK` se reevalúa en cada `UPDATE`, se rompería exactamente cuando la renovación deja
+de tocar `creada_en` — que es el caso normal. La garantía de que una sesión nunca nace ya
+caducada la da el código que la crea, no una restricción de tabla.
 
 **Requisito de versión:** el esquema da por hecho **PostgreSQL 15 o superior**. Lo necesita
 `UNIQUE NULLS NOT DISTINCT`, que sostiene dos restricciones de peso: «solo un colocador, un opuesto

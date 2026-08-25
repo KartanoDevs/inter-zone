@@ -1,6 +1,8 @@
 # 0028 — Se aplaza la autenticación; el siguiente paso es huecos y conflictos
 
-**Estado:** Aceptada
+**Estado:** Sustituida por 0036 — se cumplió el disparador que esta misma decisión dejó escrito
+(«antes de exponer el servidor a internet», ver sus consecuencias más abajo), así que la
+autenticación se retoma. Huecos y conflictos siguen vivos, sin spec asignada.
 
 **Contexto.** La ADR 0023 abrió la v2 con tres cosas dentro: backend, base de datos y cuentas. Las
 dos primeras están construidas y en producción (specs 031-034). La tercera —lista blanca, login con

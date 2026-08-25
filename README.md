@@ -34,20 +34,27 @@ sin cubrir.
   verlas todas a la vez con su leyenda de colores. Solo en los sistemas de defensa (spec 024).
 - Guardar en un servidor propio (PostgreSQL). Los ajustes de pantalla (validación desactivada,
   ayuda de posición…) siguen en el navegador, por dispositivo.
+- Darse de alta con correo y contraseña si el admin invitó ese correo de antemano (lista
+  blanca), que fija el rol con el que nace la cuenta —`admin`, `entrenador` o `usuario`— y, para
+  `entrenador`/`usuario`, en qué equipo o equipos. Entrar abre una sesión de 30 días que se
+  renueva sola con el uso; salir la invalida al instante (spec 035, ADR 0036).
 
 ## Qué NO hace
 
 **Ya hecho, de la v2:** backend propio (Express + PostgreSQL vía Prisma, en `server/`), sistemas
-separados por equipo masculino y femenino, y la pizarra hablando con el servidor en vez de con
-`localStorage`. La condición que la v1 puso para construirlo —que el equipo pidiera editar desde
+separados por equipo masculino y femenino, la pizarra hablando con el servidor en vez de con
+`localStorage`, y cuentas con lista blanca, contraseña y sesión (spec 035, ADR 0036 — sustituye
+a la 0028). La condición que la v1 puso para el backend —que el equipo pidiera editar desde
 varios dispositivos— se cumplió; la decisión está en
 `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
 
-**Aplazado, con el diseño ya hecho:** login con Google o contraseña, lista blanca de correos y
-tres roles de acceso. El esquema sigue intacto en `docs/modelo-de-datos.md` §4, pero las specs
-035-037 salieron del camino corto (ADR 0028) y el siguiente paso son huecos y conflictos. Mientras
-tanto **el servidor no tiene autenticación**: basta en local y no basta en una máquina expuesta a
-internet.
+**Con las cuentas ya construidas, falta cerrar la puerta con ellas:** `/api/sistemas` todavía no
+exige sesión ni mira el rol de quien pregunta — cualquiera puede seguir leyendo y escribiendo
+sistemas sin entrar. Que el rol decida quién edita (`admin`/`entrenador` sí, `usuario` no) es la
+spec 037, sin escribir todavía. Mientras tanto, sigue sin ser buena idea exponer el servidor a
+una red que no sea de confianza.
+
+**Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
 
 **Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 012–016 en la numeración de
 specs están guardados para esto, y hasta que no se escriban no existe ni la spec ni el código:
@@ -153,11 +160,11 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
    estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);
    cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
-   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034). **Aplazado (ADR 0028):** se
-   entra con lista blanca, contraseña y Google (specs 035-036); y los tres roles deciden quién ve
-   y quién edita cada cosa (spec 037). El diseño de las tres sigue completo en
-   `docs/modelo-de-datos.md`, pero salen del camino corto: se retoman cuando alguien pida entrar
-   desde fuera, o antes de exponer el servidor a internet — lo que ocurra primero.
+   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034); y la autenticación,
+   aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
+   sesión (spec 035). **Sin hacer todavía:** login con Google, sin spec asignada; y que los tres
+   roles decidan quién ve y quién edita cada cosa (spec 037) — hasta entonces, `/api/sistemas`
+   sigue abierto a cualquiera con sesión o sin ella.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

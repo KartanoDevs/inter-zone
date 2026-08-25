@@ -41,7 +41,7 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0025](0025-el-servidor-importa-el-dominio.md) | El servidor importa `src/app/domain/` directamente | Aceptada |
 | [0026](0026-escritura-antes-de-mutar-estado-local.md) | El store escribe en el repositorio antes de mutar sus signals, nunca al revés | Aceptada |
 | [0027](0027-cerrar-spec-tambien-actualiza-arquitectura-y-readme.md) | Cerrar una spec también actualiza `docs/arquitectura.md` y `README.md` si tocó la estructura | Aceptada |
-| [0028](0028-se-aplaza-la-autenticacion-entran-huecos-y-conflictos.md) | Se aplaza la autenticación; el siguiente paso es huecos y conflictos | Aceptada |
+| [0028](0028-se-aplaza-la-autenticacion-entran-huecos-y-conflictos.md) | Se aplaza la autenticación; el siguiente paso es huecos y conflictos | Sustituida por 0036 |
 | [0029](0029-puestos-de-defensa-genericos.md) | Los puestos de defensa son genéricos: tipo paralelo, no jugadores | Aceptada |
 | [0030](0030-defensas-antiguas-no-se-migran.md) | Las defensas guardadas por rotación y vía no se migran | Aceptada |
 | [0031](0031-se-retira-localstorage-sistema-repository.md) | Se retira `LocalStorageSistemaRepository` | Aceptada |
@@ -49,3 +49,5 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0033](0033-desplazamiento-sombra-sin-posicion-atacante.md) | Del atacante se sigue sin persistir la posición; se persiste el retoque de la sombra | Aceptada |
 | [0034](0034-cambiar-sustituto-libero-hereda-el-punto.md) | Cambiar a quién sustituye el líbero hereda el punto de quien sale | Aceptada |
 | [0035](0035-zona-de-finta-campo-paralelo.md) | La zona de finta es un campo paralelo, no un discriminador dentro de `Celda` | Aceptada |
+| [0036](0036-se-retoma-la-autenticacion.md) | Se retoma la autenticación: sustituye a la 0028 | Aceptada |
+| [0037](0037-sesion-opaca-y-scrypt.md) | Sesión opaca en base de datos y contraseña con scrypt | Aceptada |

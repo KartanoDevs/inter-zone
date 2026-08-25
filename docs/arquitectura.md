@@ -130,6 +130,11 @@ Modelos y reglas. Aquí vive el voleibol.
   casos del colocador rival y las situaciones que cubre el documento (z4, z3, z2 —solo caso
   trasero—, pipe); la posición inicial y el ataque por 1 nacen sin colocación, sin material de
   referencia que sembrar (spec 038, E20).
+- `acceso.ts` — el rol de acceso (spec 035): `normalizarEmail` (el correo se compara siempre en
+  minúsculas y sin espacios), `resolverAltaDesdeInvitacion` (traduce una invitación de la lista
+  blanca en si la cuenta nace admin o en qué equipos nace con membresía) y
+  `LONGITUD_MINIMA_CONTRASENA`. Nada de contraseñas ni de sesión aquí: eso necesita `node:crypto`
+  y vive en `server/`, que es quien lo usa (invariante 2).
 - `puertos.ts` — las interfaces `SistemaRepository` y `AjustesRepository`, sin implementación.
   Asíncronas las dos; `SistemaRepository` además es granular —`crear`/`actualizar`/`borrar` por
   sistema, nunca un `guardar` de todo el catálogo— para que una escritura no pueda arriesgar el
@@ -353,26 +358,37 @@ navegador, ejecutándose en Node.
   eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
-- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, **sin autenticación y aplazada**
-  (ADR 0028: las specs 035-037 salen del camino corto, así que la API se queda abierta — vale en
-  local, no vale expuesta a internet): reciben y devuelven el `Sistema` de dominio tal cual lo
-  serializa el cliente, sin
-  traducción de forma en la frontera HTTP. `PUT` exige la cabecera `If-Match` con el testigo de
-  concurrencia; `409` si caducó.
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, **todavía sin exigir sesión**
+  (spec 037, sin hacer): reciben y devuelven el `Sistema` de dominio tal cual lo serializa el
+  cliente, sin traducción de forma en la frontera HTTP. `PUT` exige la cabecera `If-Match` con
+  el testigo de concurrencia; `409` si caducó.
+- `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro contra la
+  lista blanca, entrar, salir y "quién soy". Lee y escribe la cookie de sesión a mano (parseo de
+  `Cookie`/`Set-Cookie`), mismo criterio que el CORS escrito a mano en `servidor.ts` — no hace
+  falta más para esto.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
+- `src/infraestructura/acceso.repositorio.ts` — `registrar`, `entrar`, `quienSoy` y `salir` (spec
+  035): compone `domain/acceso.ts` con Prisma — valida la invitación, resuelve en qué equipos
+  nace la membresía, abre y renueva la sesión. `contrasena.ts` (hash y verificación con `scrypt`,
+  ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días) son los
+  dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/` (invariante 2).
 - `src/infraestructura/semilla.ts` — siembra el equipo, el catálogo fijo de jugadores y los dos
   sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía el adaptador de
   `localStorage` en la v1. La guarda de `sembrarEjemplos` es por tipo desde la spec 038, no
   "el equipo tiene algo guardado": un equipo puede tener sistemas de recepción con trabajo real
   del entrenador y a la vez no tener ningún sistema de defensa (por ejemplo, justo tras una
   migración que los borró) — con una guarda por "cualquier sistema" el de defensa no volvería a
-  sembrarse nunca.
+  sembrarse nunca. `sembrarPrimerAdmin` (spec 035) invita como `admin` el correo de
+  `ADMIN_EMAIL_INICIAL`, si lo hay y todavía no está invitado — esa persona completa su alta por
+  el registro normal, sin que ninguna contraseña pase por un fichero.
 - `prisma/schema.prisma` y `prisma/migrations/` — el esquema completo está en
   `docs/modelo-de-datos.md`. Los `CHECK` y la función `celdas_validas()` no se expresan en el
   lenguaje de esquema de Prisma: van a mano en el SQL de la migración. Desde la spec 038,
   `formacion_defensa` y `colocacion_defensa` sustituyen a la columna `via` de `formacion`: cuelgan
-  directamente de `sistema`, no de `sistema_rotacion` — en defensa ya no hay rotación.
+  directamente de `sistema`, no de `sistema_rotacion` — en defensa ya no hay rotación. Desde la
+  spec 035, `usuario`, `lista_blanca`, `membresia` y `sesion` (esta última no estaba en el
+  documento original) dan cuenta, lista blanca y sesión.
 
 Arranque, tests y la lista completa de rutas están en `server/README.md`, no se duplican aquí.
 
@@ -396,6 +412,7 @@ src/app/
 │   ├── sistema-defensa.ts
 │   ├── sistema-por-defecto.ts
 │   ├── sistema-defensa-por-defecto.ts
+│   ├── acceso.ts
 │   ├── puertos.ts
 │   └── *.spec.ts
 ├── application/
@@ -420,8 +437,8 @@ server/
 │   ├── schema.prisma
 │   └── migrations/       # los CHECK y celdas_validas() están a mano en el SQL
 └── src/
-    ├── infraestructura/   # Prisma, el repositorio de sistemas, la semilla
-    ├── http/               # Express: rutas y la fábrica del servidor
+    ├── infraestructura/   # Prisma, repositorios (sistemas, acceso), contraseña, sesión, semilla
+    ├── http/               # Express: rutas (sistemas, auth) y la fábrica del servidor
     └── main.ts
 ```
 

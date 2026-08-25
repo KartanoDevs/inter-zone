@@ -1,8 +1,9 @@
 # InterZone — servidor
 
-API REST que guarda y sirve sistemas en PostgreSQL (spec 033). **Sin autenticación, y aplazada**
-(ADR 0028): las specs 035-037 salieron del camino corto, así que la API acepta cualquier petición
-del origen permitido. Vale en local; **no vale en una máquina expuesta a internet**.
+API REST que guarda y sirve sistemas en PostgreSQL (spec 033), con cuentas, lista blanca y
+sesión (spec 035, ADR 0036/0037). **`/api/sistemas` todavía no exige sesión ni mira el rol**:
+cerrar esa puerta es la spec 037, sin escribir. Vale en local; **no vale en una máquina expuesta
+a internet** hasta que esa spec cierre esa puerta.
 Importa `src/app/domain/` directamente — ver
 `docs/decisiones/0025-el-servidor-importa-el-dominio.md`.
 
@@ -34,8 +35,8 @@ npm test
 
 ## API
 
-Todas bajo `/api`. El cuerpo de `POST`/`PUT` es el `Sistema` de dominio tal cual lo serializa
-el cliente — sin traducción de forma en la frontera HTTP.
+Todas bajo `/api`. El cuerpo de `POST`/`PUT` de `/sistemas` es el `Sistema` de dominio tal cual
+lo serializa el cliente — sin traducción de forma en la frontera HTTP.
 
 | Método | Ruta | |
 |---|---|---|
@@ -48,6 +49,16 @@ el cliente — sin traducción de forma en la frontera HTTP.
 frontera, no del tipo de dominio (ADR 0012): es el testigo que hay que mandar de vuelta en el
 próximo `PUT`.
 
+**`/api/sistemas` no exige sesión todavía** (spec 037, sin hacer): las rutas de abajo dan cuenta
+y sesión, pero ninguna otra ruta las comprueba por ahora.
+
+| Método | Ruta | |
+|---|---|---|
+| `POST` | `/auth/registro` | `{ email, contrasena }`; `403` sin invitación disponible, `409` si el correo ya tiene cuenta, `400` si la contraseña es demasiado corta |
+| `POST` | `/auth/entrar` | `{ email, contrasena }`; abre sesión (cookie `iz_sesion`, `HttpOnly`, 30 días); `401` igual para contraseña incorrecta y correo inexistente |
+| `POST` | `/auth/salir` | invalida la sesión de la cookie al instante |
+| `GET` | `/auth/quien-soy` | `{ usuario: null }` sin sesión o con una caducada, nunca un error; con sesión válida, la renueva y devuelve `{ usuario }` |
+
 ## Estructura
 
 ```
@@ -56,12 +67,12 @@ server/
 │   ├── schema.prisma
 │   └── migrations/       # los CHECK y la función celdas_validas() están a mano en el SQL
 └── src/
-    ├── infraestructura/   # Prisma, el repositorio de sistemas, la semilla
-    ├── http/               # Express: rutas y la fábrica del servidor
+    ├── infraestructura/   # Prisma, los repositorios (sistemas y acceso), la semilla
+    ├── http/               # Express: rutas (sistemas, auth) y la fábrica del servidor
     └── main.ts
 ```
 
-Seis tablas de las nueve de `docs/modelo-de-datos.md` (`equipo`, `jugador`, `sistema`,
-`sistema_rotacion`, `formacion`, `colocacion`). Las tres de acceso (`usuario`, `lista_blanca`,
-`membresia`) quedan **aplazadas** (ADR 0028): su diseño sigue intacto y, cuando se retomen,
-entrarán en una migración nueva que no toca esta.
+Diez tablas: las seis de voleibol de `docs/modelo-de-datos.md` (`equipo`, `jugador`, `sistema`,
+`sistema_rotacion`, `formacion`, `colocacion`) más las cuatro de acceso que llegaron con la spec
+035 (`usuario`, `lista_blanca`, `membresia`, `sesion` — esta última no estaba en el documento
+original, que ya avisaba de que si hacía falta pasaría de nueve a diez).
