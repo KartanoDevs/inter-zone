@@ -162,8 +162,8 @@ ser evidente para alguien que solo lea `domain/`.
 
 ### `application/`
 
-Orquestación y estado de la aplicación con signals. Dos clases, ninguna con decorador de
-Angular, las dos testeables sin `TestBed`.
+Orquestación y estado de la aplicación con signals. Tres clases, ninguna con decorador de
+Angular, las tres testeables sin `TestBed`.
 
 - `AccesoStore` (spec 050) — `usuario`, `cargando` y `error`. `comprobarSesion()` es lo único
   que dispara `app.config.ts` con `provideAppInitializer`: al arrancar solo se pregunta si hay
@@ -179,6 +179,13 @@ Angular, las dos testeables sin `TestBed`.
   `cambiarEstadoActivo(estado)` (acción) validan o quitan la validación del sistema activo; el
   servidor decide si quien lo pide tiene permiso (ADR 0038), y un rechazo llega por
   `errorGuardado`, igual que cualquier otra escritura.
+- `TeoriaStore` (spec 052, ADR 0039) — `new TeoriaStore(sistemaStore)`
+  (`teoria.store.spec.ts`): lee `SistemaStore.sistemas()`, filtrado a los validados (spec 051),
+  con su propia navegación (equipo, sistema, rotación, caso, situación, bloqueadores, jugador
+  seleccionado) — nunca la de `SistemaStore`, para que abrir Teoría no pise un cambio sin
+  guardar del editor. `formacionActiva` es `null` cuando esa rotación o variante nunca se
+  guardó — a diferencia de `SistemaStore`, no rellena con una formación de partida, porque no
+  hay nada que "empezar a colocar" en una vista de solo lectura.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -341,7 +348,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   ni el tipo ni el equipo cambian una vez creado), `SelectorEquipo` (pestañas del equipo activo,
   spec 032, mismo patrón que `SelectorCaso`).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
-  el borrado de un sistema.
+  el borrado de un sistema. `ficha-vista.ts` (spec 052): etiqueta y color de un puesto o un
+  jugador en la pista — `idOcupanteDe`, `indiceColorDe`, `etiquetaOcupanteDe`,
+  `ETIQUETA_PUESTO`... Fontanería de presentación sin estado, compartida entre `Tablero` y
+  `TeoriaTablero`; vivía dentro de `tablero.ts` hasta que `TeoriaTablero` la necesitó también —
+  importarla directamente de ahí habría creado un import circular entre los dos componentes.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
   ficha). Trabaja con `ColocacionBorrador` de forma genérica (jugador o puesto, spec 038): las
@@ -359,6 +370,12 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   arrastra la ficha "A" (`arrastreAtacante`, spec E3) — un tercer gestor de `PointerEvent`,
   `onAgarrarSombra`, acumula el desplazamiento respecto al punto donde se agarró la sombra y lo
   deja en `store.desplazamientoSombraEdicion` para que `guardar()` lo persista.
+- `ui/teoria/` — `TeoriaTablero` (spec 052): la pestaña "Teoría", de solo consulta. Reutiliza
+  `Pista` y los selectores del editor (son presentacionales, sin acoplar a `SistemaStore`), pero
+  nunca escucha sus eventos de arrastre — `idArrastrada`/`accionArrastre` van siempre a `null` o
+  vacíos. Construye `FichaVista`/`CeldaConjunto`/leyenda sobre `TeoriaStore` con el mismo cálculo
+  que `Tablero` hace sobre `SistemaStore.borrador()`, pero repetido (ADR 0039) en vez de
+  compartido: los dos consumidores necesitan la misma fontanería, pero nunca el mismo estado.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
 la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un
@@ -448,7 +465,9 @@ src/app/
 │   ├── acceso.store.ts
 │   ├── acceso.store.spec.ts
 │   ├── sistema.store.ts
-│   └── sistema.store.spec.ts
+│   ├── sistema.store.spec.ts
+│   ├── teoria.store.ts
+│   └── teoria.store.spec.ts
 ├── infrastructure/
 │   ├── http-acceso.repository.ts             # en uso (spec 050)
 │   ├── http-sistema.repository.ts            # en uso (spec 034)
@@ -456,13 +475,14 @@ src/app/
 │   └── *.spec.ts
 ├── ui/
 │   ├── acceso/
+│   ├── teoria/
 │   ├── tablero/
 │   ├── pista/
 │   ├── rotaciones/
 │   ├── panel/
 │   ├── sistemas/
 │   ├── ajustes/
-│   └── comun/
+│   └── comun/          # incluye ficha-vista.ts, compartido con tablero/
 └── maqueta/        # boceto congelado, no se renderiza ni se borra
 
 server/

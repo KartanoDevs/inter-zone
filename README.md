@@ -45,6 +45,11 @@ sin cubrir.
   para que un jugador lo estudie — y puede quitarle la marca si hace falta corregirlo. Es la
   única acción de `/api/sistemas` que ya exige sesión y rol; el resto sigue abierto hasta la
   spec 037.
+- Teoría (spec 052): cualquier cuenta puede abrir esta pestaña y recorrer los sistemas
+  validados del equipo activo — rotación a rotación en recepción, por caso/situación/
+  bloqueadores en defensa — viendo fichas, zonas, sombra y explicaciones exactamente como en el
+  editor, sin poder tocar nada. Un equipo sin nada validado todavía lo dice, en vez de una pista
+  vacía.
 
 ## Qué NO hace
 
@@ -145,7 +150,10 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    cualquier jugador de zaga, entrando y saliendo según la rotación (FIVB 19.3.1.1). Primer
    punto en que la herramienta enseña algo tocándola. Specs 006–011.
 4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
-   jugadores y recibir una nota de perfección más el veredicto de legalidad. Specs 012–013.
+   jugadores y recibir una nota de perfección más el veredicto de legalidad. La consulta en solo
+   lectura se hizo como "Teoría" (spec 052, ligada a cuentas y roles — ver paso 8): cualquier
+   cuenta recorre los sistemas validados del equipo, sin poder tocarlos. Examinarse con nota
+   sigue pendiente, specs 012–013.
 5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
    028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs
@@ -169,9 +177,10 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
    PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034); la autenticación,
    aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
-   sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); y un
+   sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); un
    entrenador o el admin pueden validar un sistema (spec 051, ADR 0038 — la única acción que ya
-   exige rol). **Sin hacer todavía:** login con Google, sin spec asignada; y que los tres
+   exige rol); y "Teoría" deja consultar en solo lectura los sistemas validados (spec 052, ADR
+   0039). **Sin hacer todavía:** login con Google, sin spec asignada; y que los tres
    roles decidan quién ve y quién edita cada cosa (spec 037) — hasta entonces, `/api/sistemas`
    sigue abierto a cualquiera con sesión o sin ella.
 
