@@ -96,6 +96,10 @@ export interface Colocacion {
   /** Celdas de la rejilla de responsabilidad que este jugador cubre (spec 022). Voluntaria: sin
    * celdas pintadas, ausente. */
   readonly celdas?: readonly Celda[];
+  /** Celdas de zona de finta (spec 041). Solo se pinta en defensa (mismo alcance que `celdas`
+   * desde la spec 024); se declara aquí también por simetría estructural con `ColocacionDefensa`,
+   * igual que ya hace `celdas` — nunca la puebla la UI de recepción. */
+  readonly celdasFinta?: readonly Celda[];
 }
 
 /** Dónde se coloca cada jugador del orden de saque, para una rotación concreta. */
@@ -110,6 +114,11 @@ export interface ColocacionDefensa {
   readonly explicacion?: string;
   /** Celdas de la rejilla de responsabilidad que este puesto cubre (spec 038, continúa la 022). */
   readonly celdas?: readonly Celda[];
+  /** Celdas de la zona de finta de este puesto (spec 041): responsabilidad distinta de `celdas`,
+   * campo paralelo por el mismo motivo que la ADR 0029 — no hay ninguna regla que combine los
+   * dos conjuntos, así que no gana nada compartir un discriminador dentro de `Celda`. Mismos tres
+   * estados que `celdas` (spec 024): `undefined` nunca tocada, `[]` vaciada a propósito. */
+  readonly celdasFinta?: readonly Celda[];
 }
 
 export type FormacionDefensa = readonly ColocacionDefensa[];

@@ -1,6 +1,25 @@
-import type { CasoColocador, Celda, EquipoId, FormacionDefensa, PlantillaEquipo, Punto, PuestoDefensa, Sistema, SituacionDefensa, VarianteDefensa } from './modelos';
+import type { CasoColocador, Celda, EquipoId, FormacionDefensa, NumeroBloqueadores, PlantillaEquipo, Punto, PuestoDefensa, Sistema, SituacionDefensa, VarianteDefensa } from './modelos';
 
 const CASOS: readonly CasoColocador[] = ['delantero', 'trasero'];
+
+/** Punto fijo donde se pinta al atacante para cada situación (spec 038): la ficha no guarda una
+ * posición exacta, solo la situación ya derivada — cada pestaña la muestra siempre en el mismo
+ * sitio. Un poco más cerca de la red que en la spec 021 (y = -1.2 en vez de -1.5): a petición del
+ * entrenador, para que quede más claro que ataca desde la línea delantera. La postura inicial no
+ * tiene punto: no hay ficha "A" en esa situación (E11). El ataque por 1 es la zaga derecha rival:
+ * no tiene un tercio de red propio, se sitúa por detrás de la línea de ataque, en el lado
+ * derecho — el espejo de la banda de zona 4, pero desde la zaga.
+ *
+ * Vive en `domain/` (movida desde `ui/pista/pista.ts` en la spec 049) porque
+ * `formacionDefensaPorDefecto` necesita anclar en ella el bloqueador principal de cada
+ * situación. */
+export const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
+  z2: { x: 1, y: -1.2 },
+  z3: { x: 4.5, y: -1.2 },
+  z4: { x: 8, y: -1.2 },
+  z1: { x: 1, y: -3.5 },
+  pipe: { x: 4.5, y: -3.5 },
+};
 /** Situaciones con material de referencia (`docs/voley/sistema_defensivo_unificado.md`): el
  * ataque por 1 y la posición inicial no tienen precedente y nacen vacíos (spec 038, E20). */
 const SITUACIONES_CON_MATERIAL: readonly SituacionDefensa[] = ['z4', 'z3', 'z2', 'pipe'];
@@ -13,9 +32,22 @@ const PUESTOS: readonly PuestoDefensa[] = [1, 2, 3, 4, 5, 6];
  * puesto 1 intercambiados. `z2` solo se usa para el caso trasero (spec 038, E4): el delantero no
  * tiene ataque por esa zona.
  */
+/** Postura de partida sin ataque marcado (spec 042): tres puestos en la red, tres repartidos en
+ * zaga. No es la defensa de referencia de ninguna situación concreta — `inicial` y `z1` no
+ * tienen material (spec 038, E20) —, solo un punto de partida razonable para no nacer con los
+ * seis amontonados en el origen. */
+const POSTURA_BASE: Readonly<Record<PuestoDefensa, Punto>> = {
+  4: { x: 2.0, y: 0.5 },
+  3: { x: 4.5, y: 0.5 },
+  2: { x: 7.0, y: 0.5 },
+  5: { x: 1.5, y: 6.5 },
+  6: { x: 4.5, y: 7.5 },
+  1: { x: 7.5, y: 6.5 },
+};
+
 const PUNTOS: Readonly<Record<SituacionDefensa, Readonly<Record<PuestoDefensa, Punto>>>> = {
-  inicial: { 1: { x: 0, y: 0 }, 2: { x: 0, y: 0 }, 3: { x: 0, y: 0 }, 4: { x: 0, y: 0 }, 5: { x: 0, y: 0 }, 6: { x: 0, y: 0 } },
-  z1: { 1: { x: 0, y: 0 }, 2: { x: 0, y: 0 }, 3: { x: 0, y: 0 }, 4: { x: 0, y: 0 }, 5: { x: 0, y: 0 }, 6: { x: 0, y: 0 } },
+  inicial: POSTURA_BASE,
+  z1: POSTURA_BASE,
   // Ataque rival por zona 2: viene por nuestra izquierda. Bloquean Z4 y Z3.
   z2: {
     4: { x: 1.4, y: 0.4 },
@@ -174,6 +206,67 @@ function formacionDe(situacion: SituacionDefensa): FormacionDefensa {
     explicacion: EXPLICACIONES[situacion][puesto],
     celdas: CELDAS[situacion][puesto],
   }));
+}
+
+/** Separación lateral entre bloqueadores contiguos del defecto (spec 049): igual a
+ * `DISTANCIA_MINIMA_ENTRE_JUGADORES` (`domain/separacion.ts`), así que nunca los junta más de lo
+ * que ya permite el arrastre. */
+const SEPARACION_BLOQUEADORES = 0.9;
+/** Profundidad de un bloqueador del defecto: pegado a la red (spec 049), la misma `y` que ya usan
+ * las defensas de referencia sembradas. */
+const Y_BLOQUEADOR = 0.4;
+
+/** Para cada situación de ataque con regla de bloqueo por defecto (spec 049): cuánto se bascula
+ * la postura base hacia el lado del ataque, el puesto que se pega a la red frente al atacante
+ * (alineado en `x` con `PUNTO_POR_SITUACION`), y en qué orden se suman los puestos vecinos según
+ * crece el número de bloqueadores — cada uno con el signo de a qué lado del principal se coloca
+ * (+1 derecha, −1 izquierda; cada vecino nuevo se aleja un `SEPARACION_BLOQUEADORES` más que el
+ * anterior de su mismo lado). `pipe`, `z1` e `inicial` no tienen entrada aquí: siempre devuelven
+ * la postura base sin bascular y sin nadie reubicado (E11). */
+const REGLA_BLOQUEO_POR_DEFECTO: Readonly<
+  Partial<Record<SituacionDefensa, { basculacion: number; principal: PuestoDefensa; vecinos: readonly { puesto: PuestoDefensa; signo: 1 | -1 }[] }>>
+> = {
+  z4: { basculacion: 1, principal: 2, vecinos: [{ puesto: 3, signo: -1 }, { puesto: 4, signo: -1 }] },
+  z3: { basculacion: 0, principal: 3, vecinos: [{ puesto: 2, signo: 1 }, { puesto: 4, signo: -1 }] },
+  z2: { basculacion: -1, principal: 4, vecinos: [{ puesto: 3, signo: 1 }, { puesto: 2, signo: 1 }] },
+};
+
+/** La postura por defecto de una variante de defensa que aún no se ha guardado (spec 042,
+ * ampliada por la 049 con el número de bloqueadores): solo el punto de cada puesto.
+ * Deliberadamente sin `celdas` ni `explicacion`: esos campos siguen sin tocar hasta que el
+ * entrenador pinta o escribe algo (spec 024, E3-E8), y si aquí se copiara también la zona de
+ * responsabilidad, `colocarOMover` la arrastraría sin querer en cuanto se moviera la ficha
+ * (conserva el resto de la colocación al reposicionar).
+ *
+ * En `z4`, `z3` y `z2`, con `bloqueadores >= 1`: postura base basculada hacia el ataque, con el
+ * puesto principal pegado a la red frente al atacante y los vecinos sumándose a su lado según
+ * `REGLA_BLOQUEO_POR_DEFECTO`. Con 0 bloqueadores en esas situaciones: la postura base basculada,
+ * sin nadie reubicado. En `inicial`, `z1` y `pipe`: siempre la postura base sin bascular y sin
+ * nadie reubicado, con cualquier número de bloqueadores (spec 049, E11) — a diferencia de las
+ * otras tres, el ataque por pipe es individual (spec 030) y no tiene un "lado" hacia el que
+ * pegar bloqueadores. */
+export function formacionDefensaPorDefecto(situacion: SituacionDefensa, bloqueadores: NumeroBloqueadores = 0): FormacionDefensa {
+  if (situacion === 'inicial' || situacion === 'z1' || situacion === 'pipe') {
+    return PUESTOS.map((puesto) => ({ puesto, punto: POSTURA_BASE[puesto] }));
+  }
+  const regla = REGLA_BLOQUEO_POR_DEFECTO[situacion]!;
+  const base = PUESTOS.map((puesto) => {
+    const punto = POSTURA_BASE[puesto];
+    return { puesto, punto: { x: punto.x + regla.basculacion, y: punto.y } };
+  });
+  if (bloqueadores < 1) {
+    return base;
+  }
+  const atacante = PUNTO_POR_SITUACION[situacion]!;
+  const nuevosPuntos = new Map<PuestoDefensa, Punto>();
+  nuevosPuntos.set(regla.principal, { x: atacante.x, y: Y_BLOQUEADOR });
+  const contadorPorLado = { [-1]: 0, [1]: 0 } as Record<-1 | 1, number>;
+  for (const vecino of regla.vecinos.slice(0, bloqueadores - 1)) {
+    contadorPorLado[vecino.signo] += 1;
+    const distancia = SEPARACION_BLOQUEADORES * contadorPorLado[vecino.signo];
+    nuevosPuntos.set(vecino.puesto, { x: atacante.x + vecino.signo * distancia, y: Y_BLOQUEADOR });
+  }
+  return base.map((c) => (nuevosPuntos.has(c.puesto) ? { ...c, punto: nuevosPuntos.get(c.puesto)! } : c));
 }
 
 /** El sistema defensivo de `docs/voley/sistema_defensivo_unificado.md` (spec 030, reescrito en

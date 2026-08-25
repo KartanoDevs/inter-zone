@@ -27,6 +27,16 @@
           }
         </pattern>
       }
+      <!-- Textura de la zona de finta (spec 041, E9): mismo color de fondo que la zona de
+           defensa, con esta rejilla de puntos superpuesta encima. -->
+      <pattern
+        id="app-pista__puntos-finta"
+        patternUnits="userSpaceOnUse"
+        [attr.width]="tamanoCelda / 2"
+        [attr.height]="tamanoCelda / 2"
+      >
+        <circle [attr.cx]="tamanoCelda / 4" [attr.cy]="tamanoCelda / 4" [attr.r]="tamanoCelda / 10" class="app-pista__punto-finta"></circle>
+      </pattern>
     </defs>
   }
 
@@ -39,7 +49,7 @@
   @if (mostrarRival() && puntoColocadorRival(); as puntoC) {
     <g class="app-pista__colocador-rival" [attr.transform]="'translate(' + puntoC.x + ',' + puntoC.y + ')'">
       <circle class="app-pista__colocador-rival-circulo" r="0.3"></circle>
-      <text class="app-pista__colocador-rival-etiqueta" text-anchor="middle" dominant-baseline="central">C</text>
+      <text class="app-pista__colocador-rival-etiqueta" text-anchor="middle" dominant-baseline="central">CR</text>
     </g>
   }
 
@@ -97,6 +107,28 @@
         ></rect>
       }
     </g>
+    <g class="app-pista__celdas-conjunto">
+      @for (celda of celdasFintaVistaConjunto(); track 'finta-' + celda.columna + '-' + celda.fila) {
+        <rect
+          class="app-pista__celda-conjunto"
+          [attr.x]="celda.columna * tamanoCelda"
+          [attr.y]="celda.fila * tamanoCelda"
+          [attr.width]="tamanoCelda"
+          [attr.height]="tamanoCelda"
+          [attr.fill]="rellenoDe(celda)"
+          [attr.opacity]="opacidadDe(celda)"
+        ></rect>
+        <rect
+          class="app-pista__celda-finta-textura"
+          [attr.x]="celda.columna * tamanoCelda"
+          [attr.y]="celda.fila * tamanoCelda"
+          [attr.width]="tamanoCelda"
+          [attr.height]="tamanoCelda"
+          fill="url(#app-pista__puntos-finta)"
+          [attr.opacity]="opacidadDe(celda)"
+        ></rect>
+      }
+    </g>
   }
 
   @for (ficha of fichas(); track ficha.id) {
@@ -104,7 +136,7 @@
       appFicha
       [punto]="ficha.punto"
       [etiqueta]="ficha.etiqueta"
-      [posicion]="ficha.posicion"
+      [etiquetaPosicion]="ficha.etiquetaPosicion"
       [mostrarPosicion]="mostrarPosicion()"
       [estado]="ficha.estado"
       [linea]="ficha.linea"

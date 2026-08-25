@@ -7,6 +7,7 @@ import { SelectorBloqueadores } from '../rotaciones/selector-bloqueadores';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
+import { PanelPintado } from '../panel/panel-pintado';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { Speeddial, type AccionSpeeddial } from '../comun/speeddial';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
@@ -42,7 +43,7 @@ import type {
 const ETIQUETA_PUESTO: Readonly<Record<PuestoDefensa, string>> = {
   1: 'CO',
   2: 'CO',
-  3: 'C',
+  3: 'Ce',
   4: 'R',
   5: 'L',
   6: 'R',
@@ -50,6 +51,16 @@ const ETIQUETA_PUESTO: Readonly<Record<PuestoDefensa, string>> = {
 
 function esPuestoDelantero(puesto: PuestoDefensa): boolean {
   return puesto === 2 || puesto === 3 || puesto === 4;
+}
+
+const PUESTOS_DEFENSA: readonly PuestoDefensa[] = [1, 2, 3, 4, 5, 6];
+
+/** El puesto de defensa que corresponde a un id sintético `p1`..`p6` (spec 038), o `null` si no
+ * tiene esa forma — mismo criterio que `SistemaStore.puestoDeId`, aquí porque `onAgarrarPaleta`
+ * necesita la etiqueta antes de tocar el store (spec 042: banquillo de puestos). */
+function puestoDeId(ocupanteId: string): PuestoDefensa | null {
+  const coincidencia = /^p([1-6])$/.exec(ocupanteId);
+  return coincidencia ? (Number(coincidencia[1]) as PuestoDefensa) : null;
 }
 
 /** Índice de color de un puesto de defensa en la vista de conjunto (spec 023/038): fijo por
@@ -103,14 +114,14 @@ type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
 type Ventana = 'editor' | 'examen' | 'cuenta';
 
-type PestanaTablero = 'banquillo' | 'ensenanza' | 'zonas' | 'ajustes';
+type PestanaTablero = 'banquillo' | 'ensenanza' | 'pintado' | 'ajustes';
 
 /** Nombre de cada pestaña en la cabecera del panel: con la barra de pestañas al fondo y el
  * cuerpo plegable, hace falta decir qué se está viendo (o qué se recupera al desplegar). */
 const ETIQUETA_PESTANA: Readonly<Record<PestanaTablero, string>> = {
   banquillo: 'Banquillo',
   ensenanza: 'Enseñanza',
-  zonas: 'Zonas',
+  pintado: 'Pintado',
   ajustes: 'Ajustes',
 };
 
@@ -212,6 +223,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     PanelValidacion,
     PaletaJugadores,
     PanelEnsenanza,
+    PanelPintado,
     DialogoConfirmacion,
     Speeddial,
     BarraSistemas,
@@ -247,6 +259,7 @@ export class Tablero {
    * pinta cada muestra con `var(paletaColores[indiceColor])`. */
   protected readonly paletaColores = PALETA_COLORES;
 
+
   private readonly pistaCmp = viewChild.required(Pista);
 
   protected readonly completo = computed(() => this.store.borrador().length === 6);
@@ -266,7 +279,9 @@ export class Tablero {
 
   /** En defensa un puesto delantero se pinta en línea delantera y el resto en zaga (spec 038,
    * E12): es fijo por puesto, no depende de ninguna rotación. En recepción sigue derivándose de
-   * la posición rotacional real. */
+   * la posición rotacional real. La etiqueta pequeña bajo la principal sigue el mismo criterio
+   * (spec 049): "P1".."P6" en recepción, "JD"/"JT" en defensa — ya no hay rotación de la que
+   * derivar una posición, así que dejó de tener sentido mostrar "P0" (spec 038, ADR 0029). */
   protected readonly fichas = computed<readonly FichaVista[]>(() => {
     if (this.esDefensa()) {
       const seleccionadoId = this.store.jugadorSeleccionadoId();
@@ -277,7 +292,7 @@ export class Tablero {
           id,
           punto: colocacion.punto,
           etiqueta: ETIQUETA_PUESTO[puesto],
-          posicion: 0,
+          etiquetaPosicion: esPuestoDelantero(puesto) ? 'JD' : 'JT',
           estado: 'normal' as const,
           linea: esPuestoDelantero(puesto) ? ('delantera' as const) : ('zaguera' as const),
           esLibero: puesto === 5,
@@ -295,7 +310,7 @@ export class Tablero {
         id: c.jugador.id,
         punto: c.punto,
         etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-        posicion: posicionRotacional,
+        etiquetaPosicion: `P${posicionRotacional}`,
         estado: estadoDe(resultado, c.jugador.id),
         linea: esLineaDelantera(posicionRotacional) ? 'delantera' : 'zaguera',
         esLibero: c.jugador.rol === 'libero',
@@ -342,6 +357,26 @@ export class Tablero {
     return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
   });
 
+  /** Las celdas de zona de finta de la formación activa (spec 041): mismo agregado que
+   * `celdasVistaConjunto`, sobre `celdasFinta` en vez de `celdas` — sin bloque por defecto, ni
+   * siquiera para el seleccionado (E8: la finta nunca lo tiene). */
+  protected readonly celdasFintaVistaConjunto = computed<readonly CeldaConjunto[]>(() => {
+    const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
+    for (const colocacion of this.store.borrador()) {
+      const indice = this.indiceColorDeColocacion(colocacion);
+      for (const celda of colocacion.celdasFinta ?? []) {
+        const clave = `${celda.columna},${celda.fila}`;
+        const existente = porClave.get(clave);
+        if (existente) {
+          existente.indices.push(indice);
+        } else {
+          porClave.set(clave, { columna: celda.columna, fila: celda.fila, indices: [indice] });
+        }
+      }
+    }
+    return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
+  });
+
   /** Leyenda de la vista de conjunto: los seis, con o sin zona pintada (spec 023, E2). */
   protected readonly leyendaVistaConjunto = computed<readonly EntradaLeyendaColor[]>(() =>
     this.store.borrador().map((colocacion) => ({
@@ -350,11 +385,16 @@ export class Tablero {
     })),
   );
 
-  /** El banquillo de jugadores sin colocar solo existe en recepción (spec 038): en defensa los
-   * seis puestos son fijos, no hay jugadores de los que tirar. */
+  /** El banquillo de puestos sin colocar (spec 042): en defensa no hay jugadores de los que
+   * tirar, pero un puesto sacado de la pista sí tiene que poder volver a colocarse desde algún
+   * sitio — antes de esta spec no había ninguno (spec 038, E13, quedaba sin origen de arrastre). */
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() => {
     if (this.esDefensa()) {
-      return [];
+      const colocadosIds = new Set(this.store.borrador().map((c) => idOcupanteDe(c)));
+      return PUESTOS_DEFENSA.filter((puesto) => !colocadosIds.has(`p${puesto}`)).map((puesto) => ({
+        id: `p${puesto}`,
+        etiqueta: ETIQUETA_PUESTO[puesto],
+      }));
     }
     const posiciones = this.store.posicionesActivas();
     if (!posiciones) {
@@ -445,7 +485,10 @@ export class Tablero {
     const puntosBloqueadores = puestosBloqueadores
       .map((puesto) => (this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[]).find((c) => c.puesto === puesto)?.punto)
       .filter((p): p is Punto => p !== undefined);
-    return sombraDeBloqueo(puntoAtacante, puntosBloqueadores, this.store.desplazamientoSombraEdicion() ?? undefined);
+    // El tope del dial (10) sale un 25% más ancho que el real calculado por el dominio, no el
+    // 100% exacto; el resto de la escala se reparte proporcionalmente (spec 044/045).
+    const escala = (this.store.escalaSombra() / 10) * 1.25;
+    return sombraDeBloqueo(puntoAtacante, puntosBloqueadores, this.store.desplazamientoSombraEdicion() ?? undefined, escala);
   });
 
   /** Punto bajo el puntero mientras se arrastra la ficha "A" (spec 040, E3): la sombra se
@@ -579,7 +622,7 @@ export class Tablero {
   protected confirmarDialogoSistema(datos: DatosSistema): void {
     const modo = this.dialogoSistema();
     if (modo === 'crear') {
-      this.store.crear(datos.nombre, datos.tipo, datos.equipoId);
+      this.store.crear(datos.nombre, datos.tipo, datos.equiposId);
     } else if (modo === 'clonar') {
       this.store.clonar(datos.nombre);
     } else {
@@ -615,6 +658,11 @@ export class Tablero {
   }
 
   protected onAgarrarPaleta(chip: ChipAgarrado): void {
+    const puesto = puestoDeId(chip.id);
+    if (puesto !== null) {
+      this.iniciarArrastre(chip.id, ETIQUETA_PUESTO[puesto], chip.evento, 'paleta');
+      return;
+    }
     const jugador = this.store.posicionesActivas()?.find((j) => j.id === chip.id);
     if (!jugador) {
       return;
@@ -654,6 +702,10 @@ export class Tablero {
 
   protected cambiarSustitutoLibero(sustituidoId: string | null): void {
     this.store.cambiarSustitutoLibero(this.store.rotacionActiva(), sustituidoId);
+  }
+
+  protected cambiarEscalaSombra(valor: number): void {
+    void this.store.cambiarEscalaSombra(valor);
   }
 
   protected alternarValidacion(): void {
@@ -787,6 +839,11 @@ export class Tablero {
       this.store.deseleccionarJugador();
       return;
     }
+    if (this.store.accionArrastre() !== 'pintar') {
+      // spec 044, E3: en "mover bloqueo", arrastrar por el fondo no hace nada — solo la sombra
+      // reacciona al arrastre, y eso lo gestiona onAgarrarSombra, no este método.
+      return;
+    }
     evento.preventDefault();
     this.pistaCmp().capturarPuntero(evento);
 
@@ -814,7 +871,10 @@ export class Tablero {
       tocadas.add(clave);
       trazo.push(celda);
       if (modo === null) {
-        const yaPintada = this.store.celdasJugadorSeleccionado().some((c) => c.columna === celda.columna && c.fila === celda.fila);
+        // spec 041: en modo finta se compara contra sus propias celdas, sin bloque por defecto.
+        const celdasActuales =
+          this.store.modoPintado() === 'finta' ? this.store.celdasFintaJugadorSeleccionado() : this.store.celdasJugadorSeleccionado();
+        const yaPintada = celdasActuales.some((c) => c.columna === celda.columna && c.fila === celda.fila);
         modo = yaPintada ? 'borrar' : 'pintar';
       }
       aplicar(celda);
@@ -935,10 +995,14 @@ export class Tablero {
           this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
           // Terminar un arrastre que reposiciona una ficha ya en pista la deja seleccionada
           // (spec 027, E1). Desde el banquillo no: así se pueden colocar varios jugadores
-          // seguidos sin que el panel salte a Enseñanza en cada uno.
+          // seguidos sin que el panel salte a Enseñanza en cada uno. En defensa, además, soltar
+          // nunca fuerza esa pestaña (spec posterior a la 046): el caso normal es reposicionar
+          // para pintar su zona a continuación, no para escribir una explicación.
           if (origen === 'pista') {
             this.store.enfocarJugador(jugadorId);
-            this.irAEnsenanza();
+            if (!this.esDefensa()) {
+              this.irAEnsenanza();
+            }
           }
         } else if (origen === 'pista') {
           this.store.quitar(jugadorId);
@@ -948,12 +1012,12 @@ export class Tablero {
       // Nunca se armó: es un toque, no un arrastre. Sobre el banquillo no hay nada que
       // seleccionar (spec 010, E9/E10/E12).
       if (origen === 'pista' && !armado) {
+        // Un simple toque nunca fuerza la pestaña Enseñanza ni la despliega si estaba plegada
+        // (spec posterior a la 046, generaliza su E1-E3 a los dos modos): el caso normal de
+        // seleccionar es pintar su zona o simplemente mirar quién es, no escribir una
+        // explicación. Si ya se estaba viendo Enseñanza con el panel desplegado, su contenido
+        // sigue esa selección solo, sin necesidad de tocar `tab` ni `panelPlegado` aquí.
         this.store.seleccionarJugador(jugadorId);
-        // `seleccionarJugador` alterna: un segundo toque deselecciona, y entonces no hay nada
-        // que enseñar todavía.
-        if (this.store.jugadorSeleccionadoId() === jugadorId) {
-          this.irAEnsenanza();
-        }
       }
     };
 

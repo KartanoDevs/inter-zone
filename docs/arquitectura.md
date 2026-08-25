@@ -43,7 +43,9 @@ Modelos y reglas. Aquí vive el voleibol.
   desde la spec 024), `Formacion`, `Infraccion`, `Aviso`, `ResultadoValidacion`. Desde la spec
   024, `celdas` distingue dos estados que antes eran indistinguibles: `undefined` es "nunca
   tocada" (se muestra el bloque por defecto derivado del punto) y `[]` es "vaciada a propósito"
-  (cero celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada.
+  (cero celdas, sin defecto). Solo se llega a `[]` borrando la última celda pintada. `celdasFinta?`
+  (spec 041) es un campo paralelo, mismos tres estados, sin bloque por defecto en ningún caso —
+  responsabilidad de finta, distinta de `celdas` y sin ninguna regla que las combine.
   `CasoColocador`, `SituacionDefensa`, `PuestoDefensa`, `NumeroBloqueadores`, `ColocacionDefensa`
   (con `puesto` en vez de `jugador`), `FormacionDefensa` y `VarianteDefensa` son la contraparte
   de defensa desde la spec 038: la defensa deja de ir por rotación y por vía, pasa a ir por caso
@@ -72,6 +74,11 @@ Modelos y reglas. Aquí vive el voleibol.
   `celdasDeTrazo(trazo): Celda[]` (combina las dos: si el trazo se cierra, rellena; si no, lo
   devuelve tal cual) — pintado por contorno, spec 024. `cobertura.ts` (huecos y conflictos) sigue
   sin existir: llega con las specs 014–015 de la hoja de ruta.
+- `separacion.ts` — `DISTANCIA_MINIMA_ENTRE_JUGADORES` (0,9 m) y `separarDeOtros(punto, otros,
+  distanciaMinima): Punto` (spec 046): ni en recepción ni en defensa dos fichas pueden quedar en
+  el mismo punto exacto. `SistemaStore.colocarOMover` lo aplica en las dos ramas antes de
+  guardar el punto de destino. No es una falta posicional — es un límite de arrastre, así que
+  nunca se guarda un estado inválido que `validarFormacion` tuviera que rechazar.
 - `sistema-defensa.ts` — `guardarVarianteDefensa(sistema, caso, situacion, bloqueadores,
   formacion)`: análogo a `guardarFormacion` pero keyed por (caso, situación, bloqueadores), y
   **nunca** valida posición (spec 021, en defensa la validación no existe). No reutiliza
@@ -179,7 +186,8 @@ constructor síncrono.
   conjunto va por caso y situación, no por rotación), `descripcionSistemaActivo` (spec 025: la
   descripción general del sistema activo, o cadena vacía si no tiene),
   `celdasJugadorSeleccionado` (spec 024: las celdas del ocupante seleccionado, o su bloque por
-  defecto si no tiene ninguna; siempre vacío fuera de defensa).
+  defecto si no tiene ninguna; siempre vacío fuera de defensa), `celdasFintaJugadorSeleccionado`
+  (spec 041: igual pero sobre `celdasFinta`, nunca con bloque por defecto).
 - Acciones: `activarSistema`, `seleccionarEquipo` (spec 032, mismo aviso de cambios sin guardar
   que las demás; activa el primero del catálogo del equipo nuevo, o ninguno si está vacío),
   `seleccionarRotacion`, `seleccionarCaso`/`seleccionarSituacion`/`seleccionarBloqueadores`
@@ -190,7 +198,17 @@ constructor síncrono.
   distingue de un id de jugador), `quitar`, `vaciar`, `pintarCelda`/`borrarCelda` (marcan o
   quitan una celda de la rejilla de responsabilidad de un ocupante en el borrador, spec 022; si
   `celdas` era `undefined`, parten del bloque por defecto en vez de vacío — spec 024, así que
-  pintar o borrar cualquiera de sus celdas materializa y congela la zona en vez de sustituirla),
+  pintar o borrar cualquiera de sus celdas materializa y congela la zona en vez de sustituirla;
+  spec 041: despachan sobre `celdas` o `celdasFinta` según la signal `modoPintado`, sin bloque por
+  defecto en modo finta), `accionArrastre`/`seleccionarAccionArrastre` (spec 044, sustituye al
+  interruptor `pintadoActivo` de la 041; tri-estado desde la spec 045 — `'pintar'`, `'mover'` o
+  `null` si se clica dos veces la misma opción, o si `seleccionarBloqueadores` deja la variante
+  sin bloqueadores mientras estaba en `'mover'`), `puedeMoverBloqueo` (spec 045: `false` sin
+  bloqueadores, incluida la postura inicial — deshabilita "Mover bloqueo" en la UI y hace que el
+  store ignore la selección aunque llegue igual) y `modoPintado`/`seleccionarModoPintado` (qué
+  campo afecta el pintado), `escalaSombra`/`cambiarEscalaSombra` (spec 044: entero 0-10 desde la
+  045, ajuste global persistido, puramente de pantalla — `ui/pista/pista.ts` escala solo el eje
+  lateral del polígono, nunca la profundidad; `domain/` no la conoce),
   `guardar` (en defensa llama a `guardarVarianteDefensa` en vez de `guardarFormacion`, incluyendo
   `desplazamientoSombraEdicion` si lo hay), `desplazarSombra`/`recentrarSombra` (spec 040: retocan
   o descartan el desplazamiento en edición; se persiste al llamar a `guardar`), `crear` (recibe el
@@ -244,9 +262,10 @@ Adaptadores hacia el mundo exterior.
   que no existe y queda aplazado — ADR 0028, así que este adaptador deja de ser una parada
   intermedia y pasa a ser el definitivo por tiempo indefinido). Mismo patrón (versión + data) que
   tenía `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la
-  app, no de un sistema concreto (ADR 0015). Sigue siendo un único documento de cuatro banderas
-  que se reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
-  `SistemaRepository` pudiera arriesgar aquí, solo se volvió asíncrono.
+  app, no de un sistema concreto (ADR 0015). Sigue siendo un único documento — de cuatro banderas
+  más `escalaSombra` (spec 044, versión 5 del payload) — que se reescribe entero en cada
+  `guardar()` (spec 031): no hay nada que la granularidad de `SistemaRepository` pudiera
+  arriesgar aquí, solo se volvió asíncrono.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`

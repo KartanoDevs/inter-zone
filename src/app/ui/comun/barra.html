@@ -1,0 +1,10 @@
+<div class="app-barra__pista">
+  <div class="app-barra__relleno" [style.width.%]="porcentaje()"></div>
+  <div class="app-barra__marcas">
+    @for (marca of marcas; track marca) {
+      <span class="app-barra__marca" [class.app-barra__marca--activa]="marca <= valor()"></span>
+    }
+  </div>
+  <div class="app-barra__agarre" [style.left.%]="porcentaje()"></div>
+</div>
+<span class="app-barra__lectura">{{ valor() }}</span>

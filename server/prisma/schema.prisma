@@ -155,6 +155,9 @@ model colocacion_defensa {
   explicacion  String?
   /// Mismos tres estados que `colocacion.celdas` (docs/modelo-de-datos.md §5).
   celdas       Int[]
+  /// Zona de finta (spec 041): campo paralelo a `celdas`, mismos tres estados. Se escribe y se
+  /// lee con SQL a mano, igual que `celdas` (ver el comentario de `colocacion.celdas` más abajo).
+  celdas_finta Int[]
 
   formacion formacion_defensa @relation(fields: [formacion_id], references: [id], onDelete: Cascade)
 

@@ -28,6 +28,10 @@
   fill: var(--text-main);
 }
 
+:host(.app-ficha--etiqueta-larga) .app-ficha__etiqueta {
+  font-size: 0.3px;
+}
+
 .app-ficha__posicion {
   font-family: var(--font-display);
   font-weight: 700;

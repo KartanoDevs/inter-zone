@@ -22,6 +22,7 @@ const RADIO_M = 0.45;
     '[class.app-ficha--falta]': "estado() === 'falta'",
     '[class.app-ficha--libero]': 'esLibero()',
     '[class.app-ficha--zaguera]': "linea() === 'zaguera'",
+    '[class.app-ficha--etiqueta-larga]': 'etiquetaLarga()',
     '[class.app-ficha--seleccionada]': 'seleccionada()',
     '[class.app-ficha--arrastrando]': 'arrastrando()',
     '[attr.transform]': 'transform()',
@@ -31,9 +32,10 @@ const RADIO_M = 0.45;
 export class FichaJugador {
   readonly punto = input.required<Punto>();
   readonly etiqueta = input.required<string>();
-  /** Posición rotacional 1..6 (P1..P6) que ocupa el jugador en la rotación activa. */
-  readonly posicion = input.required<number>();
-  /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo la etiqueta de rol. */
+  /** La etiqueta pequeña bajo la principal (spec 049): "P1".."P6" en recepción, "JD"/"JT" en
+   * defensa. Su primer carácter se pinta pequeño y el resto grande. */
+  readonly etiquetaPosicion = input.required<string>();
+  /** Ajuste global: si se pinta la ayuda de posición bajo la etiqueta de rol. */
   readonly mostrarPosicion = input(true);
   readonly estado = input<EstadoFicha>('normal');
   readonly linea = input<LineaFicha>('delantera');
@@ -45,9 +47,26 @@ export class FichaJugador {
 
   protected readonly radio = RADIO_M;
 
+  /** Solo las etiquetas de dos letras sin índice numérico (`CO`, hoy la única) son más anchas
+   * de lo que el círculo espera cómodamente (spec 042); `R1`, `C1`, `C2` ya encajaban y no se
+   * tocan. */
+  protected etiquetaLarga(): boolean {
+    return this.etiqueta().length > 1 && !/\d/.test(this.etiqueta());
+  }
+
   protected transform(): string {
     const { x, y } = this.punto();
     return `translate(${x} ${y})`;
+  }
+
+  /** El primer carácter de `etiquetaPosicion` ("P" o "J"), pintado pequeño. */
+  protected prefijoPosicion(): string {
+    return this.etiquetaPosicion().slice(0, 1);
+  }
+
+  /** El resto de `etiquetaPosicion` tras el prefijo ("1".."6", o "D"/"T"), pintado grande. */
+  protected cuerpoPosicion(): string {
+    return this.etiquetaPosicion().slice(1);
   }
 
   /** No propaga: el fondo de la pista tiene su propio `pointerdown` para el modo pintar (spec

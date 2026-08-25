@@ -121,6 +121,7 @@ interface FilaColocacionDefensaCruda {
   readonly y: number;
   readonly explicacion: string | null;
   readonly celdas: readonly number[] | null;
+  readonly celdas_finta: readonly number[] | null;
 }
 
 /** Todas las colocaciones de defensa de un sistema, con su variante de origen, en una sola
@@ -129,7 +130,7 @@ async function colocacionesDefensaDe(sistemaId: string): Promise<readonly FilaCo
   return prisma.$queryRaw<FilaColocacionDefensaCruda[]>`
     SELECT fd.id AS formacion_id, fd.caso, fd.situacion, fd.bloqueadores,
            fd.explicacion AS variante_explicacion, fd.sombra_dx, fd.sombra_dy,
-           cd.puesto, cd.x, cd.y, cd.explicacion, cd.celdas
+           cd.puesto, cd.x, cd.y, cd.explicacion, cd.celdas, cd.celdas_finta
     FROM colocacion_defensa cd
     JOIN formacion_defensa fd ON fd.id = cd.formacion_id
     WHERE fd.sistema_id = ${sistemaId}::uuid
@@ -174,6 +175,9 @@ function ensamblarDefensas(colocacionesCrudas: readonly FilaColocacionDefensaCru
     }
     if (c.celdas !== null) {
       colocacion = { ...colocacion, celdas: c.celdas.map(indiceACelda) };
+    }
+    if (c.celdas_finta !== null) {
+      colocacion = { ...colocacion, celdasFinta: c.celdas_finta.map(indiceACelda) };
     }
     entrada.colocaciones.push(colocacion);
   }
@@ -346,10 +350,11 @@ async function escribirDefensas(tx: Transaccion, sistema: Sistema): Promise<void
     });
     for (const colocacion of variante.formacion) {
       const celdas = colocacion.celdas === undefined ? null : colocacion.celdas.map(celdaAIndice);
+      const celdasFinta = colocacion.celdasFinta === undefined ? null : colocacion.celdasFinta.map(celdaAIndice);
       await tx.$executeRaw`
-        INSERT INTO colocacion_defensa (formacion_id, puesto, x, y, explicacion, celdas)
+        INSERT INTO colocacion_defensa (formacion_id, puesto, x, y, explicacion, celdas, celdas_finta)
         VALUES (${formacionId}::uuid, ${colocacion.puesto}, ${colocacion.punto.x}, ${colocacion.punto.y},
-                ${colocacion.explicacion ?? null}, ${celdas}::integer[])
+                ${colocacion.explicacion ?? null}, ${celdas}::integer[], ${celdasFinta}::integer[])
       `;
     }
   }

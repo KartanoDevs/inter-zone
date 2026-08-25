@@ -18,6 +18,7 @@ const AJUSTES_POR_DEFECTO = {
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
   mostrarNumerosMetros: false,
+  escalaSombra: 5,
 };
 
 describe('LocalStorageAjustesRepository', () => {
@@ -34,6 +35,7 @@ describe('LocalStorageAjustesRepository', () => {
       ayudaPosicionDesactivada: true,
       ordenRotacionCronologico: true,
       mostrarNumerosMetros: true,
+      escalaSombra: 8,
     };
 
     await repositorio.guardar(ajustes);
@@ -61,6 +63,7 @@ describe('LocalStorageAjustesRepository', () => {
           ayudaPosicionDesactivada: true,
           ordenRotacionCronologico: true,
           mostrarNumerosMetros: true,
+          escalaSombra: 8,
         },
       }),
     );
@@ -88,6 +91,47 @@ describe('LocalStorageAjustesRepository', () => {
       JSON.stringify({
         version: 3,
         data: { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true },
+      }),
+    );
+    const repositorio = new LocalStorageAjustesRepository(almacen);
+
+    await expect(repositorio.leer()).resolves.not.toThrow();
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+  });
+
+  it('044-E5/E8: una versión 4 con forma incompatible (sin escalaSombra) tampoco se lee a ciegas', async () => {
+    const almacen = new AlmacenEnMemoria();
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({
+        version: 4,
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
+          mostrarNumerosMetros: true,
+        },
+      }),
+    );
+    const repositorio = new LocalStorageAjustesRepository(almacen);
+
+    await expect(repositorio.leer()).resolves.not.toThrow();
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+  });
+
+  it('045-E8: una versión 5 con escalaSombra en el rango antiguo (0-100) no se reinterpreta, se descarta', async () => {
+    const almacen = new AlmacenEnMemoria();
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({
+        version: 5,
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
+          mostrarNumerosMetros: true,
+          escalaSombra: 75,
+        },
       }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);

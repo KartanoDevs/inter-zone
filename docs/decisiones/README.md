@@ -47,3 +47,5 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0031](0031-se-retira-localstorage-sistema-repository.md) | Se retira `LocalStorageSistemaRepository` | Aceptada |
 | [0032](0032-sombra-poligono-no-rejilla.md) | La sombra de bloqueo es geometría derivada: polígono, no rejilla | Aceptada |
 | [0033](0033-desplazamiento-sombra-sin-posicion-atacante.md) | Del atacante se sigue sin persistir la posición; se persiste el retoque de la sombra | Aceptada |
+| [0034](0034-cambiar-sustituto-libero-hereda-el-punto.md) | Cambiar a quién sustituye el líbero hereda el punto de quien sale | Aceptada |
+| [0035](0035-zona-de-finta-campo-paralelo.md) | La zona de finta es un campo paralelo, no un discriminador dentro de `Celda` | Aceptada |

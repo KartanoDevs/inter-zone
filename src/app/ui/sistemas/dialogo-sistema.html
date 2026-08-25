@@ -32,10 +32,9 @@
       @for (equipo of equipos; track equipo) {
         <label>
           <input
-            type="radio"
-            name="equipo"
-            [checked]="equipoSeleccionado() === equipo"
-            (change)="equipoSeleccionado.set(equipo)"
+            type="checkbox"
+            [checked]="equiposSeleccionados().has(equipo)"
+            (change)="alternarEquipo(equipo)"
           />
           {{ nombreEquipo[equipo] }}
         </label>
@@ -45,7 +44,12 @@
 
   <ng-container acciones>
     <button type="button" class="app-boton app-boton--secundario" (click)="cancelar.emit()">Cancelar</button>
-    <button type="button" class="app-boton app-boton--primario" (click)="emitirConfirmacion(nombreCampo.value)">
+    <button
+      type="button"
+      class="app-boton app-boton--primario"
+      [disabled]="mostrarTipo() && !puedeConfirmar()"
+      (click)="emitirConfirmacion(nombreCampo.value)"
+    >
       Confirmar
     </button>
   </ng-container>

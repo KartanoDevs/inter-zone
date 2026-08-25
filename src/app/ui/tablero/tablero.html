@@ -71,8 +71,10 @@
           [situacionActiva]="store.situacionActiva()"
           [mostrarZonas]="esDefensa()"
           [celdasVistaConjunto]="celdasVistaConjunto()"
+          [celdasFintaVistaConjunto]="celdasFintaVistaConjunto()"
           [indiceColorSeleccionado]="indiceColorSeleccionado()"
           [sombra]="sombra()"
+          [accionArrastre]="store.accionArrastre()"
           (fichaAgarrada)="onAgarrarFicha($event)"
           (rivalAgarrado)="onAgarrarRival($event)"
           (sombraAgarrada)="onAgarrarSombra($event)"
@@ -149,19 +151,19 @@
               (guardar)="guardarExplicacion($event)"
             ></app-panel-ensenanza>
           }
-          @case ('zonas') {
+          @case ('pintado') {
             @if (esDefensa()) {
-              <div class="app-tablero__leyenda-zonas">
-                @for (entrada of leyendaVistaConjunto(); track entrada.etiqueta) {
-                  <div class="app-tablero__leyenda-zonas-fila">
-                    <span
-                      class="app-tablero__leyenda-zonas-muestra"
-                      [style.background]="'var(' + paletaColores[entrada.indiceColor] + ')'"
-                    ></span>
-                    <span>{{ entrada.etiqueta }}</span>
-                  </div>
-                }
-              </div>
+              <app-panel-pintado
+                [accionArrastre]="store.accionArrastre()"
+                [puedeMoverBloqueo]="store.puedeMoverBloqueo()"
+                [modoPintado]="store.modoPintado()"
+                [escalaSombra]="store.escalaSombra()"
+                [leyenda]="leyendaVistaConjunto()"
+                [paletaColores]="paletaColores"
+                (seleccionarAccionArrastre)="store.seleccionarAccionArrastre($event)"
+                (seleccionarModoPintado)="store.seleccionarModoPintado($event)"
+                (cambiarEscalaSombra)="cambiarEscalaSombra($event)"
+              ></app-panel-pintado>
             }
           }
           @case ('ajustes') {
@@ -217,16 +219,16 @@
         <button
           type="button"
           role="tab"
-          [attr.aria-selected]="tab() === 'zonas'"
+          [attr.aria-selected]="tab() === 'pintado'"
           [disabled]="!esDefensa()"
-          [attr.title]="esDefensa() ? null : 'Las zonas de responsabilidad solo existen en defensa (spec 024)'"
-          (click)="seleccionarTab('zonas')"
+          [attr.title]="esDefensa() ? null : 'El pintado de zonas solo existe en defensa (spec 024)'"
+          (click)="seleccionarTab('pintado')"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <polygon points="12,3.5 20.5,8 12,12.5 3.5,8" />
             <polyline points="3.5,12.6 12,17.1 20.5,12.6" />
           </svg>
-          Zonas
+          Pintado
         </button>
         <button
           type="button"

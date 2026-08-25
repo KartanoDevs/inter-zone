@@ -8,10 +8,12 @@ export interface AlmacenClaveValor {
 }
 
 const CLAVE = 'interzone.ajustes';
-/** 4: se añadió `mostrarNumerosMetros` a la forma persistida. Sin `migrar()` real, un
- * payload de una versión anterior (sin ese campo) se trata como no legible, mismo patrón que
+/** 6: `escalaSombra` cambió de rango y de significado (spec 045: antes 0-100 escalando todo el
+ * polígono, ahora 0-10 entero escalando solo el ancho) — un valor de la versión 5 ya no
+ * significa lo mismo, así que se descarta igual que si el campo no existiera. Sin `migrar()`
+ * real, un payload de una versión anterior se trata como no legible, mismo patrón que
  * `LocalStorageSistemaRepository`. */
-const VERSION_ACTUAL = 4;
+const VERSION_ACTUAL = 6;
 
 interface Payload {
   readonly version: number;
@@ -23,6 +25,7 @@ const AJUSTES_POR_DEFECTO: Ajustes = {
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
   mostrarNumerosMetros: false,
+  escalaSombra: 5,
 };
 
 function esPayloadValido(valor: unknown): valor is Payload {
@@ -36,6 +39,7 @@ function esPayloadValido(valor: unknown): valor is Payload {
       ayudaPosicionDesactivada?: unknown;
       ordenRotacionCronologico?: unknown;
       mostrarNumerosMetros?: unknown;
+      escalaSombra?: unknown;
     };
   };
   return (
@@ -43,7 +47,8 @@ function esPayloadValido(valor: unknown): valor is Payload {
     typeof conVersion.data?.validacionDesactivada === 'boolean' &&
     typeof conVersion.data?.ayudaPosicionDesactivada === 'boolean' &&
     typeof conVersion.data?.ordenRotacionCronologico === 'boolean' &&
-    typeof conVersion.data?.mostrarNumerosMetros === 'boolean'
+    typeof conVersion.data?.mostrarNumerosMetros === 'boolean' &&
+    typeof conVersion.data?.escalaSombra === 'number'
   );
 }
 

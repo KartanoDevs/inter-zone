@@ -70,7 +70,7 @@
 .app-pista__colocador-rival-etiqueta {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.32px;
+  font-size: 0.24px;
   fill: var(--neon-purple);
 }
 
@@ -89,6 +89,16 @@
   stroke: rgba(255, 255, 255, 0.25);
   stroke-width: 0.015;
   pointer-events: none;
+}
+
+/* Textura de puntos de la zona de finta (spec 041, E9): se dibuja encima del mismo relleno de
+ * color que la zona de defensa, así que solo aporta los puntos, no un color nuevo. */
+.app-pista__celda-finta-textura {
+  pointer-events: none;
+}
+
+.app-pista__punto-finta {
+  fill: rgba(0, 0, 0, 0.55);
 }
 
 .app-pista__rejilla-linea {

@@ -313,4 +313,150 @@ describe('cambiarSustitutoLibero', () => {
     // 017-E8: la rotación 2 no ha cambiado su sustituto -> su formación queda intacta.
     expect(resultado.formaciones[2]).toEqual(formacionR2);
   });
+
+  it('043-E1: cambiar el sustituto mantiene los seis colocados en esa rotación', () => {
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    const sistemaConFormacion: Sistema = {
+      ...sistemaConLibero('s1', 'Sistema'),
+      plantilla: plantillaCentral2,
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 } },
+          { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: { x: 4.5, y: 6 } },
+          { jugador: opuesto, punto: { x: 8, y: 8 } },
+        ],
+      },
+    };
+
+    const resultado = cambiarSustitutoLibero(sistemaConFormacion, 1, 'opuesto');
+
+    expect(resultado.formaciones[1]).toHaveLength(6);
+  });
+
+  it('043-E2: quien entra hereda el punto exacto de quien sale, y el líbero hereda el de quien acaba de salir', () => {
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    const puntoDeLibero = { x: 4.5, y: 6 };
+    const puntoDeOpuesto = { x: 8, y: 8 };
+    const sistemaConFormacion: Sistema = {
+      ...sistemaConLibero('s1', 'Sistema'),
+      plantilla: plantillaCentral2,
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 } },
+          { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: puntoDeLibero },
+          { jugador: opuesto, punto: puntoDeOpuesto },
+        ],
+      },
+    };
+
+    const resultado = cambiarSustitutoLibero(sistemaConFormacion, 1, 'opuesto');
+
+    const formacionR1 = resultado.formaciones[1]!;
+    const central2Vuelto = formacionR1.find((c) => c.jugador.id === 'central2');
+    const liberoNuevo = formacionR1.find((c) => c.jugador.id === 'libero');
+    expect(central2Vuelto?.punto).toEqual(puntoDeLibero);
+    expect(liberoNuevo?.punto).toEqual(puntoDeOpuesto);
+  });
+
+  it('043-E3: cambiar a "ninguno" devuelve al titular sustituido, en el punto donde estaba el líbero', () => {
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    const puntoDeLibero = { x: 4.5, y: 6 };
+    const sistemaConFormacion: Sistema = {
+      ...sistemaConLibero('s1', 'Sistema'),
+      plantilla: plantillaCentral2,
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 } },
+          { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: puntoDeLibero },
+          { jugador: opuesto, punto: { x: 8, y: 8 } },
+        ],
+      },
+    };
+
+    const resultado = cambiarSustitutoLibero(sistemaConFormacion, 1, null);
+
+    const formacionR1 = resultado.formaciones[1]!;
+    expect(formacionR1).toHaveLength(6);
+    expect(formacionR1.map((c) => c.jugador.id)).not.toContain('libero');
+    expect(formacionR1.find((c) => c.jugador.id === 'central2')?.punto).toEqual(puntoDeLibero);
+  });
+
+  it('043-E4: elegir un titular delantero saca al líbero sin que nadie herede el punto de nadie', () => {
+    // En R1 (ordenConCentral2): receptor1 ocupa P2, línea delantera.
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    const puntoDeReceptor1 = { x: 4.5, y: 1 };
+    const puntoDeLibero = { x: 4.5, y: 6 };
+    const sistemaConFormacion: Sistema = {
+      ...sistemaConLibero('s1', 'Sistema'),
+      plantilla: plantillaCentral2,
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 } },
+          { jugador: receptor1, punto: puntoDeReceptor1 },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: puntoDeLibero },
+          { jugador: opuesto, punto: { x: 8, y: 8 } },
+        ],
+      },
+    };
+
+    const resultado = cambiarSustitutoLibero(sistemaConFormacion, 1, 'receptor1');
+
+    const formacionR1 = resultado.formaciones[1]!;
+    expect(formacionR1).toHaveLength(6);
+    expect(formacionR1.map((c) => c.jugador.id)).not.toContain('libero');
+    expect(formacionR1.find((c) => c.jugador.id === 'receptor1')?.punto).toEqual(puntoDeReceptor1);
+    expect(formacionR1.find((c) => c.jugador.id === 'central2')?.punto).toEqual(puntoDeLibero);
+  });
+
+  it('043-E5: cambiar el sustituto de una rotación no toca las formaciones de las demás', () => {
+    const plantillaCentral2 = plantillaConLibero('central2');
+    const [colocador, receptor1, receptor2, central1, , opuesto] = plantillaCentral2.ordenSaque;
+    const libero = plantillaCentral2.libero!.jugador;
+    const formacionR2 = [{ jugador: colocador, punto: { x: 5, y: 5 } }];
+    const sistemaConFormacion: Sistema = {
+      ...sistemaConLibero('s1', 'Sistema'),
+      plantilla: plantillaCentral2,
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 } },
+          { jugador: receptor1, punto: { x: 4.5, y: 1 } },
+          { jugador: receptor2, punto: { x: 1, y: 1 } },
+          { jugador: central1, punto: { x: 1, y: 6 } },
+          { jugador: libero, punto: { x: 4.5, y: 6 } },
+          { jugador: opuesto, punto: { x: 8, y: 8 } },
+        ],
+        2: formacionR2,
+      },
+    };
+
+    const resultado = cambiarSustitutoLibero(sistemaConFormacion, 1, 'opuesto');
+
+    expect(resultado.formaciones[2]).toEqual(formacionR2);
+  });
+
+  it('043-E6: sin formación guardada todavía, cambiar el sustituto solo cambia la plantilla', () => {
+    const resultado = cambiarSustitutoLibero(sistemaConLibero('s1', 'Sistema'), 3, 'opuesto');
+
+    expect(resultado.formaciones[3]).toBeUndefined();
+    expect(resultado.plantilla.libero?.sustitutosPorRotacion[3]).toBe('opuesto');
+  });
 });

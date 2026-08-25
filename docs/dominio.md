@@ -133,7 +133,11 @@ colocador (spec 038). Un sistema de defensa se organiza por:
 
 - **Caso del colocador rival**: `delantero` (ocupa una de las tres zonas de la red) o `trasero`
   (está en zaga). Es un dato que el entrenador declara, no algo que se derive de una rotación
-  rival que no existe en el modelo.
+  rival que no existe en el modelo. En el diagrama, el colocador rival se dibuja siempre en el
+  mismo punto de la red, sea cual sea su caso (spec 042): un colocador trasero no arma desde el
+  fondo, penetra hasta la red para hacerlo — al mismo sitio, entre las zonas 2 y 3, donde ya se
+  dibuja al delantero. El caso solo decide qué situaciones de ataque existen para su equipo, no
+  dónde se pinta la ficha.
 - **Situación de ataque**: la postura inicial (sin atacante marcado), o una de las zonas por las
   que puede atacar el rival. Las situaciones disponibles dependen del caso:
 
@@ -294,13 +298,22 @@ Motivo en `docs/decisiones/0004-rejilla-de-responsabilidad.md`.
 - Cada celda puede estar asignada a cero, uno o varios jugadores.
 - **Cualquiera de los seis puede tener celdas asignadas**, no solo quien recibe (spec 022): los
   seis defienden zona, no solo uno.
-- **Zona por defecto** (spec 024): un jugador seleccionado sin ninguna celda pintada todavía
-  muestra, como zona, el bloque de 2×2 celdas (1 m²) más cercano a su posición. Se deriva de su
-  punto y nunca se almacena — sigue a la ficha si se mueve. En cuanto se pinta o se borra
-  cualquier celda suya, deja de recalcularse: la zona pasa a ser la pintada a mano, ya fija,
-  aunque se mueva la ficha después.
+- **Sin zona por defecto** (spec 024, retirada por la spec 047): un jugador seleccionado sin
+  ninguna celda pintada todavía no muestra ninguna zona — ni de defensa ni de finta. La spec 024
+  llegó a mostrar un bloque de 2×2 celdas (1 m²) junto a su posición antes de pintar nada; en
+  uso real molestaba más de lo que ayudaba, así que se quitó. La zona empieza a existir solo
+  cuando el entrenador pinta la primera celda.
 - **Hueco:** celda dentro de las líneas del campo con cero jugadores asignados.
 - **Conflicto:** celda con dos o más jugadores asignados.
+
+### Zona de finta
+
+Responsabilidad distinta de la zona de defensa (spec 041): dónde cubre cada puesto las fintas y
+los toques suaves, en vez de un remate. Es una segunda rejilla sobre el mismo campo, propia de
+cada puesto — una celda puede ser zona de defensa y zona de finta a la vez, o solo una de las dos.
+Mismas reglas que la zona de defensa (solo existe en defensa; sin bloque por defecto, a
+diferencia de la zona de defensa) salvo por eso: nunca se deriva de la posición del puesto, solo
+se pinta a mano.
 
 Huecos y conflictos son **siempre derivados** de la asignación. No se almacenan. **Todavía no
 se calculan** (specs 014-015 de la hoja de ruta, sin escribir): hoy la rejilla solo se pinta y

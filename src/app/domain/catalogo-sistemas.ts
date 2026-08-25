@@ -1,4 +1,4 @@
-import type { EquipoId, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
+import type { EquipoId, Jugador, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
 import { jugadoresEnPista } from './rotacion';
 
 function nombreValido(nombre: string): boolean {
@@ -74,15 +74,18 @@ export function ordenarCatalogo(sistemas: readonly Sistema[]): readonly Sistema[
 /**
  * Cambia a qué titular sustituye el líbero, en una única rotación (spec 017: el sustituto se
  * declara rotación a rotación, no uno solo para las seis). `null` significa que en esa
- * rotación no sustituye a nadie. Purga solo la formación guardada de esa rotación, con el
- * roster que le corresponde en la plantilla nueva; las demás rotaciones no se tocan, porque
- * su sustituto no ha cambiado.
+ * rotación no sustituye a nadie. La formación guardada de esa rotación mantiene siempre a los
+ * seis (invariante 2, `docs/dominio.md`): quien entra en pista hereda el punto exacto de quien
+ * sale, con su explicación de enseñanza y sus celdas si las tenía — hablan de ese sitio de la
+ * pizarra, no de quién lo ocupó antes (spec 043, corrige 017-E8). Las demás rotaciones no se
+ * tocan, porque su sustituto no ha cambiado.
  */
 export function cambiarSustitutoLibero(sistema: Sistema, rotacion: 1 | 2 | 3 | 4 | 5 | 6, sustituidoId: string | null): Sistema {
   const libero = sistema.plantilla.libero;
   if (!libero) {
     return sistema;
   }
+  const rosterAnterior = jugadoresEnPista(sistema.plantilla, rotacion);
   const nuevaPlantilla = {
     ...sistema.plantilla,
     libero: { ...libero, sustitutosPorRotacion: { ...libero.sustitutosPorRotacion, [rotacion]: sustituidoId } },
@@ -91,10 +94,20 @@ export function cambiarSustitutoLibero(sistema: Sistema, rotacion: 1 | 2 | 3 | 4
   if (!formacionRotacion) {
     return { ...sistema, plantilla: nuevaPlantilla };
   }
-  const idsValidos = new Set(jugadoresEnPista(nuevaPlantilla, rotacion).map((jugador) => jugador.id));
+  const rosterNuevo = jugadoresEnPista(nuevaPlantilla, rotacion);
+  const relevos = new Map<string, Jugador>();
+  rosterAnterior.forEach((anterior, indice) => {
+    const nuevo = rosterNuevo[indice];
+    if (nuevo.id !== anterior.id) {
+      relevos.set(anterior.id, nuevo);
+    }
+  });
   const formaciones = {
     ...sistema.formaciones,
-    [rotacion]: formacionRotacion.filter((colocacion) => idsValidos.has(colocacion.jugador.id)),
+    [rotacion]: formacionRotacion.map((colocacion) => {
+      const relevo = relevos.get(colocacion.jugador.id);
+      return relevo ? { ...colocacion, jugador: relevo } : colocacion;
+    }),
   };
   return { ...sistema, plantilla: nuevaPlantilla, formaciones };
 }

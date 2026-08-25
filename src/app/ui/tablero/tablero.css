@@ -388,29 +388,6 @@ app-panel-ensenanza + app-panel-ensenanza {
   margin-top: var(--space-2);
 }
 
-/* ---- leyenda de zonas ---- */
-
-.app-tablero__leyenda-zonas {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.app-tablero__leyenda-zonas-fila {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-
-.app-tablero__leyenda-zonas-muestra {
-  width: 11px;
-  height: 11px;
-  border-radius: 3px;
-  flex: 0 0 auto;
-}
-
 /* ---- ventanas futuras: Examen, Cuenta (specs sin escribir) ---- */
 
 .app-tablero__futura {

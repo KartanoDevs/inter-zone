@@ -1,0 +1,81 @@
+:host {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  touch-action: none;
+  cursor: grab;
+}
+
+:host(:active) {
+  cursor: grabbing;
+}
+
+:host(:focus-visible) {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+  border-radius: 15px;
+}
+
+.app-barra__pista {
+  position: relative;
+  flex: 1;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.app-barra__relleno {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 11px;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.25), var(--neon-cyan));
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4) inset;
+}
+
+.app-barra__marcas {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 5px;
+}
+
+.app-barra__marca {
+  width: 2px;
+  height: 7px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-barra__marca--activa {
+  background: var(--bg-darker);
+}
+
+.app-barra__agarre {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-main);
+  border: 2px solid var(--neon-cyan);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.55);
+  z-index: 2;
+}
+
+.app-barra__lectura {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+  text-align: right;
+}

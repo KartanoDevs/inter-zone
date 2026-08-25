@@ -2,32 +2,19 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output
 import type { CasoColocador, ConfiguracionRoles, Punto, SituacionDefensa } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { TAMANO_CELDA } from '../../domain/rejilla';
+import { PUNTO_POR_SITUACION } from '../../domain/sistema-defensa-por-defecto';
 import { Modal } from '../comun/modal';
 import { ORDEN_ROLES } from '../comun/orden-roles';
 import { FichaJugador, type EstadoFicha, type LineaFicha } from './ficha-jugador';
 
-/** Punto fijo donde se pinta al atacante para cada situación (spec 038): la ficha no guarda una
- * posición exacta, solo la situación ya derivada — cada pestaña la muestra siempre en el mismo
- * sitio. Un poco más cerca de la red que en la spec 021 (y = -1.2 en vez de -1.5): a petición del
- * entrenador, para que quede más claro que ataca desde la línea delantera. La postura inicial no
- * tiene punto: no hay ficha "A" en esa situación (E11). El ataque por 1 es la zaga derecha rival:
- * no tiene un tercio de red propio, se sitúa por detrás de la línea de ataque, en el lado
- * derecho — el espejo de la banda de zona 4, pero desde la zaga. */
-export const PUNTO_POR_SITUACION: Readonly<Partial<Record<SituacionDefensa, Punto>>> = {
-  z2: { x: 1, y: -1.2 },
-  z3: { x: 4.5, y: -1.2 },
-  z4: { x: 8, y: -1.2 },
-  z1: { x: 1, y: -3.5 },
-  pipe: { x: 4.5, y: -3.5 },
-};
+export { PUNTO_POR_SITUACION };
 
-/** Punto fijo del colocador rival según el caso (spec 038, E8): delantero, cerca de la red y en
- * el límite entre las zonas 2 y 3 rivales, a petición del entrenador; trasero, en su zona 1, en
- * el fondo de su campo. */
-const PUNTO_COLOCADOR_RIVAL: Readonly<Record<CasoColocador, Punto>> = {
-  delantero: { x: 3.0, y: -0.5 },
-  trasero: { x: 7.5, y: -3.5 },
-};
+/** Punto fijo del colocador rival, el mismo sea cual sea su caso (spec 042): cerca de la red, en
+ * el límite entre las zonas 2 y 3 rivales. Un colocador trasero no arma desde el fondo — penetra
+ * hasta ahí para hacerlo, así que dibujarlo también en el fondo (como hacía la spec 038, E8)
+ * enseñaba algo que no pasa en pista. Que sea delantero o trasero sigue decidiendo qué
+ * situaciones de ataque existen (`situacionesDe`); solo cambia dónde se dibuja la ficha. */
+const PUNTO_COLOCADOR_RIVAL: Punto = { x: 3.0, y: -0.5 };
 
 /** Paleta de la vista de conjunto (spec 023), en el mismo orden que `CLAVES_ORDEN_COLOR` de
  * `Tablero`: colocador, receptor1, receptor2, central1, central2, opuesto, líbero. Se exporta
@@ -59,8 +46,11 @@ export interface FichaVista {
   readonly id: string;
   readonly punto: Punto;
   readonly etiqueta: string;
-  /** Posición rotacional 1..6 (P1..P6) que ocupa el jugador en la rotación activa. */
-  readonly posicion: number;
+  /** La etiqueta pequeña bajo la principal (spec 049): "P1".."P6" en recepción (posición
+   * rotacional real), "JD"/"JT" en defensa (jugador delantero/zaguero — sin rotación de la que
+   * derivar una posición, spec 038). Su primer carácter se pinta pequeño y el resto grande
+   * (`ficha-jugador.html`), igual que ya distinguía "P" de "1" antes de esta spec. */
+  readonly etiquetaPosicion: string;
   readonly estado: EstadoFicha;
   readonly linea: LineaFicha;
   readonly esLibero: boolean;
@@ -98,11 +88,13 @@ const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
  * normal solo cuando el sistema activo es de defensa — en recepción no hay nada de esto. */
 const ENTRADAS_LEYENDA_DEFENSA: readonly EntradaLeyenda[] = [
   { etiqueta: 'A', nombre: 'Atacante' },
-  { etiqueta: 'C', nombre: 'Colocador rival' },
+  { etiqueta: 'CR', nombre: 'Colocador rival' },
   { etiqueta: 'CO', nombre: 'Colocador u opuesto' },
   { etiqueta: 'R', nombre: 'Receptor' },
-  { etiqueta: 'C', nombre: 'Central' },
+  { etiqueta: 'Ce', nombre: 'Central' },
   { etiqueta: 'L', nombre: 'Líbero' },
+  { etiqueta: 'JD', nombre: 'Jugador delantero' },
+  { etiqueta: 'JT', nombre: 'Jugador trasero' },
 ];
 
 /**
@@ -137,12 +129,22 @@ export class Pista {
   readonly mostrarZonas = input(false);
   /** Todas las celdas pintadas de la formación activa, con su color por jugador (spec 023). */
   readonly celdasVistaConjunto = input<readonly CeldaConjunto[]>([]);
+  /** Celdas de zona de finta (spec 041): mismo dato que `celdasVistaConjunto`, se pintan del
+   * mismo color de su puesto pero con una textura de puntos encima, para distinguirlas de la
+   * zona de defensa sólida. */
+  readonly celdasFintaVistaConjunto = input<readonly CeldaConjunto[]>([]);
   /** Índice de color del jugador seleccionado: su zona se pinta a plena intensidad; las de los
    * demás se atenúan (spec 024, E12-E13). */
   readonly indiceColorSeleccionado = input<number | null>(null);
-  /** La sombra de bloqueo ya calculada (spec 040): uno o más polígonos, en metros. Nunca en
-   * recepción (E15) — es `Tablero` quien decide si la pasa o no. */
+  /** La sombra de bloqueo ya calculada (spec 040), con la escala de pantalla (spec 044/045) ya
+   * aplicada por `sombraDeBloqueo`: uno o más polígonos, en metros, listos para dibujar tal
+   * cual. Nunca en recepción (E15) — es `Tablero` quien decide si la pasa o no. */
   readonly sombra = input<readonly (readonly Punto[])[]>([]);
+  /** Con la acción de arrastre en "pintar" (spec 044, antes un interruptor on/off en la 041,
+   * E11), la sombra deja de capturar el puntero: hace falta poder pintar lo que queda debajo
+   * suyo, sin dejar de poder arrastrarla en "mover bloqueo". Con `null` (spec 045: acción
+   * deseleccionada) tampoco captura — no hay nada que hacer con la sombra en ese estado. */
+  readonly accionArrastre = input<'pintar' | 'mover' | null>('pintar');
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
@@ -157,9 +159,11 @@ export class Pista {
   protected readonly tamanoCelda = TAMANO_CELDA;
   protected readonly ladoPatron = LADO_PATRON;
 
-  /** La leyenda normal, y en defensa también las entradas propias de defensa (spec 038, E21). */
+  /** La leyenda de recepción, o la de defensa — nunca las dos a la vez (spec 038, E21,
+   * corregida en una spec posterior): las etiquetas de recepción (roles) no existen en defensa,
+   * que solo usa las suyas propias por puesto. */
   protected readonly entradasLeyenda = computed<readonly EntradaLeyenda[]>(() =>
-    this.mostrarRival() ? [...ENTRADAS_LEYENDA, ...ENTRADAS_LEYENDA_DEFENSA] : ENTRADAS_LEYENDA,
+    this.mostrarRival() ? ENTRADAS_LEYENDA_DEFENSA : ENTRADAS_LEYENDA,
   );
 
   /** El punto de la ficha "A" para la situación activa (spec 038): `null` en la postura inicial
@@ -169,18 +173,16 @@ export class Pista {
     return situacion ? (PUNTO_POR_SITUACION[situacion] ?? null) : null;
   });
 
-  /** El punto de la ficha "C" del colocador rival (spec 038, E8): siempre presente mientras el
-   * sistema sea de defensa, con independencia de la situación activa. */
-  protected readonly puntoColocadorRival = computed<Punto | null>(() => {
-    const caso = this.casoActivo();
-    return caso ? PUNTO_COLOCADOR_RIVAL[caso] : null;
-  });
+  /** El punto de la ficha "C" del colocador rival: siempre presente mientras el sistema sea de
+   * defensa, con independencia de la situación activa y del caso (spec 042: es el mismo punto
+   * delantero o trasero). */
+  protected readonly puntoColocadorRival = computed<Punto | null>(() => (this.casoActivo() ? PUNTO_COLOCADOR_RIVAL : null));
 
   /** Un patrón de franjas diagonales por cada combinación de colores que comparte alguna
    * celda (spec 023, E3) — una celda de un solo jugador no necesita patrón, solo su color. */
   protected readonly patronesFranjas = computed<readonly PatronFranjas[]>(() => {
     const combos = new Map<string, readonly number[]>();
-    for (const celda of this.celdasVistaConjunto()) {
+    for (const celda of [...this.celdasVistaConjunto(), ...this.celdasFintaVistaConjunto()]) {
       if (celda.indicesColor.length > 1) {
         const ordenados = [...new Set(celda.indicesColor)].sort((a, b) => a - b);
         combos.set(ordenados.join('-'), ordenados);
@@ -207,7 +209,8 @@ export class Pista {
     return activo === null || celda.indicesColor.includes(activo) ? 1 : 0.35;
   }
 
-  /** El atributo `points` de un `<polygon>` SVG a partir de un polígono en metros (spec 040). */
+  /** El atributo `points` de un `<polygon>` SVG a partir de un polígono en metros (spec 040),
+   * ya con la escala de pantalla aplicada por el dominio (spec 044/045). */
   protected puntosSvg(poligono: readonly Punto[]): string {
     return poligono.map((p) => `${p.x},${p.y}`).join(' ');
   }
@@ -260,8 +263,15 @@ export class Pista {
   }
 
   /** No propaga: por el mismo motivo que `onRivalPointerDown` — si llegara al fondo, dispararía
-   * también el modo pintar. */
+   * también el modo pintar. En "pintar" (spec 044) se deja pasar el evento tal cual, sin
+   * capturarlo: pintar debajo de la sombra importa más que poder arrastrarla justo en ese
+   * momento — para moverla, hay que elegir "Mover bloqueo" primero. */
   protected onSombraPointerDown(evento: PointerEvent): void {
+    if (this.accionArrastre() !== 'mover') {
+      // spec 045: en 'pintar' se deja pasar (E11 de la 044); en null tampoco hay nada que
+      // mover, así que se deja pasar igual — el fondo ya está gobernado por la misma acción.
+      return;
+    }
     evento.stopPropagation();
     this.sombraAgarrada.emit(evento);
   }

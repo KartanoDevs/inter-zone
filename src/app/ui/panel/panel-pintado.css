@@ -1,0 +1,200 @@
+/* ---- acción: segmentado grande, con color completo en el activo (spec 045, estilo 2) ---- */
+
+.app-pintado__segmentado {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 11px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 12px;
+}
+
+.app-pintado__segmentado input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-pintado__segmentado label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 11px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--bg-card-alt);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.app-pintado__segmentado label svg {
+  width: 18px;
+  height: 18px;
+}
+
+.app-pintado__segmentado input:checked + .app-pintado__rol-pintar {
+  background: var(--neon-cyan);
+  color: var(--bg-darker);
+}
+
+.app-pintado__segmentado input:checked + .app-pintado__rol-mover {
+  background: var(--neon-amber);
+  color: var(--bg-darker);
+}
+
+.app-pintado__segmentado input:focus-visible + label {
+  outline: 2px solid var(--text-main);
+  outline-offset: -2px;
+}
+
+.app-pintado__rol--deshabilitado {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---- control: barra de ancho del bloqueo ---- */
+
+.app-pintado__control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.app-pintado__control-etiqueta {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.app-pintado__barra {
+  width: 100%;
+}
+
+/* ---- qué se pinta ---- */
+
+.app-pintado__modo {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.app-pintado__modo button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.app-pintado__modo button::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.app-pintado__modo button:last-child::before {
+  background-image: radial-gradient(circle at 2.8px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 8.4px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 2.8px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 8.4px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px);
+  background-color: currentColor;
+  opacity: 1;
+}
+
+.app-pintado__modo-boton--activo {
+  background: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+  color: var(--bg-darker);
+  box-shadow: 0 0 14px -4px rgba(0, 229, 255, 0.7);
+}
+
+.app-pintado__modo-boton--activo::before {
+  opacity: 1;
+}
+
+/* ---- leyenda: chips con las dos zonas de cada puesto, puntos de finta legibles ---- */
+
+.app-pintado__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.app-pintado__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px 6px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.app-pintado__chip-par {
+  display: flex;
+  gap: 3px;
+}
+
+.app-pintado__chip-par span {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+}
+
+/* Puntos calibrados al tamaño real de la muestra (13px): cuatro puntos claramente visibles, no
+   un patrón genérico demasiado fino para verse a este tamaño. */
+.app-pintado__chip-finta {
+  background-image:
+    radial-gradient(circle at 3.2px 3.2px, rgba(5, 6, 16, 0.9) 1.3px, transparent 1.4px),
+    radial-gradient(circle at 9.6px 3.2px, rgba(5, 6, 16, 0.9) 1.3px, transparent 1.4px),
+    radial-gradient(circle at 3.2px 9.6px, rgba(5, 6, 16, 0.9) 1.3px, transparent 1.4px),
+    radial-gradient(circle at 9.6px 9.6px, rgba(5, 6, 16, 0.9) 1.3px, transparent 1.4px);
+}
+
+.app-pintado__clave {
+  display: flex;
+  gap: 14px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.app-pintado__clave span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-pintado__muestra {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--text-muted);
+  display: inline-block;
+}
+
+.app-pintado__muestra--finta {
+  background-image:
+    radial-gradient(circle at 3.5px 3.5px, rgba(5, 6, 16, 0.9) 1.4px, transparent 1.5px),
+    radial-gradient(circle at 10.5px 3.5px, rgba(5, 6, 16, 0.9) 1.4px, transparent 1.5px),
+    radial-gradient(circle at 3.5px 10.5px, rgba(5, 6, 16, 0.9) 1.4px, transparent 1.5px),
+    radial-gradient(circle at 10.5px 10.5px, rgba(5, 6, 16, 0.9) 1.4px, transparent 1.5px);
+}

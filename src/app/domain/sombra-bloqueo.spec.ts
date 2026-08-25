@@ -135,4 +135,53 @@ describe('sombraDeBloqueo', () => {
 
     expect(recentrada).toEqual(sinRetocar);
   });
+
+  it('E14: la escala por defecto (1) no cambia el resultado', () => {
+    const atacante: Punto = { x: 4.5, y: -1.2 };
+    const bloqueador: Punto = { x: 4.5, y: 0.4 };
+
+    const sinEscala = sombraDeBloqueo(atacante, [bloqueador]);
+    const conEscala1 = sombraDeBloqueo(atacante, [bloqueador], undefined, 1);
+
+    expect(conEscala1).toEqual(sinEscala);
+  });
+
+  it('E15: una pared ancha escalada hacia dentro sigue llegando al fondo del campo', () => {
+    // Bloqueo doble ancho (varios bloqueadores fusionados) con un atacante escorado: el cono sin
+    // escalar ya se recorta contra el lateral izquierdo antes de llegar a y=9. Escalar hacia
+    // dentro (factor < 1) desde el centro de la pared, antes de recortar, no debe introducir un
+    // borde recto artificial que corte la sombra antes del fondo.
+    const atacante: Punto = { x: 8, y: -1.2 };
+    const bloqueadorIzq: Punto = { x: 6.1, y: 0.4 };
+    const bloqueadorDer: Punto = { x: 7.6, y: 0.4 };
+
+    const sombra = sombraDeBloqueo(atacante, [bloqueadorIzq, bloqueadorDer], undefined, 0.5);
+
+    expect(sombra).toHaveLength(1);
+    const [poligono] = sombra;
+    expect(poligono.some((p) => p.y === 9)).toBe(true);
+  });
+
+  it('E16: escalar no cambia el conjunto de profundidades del polígono sin recortar', () => {
+    const atacante: Punto = { x: 4.5, y: -2 };
+    const bloqueador: Punto = { x: 4.5, y: 0.4 };
+
+    const sinEscalar = sombraDeBloqueo(atacante, [bloqueador], undefined, 1);
+    const escalado = sombraDeBloqueo(atacante, [bloqueador], undefined, 0.5);
+
+    expect(escalado[0].map((p) => p.y)).toEqual(sinEscalar[0].map((p) => p.y));
+  });
+
+  it('E17: la escala ancla en el centro de la pared, no en los vértices supervivientes del recorte', () => {
+    const atacante: Punto = { x: 4.5, y: -1.2 };
+    const bloqueador: Punto = { x: 4.5, y: 0.4 };
+
+    const sombra = sombraDeBloqueo(atacante, [bloqueador], undefined, 0.5);
+
+    const [poligono] = sombra;
+    const enRed = poligono.filter((p) => p.y === 0);
+    // El tramo de red del bloqueador es [4.3, 4.7]; escalado al 50% desde su centro (4.5) queda
+    // [4.4, 4.6].
+    expect(enRed.map((p) => p.x).sort((a, b) => a - b)).toEqual([4.4, 4.6]);
+  });
 });

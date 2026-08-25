@@ -1,0 +1,83 @@
+<div class="app-pintado__segmentado" role="radiogroup" aria-label="Acción al arrastrar">
+  <input
+    type="radio"
+    name="app-pintado-accion-arrastre"
+    id="app-pintado-accion-pintar"
+    [checked]="accionArrastre() === 'pintar'"
+    (click)="seleccionarAccionArrastre.emit('pintar')"
+  />
+  <label for="app-pintado-accion-pintar" class="app-pintado__rol-pintar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 19l7-7 3 3-7 7-3-3z" />
+      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+      <circle cx="11" cy="11" r="2" />
+    </svg>
+    Pintar
+  </label>
+  <input
+    type="radio"
+    name="app-pintado-accion-arrastre"
+    id="app-pintado-accion-mover"
+    [checked]="accionArrastre() === 'mover'"
+    [disabled]="!puedeMoverBloqueo()"
+    (click)="seleccionarAccionArrastre.emit('mover')"
+  />
+  <label
+    for="app-pintado-accion-mover"
+    class="app-pintado__rol-mover"
+    [class.app-pintado__rol--deshabilitado]="!puedeMoverBloqueo()"
+    [attr.title]="puedeMoverBloqueo() ? null : 'Sin bloqueadores en esta variante no hay nada que mover'"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="5 9 2 12 5 15" />
+      <polyline points="9 5 12 2 15 5" />
+      <polyline points="15 19 12 22 9 19" />
+      <polyline points="19 9 22 12 19 15" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <line x1="12" y1="2" x2="12" y2="22" />
+    </svg>
+    Mover sombra de bloqueo
+  </label>
+</div>
+
+<div class="app-pintado__control">
+  <span class="app-pintado__control-etiqueta">Ancho del bloqueo</span>
+  <app-barra class="app-pintado__barra" [valor]="escalaSombra()" etiqueta="Ancho del bloqueo" (valorCambiado)="cambiarEscalaSombra.emit($event)"></app-barra>
+</div>
+
+<div class="app-pintado__modo" role="radiogroup" aria-label="Qué se pinta">
+  <button
+    type="button"
+    role="radio"
+    [attr.aria-checked]="modoPintado() === 'defensa'"
+    [class.app-pintado__modo-boton--activo]="modoPintado() === 'defensa'"
+    (click)="seleccionarModoPintado.emit('defensa')"
+  >
+    Zona de defensa
+  </button>
+  <button
+    type="button"
+    role="radio"
+    [attr.aria-checked]="modoPintado() === 'finta'"
+    [class.app-pintado__modo-boton--activo]="modoPintado() === 'finta'"
+    (click)="seleccionarModoPintado.emit('finta')"
+  >
+    Zona de finta
+  </button>
+</div>
+
+<div class="app-pintado__chips">
+  @for (entrada of leyenda(); track entrada.indiceColor) {
+    <span class="app-pintado__chip">
+      <span class="app-pintado__chip-par">
+        <span [style.background]="'var(' + paletaColores()[entrada.indiceColor] + ')'"></span>
+        <span class="app-pintado__chip-finta" [style.background-color]="'var(' + paletaColores()[entrada.indiceColor] + ')'"></span>
+      </span>
+      {{ entrada.etiqueta }}
+    </span>
+  }
+</div>
+<div class="app-pintado__clave">
+  <span><span class="app-pintado__muestra"></span>defensa</span>
+  <span><span class="app-pintado__muestra app-pintado__muestra--finta"></span>finta</span>
+</div>

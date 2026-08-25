@@ -26,12 +26,13 @@ import {
   renombrarSistema,
 } from '../domain/catalogo-sistemas';
 import { jugadoresEnPista } from '../domain/rotacion';
-import { bloquePorDefecto } from '../domain/rejilla';
 import { situacionTrasCambioDeCaso, situacionesDe } from '../domain/defensa';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
 import { explicarPuesto, explicarVariante, guardarVarianteDefensa } from '../domain/sistema-defensa';
+import { formacionDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 import { validarFormacion } from '../domain/validacion';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
+import { DISTANCIA_MINIMA_ENTRE_JUGADORES, separarDeOtros } from '../domain/separacion';
 
 export type RotacionValida = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -89,7 +90,11 @@ function formacionesIguales(a: readonly ColocacionBorrador[], b: readonly Coloca
   return a.every((c) => {
     const otra = colocacionPorId.get(idDe(c));
     return (
-      otra !== undefined && otra.punto.x === c.punto.x && otra.punto.y === c.punto.y && celdasIguales(c.celdas, otra.celdas)
+      otra !== undefined &&
+      otra.punto.x === c.punto.x &&
+      otra.punto.y === c.punto.y &&
+      celdasIguales(c.celdas, otra.celdas) &&
+      celdasIguales(c.celdasFinta, otra.celdasFinta)
     );
   });
 }
@@ -125,6 +130,11 @@ export class SistemaStore {
   readonly ayudaPosicionDesactivada = signal(false);
   readonly ordenRotacionCronologico = signal(false);
   readonly mostrarNumerosMetros = signal(false);
+  /** Escala del ancho de la sombra del bloqueo, 0-10 en enteros (spec 044, rango corregido por
+   * la 045): puramente de pantalla, ajuste global de la app, nunca viaja al servidor. Escala
+   * solo el eje lateral (ancho) del polígono, nunca su profundidad. 5 hasta que se cargan los
+   * ajustes guardados. */
+  readonly escalaSombra = signal(5);
   /** Último fallo al escribir, con un reintento explícito (spec 034). `null` cuando no hay
    * ningún aviso pendiente — ni al arrancar, ni tras un reintento que tuvo éxito, ni tras
    * cerrarlo a mano. */
@@ -166,7 +176,9 @@ export class SistemaStore {
       return [];
     }
     if (sistema.tipo === 'defensa') {
-      return this.varianteDefensaActiva()?.formacion ?? [];
+      // spec 042: una variante nunca guardada nace ya colocada (la defensa de referencia de su
+      // situación, o la postura base en `inicial`/`z1`), no vacía.
+      return this.varianteDefensaActiva()?.formacion ?? formacionDefensaPorDefecto(this.situacionActiva(), this.bloqueadoresActivos());
     }
     return sistema.formaciones[this.rotacionActiva()] ?? [];
   });
@@ -224,7 +236,9 @@ export class SistemaStore {
   /**
    * Celdas efectivas del jugador seleccionado (spec 024): las que ya tenga pintadas, o si no
    * tiene ninguna, el bloque de 1 m² por defecto en su posición — que por eso sigue a la ficha
-   * mientras no se pinte ni se borre nada suyo (E5). Solo existe en defensa: en recepción la
+   * mientras no se pinte ni se borre nada suyo — spec 024, E5, **retirado por la spec 047**: ya
+   * no hay bloque por defecto, ni aquí ni al pintar/borrar la primera celda; empieza vacía,
+   * igual que ya hacía la zona de finta (spec 041, E8). Solo existe en defensa: en recepción la
    * zona de responsabilidad no se pinta (E1), aunque haya quedado guardada de antes (E2).
    */
   readonly celdasJugadorSeleccionado = computed<readonly Celda[]>(() => {
@@ -236,8 +250,32 @@ export class SistemaStore {
     if (!colocacion) {
       return [];
     }
-    return colocacion.celdas ?? bloquePorDefecto(colocacion.punto);
+    return colocacion.celdas ?? [];
   });
+
+  /** Celdas de finta del puesto seleccionado (spec 041): a diferencia de `celdasJugadorSeleccionado`
+   * nunca aplica el bloque por defecto de la spec 024 — una zona de finta empieza siempre vacía. */
+  readonly celdasFintaJugadorSeleccionado = computed<readonly Celda[]>(() => {
+    const id = this.jugadorSeleccionadoId();
+    if (!id || this.sistemaActivo()?.tipo !== 'defensa') {
+      return [];
+    }
+    return this.borrador().find((c) => idDe(c) === id)?.celdasFinta ?? [];
+  });
+
+  /** Qué hace arrastrar sobre el campo (spec 044, reemplaza el interruptor on/off de la 041;
+   * tri-estado desde la spec 045): `'pintar'` pinta el trazo, incluso bajo la sombra; `'mover'`
+   * deja arrastrar la sombra para retocarla y no pinta nada al arrastrar el resto del campo;
+   * `null` dinamita las dos cosas — el arrastre no hace nada. `'pintar'` por defecto. */
+  readonly accionArrastre = signal<'pintar' | 'mover' | null>('pintar');
+
+  /** Si hay algún bloqueador que mover (spec 045, E5-E7): la postura inicial siempre tiene 0
+   * (spec 039-E4), así que queda cubierta por esta misma condición sin caso aparte. */
+  readonly puedeMoverBloqueo = computed(() => this.bloqueadoresActivos() > 0);
+
+  /** Qué conjunto de celdas pinta o borra `pintarCelda`/`borrarCelda` (spec 041): la zona de
+   * defensa de siempre, o la zona de finta, paralela. */
+  readonly modoPintado = signal<'defensa' | 'finta'>('defensa');
 
   constructor(
     private readonly repositorio: SistemaRepository,
@@ -282,6 +320,7 @@ export class SistemaStore {
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
     this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
     this.mostrarNumerosMetros.set(ajustes?.mostrarNumerosMetros ?? false);
+    this.escalaSombra.set(ajustes?.escalaSombra ?? 5);
     this.cambiarContexto();
   }
 
@@ -313,6 +352,14 @@ export class SistemaStore {
     await this.guardarAjustes();
   }
 
+  /** Cambia a qué escala se dibuja el ancho de la sombra del bloqueo (spec 044, E6-E9; rango
+   * corregido por la 045, E8-E10): un entero entre 0 y 10, recortado a ese rango. Puramente de
+   * pantalla — nunca toca ninguna variante guardada. */
+  async cambiarEscalaSombra(valor: number): Promise<void> {
+    this.escalaSombra.set(Math.round(Math.max(0, Math.min(10, valor))));
+    await this.guardarAjustes();
+  }
+
   /** Solo toca el ajuste global (spec 031): nunca reescribe el catálogo de sistemas. */
   private async guardarAjustes(): Promise<void> {
     await this.ajustesRepositorio?.guardar({
@@ -320,6 +367,7 @@ export class SistemaStore {
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
       ordenRotacionCronologico: this.ordenRotacionCronologico(),
       mostrarNumerosMetros: this.mostrarNumerosMetros(),
+      escalaSombra: this.escalaSombra(),
     });
   }
 
@@ -459,27 +507,39 @@ export class SistemaStore {
     this.jugadorSeleccionadoId.set(null);
   }
 
-  /** Crea un sistema para `equipoId` (spec 032): si es distinto del equipo activo, el equipo
-   * activo cambia también, para que el sistema recién creado se vea de inmediato. Si falla al
-   * escribir (spec 034), no queda ni rastro local del intento — reintentar vuelve a generar un
-   * id nuevo, así que dos intentos que ambos lleguen al servidor (uno cuya respuesta se perdió
-   * por la red, y su reintento) crearían dos sistemas en vez de uno; es un límite conocido, no
-   * un caso que esta spec resuelva. */
-  async crear(nombre: string, tipo: TipoSistema, equipoId: EquipoId): Promise<boolean> {
-    const nuevo = crearSistema(crypto.randomUUID(), nombre, tipo, equipoId, PLANTILLA_GLOBAL, this.sistemas());
-    if (!nuevo) {
+  /** Crea un sistema en cada uno de `equiposId` (spec 032, ampliado por la 048 a más de un
+   * equipo a la vez): una copia independiente por equipo, mismo nombre y tipo, cada una editable
+   * después por separado — igual que crear y clonar a mano al otro equipo. Todo o nada (spec
+   * 048, E3): si el nombre colisiona en cualquiera de los equipos marcados, no se crea ninguna.
+   * El equipo activo pasa a ser el primero de la lista, para que su copia se vea de inmediato
+   * (E4). Si falla al escribir (spec 034), no queda ni rastro local del intento — reintentar
+   * vuelve a generar ids nuevos, así que dos intentos que ambos lleguen al servidor (uno cuya
+   * respuesta se perdió por la red, y su reintento) crearían copias de más en vez de una por
+   * equipo; es un límite conocido, ya existía con un único equipo y no lo resuelve esta spec. */
+  async crear(nombre: string, tipo: TipoSistema, equiposId: readonly EquipoId[]): Promise<boolean> {
+    if (equiposId.length === 0) {
       return false;
+    }
+    const nuevos: Sistema[] = [];
+    for (const equipoId of equiposId) {
+      const nuevo = crearSistema(crypto.randomUUID(), nombre, tipo, equipoId, PLANTILLA_GLOBAL, [...this.sistemas(), ...nuevos]);
+      if (!nuevo) {
+        return false;
+      }
+      nuevos.push(nuevo);
     }
     return this.ejecutarEscritura(
       async () => {
-        await this.repositorio.crear(nuevo);
-        this.sistemas.update((lista) => [...lista, nuevo]);
-        this.equipoActivo.set(equipoId);
-        this.sistemaActivoId.set(nuevo.id);
+        for (const nuevo of nuevos) {
+          await this.repositorio.crear(nuevo);
+        }
+        this.sistemas.update((lista) => [...lista, ...nuevos]);
+        this.equipoActivo.set(equiposId[0]);
+        this.sistemaActivoId.set(nuevos[0].id);
         this.rotacionActiva.set(1);
         this.cambiarContexto();
       },
-      () => void this.crear(nombre, tipo, equipoId),
+      () => void this.crear(nombre, tipo, equiposId),
     );
   }
 
@@ -591,13 +651,22 @@ export class SistemaStore {
     return m ? (Number(m[1]) as PuestoDefensa) : null;
   }
 
+  /** Ni en recepción ni en defensa dos fichas pueden solaparse (spec posterior a la 045): si el
+   * punto de destino queda demasiado cerca de otra ya colocada, se aparta lo mínimo para
+   * respetar `DISTANCIA_MINIMA_ENTRE_JUGADORES`, elegida para no abrir nunca un pasillo de luz
+   * en la sombra de bloqueo (`separacion.ts`). */
   colocarOMover(ocupanteId: string, punto: Punto): void {
     const puesto = SistemaStore.puestoDeId(ocupanteId);
     if (puesto !== null) {
       this.borrador.update((formacion) => {
         const previa = formacion.find((c) => idDe(c) === ocupanteId) as ColocacionDefensa | undefined;
         const resto = formacion.filter((c) => idDe(c) !== ocupanteId);
-        const nueva: ColocacionDefensa = { ...previa, puesto, punto };
+        const puntoLibre = separarDeOtros(
+          punto,
+          resto.map((c) => c.punto),
+          DISTANCIA_MINIMA_ENTRE_JUGADORES,
+        );
+        const nueva: ColocacionDefensa = { ...previa, puesto, punto: puntoLibre };
         return [...resto, nueva];
       });
       return;
@@ -609,7 +678,12 @@ export class SistemaStore {
     this.borrador.update((formacion) => {
       const previa = formacion.find((c) => idDe(c) === ocupanteId) as Colocacion | undefined;
       const resto = formacion.filter((c) => idDe(c) !== ocupanteId);
-      const nueva: Colocacion = { ...previa, jugador, punto };
+      const puntoLibre = separarDeOtros(
+        punto,
+        resto.map((c) => c.punto),
+        DISTANCIA_MINIMA_ENTRE_JUGADORES,
+      );
+      const nueva: Colocacion = { ...previa, jugador, punto: puntoLibre };
       return [...resto, nueva];
     });
   }
@@ -625,38 +699,56 @@ export class SistemaStore {
   }
 
   /** Marca `celda` como responsabilidad de `ocupanteId` (spec 022, extendido a puestos de
-   * defensa por la 038). Si todavía no tenía ninguna celda propia, parte del bloque por defecto
-   * (spec 024, E6) en vez de partir de vacío — así pintar una celda nueva la añade a lo que ya se
-   * veía, no lo sustituye. Idempotente: pintar una celda ya suya no la duplica. */
+   * defensa por la 038). Sin bloque por defecto en ningún modo (spec 024/041, retirado en la
+   * zona de defensa por la 047): siempre parte de vacío si todavía no tenía ninguna celda
+   * propia. Idempotente: pintar una celda ya suya no la duplica. */
   pintarCelda(ocupanteId: string, celda: Celda): void {
+    const campo = this.modoPintado() === 'finta' ? 'celdasFinta' : 'celdas';
     this.borrador.update((formacion) =>
       formacion.map((c) => {
         if (idDe(c) !== ocupanteId) {
           return c;
         }
-        const base = c.celdas ?? bloquePorDefecto(c.punto);
+        const base = c[campo] ?? [];
         if (base.some((existente) => coincide(existente, celda))) {
-          return { ...c, celdas: base };
+          return { ...c, [campo]: base };
         }
-        return { ...c, celdas: [...base, celda] };
+        return { ...c, [campo]: [...base, celda] };
       }),
     );
   }
 
   /** Quita `celda` de la responsabilidad de `ocupanteId` (spec 022, extendido a puestos de
-   * defensa por la 038). Si todavía no tenía ninguna celda propia, parte del bloque por defecto
-   * (spec 024, E7): borrar una de sus celdas la convierte en zona explícita con las que queden,
-   * en vez de no hacer nada. Idempotente. */
+   * defensa por la 038, y a la zona de finta por la 041). Sin bloque por defecto en ningún modo
+   * (spec 047): sin celdas propias, borrar no hace nada — no hay bloque del que partir para
+   * quitar una. Idempotente. */
   borrarCelda(ocupanteId: string, celda: Celda): void {
+    const campo = this.modoPintado() === 'finta' ? 'celdasFinta' : 'celdas';
     this.borrador.update((formacion) =>
       formacion.map((c) => {
         if (idDe(c) !== ocupanteId) {
           return c;
         }
-        const base = c.celdas ?? bloquePorDefecto(c.punto);
-        return { ...c, celdas: base.filter((existente) => !coincide(existente, celda)) };
+        const base = c[campo] ?? [];
+        return { ...c, [campo]: base.filter((existente) => !coincide(existente, celda)) };
       }),
     );
+  }
+
+  /** Elige qué hace arrastrar sobre el campo (spec 044, E1-E4; deseleccionable desde la 045,
+   * E1-E4): clicar la opción ya activa la apaga, dejando la acción en `null`. "Mover bloqueo"
+   * se ignora sin bloqueadores que mover (E5, defensa en profundidad — el botón ya sale
+   * deshabilitado en la UI, pero el store no confía solo en eso). */
+  seleccionarAccionArrastre(accion: 'pintar' | 'mover'): void {
+    if (accion === 'mover' && !this.puedeMoverBloqueo()) {
+      return;
+    }
+    this.accionArrastre.set(this.accionArrastre() === accion ? null : accion);
+  }
+
+  /** Elige qué conjunto de celdas afectan `pintarCelda`/`borrarCelda` (spec 041, E5). */
+  seleccionarModoPintado(modo: 'defensa' | 'finta'): void {
+    this.modoPintado.set(modo);
   }
 
   vaciar(): void {
@@ -706,6 +798,11 @@ export class SistemaStore {
     this.borrador.set(this.formacionGuardadaActiva());
     this.jugadorSeleccionadoId.set(null);
     this.desplazamientoSombraEdicion.set(this.varianteDefensaActiva()?.desplazamientoSombra ?? null);
+    // spec 045, E6: si "mover bloqueo" deja de tener sentido (0 bloqueadores tras el cambio de
+    // contexto), se apaga — y no se reactiva sola si más tarde vuelven a existir bloqueadores.
+    if (this.accionArrastre() === 'mover' && !this.puedeMoverBloqueo()) {
+      this.accionArrastre.set(null);
+    }
   }
 
   /** Retoca el desplazamiento de la sombra de bloqueo en edición (spec 040, E10): se llama

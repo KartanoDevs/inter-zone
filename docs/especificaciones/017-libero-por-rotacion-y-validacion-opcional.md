@@ -105,11 +105,18 @@ formación completa, con o sin falta.
 - Entonces: la elección se acepta, pero en esa rotación juega el titular, no el líbero — igual
   que en la spec 011, entrar depende de en qué línea cae el sustituido, no de la elección en sí
 
-**E8 — Cambiar el sustituto de una rotación solo purga la formación guardada de esa rotación**
+**E8 — Cambiar el sustituto de una rotación solo toca la formación guardada de esa rotación**
 - Dado: un sistema con formaciones guardadas en varias rotaciones donde juega el líbero
 - Cuando: se cambia a quién sustituye el líbero en una única rotación
-- Entonces: solo la formación guardada de esa rotación pierde a los jugadores que ya no
-  corresponden; las formaciones de las demás rotaciones quedan intactas
+- Entonces: solo la formación guardada de esa rotación cambia; las formaciones de las demás
+  rotaciones quedan intactas
+- **Corregido por la spec 043:** esta redacción original decía que la formación "pierde a los
+  jugadores que ya no corresponden" — es decir, que se purgaba sin reponer a quien entra, y
+  quedaba en cinco. Contradecía el invariante 2 de `docs/dominio.md` ("cada formación coloca
+  exactamente a 6 jugadores") desde el día en que se escribió, y el servidor la rechazaba con
+  `RosterInvalido` en cuanto existía backend (spec 033). La spec 043 corrige el comportamiento:
+  quien entra hereda el punto exacto de quien sale, así que la formación se queda siempre en
+  seis.
 
 **E9 — Sustituir a alguien que no es titular se rechaza, rotación a rotación**
 - Dado: seis titulares y un líbero

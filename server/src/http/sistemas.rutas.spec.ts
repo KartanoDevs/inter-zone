@@ -255,6 +255,38 @@ describe('API de sistemas (spec 033)', () => {
       );
       expect(guardadas.find((c) => c.puesto === 3).celdas).toHaveLength(2);
     });
+
+    it('041-E6 (servidor): celdas y celdasFinta se guardan y se leen por separado, sin mezclarse', async () => {
+      const id = crypto.randomUUID();
+      const { cuerpo: creado } = await postSistema(sistemaVacio(id, 'Defensa', 'defensa', 'masculino'));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formacion: any[] = [
+        {
+          puesto: 1,
+          punto: { x: 1, y: 1 },
+          celdas: [{ columna: 0, fila: 0 }],
+          celdasFinta: [{ columna: 5, fila: 5 }],
+        },
+        { puesto: 2, punto: { x: 2, y: 2 } }, // ninguna de las dos tocada
+        { puesto: 3, punto: { x: 3, y: 3 } },
+        { puesto: 4, punto: { x: 4, y: 4 } },
+        { puesto: 5, punto: { x: 5, y: 5 } },
+        { puesto: 6, punto: { x: 6, y: 6 } },
+      ];
+      const defensas = [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion }];
+
+      const { status } = await putSistema(id, { ...creado, defensas }, creado.actualizadoEn);
+      expect(status).toBe(200);
+
+      const [leido] = await getCatalogo('masculino');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const guardadas: any[] = leido.defensas.find((v: any) => v.caso === 'delantero' && v.situacion === 'z4').formacion;
+      const puesto1 = guardadas.find((c) => c.puesto === 1);
+      expect(puesto1.celdas).toEqual([{ columna: 0, fila: 0 }]);
+      expect(puesto1.celdasFinta).toEqual([{ columna: 5, fila: 5 }]);
+      expect(guardadas.find((c) => c.puesto === 2).celdasFinta).toBeUndefined();
+    });
   });
 
   describe('actualizar y concurrencia', () => {

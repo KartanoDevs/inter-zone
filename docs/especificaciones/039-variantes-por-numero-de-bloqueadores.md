@@ -48,6 +48,11 @@ sin tocar esas capas.
 - Dado: una situación con solo la variante de 2 bloqueadores guardada
 - Cuando: se selecciona 1 bloqueador
 - Entonces: el campo aparece sin ningún puesto colocado, no una copia de la variante de 2
+- **Corregido por la spec 042:** desde esa spec ninguna variante nace vacía — la que no se ha
+  guardado muestra la postura por defecto de su situación (la defensa de referencia, o la
+  postura base en `inicial`/`z1`). El punto que sigue en pie de este escenario es el otro: la
+  variante de 1 bloqueador **no** hereda la colocación de la de 2; muestra el defecto de la
+  situación, no una copia de otra variante.
 
 **E4 — La posición inicial no admite variantes**
 - Dado: la situación "posición inicial" activa
