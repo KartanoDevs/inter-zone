@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import * as accesoRepositorio from '../infraestructura/acceso.repositorio';
 
 export const NOMBRE_COOKIE_SESION = 'iz_sesion';
 
@@ -22,4 +23,13 @@ export function leerTestigoSesion(req: Request): string | null {
     }
   }
   return null;
+}
+
+/** Quién ha entrado, a partir de la cookie de la petición (spec 037) — `null` sin sesión o con
+ * una caducada, igual que `accesoRepositorio.quienSoy`. Compartido entre `sistemas.rutas.ts` y
+ * `auth.rutas.ts` (spec 053: el perfil y el cambio de contraseña también necesitan saber quién
+ * pregunta). */
+export async function resolverSesion(req: Request): ReturnType<typeof accesoRepositorio.quienSoy> {
+  const testigo = leerTestigoSesion(req);
+  return testigo ? accesoRepositorio.quienSoy(testigo) : null;
 }

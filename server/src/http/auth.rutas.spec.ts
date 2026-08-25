@@ -70,6 +70,31 @@ async function get(ruta: string, cookie?: string): Promise<RespuestaJson> {
   };
 }
 
+async function put(ruta: string, cuerpo: unknown, cookie?: string): Promise<RespuestaJson> {
+  const respuesta = await fetch(`${base}${ruta}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) },
+    body: JSON.stringify(cuerpo),
+  });
+  return {
+    status: respuesta.status,
+    cuerpo: await respuesta.json().catch(() => null),
+    cookie: extraerCookie(respuesta),
+  };
+}
+
+/** Invita, registra y entra con un correo nuevo (spec 053): devuelve la cookie de sesión lista
+ * para usar en la siguiente petición. */
+async function crearYEntrar(email: string): Promise<string> {
+  await invitar(email, 'usuario');
+  await post('/api/auth/registro', { email, contrasena: 'contrasena123' });
+  const { cookie } = await post('/api/auth/entrar', { email, contrasena: 'contrasena123' });
+  if (!cookie) {
+    throw new Error('No se obtuvo cookie de sesión');
+  }
+  return cookie;
+}
+
 function extraerCookie(respuesta: globalThis.Response): string | null {
   const cabecera = respuesta.headers.get('set-cookie');
   if (!cabecera) {
@@ -259,6 +284,107 @@ describe('API de acceso (spec 035)', () => {
       expect(registro.status).toBe(201);
       const usuario = await prisma.usuario.findUniqueOrThrow({ where: { email: 'admin-inicial@club.com' } });
       expect(usuario.es_admin).toBe(true);
+    });
+  });
+
+  describe('perfil (spec 053)', () => {
+    it('053-E1: quien-soy incluye los campos de perfil ya guardados', async () => {
+      const cookie = await crearYEntrar('perfil1@club.com');
+      await put('/api/auth/perfil', { nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 }, cookie);
+
+      const { cuerpo } = await get('/api/auth/quien-soy', cookie);
+
+      expect(cuerpo.usuario).toMatchObject({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
+    });
+
+    it('053-E2: un nombre guardado sigue ahí en una petición posterior', async () => {
+      const cookie = await crearYEntrar('perfil2@club.com');
+
+      await put('/api/auth/perfil', { nombre: 'Bea', posicionFavorita: null, dorsal: null }, cookie);
+      const { cuerpo } = await get('/api/auth/quien-soy', cookie);
+
+      expect(cuerpo.usuario.nombre).toBe('Bea');
+    });
+
+    it('053-E3: una posición favorita que no es un rol de voleibol se rechaza', async () => {
+      const cookie = await crearYEntrar('perfil3@club.com');
+
+      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: 'entrenador', dorsal: null }, cookie);
+
+      expect(status).toBe(400);
+    });
+
+    it('053-E4: un dorsal fuera de 1-99 se rechaza y no cambia el guardado', async () => {
+      const cookie = await crearYEntrar('perfil4@club.com');
+      await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: 10 }, cookie);
+
+      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: 150 }, cookie);
+
+      expect(status).toBe(400);
+      const { cuerpo } = await get('/api/auth/quien-soy', cookie);
+      expect(cuerpo.usuario.dorsal).toBe(10);
+    });
+
+    it('053-E5: guardar los tres campos en blanco no da error', async () => {
+      const cookie = await crearYEntrar('perfil5@club.com');
+
+      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: null }, cookie);
+
+      expect(status).toBe(200);
+    });
+
+    it('053-E6: vaciar un dorsal ya guardado lo borra', async () => {
+      const cookie = await crearYEntrar('perfil6@club.com');
+      await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: 23 }, cookie);
+
+      await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: null }, cookie);
+
+      const { cuerpo } = await get('/api/auth/quien-soy', cookie);
+      expect(cuerpo.usuario.dorsal).toBeNull();
+    });
+
+    it('053-E7: cambiar la contraseña exige acertar la actual', async () => {
+      const cookie = await crearYEntrar('perfil7@club.com');
+
+      const { status } = await put('/api/auth/contrasena', { actual: 'mala-clave', nueva: 'nuevaclave123' }, cookie);
+
+      expect(status).toBe(401);
+    });
+
+    it('053-E7: cambiar la contraseña con la actual correcta funciona, y sirve para entrar después', async () => {
+      const cookie = await crearYEntrar('perfil7b@club.com');
+
+      const { status } = await put('/api/auth/contrasena', { actual: 'contrasena123', nueva: 'nuevaclave123' }, cookie);
+      expect(status).toBe(204);
+
+      const entrada = await post('/api/auth/entrar', { email: 'perfil7b@club.com', contrasena: 'nuevaclave123' });
+      expect(entrada.status).toBe(200);
+    });
+
+    it('053-E8: la nueva contraseña también tiene que llegar al mínimo', async () => {
+      const cookie = await crearYEntrar('perfil8@club.com');
+
+      const { status } = await put('/api/auth/contrasena', { actual: 'contrasena123', nueva: 'corta' }, cookie);
+
+      expect(status).toBe(400);
+    });
+
+    it('053-E9: el correo y el rol no cambian aunque se manden en la petición', async () => {
+      const cookie = await crearYEntrar('perfil9@club.com');
+
+      await put('/api/auth/perfil', { email: 'otro@club.com', rol: 'admin', nombre: null, posicionFavorita: null, dorsal: null }, cookie);
+
+      const { cuerpo } = await get('/api/auth/quien-soy', cookie);
+      expect(cuerpo.usuario.email).toBe('perfil9@club.com');
+      expect(cuerpo.usuario.esAdmin).toBe(false);
+    });
+
+    it('sin sesión no se puede guardar el perfil ni cambiar la contraseña', async () => {
+      const perfil = await put('/api/auth/perfil', { nombre: 'X', posicionFavorita: null, dorsal: null });
+      const contrasena = await put('/api/auth/contrasena', { actual: 'a', nueva: 'contrasena123' });
+
+      expect(perfil.status).toBe(401);
+      expect(contrasena.status).toBe(401);
     });
   });
 });

@@ -1,11 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import type { EquipoId } from '../../../src/app/domain/modelos';
+import type { EquipoId, RolId } from '../../../src/app/domain/modelos';
 import {
   LONGITUD_MINIMA_CONTRASENA,
+  dorsalValido,
   normalizarEmail,
+  normalizarNombre,
   resolverAltaDesdeInvitacion,
+  type DatosPerfil,
   type RolAcceso,
 } from '../../../src/app/domain/acceso';
+import { esRolIdValido } from '../../../src/app/domain/roles';
 import { prisma } from './prisma';
 import { hashContrasena, verificarContrasena } from './contrasena';
 import { DURACION_SESION_MS, generarTestigoSesion, huellaTestigo } from './sesion';
@@ -14,6 +18,8 @@ export class InvitacionNoDisponible extends Error {}
 export class CorreoYaRegistrado extends Error {}
 export class ContrasenaDemasiadoCorta extends Error {}
 export class CredencialesInvalidas extends Error {}
+export class PosicionFavoritaInvalida extends Error {}
+export class DorsalInvalido extends Error {}
 
 const EQUIPOS: readonly EquipoId[] = ['masculino', 'femenino'];
 
@@ -27,6 +33,9 @@ export interface UsuarioIdentificado {
   readonly email: string;
   readonly esAdmin: boolean;
   readonly membresias: readonly MembresiaUsuario[];
+  readonly nombre: string | null;
+  readonly posicionFavorita: RolId | null;
+  readonly dorsal: number | null;
 }
 
 export interface SesionCreada {
@@ -44,6 +53,9 @@ interface FilaUsuarioConMembresias {
   readonly email: string;
   readonly es_admin: boolean;
   readonly membresias: readonly { readonly equipo_id: string; readonly rol: string }[];
+  readonly nombre: string | null;
+  readonly posicion_favorita: string | null;
+  readonly dorsal: number | null;
 }
 
 async function mapaEquipos(): Promise<{
@@ -66,6 +78,9 @@ function usuarioIdentificadoDeFila(fila: FilaUsuarioConMembresias, porId: Map<st
       equipoId: porId.get(membresia.equipo_id) as EquipoId,
       rol: membresia.rol as Exclude<RolAcceso, 'admin'>,
     })),
+    nombre: fila.nombre,
+    posicionFavorita: fila.posicion_favorita as RolId | null,
+    dorsal: fila.dorsal,
   };
 }
 
@@ -154,4 +169,39 @@ export async function quienSoy(testigo: string): Promise<QuienSoyResultado | nul
 /** Invalida la sesión al instante (spec 035, E14): borra la fila, no espera a que caduque sola. */
 export async function salir(testigo: string): Promise<void> {
   await prisma.sesion.deleteMany({ where: { testigo_hash: huellaTestigo(testigo) } });
+}
+
+/** Guarda los tres campos de perfil de una cuenta (spec 053): siempre los tres juntos, nunca el
+ * correo ni el rol — ni aunque `datos` los trajera, esta función no los toca porque ni siquiera
+ * los lee. Un nombre en blanco lo borra (`normalizarNombre`); `posicionFavorita`/`dorsal` nulos
+ * también se guardan tal cual (E6). Rechaza una posición o un dorsal fuera de rango antes de
+ * tocar la base. */
+export async function actualizarPerfil(usuarioId: string, datos: DatosPerfil): Promise<void> {
+  if (datos.posicionFavorita !== null && !esRolIdValido(datos.posicionFavorita)) {
+    throw new PosicionFavoritaInvalida();
+  }
+  if (datos.dorsal !== null && !dorsalValido(datos.dorsal)) {
+    throw new DorsalInvalido();
+  }
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: {
+      nombre: datos.nombre === null ? null : normalizarNombre(datos.nombre),
+      posicion_favorita: datos.posicionFavorita,
+      dorsal: datos.dorsal,
+    },
+  });
+}
+
+/** Cambia la contraseña, exigiendo acertar la actual (spec 053, E7) y que la nueva llegue al
+ * mínimo (E8) — mismas reglas que al darse de alta. */
+export async function cambiarContrasena(usuarioId: string, actual: string, nueva: string): Promise<void> {
+  const fila = await prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } });
+  if (!verificarContrasena(actual, fila.contrasena_hash)) {
+    throw new CredencialesInvalidas();
+  }
+  if (nueva.length < LONGITUD_MINIMA_CONTRASENA) {
+    throw new ContrasenaDemasiadoCorta();
+  }
+  await prisma.usuario.update({ where: { id: usuarioId }, data: { contrasena_hash: hashContrasena(nueva) } });
 }

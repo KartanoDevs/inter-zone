@@ -3,20 +3,12 @@ import type { EquipoId, EstadoSistema, Sistema } from '../../../src/app/domain/m
 import { puedeGestionarEquipo } from '../../../src/app/domain/acceso';
 import * as sistemaRepositorio from '../infraestructura/sistema.repositorio';
 import { ConflictoDeConcurrencia, RosterInvalido, SistemaNoEncontrado } from '../infraestructura/sistema.repositorio';
-import * as accesoRepositorio from '../infraestructura/acceso.repositorio';
-import { leerTestigoSesion } from './cookies';
+import { resolverSesion } from './cookies';
 
 const EQUIPOS_VALIDOS: readonly EquipoId[] = ['masculino', 'femenino'];
 
 function esEquipoValido(valor: unknown): valor is EquipoId {
   return typeof valor === 'string' && (EQUIPOS_VALIDOS as readonly string[]).includes(valor);
-}
-
-/** Quién ha entrado, a partir de la cookie de la petición (spec 037) — `null` sin sesión o con
- * una caducada, igual que `accesoRepositorio.quienSoy`. */
-async function resolverSesion(req: Request): ReturnType<typeof accesoRepositorio.quienSoy> {
-  const testigo = leerTestigoSesion(req);
-  return testigo ? accesoRepositorio.quienSoy(testigo) : null;
 }
 
 /** Crear, editar, clonar y borrar sistemas exige sesión y rol (spec 037): el admin, o un
