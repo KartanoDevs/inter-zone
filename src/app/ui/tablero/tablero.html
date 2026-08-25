@@ -1,15 +1,17 @@
 <div class="app-tablero">
-  <nav class="app-tablero__nav" aria-label="Ventana">
-    <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="ventana.set('editor')">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6" />
-        <line x1="12" y1="17.4" x2="12" y2="20" />
-        <line x1="8.6" y1="20" x2="15.4" y2="20" />
-        <circle cx="8.4" cy="9.2" r="1.5" />
-        <circle cx="15.6" cy="12.6" r="1.5" />
-      </svg>
-      Editor
-    </button>
+  <nav class="app-tablero__nav" [class.app-tablero__nav--sin-editor]="!puedeEditar()" aria-label="Ventana">
+    @if (puedeEditar()) {
+      <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="ventana.set('editor')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6" />
+          <line x1="12" y1="17.4" x2="12" y2="20" />
+          <line x1="8.6" y1="20" x2="15.4" y2="20" />
+          <circle cx="8.4" cy="9.2" r="1.5" />
+          <circle cx="15.6" cy="12.6" r="1.5" />
+        </svg>
+        Editor
+      </button>
+    }
     <button type="button" [attr.aria-current]="ventana() === 'teoria' ? 'page' : null" (click)="ventana.set('teoria')">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4.5 5.2c2.3-1 4.9-1 7.5.4 2.6-1.4 5.2-1.4 7.5-.4v13.6c-2.3-1-4.9-1-7.5.4-2.6-1.4-5.2-1.4-7.5-.4z" />

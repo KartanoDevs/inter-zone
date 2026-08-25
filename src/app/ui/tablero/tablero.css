@@ -80,6 +80,11 @@
   border-radius: 9px;
 }
 
+/* Sin la pestaña Editor (spec 037, rol usuario): tres huecos, no cuatro con uno vacío. */
+.app-tablero__nav--sin-editor {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .app-tablero__nav button {
   display: flex;
   align-items: center;

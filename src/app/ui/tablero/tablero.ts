@@ -24,6 +24,7 @@ import { puestosQueBloquean } from '../../domain/sistema-defensa';
 import { sombraDeBloqueo } from '../../domain/sombra-bloqueo';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
+import { puedeEditarAlgo } from '../../domain/acceso';
 import { claveOrdenRol } from '../comun/orden-roles';
 import {
   ETIQUETA_PUESTO,
@@ -199,9 +200,19 @@ export class Tablero {
   protected readonly confirmandoVaciado = signal(false);
   protected readonly confirmandoGuardado = signal(false);
 
-  /** Navegación de ventana: hoy solo "Editor" está implementado; "Examen" y "Cuenta" son el
-   * hueco de las specs 012-013 y 035-037 (aplazadas, ADR 0028), sin funcionalidad todavía. */
-  protected readonly ventana = signal<Ventana>('editor');
+  /** Si la cuenta puede editar algún sistema (spec 037): decide si se ve la pestaña Editor y en
+   * cuál se aterriza. Solo depende del rol, no de qué equipo esté activo — un entrenador de un
+   * único equipo sigue viendo el editor, aunque el servidor rechace escribir en el otro. */
+  protected readonly puedeEditar = computed(() => {
+    const usuario = this.acceso.usuario();
+    return usuario !== null && puedeEditarAlgo(usuario);
+  });
+
+  /** Navegación de ventana: "Examen" y "Cuenta" son el hueco de las specs 012-013 y 053, sin
+   * funcionalidad todavía. Arranca en "Editor" salvo que el rol no lo permita (spec 037, E6) —
+   * `puedeEditar` ya tiene su valor final aquí porque `App` no crea `Tablero` hasta que
+   * `AccesoStore.usuario()` deja de ser `null`. */
+  protected readonly ventana = signal<Ventana>(this.puedeEditar() ? 'editor' : 'teoria');
 
   protected readonly tab = signal<PestanaTablero>('banquillo');
   protected readonly panelPlegado = signal(false);
