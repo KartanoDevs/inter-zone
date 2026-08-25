@@ -4,7 +4,7 @@ import { sistemaDefensaPorDefecto } from '../../../src/app/domain/sistema-defens
 import type { EquipoId } from '../../../src/app/domain/modelos';
 import { normalizarEmail } from '../../../src/app/domain/acceso';
 import { prisma } from './prisma';
-import { crear } from './sistema.repositorio';
+import { cambiarEstadoSistema, crear } from './sistema.repositorio';
 
 const EQUIPOS: readonly { readonly clave: EquipoId; readonly nombre: string }[] = [
   { clave: 'masculino', nombre: 'Senior masculino' },
@@ -53,15 +53,23 @@ export async function sembrarCatalogoBase(): Promise<void> {
  *
  * Las factorías traen un id literal (`'sistema-por-defecto'`) pensado para `localStorage`, no
  * un UUID — aquí se sustituye por uno real antes de guardar; el resto del contenido (nombre,
- * formaciones, colocaciones, explicaciones) es exactamente el que produce el dominio. */
+ * formaciones, colocaciones, explicaciones) es exactamente el que produce el dominio.
+ *
+ * Nacen ya validados (spec 051, E7): sin esto, Teoría no mostraría nada hasta que un
+ * entrenador validara algo a mano — y el objetivo de sembrarlos es precisamente tener algo que
+ * enseñar desde el principio. `validado_por` queda `null`: los validó la semilla, no una cuenta. */
 export async function sembrarEjemplos(): Promise<void> {
   const recepcionExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'recepcion' } });
   if (recepcionExistente === 0) {
-    await crear({ ...sistemaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
+    const id = crypto.randomUUID();
+    await crear({ ...sistemaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id });
+    await cambiarEstadoSistema(id, 'validado', null);
   }
   const defensaExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'defensa' } });
   if (defensaExistente === 0) {
-    await crear({ ...sistemaDefensaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id: crypto.randomUUID() });
+    const id = crypto.randomUUID();
+    await crear({ ...sistemaDefensaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id });
+    await cambiarEstadoSistema(id, 'validado', null);
   }
 }
 

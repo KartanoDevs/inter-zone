@@ -6,37 +6,18 @@ import {
   CredencialesInvalidas,
   InvitacionNoDisponible,
 } from '../infraestructura/acceso.repositorio';
-
-const NOMBRE_COOKIE = 'iz_sesion';
-
-function leerTestigo(req: Request): string | null {
-  const cabecera = req.headers.cookie;
-  if (!cabecera) {
-    return null;
-  }
-  for (const parte of cabecera.split(';')) {
-    const separador = parte.indexOf('=');
-    if (separador === -1) {
-      continue;
-    }
-    const clave = parte.slice(0, separador).trim();
-    if (clave === NOMBRE_COOKIE) {
-      return decodeURIComponent(parte.slice(separador + 1).trim());
-    }
-  }
-  return null;
-}
+import { leerTestigoSesion, NOMBRE_COOKIE_SESION } from './cookies';
 
 function ponerCookieSesion(res: Response, testigo: string, expiraEn: Date): void {
   const segura = process.env['COOKIE_SEGURA'] === 'true' ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${NOMBRE_COOKIE}=${testigo}; HttpOnly; Path=/; SameSite=Lax; Expires=${expiraEn.toUTCString()}${segura}`,
+    `${NOMBRE_COOKIE_SESION}=${testigo}; HttpOnly; Path=/; SameSite=Lax; Expires=${expiraEn.toUTCString()}${segura}`,
   );
 }
 
 function borrarCookieSesion(res: Response): void {
-  res.setHeader('Set-Cookie', `${NOMBRE_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`);
+  res.setHeader('Set-Cookie', `${NOMBRE_COOKIE_SESION}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`);
 }
 
 export const authRutas: Router = Router();
@@ -87,7 +68,7 @@ authRutas.post('/auth/entrar', async (req: Request, res: Response) => {
 });
 
 authRutas.post('/auth/salir', async (req: Request, res: Response) => {
-  const testigo = leerTestigo(req);
+  const testigo = leerTestigoSesion(req);
   if (testigo) {
     await accesoRepositorio.salir(testigo);
   }
@@ -96,7 +77,7 @@ authRutas.post('/auth/salir', async (req: Request, res: Response) => {
 });
 
 authRutas.get('/auth/quien-soy', async (req: Request, res: Response) => {
-  const testigo = leerTestigo(req);
+  const testigo = leerTestigoSesion(req);
   if (!testigo) {
     res.status(200).json({ usuario: null });
     return;

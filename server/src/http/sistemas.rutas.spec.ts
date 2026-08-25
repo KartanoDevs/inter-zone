@@ -37,7 +37,41 @@ beforeEach(async () => {
   // Cascada de FK: borra sistema_rotacion, formacion y colocacion también. equipo y jugador,
   // el catálogo base, se quedan.
   await prisma.sistema.deleteMany({});
+  // Spec 051: las cuentas que crean los tests de "validar" no deben arrastrarse de un test a otro.
+  await prisma.usuario.deleteMany({});
+  await prisma.lista_blanca.deleteMany({});
 });
+
+/** Da de alta y entra con un correo nuevo, invitado con el rol y equipo que se le pida (spec
+ * 051). Devuelve la cabecera `Cookie` lista para usar en la siguiente petición. */
+async function entrarComo(email: string, rol: 'admin' | 'entrenador' | 'usuario', equipoClave?: EquipoId): Promise<string> {
+  const equipoId = equipoClave ? (await prisma.equipo.findUniqueOrThrow({ where: { clave: equipoClave } })).id : null;
+  await prisma.lista_blanca.create({ data: { email, rol, equipo_id: equipoId } });
+  await fetch(`${base}/api/auth/registro`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, contrasena: 'contrasena123' }),
+  });
+  const respuesta = await fetch(`${base}/api/auth/entrar`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, contrasena: 'contrasena123' }),
+  });
+  const testigo = /iz_sesion=([^;]*)/.exec(respuesta.headers.get('set-cookie') ?? '')?.[1];
+  if (!testigo) {
+    throw new Error('No se obtuvo cookie de sesión');
+  }
+  return `iz_sesion=${testigo}`;
+}
+
+async function ponerEstado(id: string, estado: 'validado' | 'borrador', cookie?: string): Promise<{ readonly status: number }> {
+  const respuesta = await fetch(`${base}/api/sistemas/${id}/estado`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) },
+    body: JSON.stringify({ estado }),
+  });
+  return { status: respuesta.status };
+}
 
 function sistemaVacio(id: string, nombre: string, tipo: TipoSistema, equipoId: EquipoId): Sistema {
   return { id, nombre, tipo, equipoId, plantilla: PLANTILLA_GLOBAL, formaciones: {}, explicacionesRotacion: {} };
@@ -355,6 +389,72 @@ describe('API de sistemas (spec 033)', () => {
       expect(normalizarDefensas(defensa.defensas)).toEqual(normalizarDefensas(esperadoDefensa.defensas));
 
       expect(await getCatalogo('femenino')).toEqual([]);
+    });
+
+    it('051-E7: los dos sistemas de ejemplo nacen ya validados', async () => {
+      await sembrarEjemplos();
+
+      const catalogo = await getCatalogo('masculino');
+
+      expect(catalogo.every((s) => s.estado === 'validado')).toBe(true);
+    });
+  });
+
+  describe('validar (spec 051)', () => {
+    it('051-E1: un sistema recién creado nace en borrador', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'Nuevo', 'recepcion', 'masculino'));
+
+      // POST devuelve el cuerpo enviado (sin `estado`, el cliente no lo manda al crear) más los
+      // metadatos del servidor — para el estado real hay que leer el catálogo, no el eco del POST.
+      expect((await getCatalogo('masculino')).find((s) => s.id === creado.id)?.estado).toBe('borrador');
+    });
+
+    it('051-E2: un entrenador del equipo dueño puede validar el sistema', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De femenino', 'recepcion', 'femenino'));
+      const cookie = await entrarComo('entrenadora@club.com', 'entrenador', 'femenino');
+
+      const { status } = await ponerEstado(creado.id, 'validado', cookie);
+
+      expect(status).toBe(200);
+      expect((await getCatalogo('femenino')).find((s) => s.id === creado.id)?.estado).toBe('validado');
+    });
+
+    it('051-E3: el admin puede validar un sistema de cualquier equipo', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De masculino', 'recepcion', 'masculino'));
+      const cookie = await entrarComo('admin@club.com', 'admin');
+
+      const { status } = await ponerEstado(creado.id, 'validado', cookie);
+
+      expect(status).toBe(200);
+    });
+
+    it('051-E4: un entrenador de otro equipo no puede validar ese sistema', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'De femenino', 'recepcion', 'femenino'));
+      const cookie = await entrarComo('entrenador-masculino@club.com', 'entrenador', 'masculino');
+
+      const { status } = await ponerEstado(creado.id, 'validado', cookie);
+
+      expect(status).toBe(403);
+      expect((await getCatalogo('femenino')).find((s) => s.id === creado.id)?.estado).toBe('borrador');
+    });
+
+    it('051-E5: sin sesión, no se puede validar', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'Sin sesión', 'recepcion', 'masculino'));
+
+      const { status } = await ponerEstado(creado.id, 'validado');
+
+      expect(status).toBe(401);
+    });
+
+    it('051-E6: un entrenador puede quitar la validación de un sistema ya validado', async () => {
+      const { cuerpo: creado } = await postSistema(sistemaVacio(crypto.randomUUID(), 'A corregir', 'recepcion', 'masculino'));
+      const cookie = await entrarComo('entrenador@club.com', 'entrenador', 'masculino');
+      await ponerEstado(creado.id, 'validado', cookie);
+
+      const { status } = await ponerEstado(creado.id, 'borrador', cookie);
+
+      expect(status).toBe(200);
+      expect((await getCatalogo('masculino')).find((s) => s.id === creado.id)?.estado).toBe('borrador');
     });
   });
 });

@@ -1,7 +1,10 @@
 import { Router, type Request, type Response } from 'express';
-import type { EquipoId, Sistema } from '../../../src/app/domain/modelos';
+import type { EquipoId, EstadoSistema, Sistema } from '../../../src/app/domain/modelos';
+import { puedeValidar } from '../../../src/app/domain/acceso';
 import * as sistemaRepositorio from '../infraestructura/sistema.repositorio';
 import { ConflictoDeConcurrencia, RosterInvalido, SistemaNoEncontrado } from '../infraestructura/sistema.repositorio';
+import * as accesoRepositorio from '../infraestructura/acceso.repositorio';
+import { leerTestigoSesion } from './cookies';
 
 const EQUIPOS_VALIDOS: readonly EquipoId[] = ['masculino', 'femenino'];
 
@@ -72,6 +75,35 @@ sistemasRutas.put('/sistemas/:id', async (req: Request, res: Response) => {
     }
     throw error;
   }
+});
+
+/** Validar o quitar la validación (spec 051) es la única acción de `/api/sistemas` que ya exige
+ * sesión y rol: el admin, o un entrenador del equipo dueño del sistema — el resto de rutas de
+ * este fichero se queda abierto hasta la spec 037. */
+sistemasRutas.put('/sistemas/:id/estado', async (req: Request, res: Response) => {
+  const { estado } = req.body as { estado?: unknown };
+  if (estado !== 'validado' && estado !== 'borrador') {
+    res.status(400).json({ error: 'estado debe ser "validado" o "borrador"' });
+    return;
+  }
+  const testigo = leerTestigoSesion(req);
+  const sesion = testigo ? await accesoRepositorio.quienSoy(testigo) : null;
+  if (!sesion) {
+    res.status(401).json({ error: 'Hace falta iniciar sesión' });
+    return;
+  }
+  const id = req.params['id'] as string;
+  const equipoId = await sistemaRepositorio.equipoDelSistema(id);
+  if (!equipoId) {
+    res.status(404).json({ error: 'Sistema no encontrado' });
+    return;
+  }
+  if (!puedeValidar(sesion.usuario, equipoId)) {
+    res.status(403).json({ error: 'No tienes permiso para validar sistemas de este equipo' });
+    return;
+  }
+  await sistemaRepositorio.cambiarEstadoSistema(id, estado as EstadoSistema, estado === 'validado' ? sesion.usuario.id : null);
+  res.status(200).json({ estado });
 });
 
 sistemasRutas.delete('/sistemas/:id', async (req: Request, res: Response) => {

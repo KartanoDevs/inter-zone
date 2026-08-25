@@ -3,6 +3,7 @@ import type {
   Colocacion,
   ColocacionDefensa,
   EquipoId,
+  EstadoSistema,
   Formacion,
   FormacionDefensa,
   Jugador,
@@ -142,6 +143,7 @@ interface FilaSistema {
   readonly tipo: string;
   readonly nombre: string;
   readonly descripcion: string | null;
+  readonly estado: string;
   readonly actualizado_en: Date;
   readonly rotaciones: readonly {
     readonly rotacion: number;
@@ -253,6 +255,7 @@ function ensamblarSistema(
     ...(fila.descripcion !== null ? { descripcion: fila.descripcion } : {}),
     explicacionesRotacion,
     ...(defensas.length > 0 ? { defensas } : {}),
+    estado: fila.estado as EstadoSistema,
   };
 }
 
@@ -423,6 +426,36 @@ export async function actualizar(sistema: Sistema, testigoIfMatch: string): Prom
     await escribirDefensas(tx, sistema);
     return actualizado.actualizado_en.toISOString();
   });
+}
+
+/** El equipo dueño de un sistema (spec 051): lo que hace falta para decidir si quien pide
+ * validarlo tiene permiso, sin traer el sistema entero. `null` si no existe. */
+export async function equipoDelSistema(id: string): Promise<EquipoId | null> {
+  const fila = await prisma.sistema.findUnique({ where: { id }, include: { equipo: true } });
+  return fila ? (fila.equipo.clave as EquipoId) : null;
+}
+
+/** Valida o quita la validación de un sistema (spec 051). `validadoPorUsuarioId` se ignora al
+ * volver a borrador: nadie es "quien lo invalidó", solo se limpia el rastro de quién lo validó. */
+export async function cambiarEstadoSistema(
+  id: string,
+  estado: EstadoSistema,
+  validadoPorUsuarioId: string | null,
+): Promise<void> {
+  try {
+    await prisma.sistema.update({
+      where: { id },
+      data:
+        estado === 'validado'
+          ? { estado, validado_por: validadoPorUsuarioId, validado_en: new Date() }
+          : { estado, validado_por: null, validado_en: null },
+    });
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: unknown }).code === 'P2025') {
+      throw new SistemaNoEncontrado(id);
+    }
+    throw error;
+  }
 }
 
 export async function borrar(id: string): Promise<void> {

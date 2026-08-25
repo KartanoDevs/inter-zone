@@ -90,6 +90,7 @@ model usuario {
   membresias          membresia[]
   sesiones            sesion[]
   invitaciones_hechas lista_blanca[]
+  sistemas_validados  sistema[]
 }
 
 /// La única puerta de entrada (spec 035, ADR 0039): sin una fila aquí no se crea cuenta. Fija
@@ -149,10 +150,15 @@ model sistema {
   nombre         String
   descripcion    String?
   estado         estado_sistema @default(borrador)
+  /// Quién lo validó y cuándo (spec 051). Ambos nulos mientras esté en borrador — CHECK
+  /// sistema_validado_con_fecha a mano, Prisma no expresa esa condición conjunta.
+  validado_por   String?        @db.Uuid
+  validado_en    DateTime?      @db.Timestamptz
   creado_en      DateTime       @default(now()) @db.Timestamptz
   actualizado_en DateTime       @default(now()) @db.Timestamptz
 
   equipo             equipo               @relation(fields: [equipo_id], references: [id], onDelete: Restrict)
+  validador          usuario?             @relation(fields: [validado_por], references: [id], onDelete: SetNull)
   rotaciones         sistema_rotacion[]
   formaciones_defensa formacion_defensa[]
 
