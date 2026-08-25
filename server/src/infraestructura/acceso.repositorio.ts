@@ -3,6 +3,7 @@ import type { EquipoId, RolId } from '../../../src/app/domain/modelos';
 import {
   LONGITUD_MINIMA_CONTRASENA,
   dorsalValido,
+  esRolAccesoValido,
   normalizarEmail,
   normalizarNombre,
   resolverAltaDesdeInvitacion,
@@ -20,6 +21,15 @@ export class ContrasenaDemasiadoCorta extends Error {}
 export class CredencialesInvalidas extends Error {}
 export class PosicionFavoritaInvalida extends Error {}
 export class DorsalInvalido extends Error {}
+export class RolAccesoInvalido extends Error {}
+
+export interface InvitacionListada {
+  readonly email: string;
+  readonly rol: RolAcceso;
+  readonly equipoId: EquipoId | null;
+  readonly creadaEn: Date;
+  readonly usadaEn: Date | null;
+}
 
 const EQUIPOS: readonly EquipoId[] = ['masculino', 'femenino'];
 
@@ -204,4 +214,47 @@ export async function cambiarContrasena(usuarioId: string, actual: string, nueva
     throw new ContrasenaDemasiadoCorta();
   }
   await prisma.usuario.update({ where: { id: usuarioId }, data: { contrasena_hash: hashContrasena(nueva) } });
+}
+
+/** Todas las invitaciones, pendientes y ya usadas (spec 054, E6). */
+export async function listarInvitaciones(): Promise<readonly InvitacionListada[]> {
+  const [invitaciones, { porId }] = await Promise.all([
+    prisma.lista_blanca.findMany({ orderBy: { creado_en: 'desc' } }),
+    mapaEquipos(),
+  ]);
+  return invitaciones.map((fila) => ({
+    email: fila.email,
+    rol: fila.rol as RolAcceso,
+    equipoId: fila.equipo_id === null ? null : (porId.get(fila.equipo_id) ?? null),
+    creadaEn: fila.creado_en,
+    usadaEn: fila.usada_en,
+  }));
+}
+
+/** Invita un correo, o actualiza su rol y equipo si ya estaba invitado y sin usar (spec 054,
+ * E1-E2). Rechaza si el rol no es válido (E1) o si el correo ya tiene cuenta (E3) — el rol de
+ * una cuenta ya creada no se toca desde aquí, solo desde el registro que ya la creó. */
+export async function invitar(emailBruto: string, rol: string, equipoClave: EquipoId | null, invitadoPor: string): Promise<void> {
+  if (!esRolAccesoValido(rol)) {
+    throw new RolAccesoInvalido();
+  }
+  const email = normalizarEmail(emailBruto);
+  const yaExiste = await prisma.usuario.findUnique({ where: { email } });
+  if (yaExiste) {
+    throw new CorreoYaRegistrado();
+  }
+  const { porClave } = await mapaEquipos();
+  const equipoId = equipoClave === null ? null : porClave.get(equipoClave);
+  await prisma.lista_blanca.upsert({
+    where: { email },
+    create: { email, rol, equipo_id: equipoId, invitado_por: invitadoPor },
+    update: { rol, equipo_id: equipoId },
+  });
+}
+
+/** Retira una invitación (spec 054, E4-E5): si ya se usó, no toca la cuenta que salió de
+ * ella — la fila de `lista_blanca` es historia a partir de ahí, no la fuente de verdad de esa
+ * cuenta. No falla si el correo no estaba invitado; simplemente no hace nada. */
+export async function retirarInvitacion(emailBruto: string): Promise<void> {
+  await prisma.lista_blanca.deleteMany({ where: { email: normalizarEmail(emailBruto) } });
 }
