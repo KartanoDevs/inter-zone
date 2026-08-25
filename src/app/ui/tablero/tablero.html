@@ -1,5 +1,5 @@
 <div class="app-tablero">
-  <nav class="app-tablero__nav" [class.app-tablero__nav--sin-editor]="!puedeEditar()" aria-label="Ventana">
+  <nav class="app-tablero__nav" [style.grid-template-columns]="'repeat(' + columnasNav() + ', 1fr)'" aria-label="Ventana">
     @if (puedeEditar()) {
       <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="ventana.set('editor')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -34,6 +34,15 @@
       </svg>
       Cuenta
     </button>
+    @if (esAdmin()) {
+      <button type="button" [attr.aria-current]="ventana() === 'admin' ? 'page' : null" (click)="ventana.set('admin')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3.5 19.5 7v6c0 4.2-3.2 7-7.5 8.5C8.2 20 5 17.2 5 13V7z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+        Lista blanca
+      </button>
+    }
   </nav>
 
   @if (ventana() === 'editor') {
@@ -301,6 +310,10 @@
     <div class="app-tablero__cuenta-salir">
       <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
     </div>
+  }
+
+  @if (ventana() === 'admin' && esAdmin()) {
+    <app-lista-blanca-admin></app-lista-blanca-admin>
   }
 
   @if (arrastre(); as a) {

@@ -18,6 +18,7 @@ import { AccesoStore } from '../../application/acceso.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
+import { ListaBlancaAdmin } from '../acceso/lista-blanca-admin';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
@@ -89,7 +90,7 @@ const UMBRAL_ARRASTRE_PX = 8;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
-type Ventana = 'editor' | 'teoria' | 'examen' | 'cuenta';
+type Ventana = 'editor' | 'teoria' | 'examen' | 'cuenta' | 'admin';
 
 type PestanaTablero = 'banquillo' | 'ensenanza' | 'pintado' | 'ajustes';
 
@@ -185,6 +186,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     PanelAjustes,
     TeoriaTablero,
     PerfilCuenta,
+    ListaBlancaAdmin,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',
@@ -209,6 +211,13 @@ export class Tablero {
     const usuario = this.acceso.usuario();
     return usuario !== null && puedeEditarAlgo(usuario);
   });
+
+  /** Si se ve la pestaña "Lista blanca" (spec 054): solo el admin. */
+  protected readonly esAdmin = computed(() => this.acceso.usuario()?.esAdmin ?? false);
+
+  /** Teoría, Examen y Cuenta siempre están; Editor y Admin se suman según el rol (spec 037/054):
+   * 3, 4 o 5 columnas, nunca un hueco vacío en el nav. */
+  protected readonly columnasNav = computed(() => 3 + (this.puedeEditar() ? 1 : 0) + (this.esAdmin() ? 1 : 0));
 
   /** Navegación de ventana: "Examen" y "Cuenta" son el hueco de las specs 012-013 y 053, sin
    * funcionalidad todavía. Arranca en "Editor" salvo que el rol no lo permita (spec 037, E6) —

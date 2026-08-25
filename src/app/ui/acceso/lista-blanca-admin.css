@@ -1,0 +1,82 @@
+.app-lista-blanca {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.app-lista-blanca h2 {
+  margin: 0;
+  color: var(--text-main);
+}
+
+.app-lista-blanca__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-lista-blanca__form input,
+.app-lista-blanca__form select {
+  min-height: 36px;
+  padding: 0 10px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-main);
+  font: inherit;
+}
+
+.app-lista-blanca__form input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.app-lista-blanca__error {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(255, 0, 85, 0.12);
+  border: 1px solid rgba(255, 0, 85, 0.35);
+  border-radius: 8px;
+  color: var(--neon-pink);
+  font-size: 13px;
+}
+
+.app-lista-blanca__vacio {
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.app-lista-blanca__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.app-lista-blanca__tabla th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-lista-blanca__tabla td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+}
+
+.app-lista-blanca__estado {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-card-alt);
+  color: var(--text-muted);
+}
+
+.app-lista-blanca__estado--usada {
+  background: rgba(57, 255, 20, 0.14);
+  color: var(--neon-green);
+}

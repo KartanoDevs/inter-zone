@@ -80,10 +80,8 @@
   border-radius: 9px;
 }
 
-/* Sin la pestaña Editor (spec 037, rol usuario): tres huecos, no cuatro con uno vacío. */
-.app-tablero__nav--sin-editor {
-  grid-template-columns: repeat(3, 1fr);
-}
+/* El número de columnas lo decide Tablero.columnasNav() (spec 037/054): 3, 4 o 5 según el rol,
+ * nunca un hueco vacío en el nav. */
 
 .app-tablero__nav button {
   display: flex;

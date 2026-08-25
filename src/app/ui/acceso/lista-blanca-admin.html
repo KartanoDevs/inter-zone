@@ -1,0 +1,72 @@
+<div class="app-lista-blanca">
+  <h2>Lista blanca</h2>
+
+  <form
+    class="app-lista-blanca__form"
+    (submit)="$event.preventDefault(); invitar(emailCampo, rolCampo.value, equipoCampo.value)"
+  >
+    <input #emailCampo type="email" placeholder="correo@club.com" required />
+    <select #rolCampo>
+      <option value="usuario">Usuario</option>
+      <option value="entrenador">Entrenador</option>
+      <option value="admin">Admin</option>
+    </select>
+    <select #equipoCampo>
+      <option value="">Ambos equipos</option>
+      @for (equipo of equipos; track equipo) {
+        <option [value]="equipo">{{ nombreEquipo[equipo] }}</option>
+      }
+    </select>
+    <button type="submit" class="app-boton app-boton--primario" [disabled]="invitando()">Invitar</button>
+  </form>
+
+  @if (store.error(); as error) {
+    <p class="app-lista-blanca__error" role="alert">{{ error }}</p>
+  }
+
+  @if (store.invitaciones().length === 0) {
+    <p class="app-lista-blanca__vacio">Aún no has invitado a nadie.</p>
+  } @else {
+    <table class="app-lista-blanca__tabla">
+      <thead>
+        <tr>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Equipo</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invitacion of store.invitaciones(); track invitacion.email) {
+          <tr>
+            <td>{{ invitacion.email }}</td>
+            <td>{{ invitacion.rol }}</td>
+            <td>{{ invitacion.equipoId ? nombreEquipo[invitacion.equipoId] : 'Ambos' }}</td>
+            <td>
+              <span
+                class="app-lista-blanca__estado"
+                [class.app-lista-blanca__estado--usada]="invitacion.usadaEn"
+              >
+                {{ invitacion.usadaEn ? 'Usada' : 'Pendiente' }}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="app-boton app-boton--secundario" (click)="pedirRetiro(invitacion.email)">Retirar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (retirando(); as email) {
+  <app-dialogo-confirmacion
+    titulo="Retirar invitación"
+    [mensaje]="'¿Retirar la invitación de «' + email + '»? Si ya tiene cuenta, no se ve afectada.'"
+    textoConfirmar="Retirar"
+    (confirmar)="confirmarRetiro()"
+    (cancelar)="cancelarRetiro()"
+  ></app-dialogo-confirmacion>
+}
