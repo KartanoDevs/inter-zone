@@ -16,6 +16,7 @@ import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
 import { AccesoStore } from '../../application/acceso.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
+import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
@@ -24,6 +25,16 @@ import { sombraDeBloqueo } from '../../domain/sombra-bloqueo';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { claveOrdenRol } from '../comun/orden-roles';
+import {
+  ETIQUETA_PUESTO,
+  INDICE_COLOR_POR_PUESTO,
+  esLineaDelantera,
+  esPuestoDelantero,
+  etiquetaOcupanteDe,
+  idOcupanteDe,
+  indiceColorDe,
+  type EntradaLeyendaColor,
+} from '../comun/ficha-vista';
 import type {
   CasoColocador,
   Celda,
@@ -39,21 +50,6 @@ import type {
   SituacionDefensa,
 } from '../../domain/modelos';
 
-/** Etiqueta doble de cada puesto de defensa, según su línea (spec 038, E12): sin depender de
- * ninguna rotación ni de la plantilla activa — se deriva del puesto, es fijo. */
-const ETIQUETA_PUESTO: Readonly<Record<PuestoDefensa, string>> = {
-  1: 'CO',
-  2: 'CO',
-  3: 'Ce',
-  4: 'R',
-  5: 'L',
-  6: 'R',
-};
-
-function esPuestoDelantero(puesto: PuestoDefensa): boolean {
-  return puesto === 2 || puesto === 3 || puesto === 4;
-}
-
 const PUESTOS_DEFENSA: readonly PuestoDefensa[] = [1, 2, 3, 4, 5, 6];
 
 /** El puesto de defensa que corresponde a un id sintético `p1`..`p6` (spec 038), o `null` si no
@@ -63,11 +59,6 @@ function puestoDeId(ocupanteId: string): PuestoDefensa | null {
   const coincidencia = /^p([1-6])$/.exec(ocupanteId);
   return coincidencia ? (Number(coincidencia[1]) as PuestoDefensa) : null;
 }
-
-/** Índice de color de un puesto de defensa en la vista de conjunto (spec 023/038): fijo por
- * puesto, igual que hoy se deriva por rol — un color estable independiente de quién ocupe el
- * puesto en la realidad, porque en defensa ya no hay "quién". */
-const INDICE_COLOR_POR_PUESTO: Readonly<Record<PuestoDefensa, number>> = { 1: 0, 2: 5, 3: 3, 4: 1, 5: 6, 6: 2 };
 
 const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
 // Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
@@ -86,23 +77,6 @@ const LIMITE_Y: readonly [number, number] = [0, 9];
 const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
 const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
 
-// El índice de color de la vista de conjunto (spec 023) se deriva del mismo orden fijo de
-// roles que ya usan el banquillo y la leyenda de etiquetas — nunca se declara a mano, así que
-// dos jugadores con el mismo rol e índice comparten color aunque sean de plantillas distintas.
-const CLAVES_ORDEN_COLOR = [
-  claveOrdenRol('colocador'),
-  claveOrdenRol('receptor', 1),
-  claveOrdenRol('receptor', 2),
-  claveOrdenRol('central', 1),
-  claveOrdenRol('central', 2),
-  claveOrdenRol('opuesto'),
-  claveOrdenRol('libero'),
-];
-
-function indiceColorDe(jugador: Jugador): number {
-  return CLAVES_ORDEN_COLOR.indexOf(claveOrdenRol(jugador.rol, jugador.indice));
-}
-
 // El arrastre no se arma al primer píxel: hace falta superar este desplazamiento en pantalla
 // o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está armado, un
 // pointerdown+pointerup sobre una ficha ya en pista cuenta como un toque y selecciona en vez
@@ -113,7 +87,7 @@ const UMBRAL_ARRASTRE_PX = 8;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
-type Ventana = 'editor' | 'examen' | 'cuenta';
+type Ventana = 'editor' | 'teoria' | 'examen' | 'cuenta';
 
 type PestanaTablero = 'banquillo' | 'ensenanza' | 'pintado' | 'ajustes';
 
@@ -125,13 +99,6 @@ const ETIQUETA_PESTANA: Readonly<Record<PestanaTablero, string>> = {
   pintado: 'Pintado',
   ajustes: 'Ajustes',
 };
-
-/** Entrada de la leyenda de colores de la vista de conjunto (spec 023): qué color le tocó a
- * cada jugador, para la pestaña "Zonas". */
-export interface EntradaLeyendaColor {
-  readonly etiqueta: string;
-  readonly indiceColor: number;
-}
 
 interface Arrastre {
   readonly jugadorId: string;
@@ -152,10 +119,6 @@ function acotarPuntoRival(punto: Punto): Punto {
   return { x: acotar(punto.x, LIMITE_X_RIVAL), y: acotar(punto.y, LIMITE_Y_RIVAL) };
 }
 
-function esLineaDelantera(posicion: number): boolean {
-  return posicion === 2 || posicion === 3 || posicion === 4;
-}
-
 function distancia(a: Punto, b: Punto): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
@@ -172,19 +135,6 @@ function colocacionMasCercana(formacion: readonly ColocacionBorrador[], punto: P
     }
     return mejor;
   }, null);
-}
-
-/** El identificador de a quién ocupa una colocación del borrador, igual que en el store: el id
- * del jugador en recepción, o `p${puesto}` en defensa (spec 038). Se repite aquí en vez de
- * importarlo porque en el store es privado — es fontanería de UI, no una regla de dominio. */
-function idOcupanteDe(colocacion: ColocacionBorrador): string {
-  return 'jugador' in colocacion ? colocacion.jugador.id : `p${colocacion.puesto}`;
-}
-
-/** La etiqueta de una colocación del borrador: derivada del rol en recepción (`etiquetaDe`), o
- * fija por puesto en defensa (spec 038, E12 — no depende de rol ni de plantilla). */
-function etiquetaOcupanteDe(colocacion: ColocacionBorrador): string {
-  return 'jugador' in colocacion ? etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO) : ETIQUETA_PUESTO[colocacion.puesto];
 }
 
 function estadoDe(resultado: ResultadoValidacion | null, jugadorId: string): 'falta' | 'aviso' | 'normal' {
@@ -231,6 +181,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     DialogoSistema,
     SelectorEquipo,
     PanelAjustes,
+    TeoriaTablero,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',

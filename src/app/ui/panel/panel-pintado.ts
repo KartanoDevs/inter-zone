@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Barra } from '../comun/barra';
-import type { EntradaLeyendaColor } from '../tablero/tablero';
+import type { EntradaLeyendaColor } from '../comun/ficha-vista';
 
 /**
  * Contenido de la pestaña "Pintado" (spec 041, rediseñado por la 044): selector de acción al

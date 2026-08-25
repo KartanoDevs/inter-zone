@@ -18,6 +18,8 @@ export class PanelEnsenanza {
   readonly texto = input.required<string>();
   /** Si el panel arranca desplegado o plegado. Por defecto desplegado. */
   readonly abierto = input(true);
+  /** Sin botón "Editar" (spec 052): Teoría es de solo consulta. Por defecto editable. */
+  readonly soloLectura = input(false);
 
   readonly guardar = output<string>();
 

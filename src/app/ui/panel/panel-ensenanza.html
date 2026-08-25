@@ -6,7 +6,9 @@
 
   <div class="app-ensenanza__cuerpo">
     <p class="app-ensenanza__texto">{{ texto() || 'Sin explicación todavía.' }}</p>
-    <button type="button" class="app-boton app-boton--secundario" (click)="iniciarEdicion()">Editar</button>
+    @if (!soloLectura()) {
+      <button type="button" class="app-boton app-boton--secundario" (click)="iniciarEdicion()">Editar</button>
+    }
   </div>
 </details>
 

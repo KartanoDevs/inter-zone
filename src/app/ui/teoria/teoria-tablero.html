@@ -1,0 +1,74 @@
+<div class="app-teoria">
+  <div class="app-teoria__cabecera">
+    <app-selector-equipo [equipoActivo]="teoria.equipoActivo()" (seleccionar)="seleccionarEquipo($event)"></app-selector-equipo>
+    <app-barra-sistemas
+      [sistemas]="opcionesSistema()"
+      [sistemaActivoId]="teoria.sistemaActivoId()"
+      (elegir)="teoria.activarSistema($event)"
+    ></app-barra-sistemas>
+  </div>
+
+  @if (opcionesSistema().length === 0) {
+    <div class="app-teoria__vacio">
+      <h2>Todavía no hay nada validado</h2>
+      <p>Cuando tu entrenador valide un sistema de este equipo, aparecerá aquí para que lo estudies.</p>
+    </div>
+  } @else {
+    @if (teoria.esDefensa()) {
+      <app-selector-caso [casoActivo]="teoria.casoActivo()" (seleccionar)="teoria.seleccionarCaso($event)"></app-selector-caso>
+      <app-selector-situacion
+        [casoActivo]="teoria.casoActivo()"
+        [situacionActiva]="teoria.situacionActiva()"
+        (seleccionar)="teoria.seleccionarSituacion($event)"
+      ></app-selector-situacion>
+      @if (teoria.admiteBloqueadores()) {
+        <app-selector-bloqueadores
+          [bloqueadoresActivos]="teoria.bloqueadoresActivos()"
+          [bloqueadoresCreados]="teoria.bloqueadoresCreados()"
+          (seleccionar)="teoria.seleccionarBloqueadores($event)"
+        ></app-selector-bloqueadores>
+      }
+    } @else {
+      <app-selector-rotacion
+        [rotaciones]="estadosRotacion()"
+        [rotacionActiva]="teoria.rotacionActiva()"
+        (seleccionar)="seleccionarRotacion($event)"
+      ></app-selector-rotacion>
+    }
+
+    <div class="app-teoria__pista">
+      <app-pista
+        [fichas]="fichas()"
+        [mostrarRival]="teoria.esDefensa()"
+        [casoActivo]="teoria.casoActivo()"
+        [situacionActiva]="teoria.situacionActiva()"
+        [mostrarZonas]="teoria.esDefensa()"
+        [celdasVistaConjunto]="celdasVistaConjunto()"
+        [celdasFintaVistaConjunto]="celdasFintaVistaConjunto()"
+        [indiceColorSeleccionado]="indiceColorSeleccionado()"
+        [sombra]="teoria.sombra()"
+        [accionArrastre]="null"
+        (fichaAgarrada)="seleccionarFicha($event.id)"
+      ></app-pista>
+
+      @if (teoria.esDefensa() && formacionActivaVacia()) {
+        <div class="app-teoria__aviso-pista">Esta situación todavía no está trabajada.</div>
+      }
+      @if (!teoria.esDefensa() && formacionActivaVacia()) {
+        <div class="app-teoria__aviso-pista">Esta rotación todavía no está colocada.</div>
+      }
+    </div>
+
+    <app-panel-ensenanza
+      [titulo]="'Descripción del sistema'"
+      [texto]="teoria.descripcionSistemaActivo()"
+      [abierto]="false"
+      [soloLectura]="true"
+    ></app-panel-ensenanza>
+    <app-panel-ensenanza
+      [titulo]="teoria.jugadorSeleccionadoId() ? 'Explicación del jugador' : 'Explicación de la rotación'"
+      [texto]="teoria.explicacionMostrada()"
+      [soloLectura]="true"
+    ></app-panel-ensenanza>
+  }
+</div>
