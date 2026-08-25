@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import type { SesionUsuario } from '../domain/acceso';
+import type { DatosPerfil, SesionUsuario } from '../domain/acceso';
 import type { AccesoRepository } from '../domain/puertos';
 
 /**
@@ -48,6 +48,34 @@ export class AccesoStore {
   async salir(): Promise<void> {
     await this.repositorio.salir();
     this.usuario.set(null);
+  }
+
+  /** Guarda los tres campos de perfil (spec 053). Con éxito, se reflejan de inmediato en
+   * `usuario()` sin volver a preguntar al servidor — ya confirmó el guardado. Devuelve si
+   * salió bien, para que el formulario decida qué hacer sin tener que leer `error()`. */
+  async actualizarPerfil(datos: DatosPerfil): Promise<boolean> {
+    this.error.set(null);
+    try {
+      await this.repositorio.actualizarPerfil(datos);
+      this.usuario.update((actual) => (actual ? { ...actual, ...datos } : actual));
+      return true;
+    } catch (error) {
+      this.error.set(mensajeDe(error));
+      return false;
+    }
+  }
+
+  /** Cambia la contraseña, exigiendo acertar la actual (spec 053). No toca `usuario()`: nada
+   * del perfil cambia con esto. */
+  async cambiarContrasena(actual: string, nueva: string): Promise<boolean> {
+    this.error.set(null);
+    try {
+      await this.repositorio.cambiarContrasena(actual, nueva);
+      return true;
+    } catch (error) {
+      this.error.set(mensajeDe(error));
+      return false;
+    }
   }
 }
 

@@ -39,7 +39,14 @@ function fallaDeRed(): never {
   throw new TypeError('Failed to fetch (simulado)');
 }
 
-const USUARIO: SesionUsuario = { email: 'entrenadora@club.com', esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'entrenador' }] };
+const USUARIO: SesionUsuario = {
+  email: 'entrenadora@club.com',
+  esAdmin: false,
+  membresias: [{ equipoId: 'femenino', rol: 'entrenador' }],
+  nombre: null,
+  posicionFavorita: null,
+  dorsal: null,
+};
 
 describe('HttpAccesoRepository', () => {
   it('050-E2: entrar con credenciales correctas abre sesión y devuelve quién ha entrado', async () => {
@@ -103,5 +110,29 @@ describe('HttpAccesoRepository', () => {
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
     await expect(repositorio.registrar('a@club.com', 'abc')).rejects.toBeInstanceOf(ErrorDelServidor);
+  });
+
+  it('053-E2: actualizarPerfil manda los tres campos a /auth/perfil', async () => {
+    const { fetchFn, llamadas } = crearFetchFalso([() => respuestaJson(200, { ok: true })]);
+    const repositorio = new HttpAccesoRepository('http://api', fetchFn);
+
+    await repositorio.actualizarPerfil({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
+
+    expect(llamadas[0]?.url).toContain('/auth/perfil');
+    expect(JSON.parse(llamadas[0]?.init?.body as string)).toEqual({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
+  });
+
+  it('053-E7: cambiarContrasena con la actual incorrecta se señala como CredencialesInvalidas', async () => {
+    const { fetchFn } = crearFetchFalso([() => respuestaJson(401, { error: 'La contraseña actual no es correcta' })]);
+    const repositorio = new HttpAccesoRepository('http://api', fetchFn);
+
+    await expect(repositorio.cambiarContrasena('mala', 'nuevaclave123')).rejects.toBeInstanceOf(CredencialesInvalidas);
+  });
+
+  it('053-E8: cambiarContrasena con la nueva demasiado corta se señala como ErrorDelServidor', async () => {
+    const { fetchFn } = crearFetchFalso([() => respuestaJson(400, { error: 'La nueva contraseña es demasiado corta' })]);
+    const repositorio = new HttpAccesoRepository('http://api', fetchFn);
+
+    await expect(repositorio.cambiarContrasena('actual123', 'corta')).rejects.toBeInstanceOf(ErrorDelServidor);
   });
 });

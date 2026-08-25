@@ -1,4 +1,4 @@
-import type { SesionUsuario } from '../domain/acceso';
+import type { DatosPerfil, SesionUsuario } from '../domain/acceso';
 import { type AccesoRepository, CredencialesInvalidas, ErrorDelServidor, ErrorDeRed, InvitacionNoDisponible } from '../domain/puertos';
 
 /**
@@ -60,6 +60,31 @@ export class HttpAccesoRepository implements AccesoRepository {
 
   async salir(): Promise<void> {
     const respuesta = await this.peticion('/auth/salir', { method: 'POST' });
+    if (!respuesta.ok) {
+      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+    }
+  }
+
+  async actualizarPerfil(datos: DatosPerfil): Promise<void> {
+    const respuesta = await this.peticion('/auth/perfil', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+    if (!respuesta.ok) {
+      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+    }
+  }
+
+  async cambiarContrasena(actual: string, nueva: string): Promise<void> {
+    const respuesta = await this.peticion('/auth/contrasena', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ actual, nueva }),
+    });
+    if (respuesta.status === 401) {
+      throw new CredencialesInvalidas(await mensajeDe(respuesta, 'La contraseña actual no es correcta'));
+    }
     if (!respuesta.ok) {
       throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
     }
