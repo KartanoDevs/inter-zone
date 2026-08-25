@@ -117,7 +117,7 @@ Modelos y reglas. Aquí vive el voleibol.
   nombre nuevos; mismas reglas de nombre que `crearSistema`/`renombrarSistema`), `estadoDe`
   (spec 051: `Sistema.estado` es opcional, ausente equivale a `'borrador'`),
   `validarSistema`/`invalidarSistema` (cambian ese estado; quién puede hacerlo es
-  `puedeValidar` en `acceso.ts`, no algo que decida este fichero).
+  `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
@@ -136,10 +136,11 @@ Modelos y reglas. Aquí vive el voleibol.
 - `acceso.ts` — el rol de acceso (spec 035): `normalizarEmail` (el correo se compara siempre en
   minúsculas y sin espacios), `resolverAltaDesdeInvitacion` (traduce una invitación de la lista
   blanca en si la cuenta nace admin o en qué equipos nace con membresía),
-  `LONGITUD_MINIMA_CONTRASENA` y `puedeValidar` (spec 051: admin, o entrenador con membresía en
-  el equipo del sistema — la única regla de permisos que ya se aplica en `server/`, desde antes
-  de que la spec 037 cierre el resto). Nada de contraseñas ni de sesión aquí: eso necesita
-  `node:crypto` y vive en `server/`, que es quien lo usa (invariante 2).
+  `LONGITUD_MINIMA_CONTRASENA`, `puedeGestionarEquipo` (specs 037/051: admin, o entrenador con
+  membresía en el equipo — crear, editar, borrar y validar comparten esta misma regla) y
+  `puedeEditarAlgo` (spec 037: si a la cuenta le toca ver la pestaña Editor, sea cual sea el
+  equipo). Nada de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en
+  `server/`, que es quien lo usa (invariante 2).
 - `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository` y `AccesoRepository`,
   sin implementación. Asíncronas todas; `SistemaRepository` además es granular —
   `crear`/`actualizar`/`borrar` por sistema, nunca un `guardar` de todo el catálogo— para que una
@@ -355,7 +356,10 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   importarla directamente de ahí habría creado un import circular entre los dos componentes.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
-  ficha). Trabaja con `ColocacionBorrador` de forma genérica (jugador o puesto, spec 038): las
+  ficha). `puedeEditar` (spec 037) decide si se ve la pestaña Editor y si `ventana` arranca ahí
+  o en "Teoría" — solo depende del rol (`domain/acceso.puedeEditarAlgo`), nunca de qué equipo
+  esté activo; el permiso real, equipo a equipo, lo comprueba el servidor en cada escritura.
+  Trabaja con `ColocacionBorrador` de forma genérica (jugador o puesto, spec 038): las
   funciones `idOcupanteDe`/`etiquetaOcupanteDe` distinguen los dos casos donde antes solo había
   `Colocacion`. El modo pintar (spec 022, solo en defensa desde la spec 024) es un segundo
   gestor de `PointerEvent` en paralelo al de arrastre: con un ocupante seleccionado, arrastrar
@@ -398,13 +402,15 @@ navegador, ejecutándose en Node.
   eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
-- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`, **todavía sin exigir sesión**
-  (spec 037, sin hacer) salvo una: reciben y devuelven el `Sistema` de dominio tal cual lo
-  serializa el cliente, sin traducción de forma en la frontera HTTP. `PUT` exige la cabecera
-  `If-Match` con el testigo de concurrencia; `409` si caducó. `PUT /sistemas/:id/estado`
-  (spec 051, ADR 0038) es la excepción: valida o quita la validación, y sí exige sesión y rol
-  (`acceso.repositorio.quienSoy` + `domain/acceso.puedeValidar`) — adelanta, para esta única
-  acción, el mecanismo que la 037 aplicará al resto.
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`. `GET` sigue **sin exigir
+  sesión**, sin spec asignada para cambiarlo. Las cuatro de escritura (`POST`, `PUT`,
+  `PUT /:id/estado`, `DELETE`) sí la exigen, y el rol (spec 037/051, ADR 0038):
+  `exigirPermisoDeEquipo`, un helper local, resuelve la sesión con
+  `acceso.repositorio.quienSoy` y comprueba `domain/acceso.puedeGestionarEquipo` contra el
+  equipo real del sistema — nunca el que traiga el cuerpo de la petición, para que no valga
+  mentir sobre `equipoId` al editar o borrar uno ya existente. `PUT /sistemas/:id` sigue
+  exigiendo además la cabecera `If-Match` con el testigo de concurrencia (`409` si caducó),
+  comprobada antes que el permiso.
 - `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro contra la
   lista blanca, entrar, salir y "quién soy".
 - `src/http/cookies.ts` — `leerTestigoSesion` (spec 035, factorizado en la 051 al necesitarlo

@@ -223,20 +223,22 @@ porque no está acotado a ningún equipo.
 
 ### Matriz de permisos
 
-**`membresia` y `usuario.es_admin` ya existen (spec 035), pero nada las consulta todavía**: las
-rutas de abajo son diseño de la matriz de permisos, ejecutable en cuanto la spec 037 las cablee
-contra `/api/sistemas`.
+**Fila por fila, qué está ya cableado:**
 
 Entrenador y usuario, siempre acotados a los equipos donde tienen membresía:
 
-| | Admin | Entrenador | Usuario |
-|---|---|---|---|
-| Ver sistemas validados | todos | de sus equipos | de sus equipos |
-| Ver borradores | sí | de sus equipos | **no** |
-| Crear, editar, clonar, borrar | sí | de sus equipos | no |
-| Validar un sistema | sí | de sus equipos | no |
-| Gestionar lista blanca, usuarios y equipos | sí | no | no |
-| Examinarse *(futuro)* | sí | sí | sí |
+| | Admin | Entrenador | Usuario | Estado |
+|---|---|---|---|---|
+| Ver sistemas validados | todos | de sus equipos | de sus equipos | Diseño — `GET /sistemas` sigue sin filtrar por rol (spec 037, fuera de alcance a propósito) |
+| Ver borradores | sí | de sus equipos | **no** | Diseño, igual que arriba |
+| Crear, editar, clonar, borrar | sí | de sus equipos | no | **Construido** (spec 037) |
+| Validar un sistema | sí | de sus equipos | no | **Construido** (spec 051, ADR 0038) |
+| Gestionar lista blanca, usuarios y equipos | sí | no | no | Diseño — spec 054 |
+| Examinarse *(futuro)* | sí | sí | sí | Diseño — specs 012-013 |
+
+Las dos filas construidas comparten una única función de dominio,
+`domain/acceso.puedeGestionarEquipo`, porque la matriz les da la misma respuesta por rol —
+validar y editar no son reglas distintas, son la misma regla aplicada a dos acciones.
 
 Traducido a consulta, lo que un usuario ve:
 

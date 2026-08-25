@@ -39,17 +39,17 @@ sin cubrir.
   `entrenador`/`usuario`, en qué equipo o equipos. Entrar abre una sesión de 30 días que se
   renueva sola con el uso; salir la invalida al instante (spec 035, ADR 0036).
 - La pizarra misma pide entrar (spec 050): sin sesión, solo se ve la pantalla de entrar o crear
-  cuenta, y no se pide el catálogo. Con sesión, el editor funciona igual que siempre — todavía
-  cualquier cuenta puede editar, sin distinguir por rol (eso es la spec 037).
+  cuenta, y no se pide el catálogo.
 - Validar un sistema (spec 051): el entrenador del equipo dueño, o el admin, lo marca como listo
-  para que un jugador lo estudie — y puede quitarle la marca si hace falta corregirlo. Es la
-  única acción de `/api/sistemas` que ya exige sesión y rol; el resto sigue abierto hasta la
-  spec 037.
+  para que un jugador lo estudie — y puede quitarle la marca si hace falta corregirlo.
 - Teoría (spec 052): cualquier cuenta puede abrir esta pestaña y recorrer los sistemas
   validados del equipo activo — rotación a rotación en recepción, por caso/situación/
   bloqueadores en defensa — viendo fichas, zonas, sombra y explicaciones exactamente como en el
   editor, sin poder tocar nada. Un equipo sin nada validado todavía lo dice, en vez de una pista
   vacía.
+- Solo `admin` y `entrenador` crean, editan, clonan o borran sistemas (spec 037): un
+  entrenador, en los suyos; el admin, en cualquiera. Un `usuario` no ve la pestaña Editor y
+  entra directo en Teoría. `GET /sistemas` sigue sin filtrar por rol — ver "Qué NO hace".
 
 ## Qué NO hace
 
@@ -60,11 +60,13 @@ a la 0028). La condición que la v1 puso para el backend —que el equipo pidier
 varios dispositivos— se cumplió; la decisión está en
 `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
 
-**Con las cuentas ya construidas, falta cerrar la puerta con ellas:** `/api/sistemas` todavía no
-exige sesión ni mira el rol de quien pregunta — cualquiera puede seguir leyendo y escribiendo
-sistemas sin entrar. Que el rol decida quién edita (`admin`/`entrenador` sí, `usuario` no) es la
-spec 037, sin escribir todavía. Mientras tanto, sigue sin ser buena idea exponer el servidor a
-una red que no sea de confianza.
+**Con las cuentas ya construidas, la puerta de escritura ya está cerrada (spec 037): sigue
+abierta la de lectura.** Crear, editar, clonar, borrar y validar exigen sesión y rol
+(`admin`/`entrenador` sí, `usuario` no). `GET /sistemas`, en cambio, sigue sin exigir sesión ni
+filtrar por rol — cualquiera puede seguir leyendo el catálogo entero, borradores incluidos, sin
+entrar. Filtrar la lectura por rol (qué ve un `usuario` frente a un `entrenador`) no tiene spec
+asignada todavía; hasta entonces, sigue sin ser buena idea exponer el servidor a una red que no
+sea de confianza.
 
 **Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
 
@@ -178,11 +180,12 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034); la autenticación,
    aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
    sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); un
-   entrenador o el admin pueden validar un sistema (spec 051, ADR 0038 — la única acción que ya
-   exige rol); y "Teoría" deja consultar en solo lectura los sistemas validados (spec 052, ADR
-   0039). **Sin hacer todavía:** login con Google, sin spec asignada; y que los tres
-   roles decidan quién ve y quién edita cada cosa (spec 037) — hasta entonces, `/api/sistemas`
-   sigue abierto a cualquiera con sesión o sin ella.
+   entrenador o el admin pueden validar un sistema (spec 051, ADR 0038); "Teoría" deja
+   consultar en solo lectura los sistemas validados (spec 052, ADR 0039); y los tres roles
+   deciden quién edita — crear, editar, clonar y borrar exigen sesión y rol; un `usuario` no ve
+   el editor (spec 037). **Sin hacer todavía:** login con Google, sin spec asignada; y que el
+   rol también decida qué se **lee** (hoy `GET /sistemas` sigue abierto a cualquiera, borradores
+   incluidos) — sin spec asignada.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

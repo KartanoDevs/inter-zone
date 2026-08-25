@@ -1,10 +1,11 @@
 # InterZone — servidor
 
 API REST que guarda y sirve sistemas en PostgreSQL (spec 033), con cuentas, lista blanca y
-sesión (spec 035, ADR 0036/0037). **`/api/sistemas` todavía no exige sesión ni mira el rol**,
-salvo validar un sistema (spec 051, ADR 0038): cerrar la puerta del resto es la spec 037, sin
-escribir. Vale en local; **no vale en una máquina expuesta a internet** hasta que esa spec
-cierre esa puerta.
+sesión (spec 035, ADR 0036/0037). **Escribir exige sesión y rol** (crear, editar, clonar,
+borrar y validar — specs 037/051, ADR 0038): admin, o entrenador con membresía en el equipo del
+sistema. **Leer sigue abierto a cualquiera**: `GET /sistemas` no exige sesión ni filtra por rol
+todavía. Vale en local; **no vale en una máquina expuesta a internet** mientras la lectura siga
+abierta.
 Importa `src/app/domain/` directamente — ver
 `docs/decisiones/0025-el-servidor-importa-el-dominio.md`.
 
@@ -41,11 +42,14 @@ lo serializa el cliente — sin traducción de forma en la frontera HTTP.
 
 | Método | Ruta | |
 |---|---|---|
-| `GET` | `/sistemas?equipoId=masculino\|femenino` | catálogo de ese equipo |
-| `POST` | `/sistemas` | crea; `409` si el nombre ya existe en ese equipo y tipo |
-| `PUT` | `/sistemas/:id` | requiere cabecera `If-Match` con `actualizadoEn`; `409` si caducó |
+| `GET` | `/sistemas?equipoId=masculino\|femenino` | catálogo de ese equipo, sin exigir sesión |
+| `POST` | `/sistemas` | exige sesión y rol sobre `equipoId`; crea; `409` si el nombre ya existe en ese equipo y tipo |
+| `PUT` | `/sistemas/:id` | exige sesión y rol sobre el equipo dueño; cabecera `If-Match` con `actualizadoEn`; `409` si caducó |
 | `PUT` | `/sistemas/:id/estado` | `{ estado: 'validado'\|'borrador' }`; exige sesión y rol (admin, o entrenador del equipo dueño) — `401` sin sesión, `403` sin permiso, `404` si no existe |
-| `DELETE` | `/sistemas/:id` | `404` si no existe |
+| `DELETE` | `/sistemas/:id` | exige sesión y rol sobre el equipo dueño; `404` si no existe |
+
+Las cuatro rutas de escritura devuelven `401` sin sesión y `403` si la sesión no tiene rol sobre
+ese equipo (spec 037) — el mismo `puedeGestionarEquipo` de `domain/acceso.ts` en las cuatro.
 
 `GET`/`POST`/`PUT` devuelven el sistema con un campo `actualizadoEn` añadido — metadato de esta
 frontera, no del tipo de dominio (ADR 0012): es el testigo que hay que mandar de vuelta en el
