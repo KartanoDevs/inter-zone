@@ -48,15 +48,16 @@ lo serializa el cliente — sin traducción de forma en la frontera HTTP.
 | `PUT` | `/sistemas/:id/estado` | `{ estado: 'validado'\|'borrador' }`; exige sesión y rol (admin, o entrenador del equipo dueño) — `401` sin sesión, `403` sin permiso, `404` si no existe |
 | `DELETE` | `/sistemas/:id` | exige sesión y rol sobre el equipo dueño; `404` si no existe |
 
-Las cuatro rutas de escritura devuelven `401` sin sesión y `403` si la sesión no tiene rol sobre
-ese equipo (spec 037) — el mismo `puedeGestionarEquipo` de `domain/acceso.ts` en las cuatro.
+Las cuatro rutas de escritura de `/sistemas` devuelven `401` sin sesión y `403` si la sesión no
+tiene rol sobre ese equipo (spec 037) — el mismo `puedeGestionarEquipo` de `domain/acceso.ts`
+en las cuatro.
 
 `GET`/`POST`/`PUT` devuelven el sistema con un campo `actualizadoEn` añadido — metadato de esta
 frontera, no del tipo de dominio (ADR 0012): es el testigo que hay que mandar de vuelta en el
 próximo `PUT`.
 
-**`/api/sistemas` no exige sesión todavía** (spec 037, sin hacer): las rutas de abajo dan cuenta
-y sesión, pero ninguna otra ruta las comprueba por ahora.
+Estas rutas dan cuenta y sesión, y no exigen tenerla ya abierta (salvo las dos últimas, sobre el
+propio perfil):
 
 | Método | Ruta | |
 |---|---|---|
@@ -64,6 +65,8 @@ y sesión, pero ninguna otra ruta las comprueba por ahora.
 | `POST` | `/auth/entrar` | `{ email, contrasena }`; abre sesión (cookie `iz_sesion`, `HttpOnly`, 30 días); `401` igual para contraseña incorrecta y correo inexistente |
 | `POST` | `/auth/salir` | invalida la sesión de la cookie al instante |
 | `GET` | `/auth/quien-soy` | `{ usuario: null }` sin sesión o con una caducada, nunca un error; con sesión válida, la renueva y devuelve `{ usuario }` |
+| `PUT` | `/auth/perfil` | `{ nombre, posicionFavorita, dorsal }` (los tres, siempre juntos; `null` vacía el campo); exige sesión; `400` si la posición o el dorsal no son válidos |
+| `PUT` | `/auth/contrasena` | `{ actual, nueva }`; exige sesión; `401` si `actual` no coincide, `400` si `nueva` es demasiado corta |
 
 ## Estructura
 

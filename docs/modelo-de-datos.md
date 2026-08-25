@@ -138,8 +138,10 @@ CREATE TABLE usuario (
 
 - El `CHECK` sobre el email es el cinturón: la comparación real ya llega normalizada desde
   `domain/acceso.ts` (spec 035, E1) antes de tocar la base.
-- `posicion_favorita` y `dorsal` no estaban en el diseño original de esta tabla: los trajo el
-  encargo de la spec 035 como campos de perfil opcionales, sin dueño en ninguna otra tabla.
+- `posicion_favorita` y `dorsal`, junto con `nombre`, no estaban en el diseño original de esta
+  tabla: los trajo el encargo de la spec 035 como campos de perfil opcionales, sin dueño en
+  ninguna otra tabla. La columna nace con la 035; `GET/PUT /api/auth/perfil` (spec 053) es quien
+  de verdad los lee y los escribe.
 - Los cuatro booleanos de `Ajustes` (`src/app/domain/puertos.ts`) siguen **sin** columna aquí:
   la spec 035 los dejó fuera de alcance a propósito, y siguen en la
   persona, que es donde encajan de verdad.

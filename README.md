@@ -50,6 +50,9 @@ sin cubrir.
 - Solo `admin` y `entrenador` crean, editan, clonan o borran sistemas (spec 037): un
   entrenador, en los suyos; el admin, en cualquiera. Un `usuario` no ve la pestaña Editor y
   entra directo en Teoría. `GET /sistemas` sigue sin filtrar por rol — ver "Qué NO hace".
+- La ventana "Cuenta" es real (spec 053): correo y rol de solo lectura, más nombre o apodo,
+  posición favorita y dorsal —los tres opcionales, y en blanco es un estado válido— y cambiar
+  la contraseña, exigiendo acertar la actual.
 
 ## Qué NO hace
 
@@ -181,11 +184,13 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
    sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); un
    entrenador o el admin pueden validar un sistema (spec 051, ADR 0038); "Teoría" deja
-   consultar en solo lectura los sistemas validados (spec 052, ADR 0039); y los tres roles
+   consultar en solo lectura los sistemas validados (spec 052, ADR 0039); los tres roles
    deciden quién edita — crear, editar, clonar y borrar exigen sesión y rol; un `usuario` no ve
-   el editor (spec 037). **Sin hacer todavía:** login con Google, sin spec asignada; y que el
-   rol también decida qué se **lee** (hoy `GET /sistemas` sigue abierto a cualquiera, borradores
-   incluidos) — sin spec asignada.
+   el editor (spec 037); y la ventana "Cuenta" guarda el perfil y cambia la contraseña
+   (spec 053). **Sin hacer todavía:** login con Google, sin spec asignada; que el rol también
+   decida qué se **lee** (hoy `GET /sistemas` sigue abierto a cualquiera, borradores incluidos);
+   y la gestión de la lista blanca desde la aplicación (spec 054) — sin spec asignada la
+   primera, reservada la segunda.
 
 Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
 escenarios de cada una viven ahí, no aquí.

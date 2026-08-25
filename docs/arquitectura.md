@@ -52,7 +52,9 @@ Modelos y reglas. Aquí vive el voleibol.
   del colocador rival y situación de ataque, y los seis puestos son genéricos — no hay jugador
   que colocar, así que `ColocacionDefensa` es un tipo paralelo a `Colocacion`, no una unión
   dentro de ella (ADR 0029). `ViaAtaque` desaparece.
-- `roles.ts` — configuración de roles por defecto y `etiquetaDe()`.
+- `roles.ts` — configuración de roles por defecto, `etiquetaDe()` y `esRolIdValido` (spec 053:
+  si un valor es uno de los cinco roles de voleibol — usado para validar la posición favorita
+  del perfil).
 - `equipos.ts` — los dos equipos fijos (spec 032, `EQUIPOS`, `NOMBRE_EQUIPO`), mismo patrón que
   `roles.ts`: el identificador es estable, el nombre visible es lo único configurable.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
@@ -139,8 +141,11 @@ Modelos y reglas. Aquí vive el voleibol.
   `LONGITUD_MINIMA_CONTRASENA`, `puedeGestionarEquipo` (specs 037/051: admin, o entrenador con
   membresía en el equipo — crear, editar, borrar y validar comparten esta misma regla) y
   `puedeEditarAlgo` (spec 037: si a la cuenta le toca ver la pestaña Editor, sea cual sea el
-  equipo). Nada de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en
-  `server/`, que es quien lo usa (invariante 2).
+  equipo), `dorsalValido` y `normalizarNombre` (spec 053: mismo criterio que `describirSistema`
+  con la descripción de un sistema — un texto en blanco borra lo que hubiera). `DatosPerfil` es
+  el tipo de los tres campos de perfil, siempre los tres juntos, nunca un parche parcial. Nada
+  de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en `server/`, que es quien
+  lo usa (invariante 2).
 - `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository` y `AccesoRepository`,
   sin implementación. Asíncronas todas; `SistemaRepository` además es granular —
   `crear`/`actualizar`/`borrar` por sistema, nunca un `guardar` de todo el catálogo— para que una
@@ -171,7 +176,9 @@ Angular, las tres testeables sin `TestBed`.
   sesión, nunca se pide el catálogo de sistemas todavía. `entrar()` y `crearCuenta()` traducen
   `CredencialesInvalidas`/`InvitacionNoDisponible` en el mensaje de `error()`; `crearCuenta()`
   encadena `registrar()` y `entrar()` para que quien acaba de crear su cuenta no tenga que
-  teclear la contraseña una segunda vez (E4).
+  teclear la contraseña una segunda vez (E4). `actualizarPerfil()` y `cambiarContrasena()`
+  (spec 053) siguen el mismo patrón: con éxito, la primera refleja los datos nuevos en
+  `usuario()` sin volver a preguntar al servidor.
 - `SistemaStore` — instanciable con `new SistemaStore(repositorio, ajustesRepositorio)`
   (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031): `cargar()` es un
   método aparte, asíncrono. Desde la spec 050, ya no lo dispara `app.config.ts`: `App` lo llama
@@ -299,6 +306,8 @@ Adaptadores hacia el mundo exterior.
   `credentials: 'include'` — sin eso el navegador no envía la cookie de sesión a un origen
   distinto del suyo. `entrar()` pregunta a `/auth/quien-soy` justo después de abrir sesión,
   porque `/auth/entrar` no devuelve quién ha entrado (spec 035: esa ruta solo abre la sesión).
+  `actualizarPerfil()` y `cambiarContrasena()` (spec 053) van a `/auth/perfil` y
+  `/auth/contrasena`.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -307,8 +316,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 `ChangeDetectionStrategy.OnPush`, zoneless.
 
 - `ui/acceso/` — `PantallaAcceso` (spec 050): entrar o crear cuenta, con una pestaña para cada
-  modo. Es lo que `App` muestra cuando `AccesoStore.usuario()` es `null`; sin componentes de
-  test, como el resto de `ui/` — la lógica que importa ya está probada en `AccesoStore`.
+  modo. Es lo que `App` muestra cuando `AccesoStore.usuario()` es `null`. `PerfilCuenta`
+  (spec 053): la ventana "Cuenta" real — correo y rol de solo lectura, los tres campos de
+  perfil, y cambiar la contraseña en un `Modal` aparte (`ui/comun/modal.ts`). Ninguno de los dos
+  lleva test de componente, como el resto de `ui/` — la lógica que importa ya está probada en
+  `AccesoStore`.
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
@@ -411,20 +423,26 @@ navegador, ejecutándose en Node.
   mentir sobre `equipoId` al editar o borrar uno ya existente. `PUT /sistemas/:id` sigue
   exigiendo además la cabecera `If-Match` con el testigo de concurrencia (`409` si caducó),
   comprobada antes que el permiso.
-- `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro contra la
-  lista blanca, entrar, salir y "quién soy".
-- `src/http/cookies.ts` — `leerTestigoSesion` (spec 035, factorizado en la 051 al necesitarlo
-  también `sistemas.rutas.ts`): parseo de `Cookie` a mano, mismo criterio que el CORS escrito a
-  mano en `servidor.ts` — no hace falta más para esto.
+- `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro, entrar,
+  salir, "quién soy", y guardar el perfil o cambiar la contraseña de la propia sesión
+  (spec 053) — nunca de otra cuenta, porque el id sale de la sesión, no de la petición.
+- `src/http/cookies.ts` — `leerTestigoSesion` (spec 035) y `resolverSesion` (spec 037,
+  factorizados aquí al necesitarlos también `sistemas.rutas.ts`, y desde la 053 las dos rutas
+  de perfil): parseo de `Cookie` a mano, mismo criterio que el CORS escrito a mano en
+  `servidor.ts` — no hace falta más para esto.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
   `cambiarEstadoSistema` y `equipoDelSistema` (spec 051) son para la ruta de validar: la segunda
   resuelve el equipo dueño sin traer el sistema entero, solo para decidir el permiso.
 - `src/infraestructura/acceso.repositorio.ts` — `registrar`, `entrar`, `quienSoy` y `salir` (spec
   035): compone `domain/acceso.ts` con Prisma — valida la invitación, resuelve en qué equipos
-  nace la membresía, abre y renueva la sesión. `contrasena.ts` (hash y verificación con `scrypt`,
-  ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días) son los
-  dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/` (invariante 2).
+  nace la membresía, abre y renueva la sesión. `actualizarPerfil` y `cambiarContrasena`
+  (spec 053): la primera rechaza antes de tocar la base si la posición o el dorsal no son
+  válidos (`esRolIdValido`, `dorsalValido`); la segunda exige acertar la actual
+  (`verificarContrasena`) antes de aceptar la nueva. `contrasena.ts` (hash y verificación con
+  `scrypt`, ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días)
+  son los dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/`
+  (invariante 2).
 - `src/infraestructura/semilla.ts` — siembra el equipo, el catálogo fijo de jugadores y los dos
   sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía el adaptador de
   `localStorage` en la v1. La guarda de `sembrarEjemplos` es por tipo desde la spec 038, no
