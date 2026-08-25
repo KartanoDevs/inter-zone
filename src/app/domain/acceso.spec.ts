@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizarEmail, puedeEditarAlgo, puedeGestionarEquipo, resolverAltaDesdeInvitacion } from './acceso';
+import { dorsalValido, normalizarEmail, normalizarNombre, puedeEditarAlgo, puedeGestionarEquipo, resolverAltaDesdeInvitacion } from './acceso';
 
 const EQUIPOS = ['masculino', 'femenino'] as const;
 
@@ -66,5 +66,26 @@ describe('acceso', () => {
       ],
     } as const;
     expect(puedeEditarAlgo(usuario)).toBe(false);
+  });
+
+  it('053-E4: un dorsal entre 1 y 99 es válido', () => {
+    expect(dorsalValido(1)).toBe(true);
+    expect(dorsalValido(99)).toBe(true);
+    expect(dorsalValido(50)).toBe(true);
+  });
+
+  it('053-E4: un dorsal fuera de 1-99 no es válido', () => {
+    expect(dorsalValido(0)).toBe(false);
+    expect(dorsalValido(100)).toBe(false);
+    expect(dorsalValido(-1)).toBe(false);
+  });
+
+  it('053-E6: un nombre en blanco se normaliza a null (lo borra)', () => {
+    expect(normalizarNombre('   ')).toBeNull();
+    expect(normalizarNombre('')).toBeNull();
+  });
+
+  it('053-E2: un nombre con contenido se conserva sin los espacios de sobra', () => {
+    expect(normalizarNombre('  Ana  ')).toBe('Ana');
   });
 });

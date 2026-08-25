@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Jugador } from './modelos';
-import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe, validarConfiguracionRoles } from './roles';
+import { CONFIGURACION_ROLES_POR_DEFECTO, esRolIdValido, etiquetaDe, validarConfiguracionRoles } from './roles';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };
@@ -63,5 +63,21 @@ describe('validarConfiguracionRoles', () => {
 
   it('la configuración por defecto no colisiona aunque colocador y central compartan la letra C', () => {
     expect(validarConfiguracionRoles(CONFIGURACION_ROLES_POR_DEFECTO)).toEqual([]);
+  });
+});
+
+describe('esRolIdValido', () => {
+  it('053-E3: los cinco roles de voleibol son válidos', () => {
+    expect(esRolIdValido('colocador')).toBe(true);
+    expect(esRolIdValido('receptor')).toBe(true);
+    expect(esRolIdValido('central')).toBe(true);
+    expect(esRolIdValido('opuesto')).toBe(true);
+    expect(esRolIdValido('libero')).toBe(true);
+  });
+
+  it('053-E3: cualquier otro valor no es un rol válido', () => {
+    expect(esRolIdValido('entrenador')).toBe(false);
+    expect(esRolIdValido('')).toBe(false);
+    expect(esRolIdValido(3)).toBe(false);
   });
 });

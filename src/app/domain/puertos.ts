@@ -1,5 +1,5 @@
 import type { EstadoSistema, Sistema } from './modelos';
-import type { SesionUsuario } from './acceso';
+import type { DatosPerfil, SesionUsuario } from './acceso';
 
 /** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
  * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). `cambiarEstado` (spec 051) es
@@ -47,12 +47,16 @@ export interface AjustesRepository {
 }
 
 /** Entrar, crear cuenta, salir y preguntar quién ha entrado (spec 050). `quienSoy` nunca lanza
- * por falta de sesión: `null` es una respuesta válida, no un fallo. */
+ * por falta de sesión: `null` es una respuesta válida, no un fallo. `actualizarPerfil` y
+ * `cambiarContrasena` (spec 053) actúan siempre sobre la propia cuenta de la sesión — no hay
+ * ningún id de usuario que pasar, porque no se puede editar el perfil de otra cuenta. */
 export interface AccesoRepository {
   registrar(email: string, contrasena: string): Promise<void>;
   entrar(email: string, contrasena: string): Promise<SesionUsuario>;
   quienSoy(): Promise<SesionUsuario | null>;
   salir(): Promise<void>;
+  actualizarPerfil(datos: DatosPerfil): Promise<void>;
+  cambiarContrasena(actual: string, nueva: string): Promise<void>;
 }
 
 /** Dos motivos de fallo propios de `AccesoRepository` (spec 050), parte del contrato del

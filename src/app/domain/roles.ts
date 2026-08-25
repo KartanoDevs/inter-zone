@@ -13,6 +13,14 @@ export function etiquetaDe(jugador: Jugador, configuracion: ConfiguracionRoles):
   return definicion.llevaIndice ? `${definicion.abreviatura}${jugador.indice}` : definicion.abreviatura;
 }
 
+const ROLES_VALIDOS: readonly RolId[] = Object.keys(CONFIGURACION_ROLES_POR_DEFECTO) as RolId[];
+
+/** Si un valor es uno de los cinco roles de voleibol del dominio (spec 053, E3): usado para
+ * validar la posición favorita del perfil, que acepta cualquiera de estos cinco o ninguno. */
+export function esRolIdValido(valor: unknown): valor is RolId {
+  return typeof valor === 'string' && (ROLES_VALIDOS as readonly string[]).includes(valor);
+}
+
 export function validarConfiguracionRoles(configuracion: ConfiguracionRoles): ColisionAbreviatura[] {
   const rolesPorEtiquetaBase = new Map<string, { abreviatura: string; roles: RolId[] }>();
   for (const rolId of Object.keys(configuracion) as RolId[]) {

@@ -1,4 +1,4 @@
-import type { EquipoId } from './modelos';
+import type { EquipoId, RolId } from './modelos';
 
 /** Rol de acceso (spec 035): `admin` es global; `entrenador` y `usuario` se acotan por equipo,
  * vía membresía. Distinto del rol de voleibol (`RolId`) y de la posición rotacional. */
@@ -23,11 +23,27 @@ export interface AltaResuelta {
 }
 
 /** Quién ha entrado (spec 050): lo que devuelve el servidor tras identificarse, o al preguntar
- * "quién soy". Sin contraseña ni testigo de sesión — eso no sale nunca de `server/`. */
+ * "quién soy". Sin contraseña ni testigo de sesión — eso no sale nunca de `server/`. `nombre`,
+ * `posicionFavorita` y `dorsal` son los tres campos opcionales del perfil (spec 053): `null`
+ * cuando no se han guardado, nunca `undefined` — a diferencia de `Sistema.estado`, aquí el
+ * servidor siempre los incluye explícitos. */
 export interface SesionUsuario {
   readonly email: string;
   readonly esAdmin: boolean;
   readonly membresias: readonly Membresia[];
+  readonly nombre: string | null;
+  readonly posicionFavorita: RolId | null;
+  readonly dorsal: number | null;
+}
+
+/** Los tres campos de perfil que una cuenta puede guardar sobre sí misma (spec 053): siempre
+ * los tres juntos, como el envío completo de un formulario — no un parche parcial. `null`
+ * significa "vacío", y guardarlo así borra lo que hubiera antes (E6): no hay manera de "no
+ * tocar" un campo por separado, para no arrastrar la ambigüedad de un tercer estado. */
+export interface DatosPerfil {
+  readonly nombre: string | null;
+  readonly posicionFavorita: RolId | null;
+  readonly dorsal: number | null;
 }
 
 /** Quién puede gestionar los sistemas de un equipo — crearlos, editarlos, borrarlos o validarlos
@@ -51,6 +67,19 @@ export const LONGITUD_MINIMA_CONTRASENA = 8;
 
 export function normalizarEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+/** Rango del dorsal (spec 053, E4): sin regla de voleibol detrás, un límite de sentido común
+ * igual de arbitrario que `LONGITUD_MINIMA_CONTRASENA`. */
+export function dorsalValido(dorsal: number): boolean {
+  return Number.isInteger(dorsal) && dorsal >= 1 && dorsal <= 99;
+}
+
+/** Un nombre en blanco lo borra, igual que `describirSistema` con la descripción de un sistema
+ * (spec 053, E6): mismo criterio en todo el dominio para "vaciar un texto opcional". */
+export function normalizarNombre(texto: string): string | null {
+  const limpio = texto.trim();
+  return limpio.length === 0 ? null : limpio;
 }
 
 /** Traduce una invitación de la lista blanca en lo que hay que crear al dar de alta la cuenta
