@@ -135,15 +135,16 @@ Modelos y reglas. Aquí vive el voleibol.
   blanca en si la cuenta nace admin o en qué equipos nace con membresía) y
   `LONGITUD_MINIMA_CONTRASENA`. Nada de contraseñas ni de sesión aquí: eso necesita `node:crypto`
   y vive en `server/`, que es quien lo usa (invariante 2).
-- `puertos.ts` — las interfaces `SistemaRepository` y `AjustesRepository`, sin implementación.
-  Asíncronas las dos; `SistemaRepository` además es granular —`crear`/`actualizar`/`borrar` por
-  sistema, nunca un `guardar` de todo el catálogo— para que una escritura no pueda arriesgar el
-  trabajo de un sistema que no tocó (spec 031, ADR 0024). También declara `ErrorDeRed`,
-  `ErrorDelServidor` y `ConflictoDeEdicion` (spec 034): los tres motivos de fallo que un
-  adaptador puede señalar al escribir, parte del contrato del puerto — no un detalle de cómo lo
-  cumple un adaptador en concreto.
+- `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository` y `AccesoRepository`,
+  sin implementación. Asíncronas todas; `SistemaRepository` además es granular —
+  `crear`/`actualizar`/`borrar` por sistema, nunca un `guardar` de todo el catálogo— para que una
+  escritura no pueda arriesgar el trabajo de un sistema que no tocó (spec 031, ADR 0024).
+  También declara `ErrorDeRed`, `ErrorDelServidor` y `ConflictoDeEdicion` (spec 034) para
+  `SistemaRepository`, y `CredencialesInvalidas`/`InvitacionNoDisponible` (spec 050) para
+  `AccesoRepository`: los motivos de fallo que un adaptador puede señalar, parte del contrato
+  del puerto — no un detalle de cómo lo cumple un adaptador en concreto.
 
-Todo son funciones puras y tipos, con una excepción deliberada: las tres clases de error de
+Todo son funciones puras y tipos, con una excepción deliberada: las clases de error de
 `puertos.ts` no tienen estado propio (heredan de `Error` sin añadir nada), así que siguen sin
 fecha ni aleatoriedad — la regla de fondo es esa, no "cero clases". `creadoEn`/`actualizadoEn`
 de un sistema no viven aquí, sino en `infrastructure/` (ADR 0012). `cobertura.ts` (huecos y
@@ -156,13 +157,20 @@ ser evidente para alguien que solo lea `domain/`.
 
 ### `application/`
 
-Orquestación y estado de la aplicación con signals. Una única clase, `SistemaStore` — sin
-decorador de Angular, instanciable con `new SistemaStore(repositorio, ajustesRepositorio)` y
-testeable sin `TestBed` (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031):
-`cargar()` es un método aparte, asíncrono, que hay que llamar y esperar antes de que el store sea
-útil — `app.config.ts` lo dispara con `provideAppInitializer`, así que Angular no monta la
-aplicación hasta que el catálogo y los ajustes están listos, la misma garantía que antes daba el
-constructor síncrono.
+Orquestación y estado de la aplicación con signals. Dos clases, ninguna con decorador de
+Angular, las dos testeables sin `TestBed`.
+
+- `AccesoStore` (spec 050) — `usuario`, `cargando` y `error`. `comprobarSesion()` es lo único
+  que dispara `app.config.ts` con `provideAppInitializer`: al arrancar solo se pregunta si hay
+  sesión, nunca se pide el catálogo de sistemas todavía. `entrar()` y `crearCuenta()` traducen
+  `CredencialesInvalidas`/`InvitacionNoDisponible` en el mensaje de `error()`; `crearCuenta()`
+  encadena `registrar()` y `entrar()` para que quien acaba de crear su cuenta no tenga que
+  teclear la contraseña una segunda vez (E4).
+- `SistemaStore` — instanciable con `new SistemaStore(repositorio, ajustesRepositorio)`
+  (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031): `cargar()` es un
+  método aparte, asíncrono. Desde la spec 050, ya no lo dispara `app.config.ts`: `App` lo llama
+  en cuanto `AccesoStore.usuario()` deja de ser `null` — al arrancar con una sesión ya viva, o
+  justo después de entrar o crear cuenta.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -262,15 +270,19 @@ Adaptadores hacia el mundo exterior.
 - `LocalStorageAjustesRepository implements AjustesRepository` — **excepción deliberada**: es el
   único adaptador de `localStorage` que sigue en producción. La spec 034 dejó los `Ajustes`
   fuera de alcance a propósito: son preferencias de pantalla por dispositivo (validación
-  desactivada, ayuda de posición…), no trabajo de un entrenador que perder, y no hay tabla de
-  servidor para ellos todavía (`docs/modelo-de-datos.md` los convierte en columnas de `usuario`,
-  que no existe y queda aplazado — ADR 0028, así que este adaptador deja de ser una parada
-  intermedia y pasa a ser el definitivo por tiempo indefinido). Mismo patrón (versión + data) que
-  tenía `LocalStorageSistemaRepository`, pero bajo su propia clave: los ajustes son globales a la
-  app, no de un sistema concreto (ADR 0015). Sigue siendo un único documento — de cuatro banderas
-  más `escalaSombra` (spec 044, versión 5 del payload) — que se reescribe entero en cada
-  `guardar()` (spec 031): no hay nada que la granularidad de `SistemaRepository` pudiera
-  arriesgar aquí, solo se volvió asíncrono.
+  desactivada, ayuda de posición…), no trabajo de un entrenador que perder. `usuario` existe
+  desde la spec 035, pero moverlos a columnas suyas (`docs/modelo-de-datos.md` §4) sigue sin
+  spec asignada, así que este adaptador sigue siendo el definitivo por tiempo indefinido. Mismo
+  patrón (versión + data) que tenía `LocalStorageSistemaRepository`, pero bajo su propia clave:
+  los ajustes son globales a la app, no de un sistema concreto (ADR 0015). Sigue siendo un único
+  documento — de cuatro banderas más `escalaSombra` (spec 044, versión 5 del payload) — que se
+  reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
+  `SistemaRepository` pudiera arriesgar aquí, solo se volvió asíncrono.
+- `HttpAccesoRepository implements AccesoRepository` (spec 050) — **el adaptador en uso**.
+  Mismo criterio que `HttpSistemaRepository`: `fetch` nativo, y toda petición manda
+  `credentials: 'include'` — sin eso el navegador no envía la cookie de sesión a un origen
+  distinto del suyo. `entrar()` pregunta a `/auth/quien-soy` justo después de abrir sesión,
+  porque `/auth/entrar` no devuelve quién ha entrado (spec 035: esa ruta solo abre la sesión).
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -278,6 +290,9 @@ Adaptadores hacia el mundo exterior.
 Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 `ChangeDetectionStrategy.OnPush`, zoneless.
 
+- `ui/acceso/` — `PantallaAcceso` (spec 050): entrar o crear cuenta, con una pestaña para cada
+  modo. Es lo que `App` muestra cuando `AccesoStore.usuario()` es `null`; sin componentes de
+  test, como el resto de `ui/` — la lógica que importa ya está probada en `AccesoStore`.
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
@@ -416,13 +431,17 @@ src/app/
 │   ├── puertos.ts
 │   └── *.spec.ts
 ├── application/
+│   ├── acceso.store.ts
+│   ├── acceso.store.spec.ts
 │   ├── sistema.store.ts
 │   └── sistema.store.spec.ts
 ├── infrastructure/
-│   ├── http-sistema.repository.ts          # en uso (spec 034)
-│   ├── local-storage-ajustes.repository.ts  # en uso, excepción deliberada
+│   ├── http-acceso.repository.ts             # en uso (spec 050)
+│   ├── http-sistema.repository.ts            # en uso (spec 034)
+│   ├── local-storage-ajustes.repository.ts   # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/
+│   ├── acceso/
 │   ├── tablero/
 │   ├── pista/
 │   ├── rotaciones/
