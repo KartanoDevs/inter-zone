@@ -33,11 +33,27 @@ export function jugadoresAColocar(examen: Examen, sistema: Sistema, rotacion: nu
   const orden = formacionEnRotacion(sistema.plantilla.ordenSaque, rotacion);
   const enPista = jugadoresEnPista(sistema.plantilla, rotacion);
   const indice = orden.findIndex((j) => j.id === examen.titularId);
+  // Spec 057-E3: si el líbero ha entrado por el examinado, este no está físicamente en pista esa
+  // rotación — no se examina (revierte 012-E5, que pedía colocar la ficha del líbero en su lugar).
+  if (enPista[indice].id !== examen.titularId) {
+    return [];
+  }
   if (examen.tipo === 'puesto') {
     return [enPista[indice]];
   }
   const indicesLinea = INDICES_DELANTERA.includes(indice) ? INDICES_DELANTERA : INDICES_ZAGA;
   return indicesLinea.map((i) => enPista[i]);
+}
+
+const TODAS_LAS_ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
+
+// Spec 057-E3/E4: qué rotaciones se examinan de verdad. Por sistema son siempre las seis; por
+// puesto o línea, solo aquellas en las que el titular examinado está físicamente en pista.
+export function rotacionesExaminables(examen: Examen, sistema: Sistema): readonly (1 | 2 | 3 | 4 | 5 | 6)[] {
+  if (examen.tipo === 'sistema') {
+    return TODAS_LAS_ROTACIONES;
+  }
+  return TODAS_LAS_ROTACIONES.filter((rotacion) => jugadoresAColocar(examen, sistema, rotacion).length > 0);
 }
 
 export function faltasImputables(jugadoresDelAlumno: readonly Jugador[], formacion: Formacion, posiciones: OrdenSaque): readonly Infraccion[] {
@@ -46,11 +62,12 @@ export function faltasImputables(jugadoresDelAlumno: readonly Jugador[], formaci
   return infracciones.filter((infraccion) => infraccion.jugadores.some((j) => idsAlumno.has(j.id)));
 }
 
-// Radio de una ficha en la pizarra (`separacion.ts`: los 0,9 m de distancia mínima entre
-// jugadores son "dos radios de 0,45 m cada una"): si tu ficha tapa el punto del modelo, aciertas.
-export const DISTANCIA_PERFECTA = 0.45;
-// La línea de ataque: a esa distancia del sitio ya estás en el sitio de otro jugador.
-export const DISTANCIA_NULA = 3;
+// Spec 057: la curva mide criterio táctico ("más o menos en su sitio"), no precisión de
+// pizarra. 0,5 m es un poco más que el radio de una ficha (0,45 m); si tu ficha tapa el punto
+// del modelo, aciertas.
+export const DISTANCIA_PERFECTA = 0.5;
+// Spec 057: el fondo de la zona de ataque contraria — a esa distancia, la nota se pierde entera.
+export const DISTANCIA_NULA = 4;
 
 export function notaPorDistancia(distancia: number): number {
   if (distancia <= DISTANCIA_PERFECTA) {
@@ -94,7 +111,9 @@ export interface CorreccionExamen {
 }
 
 export function corregirExamen(examen: Examen, sistema: Sistema, entrega: EntregaExamen): CorreccionExamen {
-  const correcciones = ([1, 2, 3, 4, 5, 6] as const).map((rotacion) => {
+  // Spec 057-E5: la nota final es la media de las rotaciones examinadas, nunca de las seis — una
+  // rotación fuera del examen (057-E3) no cuenta como cero, simplemente no entra en la media.
+  const correcciones = rotacionesExaminables(examen, sistema).map((rotacion) => {
     const formacion = entrega[rotacion];
     if (!formacion) {
       return { nota: 0, faltas: [] };

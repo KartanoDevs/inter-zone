@@ -62,6 +62,14 @@ export interface FichaAgarrada {
   readonly evento: PointerEvent;
 }
 
+/** Comparación con el modelo del entrenador (spec 057, E12): el punto donde debía estar la
+ * ficha frente a donde la colocó el alumno, unidos por una línea — el error se ve como
+ * magnitud, no depende solo del color. Solo lo usa Examen; Editor y Teoría no lo pasan nunca. */
+export interface FichaComparada {
+  readonly puntoModelo: Punto;
+  readonly puntoAlumno: Punto;
+}
+
 interface EntradaLeyenda {
   readonly etiqueta: string;
   readonly nombre: string;
@@ -145,6 +153,8 @@ export class Pista {
    * suyo, sin dejar de poder arrastrarla en "mover bloqueo". Con `null` (spec 045: acción
    * deseleccionada) tampoco captura — no hay nada que hacer con la sombra en ese estado. */
   readonly accionArrastre = input<'pintar' | 'mover' | null>('pintar');
+  /** Spec 057, E12: solo Examen la usa, al comparar un resultado con el modelo. */
+  readonly fichasComparadas = input<readonly FichaComparada[]>([]);
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();

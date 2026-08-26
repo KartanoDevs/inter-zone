@@ -1,9 +1,11 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { AccesoStore } from './application/acceso.store';
+import { ExamenStore } from './application/examen.store';
 import { ListaBlancaStore } from './application/lista-blanca.store';
 import { SistemaStore } from './application/sistema.store';
 import { TeoriaStore } from './application/teoria.store';
 import { HttpAccesoRepository } from './infrastructure/http-acceso.repository';
+import { HttpInsigniasRepository } from './infrastructure/http-insignias.repository';
 import { HttpListaBlancaRepository } from './infrastructure/http-lista-blanca.repository';
 import { HttpSistemaRepository } from './infrastructure/http-sistema.repository';
 import { LocalStorageAjustesRepository } from './infrastructure/local-storage-ajustes.repository';
@@ -32,6 +34,13 @@ export const appConfig: ApplicationConfig = {
     {
       provide: ListaBlancaStore,
       useFactory: () => new ListaBlancaStore(new HttpListaBlancaRepository(URL_API)),
+    },
+    // Examen (spec 057, sustituye a la 055) lee el mismo catálogo que el editor, con su propia
+    // navegación — mismo criterio que Teoría (ADR 0039: store propio, sin decorador, cableado
+    // con `useFactory`).
+    {
+      provide: ExamenStore,
+      useFactory: () => new ExamenStore(inject(SistemaStore), new HttpInsigniasRepository(URL_API)),
     },
     // Al arrancar solo se comprueba la sesión (spec 050) — nunca el catálogo de sistemas, que
     // ahora depende de haber entrado (E1). `App` dispara `SistemaStore.cargar()` en cuanto

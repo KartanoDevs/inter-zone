@@ -66,12 +66,18 @@ distinto en cada una**
   delantero, y en las que ocupa la zaguera se le pide el trío zaguero — no siempre el mismo
 
 **E5 — En las rotaciones en que el líbero entra por el examinado, la ficha que hay que colocar
-es la del líbero**
+es la del líbero** *(revertido por la spec 057-E3: ver nota)*
 - Dado: un sistema de recepción validado, con líbero, y un titular a examinar que en alguna
   rotación es sustituido por el líbero
 - Cuando: se plantea un examen por puesto o por línea sobre ese titular, para esa rotación
 - Entonces: la ficha que se pide colocar es la del líbero, no la del titular — porque es el
   líbero quien juega esa rotación de verdad
+
+  > **Nota (spec 057):** este escenario ya no describe el comportamiento actual. La 057 lo
+  > revierte a propósito: cuando el líbero sustituye al examinado, esa rotación **no se
+  > examina** — antes convertía en silencio el examen de un central en el examen del líbero, sin
+  > que el alumno lo supiera. Se deja el texto original sin reescribir, como constancia de la
+  > decisión que cambió.
 
 ### Cuándo un sistema se puede examinar
 

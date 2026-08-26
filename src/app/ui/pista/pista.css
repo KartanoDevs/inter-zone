@@ -20,6 +20,19 @@
   fill: var(--bg-card-alt);
 }
 
+.app-pista__comparada-modelo {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 0.06;
+  stroke-dasharray: 0.09 0.07;
+}
+
+.app-pista__comparada-linea {
+  stroke: var(--neon-teal);
+  stroke-width: 0.035;
+  stroke-dasharray: 0.06 0.05;
+}
+
 .app-pista__campo {
   fill: var(--bg-card);
 }

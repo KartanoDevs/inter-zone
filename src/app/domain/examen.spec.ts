@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
 import { formacionEnRotacion, jugadoresEnPista } from './rotacion';
-import { jugadoresAColocar, sePuedeExaminar, faltasImputables, notaPorDistancia, corregirRotacion, corregirExamen, NOTA_APROBADO, permiteCorregirPorRotacion } from './examen';
+import {
+  jugadoresAColocar,
+  sePuedeExaminar,
+  faltasImputables,
+  notaPorDistancia,
+  corregirRotacion,
+  corregirExamen,
+  rotacionesExaminables,
+  NOTA_APROBADO,
+  permiteCorregirPorRotacion,
+} from './examen';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };
@@ -104,15 +114,49 @@ describe('jugadoresAColocar', () => {
     expect(enR4.map((j) => j.id)).toEqual(['central1', 'receptor1', 'receptor2']);
   });
 
-  it('012-E5: si el líbero entra por el examinado, la ficha a colocar es la del líbero', () => {
+  it('057-E3: una rotación donde el líbero sustituye al examinado no se examina (revierte 012-E5)', () => {
     const plantillaEquipo = plantillaConLibero('central2');
     const sistema = sistemaConSeisFormaciones(plantillaEquipo);
     const examen = { tipo: 'puesto' as const, titularId: 'central2' };
 
-    // R1: central2 cae en zaga, así que el líbero entra por él.
+    // R1: central2 cae en zaga, así que el líbero entra por él — esa rotación no se examina.
+    // (Spec 012-E5 pedía colocar la ficha del líbero; la spec 057 lo revierte: si el examinado
+    // no está físicamente en pista, la rotación queda fuera del examen.)
     const resultado = jugadoresAColocar(examen, sistema, 1);
 
-    expect(resultado).toEqual([jugador('libero', 'libero')]);
+    expect(resultado).toEqual([]);
+  });
+});
+
+describe('rotacionesExaminables', () => {
+  it('057-E4: un titular en pista las seis rotaciones se examina de las seis', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const examen = { tipo: 'puesto' as const, titularId: 'receptor1' };
+
+    const resultado = rotacionesExaminables(examen, sistema);
+
+    expect(resultado).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('057-E3b: un titular al que el líbero sustituye en algunas rotaciones no se examina en esas', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'puesto' as const, titularId: 'central2' };
+
+    const resultado = rotacionesExaminables(examen, sistema);
+
+    expect(resultado.length).toBeGreaterThan(0);
+    expect(resultado.length).toBeLessThan(6);
+  });
+
+  it('057-E4b: el examen por sistema siempre examina las seis, no depende del líbero', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'sistema' as const };
+
+    const resultado = rotacionesExaminables(examen, sistema);
+
+    expect(resultado).toEqual([1, 2, 3, 4, 5, 6]);
   });
 });
 
@@ -198,14 +242,17 @@ describe('notaPorDistancia', () => {
     expect(notaPorDistancia(0)).toBe(10);
   });
 
-  it('013-E2: si tu ficha tapa el punto del entrenador, sigue siendo un diez', () => {
+  it('057-E9: una ficha a medio metro o menos de su sitio es un diez (sustituye a 013-E2)', () => {
     expect(notaPorDistancia(0.45)).toBe(10);
+    expect(notaPorDistancia(0.5)).toBe(10);
   });
 
-  it('013-E3: cuanta más distancia al sitio, menos nota, hasta perderla entera a partir de tres metros', () => {
-    expect(notaPorDistancia(0.5)).toBeCloseTo(9.804, 2);
-    expect(notaPorDistancia(1.5)).toBeCloseTo(5.882, 2);
-    expect(notaPorDistancia(3)).toBe(0);
+  it('057-E10: la nota decae de forma proporcional hasta perderla entera a los cuatro metros (sustituye a 013-E3)', () => {
+    expect(notaPorDistancia(1)).toBeCloseTo(8.571, 2);
+    expect(notaPorDistancia(1.5)).toBeCloseTo(7.143, 2);
+    expect(notaPorDistancia(2)).toBeCloseTo(5.714, 2);
+    expect(notaPorDistancia(3)).toBeCloseTo(2.857, 2);
+    expect(notaPorDistancia(4)).toBe(0);
     expect(notaPorDistancia(5)).toBe(0);
   });
 });
@@ -230,7 +277,8 @@ describe('corregirRotacion', () => {
 
     const resultado = corregirRotacion(examen, sistema, 1, entrega);
 
-    expect(resultado.nota).toBeCloseTo((10 + 10 + 5.882) / 3, 1);
+    // receptor1 desplazado 1,5 m: con la curva de la spec 057 (0,5 m/4 m) su nota es 7,143.
+    expect(resultado.nota).toBeCloseTo((10 + 10 + 7.143) / 3, 1);
   });
 
   it('013-E5: una ficha sin colocar es un cero, y esa rotación no se juzga de falta', () => {
@@ -245,7 +293,7 @@ describe('corregirRotacion', () => {
     expect(resultado.faltas).toHaveLength(0);
   });
 
-  it('013-E6: una rotación con falta suya vale cero, aunque las fichas estén casi en su sitio', () => {
+  it('013-E6 / 057-E8: una rotación con falta suya vale cero, aunque las fichas estén casi en su sitio', () => {
     const sistema = sistemaConSeisFormaciones(plantilla());
     const orden = ordenValidoEstandar();
     const posiciones = formacionEnRotacion(orden, 1);
@@ -353,5 +401,26 @@ describe('corregirExamen', () => {
     expect(permiteCorregirPorRotacion('puesto')).toBe(true);
     expect(permiteCorregirPorRotacion('linea')).toBe(true);
     expect(permiteCorregirPorRotacion('sistema')).toBe(false);
+  });
+
+  it('057-E5: la nota final es la media de las rotaciones examinadas, no de las seis', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'puesto' as const, titularId: 'central2' };
+    const rotaciones = rotacionesExaminables(examen, sistema);
+    // El líbero sustituye a central2 en algunas rotaciones: no se examinan las seis.
+    expect(rotaciones.length).toBeGreaterThan(0);
+    expect(rotaciones.length).toBeLessThan(6);
+
+    const entrega: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>> = {};
+    for (const rotacion of rotaciones) {
+      entrega[rotacion] = sistema.formaciones[rotacion]!;
+    }
+
+    const resultado = corregirExamen(examen, sistema, entrega);
+
+    // Si las rotaciones no examinadas contaran como cero, la nota bajaría de 10. Al ignorarlas,
+    // se queda en 10 porque las examinadas están colocadas exactas.
+    expect(resultado.nota).toBe(10);
   });
 });

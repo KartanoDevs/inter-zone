@@ -60,8 +60,9 @@ Modelos y reglas. Aquí vive el voleibol.
 - `rotacion.ts` — `rotar`, `formacionEnRotacion`, `rotacionDe`: deriva las posiciones
   rotacionales ancladas al colocador (ADR 0010). `jugadoresEnPista(plantilla, rotacion)`
   deriva quién juega de verdad — el líbero en vez del titular si le toca zaga (ADR 0014).
-  `zaguerosEnRotacion(orden, rotacion)` deriva quiénes ocupan P1/P5/P6 en una rotación; la usan
-  tanto `sustitutosLiberoPorDefecto` como la UI para filtrar el selector del líbero.
+  `zaguerosEnRotacion(orden, rotacion)` deriva quiénes ocupan P1/P5/P6 en una rotación; la usa
+  `sustitutosLiberoPorDefecto` (desde la decisión 0040, único origen del sustituto: la interfaz ya
+  no ofrece elegirlo).
 - `defensa.ts` — `situacionesDe(caso): SituacionDefensa[]` (qué situaciones existen para cada
   caso del colocador rival), `situacionTrasCambioDeCaso` (a qué situación cae al cambiar de caso
   si la activa no existe en el nuevo), `situacionMasCercana(punto, caso)` (deriva la situación de
@@ -122,22 +123,26 @@ Modelos y reglas. Aquí vive el voleibol.
   `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
-- `examen.ts` — reglas del examen sobre un sistema de recepción (specs 012–013). `Examen` es una
-  unión cerrada de tres casos (`'puesto' | 'linea' | 'sistema'`), no una configuración
-  declarativa: los tipos se añaden desde código, y el único punto de extensión es
-  `jugadoresAColocar(examen, sistema, rotacion)`, que deriva a quién le toca colocar al alumno en
-  cada rotación — resolviendo primero el titular examinado en el orden de saque y luego su
-  ocupante real con `jugadoresEnPista` (líbero incluido si le toca entrar, spec 043/ADR 0034: el
-  punto es del puesto, no de quien lo ocupó antes). `faltasImputables` filtra el resultado de
+- `examen.ts` — reglas del examen sobre un sistema de recepción (specs 012–013, ajustadas por la
+  057). `Examen` es una unión cerrada de tres casos (`'puesto' | 'linea' | 'sistema'`), no una
+  configuración declarativa: los tipos se añaden desde código, y el punto de extensión principal
+  es `jugadoresAColocar(examen, sistema, rotacion)`, que deriva a quién le toca colocar al alumno
+  en cada rotación — resolviendo primero el titular examinado en el orden de saque y luego su
+  ocupante real con `jugadoresEnPista`. Si el líbero ha entrado por él (spec 043/ADR 0034), el
+  titular no está físicamente en pista esa rotación y la función devuelve `[]` (spec 057-E3,
+  revierte 012-E5: antes pedía colocar la ficha del líbero en su lugar). `rotacionesExaminables`
+  usa esa señal para decidir qué rotaciones cuentan — todas por sistema, solo las de verdad en
+  pista por puesto o línea — y `corregirExamen` promedia únicamente esas (spec 057-E5: una
+  rotación fuera del examen no cuenta como cero). `faltasImputables` filtra el resultado de
   `validarFormacion` a solo las infracciones donde interviene una ficha del alumno — una falta
   entre dos fichas dadas por el enunciado no es suya. `sePuedeExaminar(sistema)` exige el sistema
   completo y sus seis rotaciones legales: no tiene sentido medir al alumno contra un modelo con
   una falta guardada a propósito (spec 017). `notaPorDistancia(distancia)` decae linealmente de
-  10 (a ≤0,45 m, el radio de una ficha en la pizarra) a 0 (a ≥3 m, la línea de ataque);
-  `corregirRotacion` la agrega por las fichas que le tocaba colocar al alumno, y una falta suya
-  anula la nota de esa rotación a 0 sin tocar las demás; `corregirExamen` agrega las seis
-  rotaciones y concede una insignia (bronce/plata/oro, una por tipo) si la nota llega a 7 y
-  ninguna rotación tuvo falta.
+  10 (a ≤0,5 m) a 0 (a ≥4 m, spec 057: valores ajustados desde los 0,45 m/3 m originales de la
+  013 porque medían precisión de pizarra, no criterio táctico); `corregirRotacion` la agrega por
+  las fichas que le tocaba colocar al alumno, y una falta suya anula la nota de esa rotación a 0
+  sin tocar las demás; `corregirExamen` agrega las rotaciones examinadas y concede una insignia
+  (bronce/plata/oro, una por tipo y titular) si la nota llega a 7 y ninguna tuvo falta.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
   sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`. En la
   v1 arrancaba la app con él si el navegador no tenía nada guardado; desde la spec 033, es

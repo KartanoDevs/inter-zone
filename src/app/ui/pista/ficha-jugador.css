@@ -83,6 +83,21 @@
   fill: var(--neon-magenta);
 }
 
+:host(.app-ficha--dada) {
+  cursor: default;
+  opacity: 0.55;
+}
+
+:host(.app-ficha--dada) .app-ficha__circulo {
+  stroke: var(--text-muted);
+  stroke-dasharray: 0.08 0.06;
+}
+
+:host(.app-ficha--dada) .app-ficha__etiqueta,
+:host(.app-ficha--dada) .app-ficha__posicion {
+  fill: var(--text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :host {
     transition: none;

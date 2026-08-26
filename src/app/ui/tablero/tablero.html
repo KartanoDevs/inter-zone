@@ -238,15 +238,10 @@
           }
           @case ('ajustes') {
             <app-panel-ajustes
-              [rotacion]="store.rotacionActiva()"
-              [tieneLibero]="tieneLibero() && !esDefensa()"
-              [opcionesLibero]="opcionesSustitutoLibero()"
-              [sustitutoActual]="sustitutoLiberoActual()"
               [validacionDesactivada]="store.validacionDesactivada()"
               [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
               [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
               [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
-              (cambiarSustituto)="cambiarSustitutoLibero($event)"
               (alternarValidacion)="alternarValidacion()"
               (alternarAyudaPosicion)="alternarAyudaPosicion()"
               (alternarOrdenRotacion)="alternarOrdenRotacion()"
@@ -325,21 +320,7 @@
   }
 
   @if (ventana() === 'examen') {
-    <div class="app-tablero__futura">
-      <span class="app-tablero__futura-icono">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 4.2 21 8.6 12 13 3 8.6z" />
-          <path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4" />
-          <line x1="20.4" y1="9" x2="20.4" y2="14" />
-        </svg>
-      </span>
-      <h2>Examinarse del sistema</h2>
-      <p>
-        Colocar los jugadores de memoria y recibir una nota de perfección frente al sistema guardado, además del veredicto de
-        legalidad. Las faltas no se enseñan hasta pulsar «Confirmar».
-      </p>
-      <span class="app-tablero__futura-spec">Specs 012-013 · reservadas</span>
-    </div>
+    <app-examen-tablero></app-examen-tablero>
   }
 
   @if (ventana() === 'cuenta') {

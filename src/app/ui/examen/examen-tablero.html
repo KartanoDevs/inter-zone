@@ -1,0 +1,146 @@
+@if (examen.fase() === 'configurando') {
+  <app-dialogo-configuracion-examen
+    [equipoActivo]="examen.equipoActivo()"
+    [sistemas]="opcionesSistema()"
+    [sistemaActivoId]="examen.sistemaActivoId()"
+    [tipo]="examen.tipo()"
+    [necesitaTitular]="examen.necesitaTitular()"
+    [titulares]="examen.titulares()"
+    [titularId]="examen.titularId()"
+    [configuracionCompleta]="examen.configuracionCompleta()"
+    (seleccionarEquipo)="seleccionarEquipo($event)"
+    (elegirSistema)="elegirSistema($event)"
+    (elegirTipo)="elegirTipo($event)"
+    (elegirTitular)="elegirTitular($event)"
+    (continuar)="pedirInicio()"
+  ></app-dialogo-configuracion-examen>
+
+  @if (pidiendoInicio()) {
+    <app-dialogo-confirmacion
+      titulo="¿Empezamos?"
+      mensaje="No podrás volver a esta pantalla hasta terminar el examen."
+      textoConfirmar="Empezar examen"
+      [peligro]="false"
+      (confirmar)="empezar()"
+      (cancelar)="cancelarInicio()"
+    ></app-dialogo-confirmacion>
+  }
+}
+
+@if (examen.fase() === 'en-curso') {
+  <div class="app-examen__cabecera">
+    <h2 class="app-examen__titulo">{{ nombreTipo[examen.tipo()] }}</h2>
+    @if (examen.titularId(); as titularId) {
+      <span class="app-examen__subtitulo">{{ titularId }}</span>
+    }
+  </div>
+
+  <app-selector-rotacion
+    [rotaciones]="estadosRotacion()"
+    [rotacionActiva]="examen.rotacionActiva()"
+    (seleccionar)="seleccionarRotacion($event)"
+  ></app-selector-rotacion>
+
+  <div class="app-examen__campo">
+    <app-pista [fichas]="fichas()" [mostrarPosicion]="false" (fichaAgarrada)="onAgarrarFicha($event)"></app-pista>
+    <app-panel-validacion [completo]="rotacionValidada()" [infracciones]="infraccionesRotacion()" [avisos]="[]"></app-panel-validacion>
+  </div>
+
+  <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+
+  <div class="app-examen__acciones">
+    @if (examen.permiteCorregirRotacionSuelta()) {
+      <button type="button" class="app-boton app-boton--secundario" (click)="pedirVaciado()">
+        {{ rotacionValidada() ? 'Repetir esta rotación' : 'Vaciar' }}
+      </button>
+      @if (!rotacionValidada()) {
+        <button type="button" class="app-boton app-boton--primario" [disabled]="!examen.rotacionCompleta()" (click)="validarRotacion()">
+          Validar rotación
+        </button>
+      } @else if (examen.todasLasExaminablesValidadas()) {
+        <button type="button" class="app-boton app-boton--primario" (click)="terminarExamen()">Ver mi boletín</button>
+      } @else {
+        <p class="app-examen__aviso-validada">Rotación validada. Elige otra pestaña para continuar.</p>
+      }
+    } @else {
+      <!-- Por sistema (012-E11/013-E11): sin corrección rotación a rotación, solo al completar
+           las seis se pide el boletín de golpe. -->
+      <button type="button" class="app-boton app-boton--secundario" (click)="pedirVaciado()">Vaciar</button>
+      <button
+        type="button"
+        class="app-boton app-boton--primario"
+        [disabled]="!examen.todasLasRotacionesCompletas()"
+        (click)="terminarExamen()"
+      >
+        Ver mi boletín
+      </button>
+    }
+  </div>
+}
+
+@if (examen.fase() === 'terminado') {
+  <div class="app-examen__resultado" [class.app-examen__resultado--sin-insignia]="!examen.correccionExamen()?.insignia">
+    <div class="app-examen__medalla-grande" [class.app-examen__medalla-grande--apagada]="!examen.correccionExamen()?.insignia">
+      @if (examen.correccionExamen()?.insignia; as insignia) {
+        {{ insignia === 'bronce' ? '🥉' : insignia === 'plata' ? '🥈' : '🥇' }}
+      } @else {
+        ✕
+      }
+    </div>
+    <h2 class="app-examen__resultado-titulo">
+      @if (examen.correccionExamen()?.insignia; as insignia) {
+        Insignia de {{ insignia }} conseguida
+      } @else {
+        Sin insignia esta vez
+      }
+    </h2>
+    <p class="app-examen__resultado-sub">{{ nombreTipo[examen.tipo()] }}@if (examen.titularId()) { · {{ examen.titularId() }} }</p>
+
+    <div class="app-examen__resultado-tira">
+      <div class="app-examen__resultado-celda">
+        <span class="app-examen__resultado-numero">{{ examen.correccionExamen()?.nota?.toFixed(1) }}</span>
+        <span class="app-examen__resultado-etiqueta">Nota final</span>
+      </div>
+      <div class="app-examen__resultado-celda">
+        <span class="app-examen__resultado-numero">{{ examen.rotacionesExaminablesActuales().length }}</span>
+        <span class="app-examen__resultado-etiqueta">Rotaciones</span>
+      </div>
+    </div>
+
+    @if (!examen.correccionExamen()?.insignia) {
+      <p class="app-examen__resultado-motivo">
+        @if ((examen.correccionExamen()?.nota ?? 0) < 7) {
+          Te faltó nota: hace falta al menos un 7.
+        } @else {
+          Hubo alguna falta de posición: la insignia exige las rotaciones examinadas sin ninguna.
+        }
+      </p>
+    }
+  </div>
+
+  <div class="app-examen__desglose">
+    <h3 class="app-examen__desglose-titulo">Rotaciones examinadas</h3>
+    @for (rotacion of examen.rotacionesExaminablesActuales(); track rotacion) {
+      <div
+        class="app-examen__desglose-fila"
+        [class.app-examen__desglose-fila--activa]="examen.rotacionActiva() === rotacion"
+        [class.app-examen__desglose-fila--falta]="(examen.correccionesPorRotacion()[rotacion]?.faltas?.length ?? 0) > 0"
+        (click)="seleccionarRotacion(rotacion)"
+      >
+        <span class="app-examen__desglose-r">R{{ rotacion }}</span>
+        <span class="app-examen__desglose-nota">{{ examen.correccionesPorRotacion()[rotacion]?.nota?.toFixed(1) }}</span>
+        @if ((examen.correccionesPorRotacion()[rotacion]?.faltas?.length ?? 0) > 0) {
+          <span class="app-examen__desglose-etiqueta-falta">FALTA</span>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="app-examen__campo">
+    <app-pista [fichas]="fichas()" [mostrarPosicion]="false" [fichasComparadas]="fichasComparadas()"></app-pista>
+  </div>
+
+  <button type="button" class="app-boton app-boton--secundario app-examen__comparar" (click)="alternarComparar()">
+    {{ comparando() ? 'Ver solo mi colocación' : 'Comparar con el modelo (R' + examen.rotacionActiva() + ')' }}
+  </button>
+}

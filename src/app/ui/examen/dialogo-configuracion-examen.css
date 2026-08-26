@@ -1,0 +1,117 @@
+:host {
+  display: contents;
+}
+
+.app-examen-config__kicker {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.app-examen-config__fila {
+  display: flex;
+  gap: var(--space-2);
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-examen-config__fila:last-of-type {
+  border-bottom: 0;
+}
+
+.app-examen-config__casilla {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.app-examen-config__casilla--hecha {
+  border-color: var(--neon-teal);
+  background: var(--neon-teal);
+  color: var(--bg-darker);
+}
+
+.app-examen-config__cuerpo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-examen-config__etiqueta {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.app-examen-config__vacio {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.app-examen-config__chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.app-examen-config__chip {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-examen-config__chip--activo {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--text-main);
+}
+
+.app-examen-config__chip--tipo {
+  flex: 1 0 30%;
+}
+
+.app-examen-config__medalla {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.app-examen-config__medalla--bronce {
+  background: #cd7f32;
+}
+
+.app-examen-config__medalla--plata {
+  background: #c7ccd6;
+}
+
+.app-examen-config__medalla--oro {
+  background: #ffd54a;
+}

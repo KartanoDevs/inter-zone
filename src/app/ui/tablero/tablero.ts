@@ -13,13 +13,14 @@ import { Speeddial, type AccionSpeeddial } from '../comun/speeddial';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
-import { PanelAjustes, type OpcionLibero } from '../ajustes/panel-ajustes';
+import { PanelAjustes } from '../ajustes/panel-ajustes';
 import { AccesoStore } from '../../application/acceso.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { TeoriaTablero } from '../teoria/teoria-tablero';
+import { ExamenTablero } from '../examen/examen-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
 import { ListaBlancaAdmin } from '../acceso/lista-blanca-admin';
-import { jugadoresEnPista, zaguerosEnRotacion } from '../../domain/rotacion';
+import { jugadoresEnPista } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
 import { puestosQueBloquean } from '../../domain/sistema-defensa';
@@ -45,7 +46,6 @@ import type {
   EquipoId,
   Formacion,
   Infraccion,
-  Jugador,
   NumeroBloqueadores,
   PuestoDefensa,
   Punto,
@@ -185,6 +185,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     SelectorEquipo,
     PanelAjustes,
     TeoriaTablero,
+    ExamenTablero,
     PerfilCuenta,
     ListaBlancaAdmin,
   ],
@@ -415,36 +416,6 @@ export class Tablero {
     });
   });
 
-  /**
-   * Opciones del selector "líbero sustituye a": solo los tres zagueros de la rotación activa
-   * (el líbero no puede sustituir a un delantero, FIVB 19.3.1.1), con el central en zaga
-   * primero — el caso típico del 5-1 —, luego "Ninguno", y el resto en el orden fijo de
-   * `orden-roles.ts`. Si ninguna central cae en zaga (plantilla sin la separación habitual),
-   * no se inventa una.
-   */
-  protected readonly opcionesSustitutoLibero = computed<readonly OpcionLibero[]>(() => {
-    const orden = this.store.sistemaActivo()?.plantilla.ordenSaque;
-    if (!orden) {
-      return [];
-    }
-    const opcion = (jugador: Jugador): OpcionLibero => ({
-      id: jugador.id,
-      etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-    });
-    const zagueros = zaguerosEnRotacion(orden, this.store.rotacionActiva());
-    const centralEnZaga = zagueros.find((j) => j.rol === 'central') ?? null;
-    const resto = zagueros
-      .filter((j) => j !== centralEnZaga)
-      .sort((a, b) => claveOrdenRol(a.rol, a.indice) - claveOrdenRol(b.rol, b.indice));
-    return [
-      ...(centralEnZaga ? [opcion(centralEnZaga)] : []),
-      { id: null, etiqueta: 'Ninguno' },
-      ...resto.map(opcion),
-    ];
-  });
-
-  protected readonly tieneLibero = computed(() => !!this.store.sistemaActivo()?.plantilla.libero);
-
   protected readonly esDefensa = computed(() => this.store.sistemaActivo()?.tipo === 'defensa');
 
   /** La situación inicial no admite variantes de bloqueo (spec 039, E4): siempre 0. */
@@ -490,20 +461,6 @@ export class Tablero {
    * y encaja en su punto canónico al soltar — nunca se persiste una posición libre (ADR 0020). */
   protected readonly arrastreAtacante = signal<Punto | null>(null);
 
-  /**
-   * Si lo guardado ya no está entre las opciones (p. ej. quedó de antes de filtrar el
-   * desplegable a solo zagueros), se ve "Ninguno" — coherente con lo que `jugadoresEnPista` ya
-   * hace con ese valor: ignorarlo. No se reescribe lo guardado, solo lo que se muestra.
-   */
-  protected readonly sustitutoLiberoActual = computed(() => {
-    const libero = this.store.sistemaActivo()?.plantilla.libero;
-    if (!libero) {
-      return null;
-    }
-    const sustituidoId = libero.sustitutosPorRotacion[this.store.rotacionActiva()];
-    const esOpcionValida = this.opcionesSustitutoLibero().some((opcion) => opcion.id === sustituidoId);
-    return esOpcionValida ? sustituidoId : null;
-  });
 
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
     this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
@@ -698,10 +655,6 @@ export class Tablero {
     } else if (id === 'borrar') {
       this.pedirBorrado();
     }
-  }
-
-  protected cambiarSustitutoLibero(sustituidoId: string | null): void {
-    this.store.cambiarSustitutoLibero(this.store.rotacionActiva(), sustituidoId);
   }
 
   protected cambiarEscalaSombra(valor: number): void {

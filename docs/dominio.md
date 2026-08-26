@@ -102,6 +102,11 @@ delantera según la rotación, ese defecto hace que el líbero juegue las seis r
 las tres en las que un único titular fijo estaría en zaga (que era el comportamiento, incompleto,
 de la spec 011).
 
+**La herramienta fija hoy ese defecto como único caso posible (decisión 0040).** El reglamento
+sigue permitiendo sustituir a cualquier zaguero, no solo al central — eso no cambia. Lo que
+cambia es que la interfaz ya no ofrece forma de declarar un sustituto distinto: es una
+simplificación de uso, no una reinterpretación de la regla FIVB.
+
 ---
 
 ## 3. Sistema de coordenadas

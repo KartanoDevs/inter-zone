@@ -131,6 +131,22 @@
     </g>
   }
 
+  @for (comparada of fichasComparadas(); track $index) {
+    <line
+      class="app-pista__comparada-linea"
+      [attr.x1]="comparada.puntoModelo.x"
+      [attr.y1]="comparada.puntoModelo.y"
+      [attr.x2]="comparada.puntoAlumno.x"
+      [attr.y2]="comparada.puntoAlumno.y"
+    ></line>
+    <circle
+      class="app-pista__comparada-modelo"
+      [attr.cx]="comparada.puntoModelo.x"
+      [attr.cy]="comparada.puntoModelo.y"
+      r="0.45"
+    ></circle>
+  }
+
   @for (ficha of fichas(); track ficha.id) {
     <g
       appFicha

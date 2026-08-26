@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { Punto } from '../../domain/modelos';
 
-export type EstadoFicha = 'normal' | 'aviso' | 'falta';
+/** `'dada'` (spec 057, heredado de la 055): una ficha del examen que ya viene colocada por el
+ * enunciado y no se puede tocar — se pinta atenuada y con trazo discontinuo, nunca arrastrable. */
+export type EstadoFicha = 'normal' | 'aviso' | 'falta' | 'dada';
 export type LineaFicha = 'delantera' | 'zaguera';
 
 const RADIO_M = 0.45;
@@ -20,6 +22,7 @@ const RADIO_M = 0.45;
   host: {
     '[class.app-ficha--aviso]': "estado() === 'aviso'",
     '[class.app-ficha--falta]': "estado() === 'falta'",
+    '[class.app-ficha--dada]': "estado() === 'dada'",
     '[class.app-ficha--libero]': 'esLibero()',
     '[class.app-ficha--zaguera]': "linea() === 'zaguera'",
     '[class.app-ficha--etiqueta-larga]': 'etiquetaLarga()',
@@ -73,6 +76,9 @@ export class FichaJugador {
    * 022), y una ficha encima nunca debe disparar los dos gestos a la vez. */
   protected onPointerDown(evento: PointerEvent): void {
     evento.stopPropagation();
+    if (this.estado() === 'dada') {
+      return;
+    }
     this.agarrada.emit(evento);
   }
 }

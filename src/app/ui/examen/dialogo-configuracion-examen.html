@@ -1,0 +1,84 @@
+<app-modal titulo="Hoja de inscripción" [rol]="'dialog'">
+  <div class="app-examen-config__kicker">Nuevo examen</div>
+
+  <div class="app-examen-config__fila">
+    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="true">1</span>
+    <div class="app-examen-config__cuerpo">
+      <span class="app-examen-config__etiqueta">Equipo</span>
+      <app-selector-equipo [equipoActivo]="equipoActivo()" (seleccionar)="seleccionarEquipo.emit($event)"></app-selector-equipo>
+    </div>
+  </div>
+
+  <div class="app-examen-config__fila">
+    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="sistemaElegido()">2</span>
+    <div class="app-examen-config__cuerpo">
+      <span class="app-examen-config__etiqueta">Sistema</span>
+      @if (sistemas().length === 0) {
+        <p class="app-examen-config__vacio">
+          Solo se puede examinar un sistema de recepción validado, con sus seis rotaciones completas y sin ninguna
+          falta guardada a propósito.
+        </p>
+      } @else {
+        <app-barra-sistemas [sistemas]="sistemas()" [sistemaActivoId]="sistemaActivoId()" (elegir)="elegirSistema.emit($event)"></app-barra-sistemas>
+      }
+    </div>
+  </div>
+
+  @if (sistemaElegido()) {
+    <div class="app-examen-config__fila">
+      <span class="app-examen-config__casilla app-examen-config__casilla--hecha">3</span>
+      <div class="app-examen-config__cuerpo">
+        <span class="app-examen-config__etiqueta">Tipo de examen</span>
+        <div class="app-examen-config__chips" role="radiogroup" aria-label="Tipo de examen">
+          @for (t of tiposExamen; track t) {
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="tipo() === t"
+              class="app-examen-config__chip app-examen-config__chip--tipo"
+              [class.app-examen-config__chip--activo]="tipo() === t"
+              (click)="elegirTipo.emit(t)"
+            >
+              <span class="app-examen-config__medalla" [class]="'app-examen-config__medalla--' + nombreInsignia[t]"></span>
+              {{ nombreTipo[t] }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (necesitaTitular()) {
+      <div class="app-examen-config__fila">
+        <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="titularElegido()">4</span>
+        <div class="app-examen-config__cuerpo">
+          <span class="app-examen-config__etiqueta">A quién examinar</span>
+          <div class="app-examen-config__chips" role="radiogroup" aria-label="A quién examinar">
+            @for (fila of filasTitular(); track fila.id) {
+              <button
+                type="button"
+                role="radio"
+                [attr.aria-checked]="titularId() === fila.id"
+                class="app-examen-config__chip"
+                [class.app-examen-config__chip--activo]="titularId() === fila.id"
+                (click)="elegirTitular.emit(fila.id)"
+              >
+                {{ fila.etiqueta }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <ng-container acciones>
+    <button
+      type="button"
+      class="app-boton app-boton--primario"
+      [disabled]="!configuracionCompleta()"
+      (click)="continuar.emit()"
+    >
+      {{ configuracionCompleta() ? 'Continuar' : 'Completa la hoja para continuar' }}
+    </button>
+  </ng-container>
+</app-modal>

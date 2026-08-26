@@ -1,14 +1,3 @@
-@if (tieneLibero()) {
-  <div class="app-ajustes__grupo">
-    <label class="app-ajustes__etiqueta" for="app-ajustes-libero">Líbero sustituye a (R{{ rotacion() }})</label>
-    <select id="app-ajustes-libero" class="app-ajustes__select" (change)="onCambiarSustituto($event)">
-      @for (opcion of opcionesLibero(); track opcion.id ?? '') {
-        <option [value]="opcion.id ?? ''" [selected]="opcion.id === sustitutoActual()">{{ opcion.etiqueta }}</option>
-      }
-    </select>
-  </div>
-}
-
 <button
   type="button"
   class="app-ajustes__switch"

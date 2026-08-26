@@ -163,9 +163,12 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    lectura se hizo como "Teoría" (spec 052, ligada a cuentas y roles — ver paso 8): cualquier
    cuenta recorre los sistemas validados del equipo, sin poder tocarlos. Las reglas de
    examinarse con nota ya están en `domain/` — los tres tipos de examen (por puesto, por línea o
-   por sistema completo), el veredicto de legalidad y la nota de 0 a 10 (specs 012–013) — pero
-   todavía no hay ventana de examen: falta la spec de UI que arrastre las fichas, guarde el
-   intento y muestre la insignia en Cuenta.
+   por sistema completo), el veredicto de legalidad y la nota de 0 a 10 (specs 012–013). La
+   ventana de examen (spec 057, sustituye a la 055) ya existe: hoja de configuración antes de
+   empezar, arrastre con faltas visibles solo al validar cada rotación, boletín de resultado con
+   desglose por rotación y comparación con el modelo del entrenador, e insignia guardada en
+   Cuenta (spec 056). El líbero como sujeto de examen propio es la spec 058, todavía sin
+   implementar.
 5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
    028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs

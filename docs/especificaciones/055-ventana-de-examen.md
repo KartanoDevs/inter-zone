@@ -1,6 +1,6 @@
 # 055 — La ventana de Examen
 
-**Estado:** Congelada
+**Estado:** Descartada
 **Paso de la hoja de ruta:** 4
 
 ## Problema
@@ -147,4 +147,12 @@ Ninguna. Resueltas con el usuario antes de escribir esta spec:
 
 ## Al cerrar
 
-Pendiente — se rellena al completar la spec.
+Descartada antes de cerrarse. Se implementó parcialmente (equipo, sistema, tipo, titular,
+rotaciones, arrastre y corrección básica), pero probarla reveló tres problemas que esta spec no
+puede resolver sin romper su propio E7: la nota (spec 013) es demasiado exigente para el uso
+real, no hay popup de configuración ni de confirmación, y el resultado agrega en un único número
+sin desglose por rotación ni comparación con el modelo. La sustituye la **spec 057**, que
+reescribe el flujo entero (incluida una curva de nota más laxa) y **contradice
+deliberadamente el E7 de esta spec**: en el diseño nuevo las faltas sí se muestran, pero solo al
+validar cada rotación, nunca mientras se arrastra. La spec 058 añade además al líbero como
+sujeto de examen, que esta spec nunca contempló (heredado sin cuestionar de 012).
