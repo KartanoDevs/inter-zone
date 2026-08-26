@@ -122,6 +122,22 @@ Modelos y reglas. Aquí vive el voleibol.
   `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
+- `examen.ts` — reglas del examen sobre un sistema de recepción (specs 012–013). `Examen` es una
+  unión cerrada de tres casos (`'puesto' | 'linea' | 'sistema'`), no una configuración
+  declarativa: los tipos se añaden desde código, y el único punto de extensión es
+  `jugadoresAColocar(examen, sistema, rotacion)`, que deriva a quién le toca colocar al alumno en
+  cada rotación — resolviendo primero el titular examinado en el orden de saque y luego su
+  ocupante real con `jugadoresEnPista` (líbero incluido si le toca entrar, spec 043/ADR 0034: el
+  punto es del puesto, no de quien lo ocupó antes). `faltasImputables` filtra el resultado de
+  `validarFormacion` a solo las infracciones donde interviene una ficha del alumno — una falta
+  entre dos fichas dadas por el enunciado no es suya. `sePuedeExaminar(sistema)` exige el sistema
+  completo y sus seis rotaciones legales: no tiene sentido medir al alumno contra un modelo con
+  una falta guardada a propósito (spec 017). `notaPorDistancia(distancia)` decae linealmente de
+  10 (a ≤0,45 m, el radio de una ficha en la pizarra) a 0 (a ≥3 m, la línea de ataque);
+  `corregirRotacion` la agrega por las fichas que le tocaba colocar al alumno, y una falta suya
+  anula la nota de esa rotación a 0 sin tocar las demás; `corregirExamen` agrega las seis
+  rotaciones y concede una insignia (bronce/plata/oro, una por tipo) si la nota llega a 7 y
+  ninguna rotación tuvo falta.
 - `sistema-por-defecto.ts` — `sistemaPorDefecto(plantilla): Sistema` (spec 025, ADR 0021): el
   sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`. En la
   v1 arrancaba la app con él si el navegador no tenía nada guardado; desde la spec 033, es
@@ -501,6 +517,7 @@ src/app/
 │   ├── rejilla.ts
 │   ├── catalogo-sistemas.ts
 │   ├── sistema-recepcion.ts
+│   ├── examen.ts
 │   ├── sistema-defensa.ts
 │   ├── sistema-por-defecto.ts
 │   ├── sistema-defensa-por-defecto.ts

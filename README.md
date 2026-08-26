@@ -78,10 +78,9 @@ sea de confianza.
 
 **Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
 
-**Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 012–016 en la numeración de
-specs están guardados para esto, y hasta que no se escriban no existe ni la spec ni el código:
+**Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 014–016 en la numeración de
+specs siguen guardados para esto, y hasta que no se escriban no existe ni la spec ni el código:
 
-- Consultar un sistema en solo lectura y examinarse con nota de perfección (specs 012–013).
 - Detectar huecos (nadie cubre) y conflictos (dos o más se pisan) sobre la rejilla ya pintada
   (specs 014–015) — **el siguiente paso**, ver el paso 5 de la hoja de ruta.
 - Exportar e importar JSON y PNG (spec 016).
@@ -162,8 +161,11 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
 4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
    jugadores y recibir una nota de perfección más el veredicto de legalidad. La consulta en solo
    lectura se hizo como "Teoría" (spec 052, ligada a cuentas y roles — ver paso 8): cualquier
-   cuenta recorre los sistemas validados del equipo, sin poder tocarlos. Examinarse con nota
-   sigue pendiente, specs 012–013.
+   cuenta recorre los sistemas validados del equipo, sin poder tocarlos. Las reglas de
+   examinarse con nota ya están en `domain/` — los tres tipos de examen (por puesto, por línea o
+   por sistema completo), el veredicto de legalidad y la nota de 0 a 10 (specs 012–013) — pero
+   todavía no hay ventana de examen: falta la spec de UI que arrastre las fichas, guarde el
+   intento y muestre la insignia en Cuenta.
 5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
    028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs
