@@ -167,8 +167,8 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    ventana de examen (spec 057, sustituye a la 055) ya existe: hoja de configuración antes de
    empezar, arrastre con faltas visibles solo al validar cada rotación, boletín de resultado con
    desglose por rotación y comparación con el modelo del entrenador, e insignia guardada en
-   Cuenta (spec 056). El líbero como sujeto de examen propio es la spec 058, todavía sin
-   implementar.
+   Cuenta (spec 056). El líbero también se puede elegir como sujeto de examen, por posición y por
+   línea, con su propia insignia (spec 058).
 5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
    028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs

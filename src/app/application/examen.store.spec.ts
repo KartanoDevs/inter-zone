@@ -60,6 +60,12 @@ function plantillaConLiberoQueSustituyeACentral2(): PlantillaEquipo {
   return { ...PLANTILLA, libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
+/** Spec 058-E5: el líbero está declarado pero nunca sustituye a nadie. */
+function plantillaConLiberoQueNuncaJuega(): PlantillaEquipo {
+  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
+  return { ...PLANTILLA, libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+}
+
 /** Formación legal construida a partir de quien juega de verdad esa rotación
  * (`jugadoresEnPista`), no del orden de saque a secas — necesario cuando la plantilla tiene
  * líbero, para que la formación coincida con la que exige `sePuedeExaminar`. */
@@ -286,5 +292,58 @@ describe('ExamenStore', () => {
     await examen.terminarExamen();
 
     expect(examen.correccionExamen()?.nota).toBe(10);
+  });
+
+  it('058-E1: el líbero aparece entre los titulares cuando el sistema lo tiene y entra en pista', () => {
+    const sistema = sistemaExaminableConPlantilla('s1', plantillaConLiberoQueSustituyeACentral2());
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+
+    expect(examen.titulares().some((j) => j.id === 'libero')).toBe(true);
+  });
+
+  it('058-E2: un sistema sin líbero no lo ofrece entre los titulares', () => {
+    const examen = crearExamenStore([sistemaExaminable('s1')]);
+    examen.activarSistema('s1');
+
+    expect(examen.titulares().some((j) => j.id === 'libero')).toBe(false);
+  });
+
+  it('058-E5: un líbero que nunca entra en pista no se ofrece entre los titulares', () => {
+    const sistema = sistemaExaminableConPlantilla('s1', plantillaConLiberoQueNuncaJuega());
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+
+    expect(examen.titulares().some((j) => j.id === 'libero')).toBe(false);
+  });
+
+  it('058-E3/E4/E6: examinar al líbero coloca solo su ficha, por posición, y guarda su propia insignia', async () => {
+    const sistema = sistemaExaminableConPlantilla('s1', plantillaConLiberoQueSustituyeACentral2());
+    const registrados: { sistemaId: string; tipo: string; titularId: string | null }[] = [];
+    const insignias: InsigniasRepository = {
+      listar: async () => [],
+      registrar: async (sistemaId, tipo, titularId) => {
+        registrados.push({ sistemaId, tipo, titularId });
+      },
+    };
+    const examen = crearExamenStore([sistema], insignias);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('puesto');
+    examen.seleccionarTitular('libero');
+
+    const rotaciones = examen.rotacionesExaminablesActuales();
+    expect(rotaciones.length).toBeGreaterThan(0);
+
+    for (const r of rotaciones) {
+      examen.seleccionarRotacion(r);
+      expect(examen.jugadoresDelAlumno().map((j) => j.id)).toEqual(['libero']);
+      const puntoIdeal = sistema.formaciones[r]!.find((c) => c.jugador.id === 'libero')!.punto;
+      examen.colocar('libero', puntoIdeal);
+    }
+
+    await examen.terminarExamen();
+
+    expect(examen.correccionExamen()?.nota).toBe(10);
+    expect(registrados).toEqual([{ sistemaId: 's1', tipo: 'puesto', titularId: 'libero' }]);
   });
 });

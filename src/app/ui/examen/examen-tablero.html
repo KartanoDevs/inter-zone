@@ -30,8 +30,8 @@
 @if (examen.fase() === 'en-curso') {
   <div class="app-examen__cabecera">
     <h2 class="app-examen__titulo">{{ nombreTipo[examen.tipo()] }}</h2>
-    @if (examen.titularId(); as titularId) {
-      <span class="app-examen__subtitulo">{{ titularId }}</span>
+    @if (etiquetaTitularActivo(); as etiqueta) {
+      <span class="app-examen__subtitulo">{{ etiqueta }}</span>
     }
   </div>
 
@@ -94,7 +94,7 @@
         Sin insignia esta vez
       }
     </h2>
-    <p class="app-examen__resultado-sub">{{ nombreTipo[examen.tipo()] }}@if (examen.titularId()) { · {{ examen.titularId() }} }</p>
+    <p class="app-examen__resultado-sub">{{ nombreTipo[examen.tipo()] }}@if (etiquetaTitularActivo(); as etiqueta) { · {{ etiqueta }} }</p>
 
     <div class="app-examen__resultado-tira">
       <div class="app-examen__resultado-celda">

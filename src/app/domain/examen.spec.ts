@@ -9,6 +9,7 @@ import {
   corregirRotacion,
   corregirExamen,
   rotacionesExaminables,
+  liberoExaminable,
   NOTA_APROBADO,
   permiteCorregirPorRotacion,
 } from './examen';
@@ -34,6 +35,12 @@ function plantilla(): PlantillaEquipo {
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
   const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
+  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+}
+
+/** Spec 058-E5: el líbero está declarado pero nunca sustituye a nadie — caso degenerado. */
+function plantillaConLiberoQueNuncaJuega(): PlantillaEquipo {
+  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
   return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
@@ -125,6 +132,61 @@ describe('jugadoresAColocar', () => {
     const resultado = jugadoresAColocar(examen, sistema, 1);
 
     expect(resultado).toEqual([]);
+  });
+
+  it('058-E3: el examen del líbero por puesto pide solo su ficha en la rotación donde está en pista', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'puesto' as const, titularId: 'libero' };
+
+    // R1: central2 cae en zaga, el líbero entra por él.
+    const resultado = jugadoresAColocar(examen, sistema, 1);
+
+    expect(resultado).toEqual([jugador('libero', 'libero')]);
+  });
+
+  it('058-E3b: el examen del líbero por puesto no examina una rotación donde no está en pista', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'puesto' as const, titularId: 'libero' };
+
+    // Buscamos una rotación en la que central2 caiga en delantera (el líbero no entra).
+    const rotacionSinLibero = ([1, 2, 3, 4, 5, 6] as const).find(
+      (r) => jugadoresAColocar(examen, sistema, r).length === 0,
+    );
+    expect(rotacionSinLibero).toBeDefined();
+  });
+
+  it('058-E4: el examen del líbero por línea pide los tres de zaga, con él incluido', () => {
+    const plantillaEquipo = plantillaConLibero('central2');
+    const sistema = sistemaConSeisFormaciones(plantillaEquipo);
+    const examen = { tipo: 'linea' as const, titularId: 'libero' };
+
+    // R1: central2 cae en zaga (P5), el líbero entra por él — la línea zaguera es P1/P5/P6.
+    const resultado = jugadoresAColocar(examen, sistema, 1);
+
+    expect(resultado).toHaveLength(3);
+    expect(resultado.some((j) => j.id === 'libero')).toBe(true);
+  });
+});
+
+describe('liberoExaminable', () => {
+  it('058-E1: el líbero es examinable si el sistema lo tiene declarado y entra en pista alguna rotación', () => {
+    const sistema = sistemaConSeisFormaciones(plantillaConLibero('central2'));
+
+    expect(liberoExaminable(sistema)?.id).toBe('libero');
+  });
+
+  it('058-E2: un sistema sin líbero no ofrece esa opción', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+
+    expect(liberoExaminable(sistema)).toBeNull();
+  });
+
+  it('058-E5: un líbero que nunca entra en pista no se ofrece como examinable', () => {
+    const sistema = sistemaConSeisFormaciones(plantillaConLiberoQueNuncaJuega());
+
+    expect(liberoExaminable(sistema)).toBeNull();
   });
 });
 

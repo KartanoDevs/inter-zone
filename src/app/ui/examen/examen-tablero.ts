@@ -58,6 +58,16 @@ export class ExamenTablero {
 
   protected readonly opcionesSistema = computed(() => this.examen.catalogo().map((s) => ({ id: s.id, nombre: s.nombre, tipo: s.tipo })));
 
+  /** Etiqueta de rol del titular examinado (o del líbero, spec 058), nunca su id crudo. */
+  protected readonly etiquetaTitularActivo = computed(() => {
+    const id = this.examen.titularId();
+    if (!id) {
+      return null;
+    }
+    const titular = this.examen.titulares().find((j) => j.id === id);
+    return titular ? etiquetaDe(titular, CONFIGURACION_ROLES_POR_DEFECTO) : null;
+  });
+
   /** Estado de cada pestaña de rotación (spec 057, E3): solo se ofrecen las que de verdad se
    * examinan — un titular al que el líbero sustituye esa rotación no la ofrece. La falta solo
    * se marca tras validar esa rotación (E6): antes, siempre `false`. */

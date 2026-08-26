@@ -23,26 +23,52 @@ export const NOTA_APROBADO = 7;
 const INDICES_DELANTERA = [3, 2, 1];
 const INDICES_ZAGA = [0, 4, 5];
 
+function jugadoresDesdeIndice(tipo: 'puesto' | 'linea', enPista: readonly Jugador[], indice: number): readonly Jugador[] {
+  if (tipo === 'puesto') {
+    return [enPista[indice]];
+  }
+  const indicesLinea = INDICES_DELANTERA.includes(indice) ? INDICES_DELANTERA : INDICES_ZAGA;
+  return indicesLinea.map((i) => enPista[i]);
+}
+
 export function jugadoresAColocar(examen: Examen, sistema: Sistema, rotacion: number): readonly Jugador[] {
   if (examen.tipo === 'sistema') {
     return jugadoresEnPista(sistema.plantilla, rotacion);
+  }
+  const enPista = jugadoresEnPista(sistema.plantilla, rotacion);
+  const libero = sistema.plantilla.libero;
+  if (libero && examen.titularId === libero.jugador.id) {
+    // Spec 058: el líbero como sujeto propio. Nunca vive en el orden de saque (ADR 0014), así
+    // que se localiza directamente en quién juega de verdad esa rotación, no en el titular al
+    // que sustituye.
+    const indiceLibero = enPista.findIndex((j) => j.id === libero.jugador.id);
+    return indiceLibero === -1 ? [] : jugadoresDesdeIndice(examen.tipo, enPista, indiceLibero);
   }
   // El titular examinado puede no ser quien juega de verdad esa rotación (spec 043/ADR 0034: el
   // líbero puede haber entrado por él). Su índice se localiza en el orden de saque, pero el
   // ocupante real —titular o líbero— sale de `jugadoresEnPista`.
   const orden = formacionEnRotacion(sistema.plantilla.ordenSaque, rotacion);
-  const enPista = jugadoresEnPista(sistema.plantilla, rotacion);
   const indice = orden.findIndex((j) => j.id === examen.titularId);
   // Spec 057-E3: si el líbero ha entrado por el examinado, este no está físicamente en pista esa
   // rotación — no se examina (revierte 012-E5, que pedía colocar la ficha del líbero en su lugar).
   if (enPista[indice].id !== examen.titularId) {
     return [];
   }
-  if (examen.tipo === 'puesto') {
-    return [enPista[indice]];
+  return jugadoresDesdeIndice(examen.tipo, enPista, indice);
+}
+
+/** Spec 058-E1/E2/E5: el líbero es un sujeto de examen más, pero solo si el sistema lo tiene
+ * declarado y de verdad entra en pista en alguna rotación — ofrecerlo si nunca sustituye a
+ * nadie no tendría sentido. */
+export function liberoExaminable(sistema: Sistema): Jugador | null {
+  const libero = sistema.plantilla.libero;
+  if (!libero) {
+    return null;
   }
-  const indicesLinea = INDICES_DELANTERA.includes(indice) ? INDICES_DELANTERA : INDICES_ZAGA;
-  return indicesLinea.map((i) => enPista[i]);
+  const entraEnAlguna = ([1, 2, 3, 4, 5, 6] as const).some((rotacion) =>
+    jugadoresEnPista(sistema.plantilla, rotacion).some((j) => j.id === libero.jugador.id),
+  );
+  return entraEnAlguna ? libero.jugador : null;
 }
 
 const TODAS_LAS_ROTACIONES = [1, 2, 3, 4, 5, 6] as const;

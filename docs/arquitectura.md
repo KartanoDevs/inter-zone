@@ -124,13 +124,18 @@ Modelos y reglas. Aquí vive el voleibol.
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `examen.ts` — reglas del examen sobre un sistema de recepción (specs 012–013, ajustadas por la
-  057). `Examen` es una unión cerrada de tres casos (`'puesto' | 'linea' | 'sistema'`), no una
-  configuración declarativa: los tipos se añaden desde código, y el punto de extensión principal
-  es `jugadoresAColocar(examen, sistema, rotacion)`, que deriva a quién le toca colocar al alumno
-  en cada rotación — resolviendo primero el titular examinado en el orden de saque y luego su
-  ocupante real con `jugadoresEnPista`. Si el líbero ha entrado por él (spec 043/ADR 0034), el
-  titular no está físicamente en pista esa rotación y la función devuelve `[]` (spec 057-E3,
-  revierte 012-E5: antes pedía colocar la ficha del líbero en su lugar). `rotacionesExaminables`
+  057, ampliadas por la 058). `Examen` es una unión cerrada de tres casos (`'puesto' | 'linea' |
+  'sistema'`), no una configuración declarativa: los tipos se añaden desde código, y el punto de
+  extensión principal es `jugadoresAColocar(examen, sistema, rotacion)`, que deriva a quién le
+  toca colocar al alumno en cada rotación. Si `titularId` es el propio líbero (spec 058: puede
+  ser sujeto de examen, no solo sustituto), se localiza directamente en `jugadoresEnPista` — el
+  líbero nunca vive en el orden de saque (ADR 0014). Si no, resuelve primero el titular en el
+  orden de saque y luego su ocupante real con `jugadoresEnPista`; si el líbero ha entrado por él
+  (spec 043/ADR 0034), el titular no está físicamente en pista esa rotación y la función
+  devuelve `[]` (spec 057-E3, revierte 012-E5: antes pedía colocar la ficha del líbero en su
+  lugar). `liberoExaminable(sistema)` decide si el líbero se ofrece como sujeto: solo si el
+  sistema lo declara y de verdad entra en pista en alguna rotación (058-E1/E2/E5).
+  `rotacionesExaminables`
   usa esa señal para decidir qué rotaciones cuentan — todas por sistema, solo las de verdad en
   pista por puesto o línea — y `corregirExamen` promedia únicamente esas (spec 057-E5: una
   rotación fuera del examen no cuenta como cero). `faltasImputables` filtra el resultado de

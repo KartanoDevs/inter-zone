@@ -5,6 +5,7 @@ import {
   corregirExamen,
   corregirRotacion,
   jugadoresAColocar,
+  liberoExaminable,
   permiteCorregirPorRotacion,
   rotacionesExaminables,
   sePuedeExaminar,
@@ -74,9 +75,17 @@ export class ExamenStore {
 
   readonly sistemaActivo = computed(() => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null);
 
-  /** Los titulares del orden de saque, para el selector de "a quién examinar" (spec 057, E2) —
-   * solo tiene sentido en los tipos que examinan a alguien concreto. */
-  readonly titulares = computed<readonly Jugador[]>(() => this.sistemaActivo()?.plantilla.ordenSaque ?? []);
+  /** Los titulares del orden de saque, más el líbero si el sistema lo tiene y de verdad entra en
+   * pista alguna rotación (spec 058, E1/E2/E5), para el selector de "a quién examinar" (spec
+   * 057, E2) — solo tiene sentido en los tipos que examinan a alguien concreto. */
+  readonly titulares = computed<readonly Jugador[]>(() => {
+    const sistema = this.sistemaActivo();
+    if (!sistema) {
+      return [];
+    }
+    const libero = liberoExaminable(sistema);
+    return libero ? [...sistema.plantilla.ordenSaque, libero] : sistema.plantilla.ordenSaque;
+  });
 
   readonly necesitaTitular = computed(() => this.tipo() !== 'sistema');
 
