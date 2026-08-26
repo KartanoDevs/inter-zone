@@ -1,7 +1,7 @@
 <div class="app-barra-sistemas">
   @if (sistemaActivo(); as activo) {
     <span class="app-barra-sistemas__tipo" [class.app-barra-sistemas__tipo--defensa]="activo.tipo === 'defensa'">
-      {{ activo.tipo === 'defensa' ? 'DEF' : 'REC' }}
+      {{ activo.tipo === 'defensa' ? 'Defensa' : 'Recepción' }}
     </span>
   }
   <select class="app-barra-sistemas__select" aria-label="Sistema" [value]="sistemaActivoId()" (change)="onElegir($event)">

@@ -5,10 +5,23 @@
       role="tab"
       class="app-selector__boton"
       [class.app-selector__boton--activa]="equipo === equipoActivo()"
+      [class.app-selector__boton--masc]="equipo === 'masculino'"
       [attr.aria-selected]="equipo === equipoActivo()"
+      [attr.aria-label]="nombreEquipo[equipo]"
+      [attr.title]="nombreEquipo[equipo]"
       (click)="seleccionar.emit(equipo)"
     >
-      {{ nombreEquipo[equipo] }}
+      @if (equipo === 'masculino') {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10" cy="14" r="6" />
+          <path d="M14.2 9.8 20 4M14 4h6v6" />
+        </svg>
+      } @else {
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="9" r="6" />
+          <path d="M12 15v6M9 19h6" />
+        </svg>
+      }
     </button>
   }
 </div>
