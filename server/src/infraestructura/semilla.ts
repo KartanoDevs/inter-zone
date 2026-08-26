@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { PLANTILLA_GLOBAL } from '../../../src/app/domain/plantilla-global';
 import { sistemaPorDefecto } from '../../../src/app/domain/sistema-por-defecto';
 import { sistemaDefensaPorDefecto } from '../../../src/app/domain/sistema-defensa-por-defecto';
@@ -98,7 +99,8 @@ async function main(): Promise<void> {
 
 // Solo se ejecuta como script (`npm run seed` / `prisma db seed`), nunca al importar desde
 // los tests, que llaman a `sembrarCatalogoBase`/`sembrarEjemplos` por separado.
-if (import.meta.url === `file://${process.argv[1]}`) {
+const esScript = process.argv[1] && fileURLToPath(import.meta.url).endsWith(process.argv[1].replace(/\\/g, '/').split('/').pop() || '');
+if (esScript) {
   main()
     .then(() => prisma.$disconnect())
     .catch(async (error: unknown) => {
