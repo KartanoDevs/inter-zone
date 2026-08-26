@@ -1,6 +1,6 @@
 # 013 — La nota del examen y las insignias
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 4
 
 ## Problema
@@ -124,4 +124,30 @@ Ninguna. Resueltas con el usuario antes de escribir esta spec:
 
 ## Al cerrar
 
-Pendiente — se rellena al completar la spec.
+Los 11 escenarios pasan (436 tests en `domain/`, frente a los 425 con los que arrancó esta
+spec). No existe el script `test:coverage` en `package.json`, así que no se reporta una cifra de
+cobertura — se dice aquí en vez de inventarla, igual que en la spec 012.
+
+**Ningún cambio de diseño no anticipado.** La firma de `corregirRotacion` y `corregirExamen`
+salió tal como preveía el plan: `corregirRotacion(examen, sistema, rotacion, formacion)` devuelve
+`{ nota, faltas }`, y `corregirExamen(examen, sistema, entrega)` agrega las seis en `{ nota,
+insignia }`. El único ajuste fue el fixture de dos tests (E4 y E8), no el código de producción:
+al escribir E6 (falta suya anula la nota) se descubrió que los primeros datos de E4 desplazaban
+una ficha "dada" (el colocador) a un punto que producía una falta real con una ficha del alumno
+—un error del propio test, no del dominio—, y se corrigió moviéndola a un punto legal.
+
+**Imprevisto real, mecánico:** al integrar `EntregaExamen` (`Partial<Record<1|2|3|4|5|6,
+Formacion>>`) en los tests, un `Record<number, Formacion>` local no es asignable a ese tipo —
+TypeScript exige literales `1|2|3|4|5|6`, no `number`. Se resolvió anotando los bucles `for
+(const rotacion of [1,2,3,4,5,6] as const)` y el propio objeto acumulador con el tipo correcto.
+No cambia ninguna regla, es una fricción de tipos al escribir los tests de integración de
+`corregirExamen`.
+
+**Nada estructural que anotar en `docs/decisiones/`.** `examen.ts` crece sin reescribirse, tal
+como preveía el plan. El único retoque a código existente fuera de `examen.ts` es exportar
+`distancia(a, b)` desde `separacion.ts`, donde ya se calculaba inline con `Math.hypot`; su propia
+suite (`separacion.spec.ts`) sigue en verde sin cambios.
+
+**Confirmado el techo de nota con una falta:** con una falta en una rotación y las otras cinco
+perfectas, la nota máxima posible es 50/6 ≈ 8,33 — por encima del umbral de aprobado (7) pero sin
+insignia, tal como preveía el diseño (E10).

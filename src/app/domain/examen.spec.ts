@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from './modelos';
 import { formacionEnRotacion, jugadoresEnPista } from './rotacion';
-import { jugadoresAColocar, sePuedeExaminar, faltasImputables } from './examen';
+import { jugadoresAColocar, sePuedeExaminar, faltasImputables, notaPorDistancia, corregirRotacion, corregirExamen, NOTA_APROBADO, permiteCorregirPorRotacion } from './examen';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };
@@ -190,5 +190,168 @@ describe('faltasImputables', () => {
     const faltas = faltasImputables(jugadoresDelAlumno, formacion, posiciones);
 
     expect(faltas).toHaveLength(0);
+  });
+});
+
+describe('notaPorDistancia', () => {
+  it('013-E1: colocar la ficha en el sitio exacto del entrenador es un diez', () => {
+    expect(notaPorDistancia(0)).toBe(10);
+  });
+
+  it('013-E2: si tu ficha tapa el punto del entrenador, sigue siendo un diez', () => {
+    expect(notaPorDistancia(0.45)).toBe(10);
+  });
+
+  it('013-E3: cuanta más distancia al sitio, menos nota, hasta perderla entera a partir de tres metros', () => {
+    expect(notaPorDistancia(0.5)).toBeCloseTo(9.804, 2);
+    expect(notaPorDistancia(1.5)).toBeCloseTo(5.882, 2);
+    expect(notaPorDistancia(3)).toBe(0);
+    expect(notaPorDistancia(5)).toBe(0);
+  });
+});
+
+describe('corregirRotacion', () => {
+  it('013-E4: la nota de la rotación es la media de las fichas que le tocaba colocar; las dadas no cuentan', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const examen = { tipo: 'linea' as const, titularId: 'central1' };
+    // R1: le toca colocar a central1 (P4), receptor2 (P3), receptor1 (P2). Los coloca exactos
+    // (nota 10 cada uno) salvo receptor1, a 1,5 m de su punto (nota ~5,88). El colocador (P1,
+    // dado) se desplaza a un punto legal distinto del suyo — no debe afectar a la nota.
+    const modelo = sistema.formaciones[1]!;
+    const entrega: Formacion = modelo.map((c) => {
+      if (c.jugador.id === 'receptor1') {
+        return { ...c, punto: { x: c.punto.x + 1.5, y: c.punto.y } };
+      }
+      if (c.jugador.id === 'colocador') {
+        return { ...c, punto: { x: 8, y: 3 } };
+      }
+      return c;
+    });
+
+    const resultado = corregirRotacion(examen, sistema, 1, entrega);
+
+    expect(resultado.nota).toBeCloseTo((10 + 10 + 5.882) / 3, 1);
+  });
+
+  it('013-E5: una ficha sin colocar es un cero, y esa rotación no se juzga de falta', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const examen = { tipo: 'puesto' as const, titularId: 'receptor1' };
+    // La entrega no incluye a receptor1 en absoluto.
+    const entrega: Formacion = sistema.formaciones[1]!.filter((c) => c.jugador.id !== 'receptor1');
+
+    const resultado = corregirRotacion(examen, sistema, 1, entrega);
+
+    expect(resultado.nota).toBe(0);
+    expect(resultado.faltas).toHaveLength(0);
+  });
+
+  it('013-E6: una rotación con falta suya vale cero, aunque las fichas estén casi en su sitio', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const orden = ordenValidoEstandar();
+    const posiciones = formacionEnRotacion(orden, 1);
+    // Examen por línea sobre central1 (P4, delantero en R1): coloca los tres de su línea casi
+    // perfectos, pero invierte central1 y receptor2 (P4/P3) — falta suya, orden-lateral.
+    const entrega: Formacion = posiciones.map((j, indice) => ({
+      jugador: j,
+      punto:
+        indice === 3
+          ? { x: 4.5 + 0.01, y: 1 }
+          : indice === 2
+            ? { x: 1 + 0.01, y: 1 }
+            : PUNTOS_LEGALES[indice],
+    }));
+    const examen = { tipo: 'linea' as const, titularId: 'central1' };
+
+    const resultado = corregirRotacion(examen, sistema, 1, entrega);
+
+    expect(resultado.nota).toBe(0);
+    expect(resultado.faltas.length).toBeGreaterThan(0);
+  });
+});
+
+describe('corregirExamen', () => {
+  it('013-E7: una falta en una rotación no hunde las otras cinco; las seis pesan lo mismo', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const examen = { tipo: 'sistema' as const };
+    const orden = ordenValidoEstandar();
+    const entrega: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
+      entrega[rotacion] = sistema.formaciones[rotacion]!;
+    }
+    // R1 con falta: invierte P4 y P3.
+    const posicionesR1 = formacionEnRotacion(orden, 1);
+    entrega[1] = posicionesR1.map((j, indice) => ({
+      jugador: j,
+      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+    }));
+
+    const resultado = corregirExamen(examen, sistema, entrega);
+
+    // R1 vale 0, las otras cinco valen 10 cada una: media = 50/6.
+    expect(resultado.nota).toBeCloseTo(50 / 6, 1);
+  });
+
+  it('013-E8: estar en regla por pocos centímetros no quita nota (no es una falta que la anule)', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const examen = { tipo: 'linea' as const, titularId: 'central1' };
+    const orden = ordenValidoEstandar();
+    const posicionesR1 = formacionEnRotacion(orden, 1);
+    // P4 y P3 separados solo 0,03 m entre sí (un aviso, dentro del margen de 0,05 m, no una
+    // falta), pero cada uno sigue a menos de 0,45 m (DISTANCIA_PERFECTA) de su punto del modelo.
+    const entrega: Formacion = posicionesR1.map((j, indice) => ({
+      jugador: j,
+      punto: indice === 3 ? { x: 1, y: 1 } : indice === 2 ? { x: 1.03, y: 1 } : PUNTOS_LEGALES[indice],
+    }));
+
+    const resultado = corregirRotacion(examen, sistema, 1, entrega);
+
+    // Sin faltas (era un aviso, no falta): la nota sale de la distancia de cada ficha al modelo,
+    // no se anula a 0 por haber estado al límite de la regla de posición.
+    expect(resultado.faltas).toHaveLength(0);
+    expect(resultado.nota).toBeGreaterThan(0);
+  });
+
+  it('013-E9: se supera el examen a partir de un siete, y cada tipo da su insignia', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const entregaPerfecta: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
+      entregaPerfecta[rotacion] = sistema.formaciones[rotacion]!;
+    }
+
+    const porPuesto = corregirExamen({ tipo: 'puesto', titularId: 'receptor1' }, sistema, entregaPerfecta);
+    const porLinea = corregirExamen({ tipo: 'linea', titularId: 'receptor1' }, sistema, entregaPerfecta);
+    const porSistema = corregirExamen({ tipo: 'sistema' }, sistema, entregaPerfecta);
+
+    expect(porPuesto.insignia).toBe('bronce');
+    expect(porLinea.insignia).toBe('plata');
+    expect(porSistema.insignia).toBe('oro');
+  });
+
+  it('013-E10: con una falta en cualquiera de las seis rotaciones no hay insignia, aunque la nota llegue a siete', () => {
+    const sistema = sistemaConSeisFormaciones(plantilla());
+    const orden = ordenValidoEstandar();
+    const entrega: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
+      entrega[rotacion] = sistema.formaciones[rotacion]!;
+    }
+    // R1 con falta (P4/P3 invertidos): esa rotación vale 0, pero las otras cinco perfectas dan
+    // 50/6 ≈ 8,33 — por encima de 7.
+    const posicionesR1 = formacionEnRotacion(orden, 1);
+    entrega[1] = posicionesR1.map((j, indice) => ({
+      jugador: j,
+      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+    }));
+    const examen = { tipo: 'sistema' as const };
+
+    const resultado = corregirExamen(examen, sistema, entrega);
+
+    expect(resultado.nota).toBeGreaterThanOrEqual(NOTA_APROBADO);
+    expect(resultado.insignia).toBeNull();
+  });
+
+  it('013-E11: el examen por puesto y por línea se corrigen rotación a rotación; el de sistema no', () => {
+    expect(permiteCorregirPorRotacion('puesto')).toBe(true);
+    expect(permiteCorregirPorRotacion('linea')).toBe(true);
+    expect(permiteCorregirPorRotacion('sistema')).toBe(false);
   });
 });
