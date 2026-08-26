@@ -9,8 +9,13 @@
 
 .app-teoria__cabecera {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 6px;
+}
+
+.app-teoria__cabecera > app-selector-equipo {
+  display: flex;
+  align-items: center;
 }
 
 .app-teoria__cabecera > app-barra-sistemas {
@@ -37,8 +42,11 @@
 
 .app-teoria__pista {
   position: relative;
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  aspect-ratio: 10.5 / 13.35;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .app-teoria__pista > app-pista {

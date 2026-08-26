@@ -204,7 +204,7 @@ export class Tablero {
   protected readonly confirmandoVaciado = signal(false);
   protected readonly confirmandoGuardado = signal(false);
 
-  /** Si la cuenta puede editar algún sistema (spec 037): decide si se ve la pestaña Editor y en
+  /** Si la cuenta puede editar algún sistema (spec 037): decide si se ve la ventana Edición y en
    * cuál se aterriza. Solo depende del rol, no de qué equipo esté activo — un entrenador de un
    * único equipo sigue viendo el editor, aunque el servidor rechace escribir en el otro. */
   protected readonly puedeEditar = computed(() => {
@@ -212,18 +212,37 @@ export class Tablero {
     return usuario !== null && puedeEditarAlgo(usuario);
   });
 
-  /** Si se ve la pestaña "Lista blanca" (spec 054): solo el admin. */
+  /** Si se ve el dial "Admin" (mejora posterior a la 054): solo el admin. Sustituye a la
+   * pestaña "Lista blanca" de nivel superior — el dial abre Edición y Lista blanca. */
   protected readonly esAdmin = computed(() => this.acceso.usuario()?.esAdmin ?? false);
 
-  /** Teoría, Examen y Cuenta siempre están; Editor y Admin se suman según el rol (spec 037/054):
-   * 3, 4 o 5 columnas, nunca un hueco vacío en el nav. */
-  protected readonly columnasNav = computed(() => 3 + (this.puedeEditar() ? 1 : 0) + (this.esAdmin() ? 1 : 0));
+  /** "Edición" solo aparece como pestaña propia del nav si el rol edita pero no es admin: quien
+   * es admin entra a Edición desde el dial, para no duplicar la puerta de entrada. */
+  protected readonly muestraPestanaEdicion = computed(() => this.puedeEditar() && !this.esAdmin());
+
+  /** Teoría, Examen y Cuenta siempre están; Edición se suma si tiene pestaña propia y Admin si
+   * es admin (el dial ocupa una sola columna) — nunca un hueco vacío en el nav. */
+  protected readonly columnasNav = computed(() => 3 + (this.muestraPestanaEdicion() ? 1 : 0) + (this.esAdmin() ? 1 : 0));
+
+  /** Si el dial de Admin está desplegado (mejora posterior a la 054): abre Edición y Lista
+   * blanca, mismo patrón de abrir/cerrar que `Speeddial` pero sin acoplarse a él, porque ese
+   * componente es específico del FAB de sistema sobre la pista. */
+  protected readonly dialAdminAbierto = signal(false);
 
   /** Navegación de ventana: "Examen" y "Cuenta" son el hueco de las specs 012-013 y 053, sin
    * funcionalidad todavía. Arranca en "Editor" salvo que el rol no lo permita (spec 037, E6) —
    * `puedeEditar` ya tiene su valor final aquí porque `App` no crea `Tablero` hasta que
    * `AccesoStore.usuario()` deja de ser `null`. */
   protected readonly ventana = signal<Ventana>(this.puedeEditar() ? 'editor' : 'teoria');
+
+  protected alternarDialAdmin(): void {
+    this.dialAdminAbierto.update((valor) => !valor);
+  }
+
+  protected irAVentanaDesdeDial(destino: Ventana): void {
+    this.dialAdminAbierto.set(false);
+    this.ventana.set(destino);
+  }
 
   protected readonly tab = signal<PestanaTablero>('banquillo');
   protected readonly panelPlegado = signal(false);

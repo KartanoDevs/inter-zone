@@ -5,42 +5,44 @@
 .app-barra-sistemas {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 40px;
-  padding: 0 30px 0 10px;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 30px 8px 14px;
   background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .app-barra-sistemas__tipo {
   flex: 0 0 auto;
-  padding: 2px 5px;
-  border-radius: 3px;
-  background: rgba(0, 229, 255, 0.16);
   color: var(--neon-cyan);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 9px;
+  font-size: 9.5px;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .app-barra-sistemas__tipo--defensa {
-  background: rgba(170, 136, 255, 0.18);
   color: var(--neon-purple);
 }
 
 .app-barra-sistemas__select {
-  flex: 1;
+  width: 100%;
   min-width: 0;
-  padding: 8px 0;
+  padding: 0;
   background: transparent;
   border: 0;
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 13px;
+  color: var(--text-main);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(13px, 4.4vw, 16px);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
