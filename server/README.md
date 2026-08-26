@@ -77,6 +77,14 @@ cualquier otro rol, `401` sin sesión:
 | `POST` | `/lista-blanca` | `{ email, rol, equipoClave? }`; invita, o si el correo ya estaba invitado y sin usar, cambia su rol en la misma fila; `409` si el correo ya tiene cuenta, `400` si el rol o el equipo no son válidos |
 | `DELETE` | `/lista-blanca/:email` | retira la invitación; no toca la cuenta si el correo ya se dio de alta desde ella |
 
+Las dos rutas de `/examen/insignias` (spec 056) exigen sesión; resuelven siempre la cuenta de la
+sesión, nunca aceptan un id de usuario en la petición:
+
+| Método | Ruta | |
+|---|---|---|
+| `GET` | `/examen/insignias` | las insignias ganadas por la propia cuenta; lista vacía si no tiene ninguna |
+| `POST` | `/examen/insignias` | `{ sistemaId, tipo, titularId }`; registra que se ha ganado esa insignia; `titularId` es `null` para el tipo `'sistema'`; repetirla no la duplica |
+
 ## Estructura
 
 ```
@@ -85,12 +93,13 @@ server/
 │   ├── schema.prisma
 │   └── migrations/       # los CHECK y la función celdas_validas() están a mano en el SQL
 └── src/
-    ├── infraestructura/   # Prisma, los repositorios (sistemas y acceso), la semilla
-    ├── http/               # Express: rutas (sistemas, auth, lista-blanca) y la fábrica del servidor
+    ├── infraestructura/   # Prisma, los repositorios (sistemas, acceso, insignias), la semilla
+    ├── http/               # Express: rutas (sistemas, auth, lista-blanca, examen) y la fábrica del servidor
     └── main.ts
 ```
 
-Diez tablas: las seis de voleibol de `docs/modelo-de-datos.md` (`equipo`, `jugador`, `sistema`,
+Once tablas: las seis de voleibol de `docs/modelo-de-datos.md` (`equipo`, `jugador`, `sistema`,
 `sistema_rotacion`, `formacion`, `colocacion`) más las cuatro de acceso que llegaron con la spec
 035 (`usuario`, `lista_blanca`, `membresia`, `sesion` — esta última no estaba en el documento
-original, que ya avisaba de que si hacía falta pasaría de nueve a diez).
+original, que ya avisaba de que si hacía falta pasaría de nueve a diez) y `insignia_examen`
+(spec 056), la primera de las ampliaciones previstas en su sección 7 que llegó a construirse.

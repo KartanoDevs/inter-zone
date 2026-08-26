@@ -63,6 +63,14 @@ enum rol_acceso {
   usuario
 }
 
+/// Los tres tipos de examen (spec 012): por posición (un único titular), por línea (los tres de
+/// su línea) o por sistema completo (los seis, en las seis rotaciones).
+enum tipo_examen {
+  puesto
+  linea
+  sistema
+}
+
 model equipo {
   id     String @id @default(uuid()) @db.Uuid
   clave  String @unique
@@ -91,6 +99,7 @@ model usuario {
   sesiones            sesion[]
   invitaciones_hechas lista_blanca[]
   sistemas_validados  sistema[]
+  insignias           insignia_examen[]
 }
 
 /// La única puerta de entrada (spec 035, ADR 0039): sin una fila aquí no se crea cuenta. Fija
@@ -161,6 +170,7 @@ model sistema {
   validador          usuario?             @relation(fields: [validado_por], references: [id], onDelete: SetNull)
   rotaciones         sistema_rotacion[]
   formaciones_defensa formacion_defensa[]
+  insignias          insignia_examen[]
 
   @@unique([equipo_id, tipo, nombre])
   @@index([equipo_id, tipo, estado])
@@ -250,4 +260,22 @@ model colocacion {
   jugador   jugador   @relation(fields: [jugador_id], references: [id], onDelete: Restrict)
 
   @@id([formacion_id, jugador_id])
+}
+
+/// Una insignia ganada al examinarse (spec 056): solo el hecho de haberla ganado, nunca la nota
+/// ni las colocaciones del intento — ambas son recalculables (specs 012-013) y guardarlas ataría
+/// el histórico a la fórmula de puntuación de hoy. `titular_id` es nulo para el tipo `sistema`
+/// (coloca a los seis, no examina a uno); obligatorio para `puesto` y `linea` — CHECK a mano,
+/// Prisma no expresa esa condición conjunta.
+model insignia_examen {
+  usuario_id  String      @db.Uuid
+  sistema_id  String      @db.Uuid
+  tipo        tipo_examen
+  titular_id  String      @default("")
+  obtenida_en DateTime    @default(now()) @db.Timestamptz
+
+  usuario usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  sistema sistema @relation(fields: [sistema_id], references: [id], onDelete: Cascade)
+
+  @@id([usuario_id, sistema_id, tipo, titular_id])
 }

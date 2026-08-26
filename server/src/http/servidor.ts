@@ -1,5 +1,6 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import { authRutas } from './auth.rutas';
+import { examenRutas } from './examen.rutas';
 import { listaBlancaRutas } from './lista-blanca.rutas';
 import { sistemasRutas } from './sistemas.rutas';
 
@@ -24,7 +25,8 @@ function cors(req: Request, res: Response, next: NextFunction): void {
 /** Fábrica del servidor Express, sin escuchar puerto (`main.ts` lo hace, los tests de
  * integración levantan su propia instancia efímera). `/api/auth` (spec 035) da cuenta,
  * contraseña y sesión; `/api/lista-blanca` (spec 054) es solo para el admin;
- * `/api/sistemas` exige sesión y rol al escribir desde la spec 037, no al leer. */
+ * `/api/sistemas` exige sesión y rol al escribir desde la spec 037, no al leer; `/api/examen`
+ * (spec 056) solo exige sesión, para guardar y consultar las insignias de la propia cuenta. */
 export function crearServidor(): Express {
   const app = express();
   app.use(cors);
@@ -32,6 +34,7 @@ export function crearServidor(): Express {
   app.use('/api', authRutas);
   app.use('/api', listaBlancaRutas);
   app.use('/api', sistemasRutas);
+  app.use('/api', examenRutas);
 
   // Express 5 reenvía los rechazos de las rutas async aquí solo; no hace falta try/catch en
   // cada una.

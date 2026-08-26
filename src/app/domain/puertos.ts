@@ -1,5 +1,7 @@
 import type { EquipoId, EstadoSistema, Sistema } from './modelos';
 import type { DatosPerfil, InvitacionListada, RolAcceso, SesionUsuario } from './acceso';
+import type { TipoExamen } from './examen';
+import type { InsigniaGanada } from './insignias';
 
 /** Cada método toca solo lo que cambia — nunca el catálogo entero — para que una escritura no
  * pueda arriesgar el trabajo de sistemas que no tocó (spec 031). `cambiarEstado` (spec 051) es
@@ -79,3 +81,12 @@ export interface ListaBlancaRepository {
 /** El correo ya tiene cuenta (spec 054, E3): su rol se cambia desde la cuenta, no desde la
  * lista blanca. Un rechazo que no sea este se señala con `ErrorDelServidor`. */
 export class CorreoYaRegistrado extends Error {}
+
+/** Insignias de la propia cuenta (spec 056): `registrar` guarda que se ha ganado la insignia de
+ * un tipo de examen sobre un sistema (y un titular, si el tipo lo exige); repetir el mismo
+ * examen y volver a superarlo no duplica nada. `listar` siempre devuelve las de quien tiene la
+ * sesión — nunca acepta un id de otra cuenta. */
+export interface InsigniasRepository {
+  listar(): Promise<readonly InsigniaGanada[]>;
+  registrar(sistemaId: string, tipo: TipoExamen, titularId: string | null): Promise<void>;
+}

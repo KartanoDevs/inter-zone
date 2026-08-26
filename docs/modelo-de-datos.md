@@ -8,10 +8,11 @@ es justo lo que `docs/flujo-de-trabajo.md` prohíbe en una spec. Es un documento
 fija la forma de los datos para que la spec que venga después pueda escribirse en lenguaje de
 voleibol sin tener que discutir tablas por el camino.
 
-**Las diez tablas están construidas.** Las seis de voleibol —`equipo`, `jugador`, `sistema`,
+**Las once tablas están construidas.** Las seis de voleibol —`equipo`, `jugador`, `sistema`,
 `sistema_rotacion`, `formacion`, `colocacion`— desde la spec 033; las tres de acceso —`usuario`,
 `lista_blanca`, `membresia`— más `sesion` (no prevista aquí), desde la spec 035 (ADR 0036,
-sustituye a la 0028). Ver la sección 9, al final.
+sustituye a la 0028); y `insignia_examen` (spec 056), la primera ampliación de la sección 7 que
+llegó a construirse. Ver la sección 9, al final.
 
 ## Aviso de vocabulario: «rol» significa ahora dos cosas
 
@@ -34,8 +35,8 @@ mira la tabla antes de suponer cuál es.
 1. **Nada derivado se almacena.** Es el invariante que más fácil se rompe al pasar a SQL. La lista
    completa está en la sección 6.
 2. **Metros, nunca píxeles.** ADR 0002, y no cambia porque ahora haya una base de datos.
-3. **Sencillo, pero sin condenarse a rehacerlo.** Diez tablas (nueve en el diseño original, más
-   `sesion` — spec 035, ver §9), ninguna columna especulativa. Todo
+3. **Sencillo, pero sin condenarse a rehacerlo.** Once tablas (nueve en el diseño original, más
+   `sesion` — spec 035 — y `insignia_examen` — spec 056, ver §9), ninguna columna especulativa. Todo
    lo previsible a futuro (un tercer equipo, jugadores con nombre, el modo examen, la IA que redacta
    sistemas) entra como fila nueva o tabla nueva, jamás como `ALTER` de lo ya escrito. La sección 7
    lo detalla caso por caso.
@@ -585,7 +586,7 @@ arriba, que es lo que se pedía al diseñarlo.
 | Un tercer equipo (cadete, juvenil) | `INSERT` en `equipo` |
 | Jugadores con nombre real | Tabla nueva enlazada, **sin rol fijo**; los siete huecos siguen intactos |
 | Varias alineaciones por equipo | Tabla nueva, con `sistema` apuntando a ella |
-| Modo examen | `intento_examen` e `intento_colocacion`, colgando de `sistema` y `usuario` |
+| Modo examen | `insignia_examen`, colgando de `sistema` y `usuario` (spec 056) — solo el logro, no la nota ni las colocaciones del intento (ver §9) |
 | IA que redacta sistemas | Tabla de auditoría: petición, antes, después |
 | Renombrar roles por equipo («Receptor» → «Punta») | Tabla de configuración de roles |
 
@@ -674,14 +675,24 @@ Lo que hay que tener presente:
 
 ---
 
-## 9. Estado: diez tablas construidas
+## 9. Estado: once tablas construidas
 
 Las seis tablas de voleibol —`equipo`, `jugador`, `sistema`, `sistema_rotacion`, `formacion`,
 `colocacion`— están construidas, migradas y con datos desde la spec 033. Las tres de acceso
 —`usuario`, `lista_blanca`, `membresia`— se construyeron con la spec 035 (ADR 0036, sustituye a
 la 0028), casi exactamente como estaban diseñadas en la sección 4 — las desviaciones concretas
 están anotadas junto a cada tabla. Se les suma `sesion`, no prevista en este documento (ver más
-abajo): diez tablas en total.
+abajo), y `insignia_examen` (spec 056): once tablas en total.
+
+**`insignia_examen` (spec 056).** Solo el logro de haber ganado una insignia al examinarse
+(spec 013): quién, sobre qué sistema, de qué tipo de examen y, si el tipo lo exige, sobre qué
+titular — nunca la nota ni las colocaciones del intento, que son recalculables y no deben quedar
+atadas a la fórmula de puntuación con la que se calcularon el día que se ganó (principio 1 de la
+sección 1). Clave primaria compuesta (`usuario_id`, `sistema_id`, `tipo`, `titular_id`) para que
+repetir el mismo examen no duplique la fila; `titular_id` es `TEXT NOT NULL DEFAULT ''` en vez de
+nullable porque forma parte de esa clave y Postgres trata cada `NULL` como distinto de los demás
+— la cadena vacía es el centinela de "examen por sistema, sin titular", con un `CHECK` que ata
+`titular_id = ''` a `tipo = 'sistema'`.
 
 **Lo que la spec 035 no hizo:** aplicar los permisos. `membresia` y `usuario.es_admin` ya
 existen y ya se pueblan al registrarse, pero ninguna ruta de `/api/sistemas` los consulta

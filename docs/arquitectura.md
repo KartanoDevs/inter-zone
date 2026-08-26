@@ -162,14 +162,18 @@ Modelos y reglas. Aquí vive el voleibol.
   el tipo de los tres campos de perfil, siempre los tres juntos, nunca un parche parcial. Nada
   de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en `server/`, que es quien
   lo usa (invariante 2).
-- `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository` y `AccesoRepository`,
-  sin implementación. Asíncronas todas; `SistemaRepository` además es granular —
+- `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository`, `AccesoRepository`,
+  `ListaBlancaRepository` e `InsigniasRepository` (spec 056), sin implementación. Asíncronas
+  todas; `SistemaRepository` además es granular —
   `crear`/`actualizar`/`borrar` por sistema, nunca un `guardar` de todo el catálogo— para que una
   escritura no pueda arriesgar el trabajo de un sistema que no tocó (spec 031, ADR 0024).
   También declara `ErrorDeRed`, `ErrorDelServidor` y `ConflictoDeEdicion` (spec 034) para
   `SistemaRepository`, y `CredencialesInvalidas`/`InvitacionNoDisponible` (spec 050) para
   `AccesoRepository`: los motivos de fallo que un adaptador puede señalar, parte del contrato
-  del puerto — no un detalle de cómo lo cumple un adaptador en concreto.
+  del puerto — no un detalle de cómo lo cumple un adaptador en concreto. `InsigniasRepository`
+  no necesita ninguna clase de error propia: un fallo se señala con `ErrorDelServidor`, y sus dos
+  métodos (`listar`, `registrar`) siempre actúan sobre la cuenta de la sesión, igual que
+  `AccesoRepository` con el propio perfil — nunca aceptan un id de otra cuenta.
 
 Todo son funciones puras y tipos, con una excepción deliberada: las clases de error de
 `puertos.ts` no tienen estado propio (heredan de `Error` sin añadir nada), así que siguen sin
@@ -333,6 +337,11 @@ Adaptadores hacia el mundo exterior.
   uso**. Mismo criterio que los otros dos: `fetch` nativo con `credentials: 'include'` contra
   `/api/lista-blanca` (`GET`/`POST`/`DELETE /lista-blanca/:email`). Traduce el 409 del servidor a
   `CorreoYaRegistrado` (E3).
+- `HttpInsigniasRepository implements InsigniasRepository` (spec 056) — **el adaptador en uso**.
+  Mismo criterio: `fetch` nativo, `credentials: 'include'`, contra `GET`/`POST
+  /api/examen/insignias`. No traduce ningún motivo de fallo propio — cualquier rechazo del
+  servidor se señala como `ErrorDelServidor`, porque el único caso especial de este puerto (sin
+  sesión) ya lo cubre ese mismo error, sin necesitar una clase nueva.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -463,6 +472,10 @@ navegador, ejecutándose en Node.
   factorizados aquí al necesitarlos también `sistemas.rutas.ts`, y desde la 053 las dos rutas
   de perfil): parseo de `Cookie` a mano, mismo criterio que el CORS escrito a mano en
   `servidor.ts` — no hace falta más para esto.
+- `src/http/examen.rutas.ts` — las rutas de `/api/examen/insignias` (spec 056): `GET` (las de la
+  propia cuenta) y `POST` (registrar una ganada). Exigen sesión, sin ningún rol — a diferencia de
+  `sistemas.rutas.ts` y `lista-blanca.rutas.ts`, no hay equipo ni admin que comprobar, porque el
+  id de usuario sale siempre de la sesión.
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
   `cambiarEstadoSistema` y `equipoDelSistema` (spec 051) son para la ruta de validar: la segunda
@@ -481,6 +494,10 @@ navegador, ejecutándose en Node.
   `scrypt`, ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días)
   son los dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/`
   (invariante 2).
+- `src/infraestructura/insignias.repositorio.ts` — `registrarInsignia` y `insigniasDe` (spec
+  056): un `upsert` sobre la clave primaria compuesta de `insignia_examen` para que repetir un
+  examen ya superado no duplique la fila ni mueva su fecha; `titular_id` vacío en la fila
+  representa "sin titular" (examen por sistema), traducido de vuelta a `null` al leer.
 - `src/infraestructura/semilla.ts` — siembra el equipo, el catálogo fijo de jugadores y los dos
   sistemas de ejemplo (`npm run seed`); sustituye a la siembra que hacía el adaptador de
   `localStorage` en la v1. La guarda de `sembrarEjemplos` es por tipo desde la spec 038, no
@@ -522,6 +539,7 @@ src/app/
 │   ├── sistema-por-defecto.ts
 │   ├── sistema-defensa-por-defecto.ts
 │   ├── acceso.ts
+│   ├── insignias.ts
 │   ├── puertos.ts
 │   └── *.spec.ts
 ├── application/
@@ -537,6 +555,7 @@ src/app/
 │   ├── http-acceso.repository.ts             # en uso (spec 050)
 │   ├── http-sistema.repository.ts            # en uso (spec 034)
 │   ├── http-lista-blanca.repository.ts       # en uso (spec 054)
+│   ├── http-insignias.repository.ts          # en uso (spec 056)
 │   ├── local-storage-ajustes.repository.ts   # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/
