@@ -1,0 +1,107 @@
+# Despliegue de producción de InterZone. Un solo origen: `web` (nginx) sirve la SPA y
+# reenvía /api a `servidor`. `servidor` y `postgres` no publican ningún puerto al host.
+#
+# Proxy del host: Nginx Proxy Manager (contenedor `nginx-proxy-manager`, red Docker
+# `nginx-proxy-network`, ya existente en el servidor — no se crea aquí). Su TLS y su dominio
+# se configuran en su propia UI (puerto 81), no con labels ni con ficheros: se añade un
+# "Proxy Host" nuevo con destino `interzone-web:80` (el alias declarado más abajo).
+#
+# Uso:  docker compose -f docker-compose.prod.yml up -d --build
+#
+# NO sustituye a server/docker-compose.yml, que es el Postgres desechable de desarrollo.
+
+name: interzone
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      # Postgres 18 cambió el punto de montaje esperado a /var/lib/postgresql, SIN /data:
+      # https://github.com/docker-library/postgres/pull/1259
+      # Con la ruta antigua el contenedor no arranca. Mismo detalle que en desarrollo.
+      - interzone-datos:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [interna]
+    # Sin `ports`: la base de datos solo se alcanza desde la red interna. Para un volcado,
+    # `docker compose -f docker-compose.prod.yml exec postgres pg_dump ...`.
+
+  servidor:
+    build:
+      # Contexto = raíz del repo, no server/: la imagen necesita también src/app/domain
+      # con su ruta relativa intacta (ADR 0025).
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      PORT: '3000'
+      # Ya no hay peticiones entre orígenes (nginx sirve todo desde el mismo dominio), pero
+      # el servidor sigue emitiendo la cabecera: se le da el origen público real para que no
+      # mienta si algún día se llama desde fuera.
+      ORIGEN_PERMITIDO: ${ORIGEN_PUBLICO}
+      # 'true' añade `; Secure` a la cookie de sesión. Correcto SOLO si Nginx Proxy Manager
+      # termina TLS delante de este despliegue. Con COOKIE_SEGURA=true y acceso por http, el
+      # navegador descarta la cookie en silencio y el login "no hace nada".
+      COOKIE_SEGURA: ${COOKIE_SEGURA:-true}
+      ADMIN_EMAIL_INICIAL: ${ADMIN_EMAIL_INICIAL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # /api/auth/quien-soy nunca exige sesión ni datos sembrados: responde 200 siempre
+      # (con o sin cookie). Se prefiere a /api/sistemas a propósito — probado en local: ese
+      # endpoint exige la fila de `equipo` que crea la semilla, y la semilla se ejecuta
+      # DESPUÉS del primer `up` (§8 del plan), así que un despliegue nuevo nunca declararía
+      # sano a `servidor` y `web` (depends_on: service_healthy) nunca llegaría a arrancar.
+      # La conectividad con Postgres ya la garantiza `prisma migrate deploy` en el CMD: si
+      # falla, el contenedor muere antes de llegar aquí.
+      test:
+        ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/api/auth/quien-soy').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks: [interna]
+    # Sin `ports`: a diferencia de inter_auu_backend (que publica 0.0.0.0:3000), la API de
+    # InterZone solo se alcanza a través de `web` — es la decisión de "mismo origen".
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      servidor:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1/index.html']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      interna: {}
+      # Red de Nginx Proxy Manager, ya existente en el servidor (no se crea aquí). El alias
+      # es el nombre que se escribe en el campo "Forward Hostname" del Proxy Host de NPM.
+      proxy:
+        aliases: [interzone-web]
+
+networks:
+  interna:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${RED_PROXY:-nginx-proxy-network}
+
+volumes:
+  interzone-datos:

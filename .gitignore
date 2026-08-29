@@ -23,6 +23,10 @@ server/node_modules
 server/generated
 server/.env
 
+# .env de la raíz: es el que lee docker-compose.prod.yml, con las credenciales de Postgres
+# dentro. El ejemplo versionado es .env.produccion.example.
+/.env
+
 # `.claude/` es un *junction* de Windows a `.agents/` (que sí está versionado). Sin esta
 # entrada, git lo trata como un directorio normal sin seguimiento y un cambio de rama puede
 # borrar a través del enlace los ficheros reales de `.agents/` — ya pasó una vez.

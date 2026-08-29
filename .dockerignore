@@ -1,0 +1,49 @@
+# Contexto de build de Docker. El contexto es SIEMPRE la raíz del repo, también para el
+# servidor: `server/` importa el dominio con rutas relativas que salen de su carpeta
+# (`../../../src/app/domain/...`, ADR 0025), así que la imagen necesita las dos jerarquías
+# con su posición relativa intacta.
+
+# Dependencias y artefactos: se reinstalan y se regeneran dentro de la imagen.
+node_modules
+server/node_modules
+dist
+server/generated
+.angular
+graphify-out
+coverage
+out-tsc
+
+# Secretos: nunca entran en una capa de imagen.
+.env
+.env.*
+!.env.*.example
+server/.env
+
+# Historia y herramientas de trabajo.
+.git
+.gitattributes
+.gitignore
+.agents
+.claude
+.vscode
+.idea
+.history
+
+# Documentación y utillaje que no participa en ningún build.
+docs
+skills-lock.json
+start.bat
+.mcp.json
+__screenshots__
+**/*.spec.ts
+vitest.config.ts
+server/vitest.config.ts
+server/vitest.setup.ts
+
+# Los propios ficheros de despliegue no hacen falta dentro de las imágenes.
+docker-compose.yml
+docker-compose.prod.yml
+server/docker-compose.yml
+Dockerfile.web
+server/Dockerfile
+.dockerignore

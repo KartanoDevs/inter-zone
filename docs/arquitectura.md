@@ -592,6 +592,37 @@ server/
 
 Los tests viven junto al fichero que prueban, no en una carpeta `test/` paralela.
 
+## Despliegue
+
+Producción es tres contenedores Docker bajo un solo origen (ADR 0041): `web` (nginx) sirve el
+build de Angular y hace `proxy_pass` de `/api` al contenedor `servidor`; `servidor` y
+`postgres` no publican ningún puerto al host, solo se alcanzan desde la red interna del
+compose. Mismo origen quiere decir que `URL_API` en `app.config.ts` es `'/api'` (ruta
+relativa) y no una URL absoluta: elimina CORS entre front y API, y hace que la cookie de
+sesión `iz_sesion` sea de primera parte — importante en Safari/iOS, que descarta cookies de
+terceros.
+
+- `Dockerfile.web`, `nginx.conf` (raíz) — build multi-stage del frontend; nginx aplica
+  cabeceras de caché distintas por tipo de recurso (inmutable para los bundles con hash,
+  `no-cache` para `index.html` y `sw.js`) y una CSP.
+- `server/Dockerfile` — build del servidor. **Se ejecuta con `tsx` en producción, igual que en
+  desarrollo, a propósito**: el generador de Prisma (`prisma-client`) emite el cliente como
+  TypeScript con imports sin extensión, que ni `tsc` reescribe ni Node resuelve; compilar
+  obligaría a migrar la resolución de módulos del servidor entero. `prisma generate` se
+  ejecuta dentro de la imagen (el motor de consultas es un binario por plataforma) y
+  `prisma migrate deploy` corre al arrancar el contenedor, antes de escuchar el puerto.
+- `docker-compose.prod.yml` (raíz) — no sustituye a `server/docker-compose.yml`, que sigue
+  siendo solo el Postgres desechable de desarrollo.
+- El servidor de estáticos no necesita fallback de rutas por SPA con router (la aplicación no
+  tiene uno, todo vive en `/`), pero lo lleva de todas formas por si algún día lo tiene.
+- PWA instalable, no offline: un service worker de ~20 líneas escrito a mano (`public/sw.js`)
+  cachea solo una página de cortesía sin conexión, nunca los bundles. No se usa
+  `@angular/service-worker` porque su precacheo agresivo es justo el modo offline que el
+  proyecto excluye a propósito (ver README y `docs/01_Finalidad_y_Alcance.md`).
+
+Detalle del razonamiento completo, alternativas descartadas y riesgos aceptados:
+`docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`.
+
 ## Por qué SVG y no Canvas
 
 Para seis fichas, una rejilla y unas líneas, SVG gana en todo lo que importa aquí:

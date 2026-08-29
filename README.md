@@ -88,10 +88,16 @@ specs siguen guardados para esto, y hasta que no se escriban no existe ni la spe
   (`plantillas-equipo.ts`), pero hoy todos los sistemas usan la misma plantilla fija:
   `PLANTILLA_GLOBAL`, una constante de la aplicación (ADR 0013).
 
-**Fuera a propósito, también en la v2:** PWA offline y sincronización sin conexión. `localStorage`
-no se queda como modo desconectado para los sistemas; se sustituyó por el servidor. Sí se queda,
-a propósito, como almacén de los ajustes de pantalla: son preferencias por dispositivo, no
-trabajo de un entrenador que perder.
+**Fuera a propósito, también en la v2:** PWA **offline** y sincronización sin conexión.
+`localStorage` no se queda como modo desconectado para los sistemas; se sustituyó por el
+servidor. Sí se queda, a propósito, como almacén de los ajustes de pantalla: son preferencias
+por dispositivo, no trabajo de un entrenador que perder.
+
+**Sí instalable, desde el despliegue en Docker (ADR 0041):** la pizarra se añade a la
+pantalla de inicio del móvil y se abre en su propia ventana, sin barra del navegador — pero
+sigue necesitando conexión. Sin red muestra una página de cortesía, no los sistemas
+guardados: instalable no es lo mismo que offline con sincronización, que sigue siendo lo que
+está fuera de alcance.
 
 ## Stack
 
@@ -128,7 +134,31 @@ npm run seed                 # equipo + jugador + los dos sistemas de ejemplo
 npm run dev                  # http://localhost:3000
 ```
 
-Con el backend arriba, `npm start` en la raíz sirve la pizarra en `http://localhost:4200`.
+Con el backend arriba, `npm start` en la raíz sirve la pizarra en `http://localhost:4200`
+(usa `proxy.conf.json` para reenviar `/api` a `:3000`, igual que hace nginx en producción).
+
+## Desplegar en producción
+
+Tres contenedores Docker bajo un solo origen — `web` (nginx, sirve el build y reenvía `/api`),
+`servidor` y `postgres` — detrás de un proxy inverso ya existente en el servidor (ADR 0041).
+
+```bash
+cp .env.produccion.example .env    # rellenar credenciales; .env nunca se commitea
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Sembrar el catálogo base, **una sola vez**, tras el primer arranque (sin esto, guardar
+cualquier sistema falla: las filas de `equipo` y `jugador` no existen todavía):
+
+```bash
+docker compose -f docker-compose.prod.yml exec servidor npm run seed:prod
+```
+
+Por último, dar de alta el dominio en el proxy inverso del servidor apuntando al contenedor
+`web` (alias de red `interzone-web`, puerto 80) y activar TLS ahí — no lo hace este compose.
+Detalle completo, alternativas descartadas y riesgos aceptados (en particular, que
+`GET /sistemas` sigue abierto sin sesión — ver "Qué NO hace" más arriba) en
+`docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`.
 
 ## Documentación
 

@@ -219,7 +219,10 @@ Dos requisitos ya anotados para cuando se escriban:
 ### Fuera a propósito
 
 - **PWA offline y sincronización sin conexión.** `localStorage` no se queda como modo
-  desconectado para los sistemas: se sustituyó por el servidor.
+  desconectado para los sistemas: se sustituyó por el servidor. Desde el despliegue en Docker
+  (ADR 0041) la aplicación **sí es instalable** —se añade a la pantalla de inicio del móvil—,
+  pero instalable no es offline: sin conexión muestra una página de cortesía, no datos
+  cacheados. El service worker no precachea ningún sistema ni bundle a propósito.
 - **Un modelo de jugador más fino que un punto.** La regla real habla del pie más adelantado;
   un punto por jugador basta para el propósito didáctico y evita un modelo mucho más
   complicado sin ganancia pedagógica.

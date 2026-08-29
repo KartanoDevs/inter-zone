@@ -11,8 +11,10 @@ import { HttpSistemaRepository } from './infrastructure/http-sistema.repository'
 import { LocalStorageAjustesRepository } from './infrastructure/local-storage-ajustes.repository';
 
 // Constante fija, igual que `PLANTILLA_GLOBAL` (spec 034): no existe `environments/` en este
-// proyecto todavía.
-const URL_API = 'http://localhost:3000/api';
+// proyecto todavía, y ya no hace falta: en producción nginx sirve la aplicación y la API bajo
+// el mismo origen, y en desarrollo `ng serve --proxy-config proxy.conf.json` reproduce ese
+// mismo reparto (ADR 0041). Una ruta relativa vale para los dos.
+const URL_API = '/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [

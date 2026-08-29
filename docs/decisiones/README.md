@@ -54,3 +54,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0038](0038-validar-se-protege-antes-que-el-resto.md) | Validar un sistema se protege antes que el resto de `/api/sistemas` | Aceptada |
 | [0039](0039-teoria-store-propio.md) | Teoría tiene su propia navegación, no comparte la del editor | Aceptada |
 | [0040](0040-el-libero-sustituye-siempre-al-central-de-zaga.md) | El líbero sustituye siempre al central de zaga; se retira el selector de la interfaz | Aceptada |
+| [0041](0041-despliegue-en-un-solo-origen-y-pwa-instalable.md) | Despliegue Docker en un solo origen (nginx + proxy a la API) y PWA instalable, no offline | Aceptada |
