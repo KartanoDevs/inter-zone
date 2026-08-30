@@ -26,6 +26,15 @@
   transition: box-shadow 200ms ease;
 }
 
+/* Área táctil de 44×44px sin agrandar el círculo visual de 36px (spec 059, E13): el círculo
+   real fija el radio de despliegue de `.sd__item` vía `--dy`, así que el exceso de hit-area es
+   invisible, no un FAB más grande — mismo criterio que `.app-tablero__panel-plegar`. */
+.sd__fab::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+
 .sd__fab svg {
   width: 18px;
   height: 18px;

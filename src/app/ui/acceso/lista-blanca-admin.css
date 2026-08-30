@@ -1,3 +1,13 @@
+:host {
+  /* Igual que en `teoria-tablero.css` (spec 059, E7): sin esto el `height: 100%` de
+     `.app-lista-blanca` no tiene nada que heredar como hijo directo del flex-column de
+     `Tablero`. */
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .app-lista-blanca {
   height: 100%;
   overflow-y: auto;
@@ -20,7 +30,8 @@
 
 .app-lista-blanca__form input,
 .app-lista-blanca__form select {
-  min-height: 36px;
+  /* `min-height: 44px` (spec 059, E13): 36 px quedaba por debajo del mínimo táctil. */
+  min-height: 44px;
   padding: 0 10px;
   background: var(--bg-card-alt);
   border: 1px solid rgba(255, 255, 255, 0.1);

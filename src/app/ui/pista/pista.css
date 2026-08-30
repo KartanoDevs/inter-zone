@@ -14,6 +14,10 @@
      táctil el primer arrastre que el navegador interpreta como posible scroll dispara
      `pointercancel` a mitad de gesto. */
   touch-action: none;
+  /* Selección de texto accidental al arrastrar (spec 059, E12): sin esto, mantener pulsado
+     sobre una etiqueta de ficha selecciona texto en vez de iniciar el arrastre. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .app-pista__zona-libre {
@@ -153,8 +157,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  /* 44×44px (spec 059, E13): antes 36×36, por debajo del mínimo táctil. El icono interior se
+     mantiene a 18px; solo crece el área pulsable, igual que `.app-tablero__recentrar-sombra`. */
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;

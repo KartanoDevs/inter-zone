@@ -18,13 +18,16 @@
 .app-ajustes__select {
   display: block;
   width: 100%;
+  /* `min-height: 44px` (spec 059, E13): con solo el padding el alto real rondaba 38 px. */
+  min-height: 44px;
   padding: 8px;
   background: var(--bg-card-alt);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   color: var(--text-main);
   font-family: var(--font-body);
-  font-size: 14px;
+  /* 16px, no 14 (spec 059, E15): por debajo de 16px iOS hace zoom automático al enfocar. */
+  font-size: 16px;
 }
 
 /* La lista desplegable la pinta el navegador en un contexto aparte que no siempre hereda
@@ -39,7 +42,8 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 40px;
+  /* `min-height: 44px` (spec 059, E13): 40px quedaba por debajo del mínimo táctil. */
+  min-height: 44px;
   padding: 0;
   background: transparent;
   border: 0;

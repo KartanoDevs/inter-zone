@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <title>InterZone</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- `viewport-fit=cover`: sin esto, `env(safe-area-inset-*)` siempre vale 0 en iOS y la app
+       instalada no puede evitar el notch ni la barra de gestos (spec 059, E10-E11). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Sistemas de recepción y defensa de voleibol: editor, teoría y examen.">
 
   <!-- PWA instalable (ADR 0041). El manifiesto y los iconos salen de public/, que el

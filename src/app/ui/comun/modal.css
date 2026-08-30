@@ -16,7 +16,9 @@
 .app-modal {
   width: 100%;
   max-width: 320px;
-  max-height: 80vh;
+  /* `dvh`, no `vh` (spec 059, E8): mismo criterio que el resto de la app — `vh` no cuenta la
+     barra del navegador en móvil y dejaba el modal más alto de lo que cabía de verdad. */
+  max-height: 80dvh;
   overflow-y: auto;
   padding: var(--space-3);
   background: var(--bg-card);
@@ -48,6 +50,7 @@
 }
 
 .app-modal__cerrar {
+  position: relative;
   flex: 0 0 auto;
   width: 24px;
   height: 24px;
@@ -60,6 +63,14 @@
   line-height: 1;
   cursor: pointer;
   transition: color 150ms ease;
+}
+
+/* Área táctil de 44×44px sin agrandar el círculo visual de 24px (spec 059, E13): mismo
+   criterio que `.app-tablero__panel-plegar` y `.sd__fab`. */
+.app-modal__cerrar::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
 }
 
 .app-modal__cerrar:hover,

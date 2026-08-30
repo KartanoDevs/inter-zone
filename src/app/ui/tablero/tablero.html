@@ -77,113 +77,119 @@
   </nav>
 
   @if (ventana() === 'editor') {
-    <div class="app-tablero__cabecera">
-      <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
-      <app-barra-sistemas
-        [sistemas]="opcionesSistema()"
-        [sistemaActivoId]="store.sistemaActivoId()"
-        (elegir)="elegirSistema($event)"
-      ></app-barra-sistemas>
-      @if (store.sistemaActivo(); as sistema) {
-        <button
-          type="button"
-          class="app-tablero__validar"
-          [class.app-tablero__validar--ok]="store.estadoActivo() === 'validado'"
-          [attr.title]="store.estadoActivo() === 'validado' ? 'Quitar validación' : 'Validar'"
-          (click)="store.cambiarEstadoActivo(store.estadoActivo() === 'validado' ? 'borrador' : 'validado')"
-        >
-          @if (store.estadoActivo() === 'validado') {
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 12l5 5L20 6" />
-            </svg>
-          } @else {
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 2" />
-            </svg>
-          }
-          {{ store.estadoActivo() === 'validado' ? 'Validado' : 'Borrador' }}
-        </button>
-      }
-    </div>
-
-    @if (esDefensa()) {
-      <app-selector-caso [casoActivo]="store.casoActivo()" (seleccionar)="seleccionarCaso($event)"></app-selector-caso>
-      <app-selector-situacion
-        [casoActivo]="store.casoActivo()"
-        [situacionActiva]="store.situacionActiva()"
-        (seleccionar)="seleccionarSituacion($event)"
-      ></app-selector-situacion>
-      @if (admiteBloqueadores()) {
-        <app-selector-bloqueadores
-          [bloqueadoresActivos]="store.bloqueadoresActivos()"
-          [bloqueadoresCreados]="bloqueadoresCreados()"
-          (seleccionar)="seleccionarBloqueadores($event)"
-        ></app-selector-bloqueadores>
-      }
-    } @else {
-      <app-selector-rotacion
-        [rotaciones]="estadosRotacion()"
-        [rotacionActiva]="store.rotacionActiva()"
-        (seleccionar)="seleccionarRotacion($event)"
-      ></app-selector-rotacion>
-    }
-
-    <div class="app-tablero__campo-envoltorio">
-      <div class="app-tablero__campo">
-        <app-pista
-          [fichas]="fichas()"
-          [idArrastrada]="idArrastrada()"
-          [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
-          [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
-          [mostrarRival]="esDefensa()"
-          [casoActivo]="store.casoActivo()"
-          [situacionActiva]="store.situacionActiva()"
-          [mostrarZonas]="esDefensa()"
-          [celdasVistaConjunto]="celdasVistaConjunto()"
-          [celdasFintaVistaConjunto]="celdasFintaVistaConjunto()"
-          [indiceColorSeleccionado]="indiceColorSeleccionado()"
-          [sombra]="sombra()"
-          [accionArrastre]="store.accionArrastre()"
-          (fichaAgarrada)="onAgarrarFicha($event)"
-          (rivalAgarrado)="onAgarrarRival($event)"
-          (sombraAgarrada)="onAgarrarSombra($event)"
-          (fondoAgarrado)="iniciarPintado($event)"
-        ></app-pista>
-        @if (esDefensa() && store.desplazamientoSombraEdicion()) {
+    <!-- Zona central scrollable (spec 059, E4/P1): nav (arriba) y panel de pestañas (abajo,
+         con su propio scroll ya existente en `.app-tablero__tabpanel`) quedan fijos; solo esto
+         de en medio cede a scroll cuando el contenido no cabe, sin que la barra de pestañas se
+         salga de pantalla — que era justo el bug que `overflow: hidden` evitaba antes. -->
+    <div class="app-tablero__central">
+      <div class="app-tablero__cabecera">
+        <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
+        <app-barra-sistemas
+          [sistemas]="opcionesSistema()"
+          [sistemaActivoId]="store.sistemaActivoId()"
+          (elegir)="elegirSistema($event)"
+        ></app-barra-sistemas>
+        @if (store.sistemaActivo(); as sistema) {
           <button
             type="button"
-            class="app-tablero__recentrar-sombra"
-            title="Recentrar la sombra del bloqueo"
-            (click)="recentrarSombra()"
+            class="app-tablero__validar"
+            [class.app-tablero__validar--ok]="store.estadoActivo() === 'validado'"
+            [attr.title]="store.estadoActivo() === 'validado' ? 'Quitar validación' : 'Validar'"
+            (click)="store.cambiarEstadoActivo(store.estadoActivo() === 'validado' ? 'borrador' : 'validado')"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 12a8 8 0 1 1 2.3 5.6" />
-              <polyline points="4,17 4,12 9,12" />
-            </svg>
+            @if (store.estadoActivo() === 'validado') {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12l5 5L20 6" />
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            }
+            {{ store.estadoActivo() === 'validado' ? 'Validado' : 'Borrador' }}
           </button>
         }
-        <app-speeddial [acciones]="accionesSistema()" (elegir)="elegirAccionSistema($event)"></app-speeddial>
-        <app-panel-validacion [completo]="completo()" [infracciones]="infracciones()" [avisos]="avisos()"></app-panel-validacion>
       </div>
-    </div>
 
-    <div class="app-tablero__acciones">
-      <button type="button" class="app-boton app-boton--secundario" (click)="pedirVaciado()">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5.5 12a6.5 6.5 0 1 1 2 4.7" />
-          <polyline points="5.5,16.8 5.5,12.4 9.9,12.4" />
-        </svg>
-        Vaciar
-      </button>
-      <button type="button" class="app-boton app-boton--primario" [disabled]="!store.puedeGuardar()" (click)="pedirGuardado()">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z" />
-          <polyline points="7.8,4.5 7.8,9.2 14.4,9.2 14.4,4.5" />
-          <rect x="7.8" y="12.6" width="8.4" height="6.9" />
-        </svg>
-        Guardar
-      </button>
+      @if (esDefensa()) {
+        <app-selector-caso [casoActivo]="store.casoActivo()" (seleccionar)="seleccionarCaso($event)"></app-selector-caso>
+        <app-selector-situacion
+          [casoActivo]="store.casoActivo()"
+          [situacionActiva]="store.situacionActiva()"
+          (seleccionar)="seleccionarSituacion($event)"
+        ></app-selector-situacion>
+        @if (admiteBloqueadores()) {
+          <app-selector-bloqueadores
+            [bloqueadoresActivos]="store.bloqueadoresActivos()"
+            [bloqueadoresCreados]="bloqueadoresCreados()"
+            (seleccionar)="seleccionarBloqueadores($event)"
+          ></app-selector-bloqueadores>
+        }
+      } @else {
+        <app-selector-rotacion
+          [rotaciones]="estadosRotacion()"
+          [rotacionActiva]="store.rotacionActiva()"
+          (seleccionar)="seleccionarRotacion($event)"
+        ></app-selector-rotacion>
+      }
+
+      <div class="app-tablero__campo-envoltorio">
+        <div class="app-tablero__campo">
+          <app-pista
+            [fichas]="fichas()"
+            [idArrastrada]="idArrastrada()"
+            [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
+            [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
+            [mostrarRival]="esDefensa()"
+            [casoActivo]="store.casoActivo()"
+            [situacionActiva]="store.situacionActiva()"
+            [mostrarZonas]="esDefensa()"
+            [celdasVistaConjunto]="celdasVistaConjunto()"
+            [celdasFintaVistaConjunto]="celdasFintaVistaConjunto()"
+            [indiceColorSeleccionado]="indiceColorSeleccionado()"
+            [sombra]="sombra()"
+            [accionArrastre]="store.accionArrastre()"
+            (fichaAgarrada)="onAgarrarFicha($event)"
+            (rivalAgarrado)="onAgarrarRival($event)"
+            (sombraAgarrada)="onAgarrarSombra($event)"
+            (fondoAgarrado)="iniciarPintado($event)"
+          ></app-pista>
+          @if (esDefensa() && store.desplazamientoSombraEdicion()) {
+            <button
+              type="button"
+              class="app-tablero__recentrar-sombra"
+              title="Recentrar la sombra del bloqueo"
+              (click)="recentrarSombra()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 1 2.3 5.6" />
+                <polyline points="4,17 4,12 9,12" />
+              </svg>
+            </button>
+          }
+          <app-speeddial [acciones]="accionesSistema()" (elegir)="elegirAccionSistema($event)"></app-speeddial>
+          <app-panel-validacion [completo]="completo()" [infracciones]="infracciones()" [avisos]="avisos()"></app-panel-validacion>
+        </div>
+      </div>
+
+      <div class="app-tablero__acciones">
+        <button type="button" class="app-boton app-boton--secundario" (click)="pedirVaciado()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5.5 12a6.5 6.5 0 1 1 2 4.7" />
+            <polyline points="5.5,16.8 5.5,12.4 9.9,12.4" />
+          </svg>
+          Vaciar
+        </button>
+        <button type="button" class="app-boton app-boton--primario" [disabled]="!store.puedeGuardar()" (click)="pedirGuardado()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z" />
+            <polyline points="7.8,4.5 7.8,9.2 14.4,9.2 14.4,4.5" />
+            <rect x="7.8" y="12.6" width="8.4" height="6.9" />
+          </svg>
+          Guardar
+        </button>
+      </div>
     </div>
 
     <section class="app-tablero__panel" [class.app-tablero__panel--plegado]="panelPlegado()">
@@ -324,9 +330,14 @@
   }
 
   @if (ventana() === 'cuenta') {
-    <app-perfil-cuenta></app-perfil-cuenta>
-    <div class="app-tablero__cuenta-salir">
-      <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
+    <!-- Zona scrollable (spec 059, E3): `app-perfil-cuenta` y el botón "Salir" son dos
+         hermanos sueltos en el flex-column de `Tablero`; sin envolverlos, el perfil se
+         recortaba sin forma de llegar al botón cuando el contenido no cabía. -->
+    <div class="app-tablero__cuenta">
+      <app-perfil-cuenta></app-perfil-cuenta>
+      <div class="app-tablero__cuenta-salir">
+        <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
+      </div>
     </div>
   }
 

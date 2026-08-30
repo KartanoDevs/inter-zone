@@ -3,6 +3,9 @@
   align-items: center;
   gap: 10px;
   touch-action: none;
+  /* Selección de texto accidental al arrastrar (spec 059, E12). */
+  -webkit-user-select: none;
+  user-select: none;
   cursor: grab;
 }
 

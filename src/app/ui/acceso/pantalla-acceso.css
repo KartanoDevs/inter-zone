@@ -5,6 +5,11 @@
   justify-content: center;
   background: var(--bg-dark);
   padding: var(--space-3);
+  /* Safe area (spec 059, E10-E11): esta pantalla no vive dentro de `Tablero`, así que necesita
+     su propio margen de seguridad frente al notch y la barra de gestos. */
+  padding-top: max(var(--space-3), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  padding-inline: max(var(--space-3), env(safe-area-inset-left)) max(var(--space-3), env(safe-area-inset-right));
 }
 
 .app-acceso__tarjeta {
@@ -38,7 +43,8 @@
 }
 
 .app-acceso__tabs button {
-  min-height: 36px;
+  /* `min-height: 44px` (spec 059, E13): 36px quedaba por debajo del mínimo táctil. */
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: 7px;
@@ -61,7 +67,8 @@
 }
 
 .app-acceso__campo input {
-  min-height: 40px;
+  /* `min-height: 44px` (spec 059, E13): 40px quedaba por debajo del mínimo táctil. */
+  min-height: 44px;
   padding: 0 var(--space-2);
   background: var(--bg-card-alt);
   border: 1px solid rgba(255, 255, 255, 0.1);

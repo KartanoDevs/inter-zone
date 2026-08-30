@@ -77,6 +77,9 @@ details[open] > .app-banquillo__resumen .app-banquillo__chevron {
   align-items: center;
   justify-content: center;
   min-width: 44px;
+  /* `min-height: 44px` (spec 059, E13): el `min-width` ya cubría el ancho, pero con
+     `padding: 8px 12px` el alto real rondaba 34 px. */
+  min-height: 44px;
   padding: 8px 12px;
   background: var(--bg-card-alt);
   border: 1px solid var(--neon-cyan);
@@ -87,6 +90,9 @@ details[open] > .app-banquillo__resumen .app-banquillo__chevron {
   font-size: 13px;
   cursor: grab;
   touch-action: none;
+  /* Selección de texto accidental al arrastrar (spec 059, E12). */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .app-chip:hover {

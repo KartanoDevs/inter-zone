@@ -52,6 +52,11 @@ html {
      nativos (el desplegable de `<select>`, su lista de opciones, la barra de scroll) con su
      tema claro por defecto, blanco sobre negro y fuera del sistema de diseño. */
   color-scheme: dark;
+  /* Sin rebote de overscroll en los bordes del documento (spec 059, E12): instalada en modo
+     standalone, el rebote elástico delata que hay una página web debajo en vez de una app. El
+     scroll interno de cada ventana lo permite igualmente porque no toca `overscroll-behavior`
+     de sus propios contenedores, solo el del documento. */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -61,6 +66,9 @@ body {
   font-weight: 400;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  /* Halo azul al tocar botones/fichas (spec 059, E12): Android lo pinta por defecto en todo
+     elemento pulsable y no hay ninguna razón de diseño para conservarlo aquí. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1,
@@ -89,7 +97,12 @@ button {
   --boton-fondo: var(--bg-dark);
   position: relative;
   z-index: 0;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* `min-height: 44px` (spec 059, E13): con solo `padding: 8px` el alto real rondaba 37 px,
+     por debajo del mínimo táctil. El padding se mantiene para el ancho del clip-path. */
+  min-height: 44px;
   padding: 8px var(--space-2);
   background: var(--text-muted);
   color: var(--text-secondary);
@@ -194,6 +207,11 @@ button {
 .app-dialogo {
   width: 100%;
   max-width: 320px;
+  /* `max-height`+`overflow-y` (spec 059, E9): sin tope, un mensaje largo en un móvil bajo
+     desbordaba el viewport sin forma de leerlo entero. `dvh`, no `vh`, mismo criterio que el
+     resto de la app. */
+  max-height: 80dvh;
+  overflow-y: auto;
   padding: var(--space-3);
   background: var(--bg-card);
   border: 1px solid var(--neon-cyan);
