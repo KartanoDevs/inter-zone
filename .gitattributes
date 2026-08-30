@@ -1,1 +1,8 @@
 graphify-out/graph.json merge=graphify
+
+# Los scripts de shell corren en Linux (servidor, contenedores): siempre LF,
+# aunque se editen desde Windows con core.autocrlf=true.
+*.sh text eol=lf
+
+# Los .bat solo corren en Windows: CRLF.
+*.bat text eol=crlf

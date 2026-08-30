@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# InterZone — actualiza y relanza el despliegue en el servidor, de una pasada:
+#
+#   1. Trae la rama `develop` de origin y deja el working tree EXACTAMENTE igual
+#      que origin/develop (git reset --hard + git clean). Cualquier cambio local del
+#      servidor se descarta a propósito: esta máquina no se edita a mano.
+#   2. Reconstruye las imágenes y recrea los contenedores con bash deploy.sh, que
+#      lee ENTORNO de .env y elige los -f de compose (producción por defecto).
+#      Las migraciones de Prisma las corre el propio contenedor `servidor` en su
+#      CMD (`prisma migrate deploy`), aquí no se tocan.
+#   3. Espera a que `servidor` quede healthy.
+#   4. Siembra el catálogo base (`npm run seed:prod`). Es idempotente: solo crea
+#      equipo + jugador + sistemas de ejemplo si la base está vacía, así que
+#      ejecutarlo en cada despliegue es seguro y cubre el primer arranque.
+#   5. Muestra el estado de los contenedores.
+#
+# Uso, desde cualquier sitio:
+#   ./deploy-servidor.sh
+#
+# Requisitos: git, docker (con el plugin compose) y un .env relleno en la raíz.
+set -euo pipefail
+
+RAMA="develop"
+RAIZ="$(cd "$(dirname "$0")" && pwd)"
+cd "$RAIZ"
+
+if [ ! -f .env ]; then
+  echo "No hay .env en la raíz ($RAIZ). Copia .env.produccion.example a .env y rellénalo." >&2
+  exit 1
+fi
+
+echo "==> 1/5  Trayendo origin/$RAMA y descartando cambios locales"
+git fetch origin "$RAMA"
+git checkout "$RAMA"
+git reset --hard "origin/$RAMA"
+git clean -fd
+echo "    HEAD: $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
+
+echo "==> 2/5  Reconstruyendo y recreando el stack"
+bash deploy.sh up -d --build --remove-orphans
+
+echo "==> 3/5  Esperando a que 'servidor' quede healthy"
+for i in $(seq 1 60); do
+  estado="$(bash deploy.sh ps --format '{{.Name}} {{.Health}}' 2>/dev/null | awk '/servidor/ {print $2}')"
+  case "$estado" in
+    healthy)
+      echo "    servidor healthy"
+      break
+      ;;
+    unhealthy)
+      echo "    servidor está unhealthy. Logs:" >&2
+      bash deploy.sh logs --tail 50 servidor >&2
+      exit 1
+      ;;
+  esac
+  if [ "$i" -eq 60 ]; then
+    echo "    'servidor' no llegó a healthy en 5 min. Logs:" >&2
+    bash deploy.sh logs --tail 50 servidor >&2
+    exit 1
+  fi
+  sleep 5
+done
+
+echo "==> 4/5  Sembrando el catálogo base (idempotente)"
+bash deploy.sh exec -T servidor npm run seed:prod
+
+echo "==> 5/5  Estado del stack"
+bash deploy.sh ps
+
+echo
+echo "Despliegue de origin/$RAMA terminado."
