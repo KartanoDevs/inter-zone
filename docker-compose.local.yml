@@ -1,0 +1,20 @@
+# Override para probar el stack de producción en local. NUNCA se usa solo: siempre junto a
+# docker-compose.prod.yml (lo hace `deploy.sh` cuando ENTORNO=local en .env). Dos diferencias
+# con producción:
+#
+# 1. Publica el puerto de `web` en el host, porque en local no hay ningún Nginx Proxy Manager
+#    que reenvíe tráfico hacia dentro de la red de Docker.
+# 2. Sustituye la red `proxy` real (externa, la de Nginx Proxy Manager en el servidor, que en
+#    tu máquina no existe) por una red normal que este mismo compose crea y gestiona. `web`
+#    sigue necesitando esa clave `proxy` en su lista de redes (la declara docker-compose.prod.yml)
+#    para no repetir el bloque `networks:` entero solo por esto.
+
+services:
+  web:
+    ports:
+      - '${PUERTO_WEB:-8080}:80'
+
+networks:
+  proxy:
+    external: false
+    name: interzone-local-proxy

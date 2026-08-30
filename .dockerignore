@@ -43,7 +43,9 @@ server/vitest.setup.ts
 # Los propios ficheros de despliegue no hacen falta dentro de las imágenes.
 docker-compose.yml
 docker-compose.prod.yml
+docker-compose.local.yml
 server/docker-compose.yml
 Dockerfile.web
 server/Dockerfile
 .dockerignore
+deploy.sh

@@ -46,6 +46,14 @@ huérfanos desde hacía meses.
   queda constancia aquí de que es a propósito.
 - `ng serve` necesita `--proxy-config proxy.conf.json` desde este cambio (script `start` en
   `package.json`), porque `URL_API` relativa no resuelve nada en `:4200` sin él.
+- Probar el stack de producción en local también necesitaba algo más que `docker compose -f
+  docker-compose.prod.yml up`: `web` no publica ningún puerto (a propósito, todo entra por el
+  proxy real) y su red `proxy` es externa (a propósito, es la de Nginx Proxy Manager, que no
+  existe fuera del servidor). `docker-compose.local.yml` es un override que solo añade eso
+  dos cosas para local — publica el puerto de `web` y sustituye esa red externa por una que
+  el propio compose crea y gestiona — y `deploy.sh` decide si aplicarlo leyendo `ENTORNO` de
+  `.env`, para no tener que acordarse de añadir el `-f` a mano ni tocar
+  `docker-compose.prod.yml` para probar.
 - El healthcheck de `servidor` en `docker-compose.prod.yml` usa `GET /api/auth/quien-soy`,
   no `GET /api/sistemas`: se probó en local y ese segundo endpoint exige la fila de `equipo`
   que crea la semilla, que se ejecuta *después* del primer `up` — con `depends_on:

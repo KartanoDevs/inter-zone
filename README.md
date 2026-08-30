@@ -144,14 +144,22 @@ Tres contenedores Docker bajo un solo origen — `web` (nginx, sirve el build y 
 
 ```bash
 cp .env.produccion.example .env    # rellenar credenciales; .env nunca se commitea
-docker compose -f docker-compose.prod.yml up -d --build
+./deploy.sh up -d --build
 ```
+
+`./deploy.sh` es un envoltorio de `docker compose` que lee `ENTORNO` de `.env` y añade
+`docker-compose.local.yml` cuando vale `local` — ese override publica el puerto de `web` y
+sustituye la red del proxy real (que en tu máquina no existe) por una de pruebas, para poder
+abrir `http://localhost:8080` sin nada más montado. Con `ENTORNO=produccion` (o sin la
+variable) usa solo `docker-compose.prod.yml`, tal cual se despliega en el servidor real. Sin
+`./deploy.sh`, es `docker compose -f docker-compose.prod.yml [-f docker-compose.local.yml] ...`
+a mano.
 
 Sembrar el catálogo base, **una sola vez**, tras el primer arranque (sin esto, guardar
 cualquier sistema falla: las filas de `equipo` y `jugador` no existen todavía):
 
 ```bash
-docker compose -f docker-compose.prod.yml exec servidor npm run seed:prod
+./deploy.sh exec servidor npm run seed:prod
 ```
 
 Por último, dar de alta el dominio en el proxy inverso del servidor apuntando al contenedor
