@@ -108,6 +108,20 @@ function crearExamenStore(sistemas: readonly Sistema[], insigniasRepositorio?: I
   return new ExamenStore(sistemaStore, insignias);
 }
 
+/** Coloca la línea del alumno en la rotación activa con dos fichas intercambiadas de sitio: es
+ * una falta de orden lateral imputable al alumno (dominio §5, R2/R3), pensada para los tests
+ * que comprueban cuándo se ve —o no— el veredicto. Devuelve la rotación colocada. */
+function colocarLineaConFalta(examen: ExamenStore, sistema: Sistema): void {
+  const rotacion = examen.rotacionActiva();
+  const modelo = sistema.formaciones[rotacion]!;
+  const alumno = examen.jugadoresDelAlumno();
+  const puntoDe = (id: string) => modelo.find((c) => c.jugador.id === id)!.punto;
+  // Intercambia el punto de los dos primeros de la línea; el tercero, en su sitio.
+  examen.colocar(alumno[0].id, puntoDe(alumno[1].id));
+  examen.colocar(alumno[1].id, puntoDe(alumno[0].id));
+  examen.colocar(alumno[2].id, puntoDe(alumno[2].id));
+}
+
 describe('ExamenStore', () => {
   it('012-E6/E7 (catálogo): solo aparecen sistemas de recepción examinables', () => {
     const examinable = sistemaExaminable('ok');
@@ -168,17 +182,26 @@ describe('ExamenStore', () => {
     expect(examen.correccionRotacionActiva()).toBeNull();
   });
 
-  it('057-E7: validar una rotación bien colocada da nota alta y sin faltas', () => {
+  it('057-E7 / 060-E1: validar una rotación bien colocada la registra, pero su nota solo se ve al terminar', async () => {
     const sistema = sistemaExaminable('s1');
     const examen = crearExamenStore([sistema]);
     examen.activarSistema('s1');
     examen.seleccionarTipo('puesto');
     examen.seleccionarTitular('receptor1');
-    const puntoIdeal = sistema.formaciones[1]!.find((c) => c.jugador.id === 'receptor1')!.punto;
+    examen.empezarExamen();
 
-    examen.colocar('receptor1', puntoIdeal);
-    examen.confirmarRotacion();
+    for (const r of examen.rotacionesExaminablesActuales()) {
+      examen.seleccionarRotacion(r);
+      const puntoIdeal = sistema.formaciones[r]!.find((c) => c.jugador.id === 'receptor1')!.punto;
+      examen.colocar('receptor1', puntoIdeal);
+      examen.confirmarRotacion();
+      // Durante el examen, validar no expone veredicto (spec 060).
+      expect(examen.correccionRotacionActiva()).toBeNull();
+    }
 
+    await examen.terminarExamen();
+
+    examen.seleccionarRotacion(examen.rotacionesExaminablesActuales()[0]);
     expect(examen.correccionRotacionActiva()?.nota).toBe(10);
     expect(examen.correccionRotacionActiva()?.faltas).toHaveLength(0);
   });
@@ -198,7 +221,9 @@ describe('ExamenStore', () => {
     examen.seleccionarRotacion(4);
     examen.seleccionarRotacion(1);
 
-    expect(examen.correccionRotacionActiva()?.nota).toBe(10);
+    // El registro sobrevive al cambio de pestaña (habilita el boletín); el veredicto sigue
+    // oculto hasta terminar (spec 060), así que se comprueba sobre el mapa, no sobre el computed.
+    expect(examen.correccionesPorRotacion()[1]?.nota).toBe(10);
   });
 
   it('013-E9 / 057: superar el examen por sistema con nota suficiente concede la insignia de oro y la guarda', async () => {
@@ -335,6 +360,123 @@ describe('ExamenStore', () => {
     examen.activarSistema('s1');
 
     expect(examen.titulares().some((j) => j.id === 'libero')).toBe(false);
+  });
+
+  it('060-E1: validar una rotación con falta no expone su veredicto durante el examen', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('linea');
+    examen.seleccionarTitular('central1');
+    examen.empezarExamen();
+    colocarLineaConFalta(examen, sistema);
+
+    examen.confirmarRotacion();
+
+    // La rotación queda registrada (habilita el boletín), pero la falta no se ve todavía.
+    expect(examen.correccionRotacionActiva()).toBeNull();
+  });
+
+  it('060-E2: validar una rotación en regla se ve igual que validar una con falta', () => {
+    const sistema = sistemaExaminable('s1');
+    const conFalta = crearExamenStore([sistema]);
+    conFalta.activarSistema('s1');
+    conFalta.seleccionarTipo('linea');
+    conFalta.seleccionarTitular('central1');
+    conFalta.empezarExamen();
+    colocarLineaConFalta(conFalta, sistema);
+    conFalta.confirmarRotacion();
+
+    const enRegla = crearExamenStore([sistema]);
+    enRegla.activarSistema('s1');
+    enRegla.seleccionarTipo('linea');
+    enRegla.seleccionarTitular('central1');
+    enRegla.empezarExamen();
+    for (const c of enRegla.jugadoresDelAlumno()) {
+      enRegla.colocar(c.id, sistema.formaciones[enRegla.rotacionActiva()]!.find((x) => x.jugador.id === c.id)!.punto);
+    }
+    enRegla.confirmarRotacion();
+
+    expect(conFalta.correccionRotacionActiva()).toEqual(enRegla.correccionRotacionActiva());
+  });
+
+  it('060-E3: volver a una rotación ya validada con falta sigue sin mostrar su veredicto', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('linea');
+    examen.seleccionarTitular('central1');
+    examen.empezarExamen();
+    colocarLineaConFalta(examen, sistema);
+    examen.confirmarRotacion();
+
+    examen.seleccionarRotacion(4);
+    examen.seleccionarRotacion(1);
+
+    expect(examen.correccionRotacionActiva()).toBeNull();
+  });
+
+  it('060-E4: el boletín final sí muestra la falta de cada rotación', async () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('linea');
+    examen.seleccionarTitular('central1');
+    examen.empezarExamen();
+    for (const r of examen.rotacionesExaminablesActuales()) {
+      examen.seleccionarRotacion(r);
+      colocarLineaConFalta(examen, sistema);
+      examen.confirmarRotacion();
+    }
+
+    await examen.terminarExamen();
+
+    const rotacion = examen.rotacionesExaminablesActuales()[0];
+    examen.seleccionarRotacion(rotacion);
+    expect(examen.correccionRotacionActiva()?.faltas.length ?? 0).toBeGreaterThan(0);
+    expect((examen.correccionesPorRotacion()[rotacion]?.faltas.length ?? 0)).toBeGreaterThan(0);
+  });
+
+  it('060-E5: una falta oculta durante el examen sigue anulando la nota de esa rotación', async () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('linea');
+    examen.seleccionarTitular('central1');
+    examen.empezarExamen();
+    const rotaciones = examen.rotacionesExaminablesActuales();
+    for (const [i, r] of rotaciones.entries()) {
+      examen.seleccionarRotacion(r);
+      if (i === 0) {
+        colocarLineaConFalta(examen, sistema);
+      } else {
+        for (const c of examen.jugadoresDelAlumno()) {
+          examen.colocar(c.id, sistema.formaciones[r]!.find((x) => x.jugador.id === c.id)!.punto);
+        }
+      }
+      examen.confirmarRotacion();
+    }
+
+    await examen.terminarExamen();
+
+    expect(examen.correccionesPorRotacion()[rotaciones[0]]?.nota).toBe(0);
+    expect(examen.correccionExamen()?.insignia).toBeNull();
+  });
+
+  it('060-E6: reiniciar el examen no arrastra correcciones del intento anterior', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('linea');
+    examen.seleccionarTitular('central1');
+    examen.empezarExamen();
+    colocarLineaConFalta(examen, sistema);
+    examen.confirmarRotacion();
+
+    examen.cancelarExamen();
+
+    expect(examen.correccionesPorRotacion()).toEqual({});
+    expect(examen.correccionExamen()).toBeNull();
   });
 
   it('058-E3/E4/E6: examinar al líbero coloca solo su ficha, por posición, y guarda su propia insignia', async () => {

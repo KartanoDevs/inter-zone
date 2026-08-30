@@ -151,8 +151,34 @@ export class ExamenStore {
 
   readonly permiteCorregirRotacionSuelta = computed(() => permiteCorregirPorRotacion(this.tipo()));
 
-  /** La corrección ya guardada de la rotación activa, si se validó (spec 057, E7). */
-  readonly correccionRotacionActiva = computed(() => this.correccionesPorRotacion()[this.rotacionActiva()] ?? null);
+  /** Si la rotación activa ya se ha validado (spec 060): distinto de ver su veredicto. Esto
+   * decide si la interfaz del examen en curso muestra "Validar rotación" o el estado de "ya
+   * hecha", sin filtrar nota ni faltas. */
+  readonly rotacionRegistrada = computed(() => this.rotacionActiva() in this.correccionesPorRotacion());
+
+  /** El veredicto de la rotación activa (spec 060): validar una rotación la registra en
+   * `correccionesPorRotacion` para habilitar el boletín, pero su nota y sus faltas no se
+   * exponen hasta que el examen entero ha terminado. Antes de eso, siempre `null` — validando
+   * no se ve nada, igual que colocando (revisa 057-E7). */
+  readonly correccionRotacionActiva = computed(() =>
+    this.fase() === 'terminado' ? (this.correccionesPorRotacion()[this.rotacionActiva()] ?? null) : null,
+  );
+
+  /** Qué rotaciones examinadas tienen una falta que el alumno puede ver ya (spec 060): ninguna
+   * hasta que el examen termina; después, las que la corrección final marca. Es la única puerta
+   * por la que la interfaz debe preguntar "¿enseño la falta de Rn?" — ni las pestañas ni el
+   * boletín leen `correccionesPorRotacion` en crudo para eso. */
+  readonly rotacionesConFaltaVisible = computed<ReadonlySet<RotacionValida>>(() => {
+    if (this.fase() !== 'terminado') {
+      return new Set();
+    }
+    const mapa = this.correccionesPorRotacion();
+    return new Set(
+      Object.entries(mapa)
+        .filter(([, correccion]) => (correccion?.faltas.length ?? 0) > 0)
+        .map(([r]) => Number(r) as RotacionValida),
+    );
+  });
 
   /** La comparación de la rotación activa con el modelo del entrenador (spec 057, E12): el punto
    * donde debía estar cada ficha del alumno frente a donde la colocó. Solo tiene sentido leerla

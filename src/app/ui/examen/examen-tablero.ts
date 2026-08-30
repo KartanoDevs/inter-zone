@@ -17,10 +17,18 @@ const NOMBRE_TIPO: Readonly<Record<TipoExamen, string>> = {
   sistema: 'Por sistema',
 };
 
-const NOMBRE_INSIGNIA: Readonly<Record<TipoExamen, string>> = {
+const NOMBRE_INSIGNIA: Readonly<Record<TipoExamen, 'bronce' | 'plata' | 'oro'>> = {
   puesto: 'bronce',
   linea: 'plata',
   sistema: 'oro',
+};
+
+/** Coronas del boletín (spec 059): las añade el equipo de diseño en `public/medals/`. La caja
+ * las reserva con width/height, así que un 404 no descuadra el layout. */
+const RUTA_INSIGNIA: Readonly<Record<'bronce' | 'plata' | 'oro', string>> = {
+  bronce: '/medals/bronze.png',
+  plata: '/medals/silver.png',
+  oro: '/medals/gold.png',
 };
 
 function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
@@ -54,6 +62,7 @@ export class ExamenTablero {
   protected readonly paletaColores = PALETA_COLORES;
   protected readonly nombreTipo = NOMBRE_TIPO;
   protected readonly nombreInsignia = NOMBRE_INSIGNIA;
+  protected readonly rutaInsignia = RUTA_INSIGNIA;
 
   protected readonly pidiendoInicio = signal(false);
   protected readonly reiniciando = signal(false);
@@ -88,14 +97,16 @@ export class ExamenTablero {
   });
 
   /** Estado de cada pestaña de rotación (spec 057, E3): solo se ofrecen las que de verdad se
-   * examinan — un titular al que el líbero sustituye esa rotación no la ofrece. La falta solo
-   * se marca tras validar esa rotación (E6): antes, siempre `false`. */
-  protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() =>
-    this.examen.rotacionesExaminablesActuales().map((rotacion) => ({
+   * examinan — un titular al que el líbero sustituye esa rotación no la ofrece. La marca de
+   * falta no aparece hasta que el examen termina (spec 060): durante el examen, `false`
+   * siempre, aunque la rotación ya esté validada. */
+  protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
+    const conFalta = this.examen.rotacionesConFaltaVisible();
+    return this.examen.rotacionesExaminablesActuales().map((rotacion) => ({
       rotacion,
-      tieneFalta: (this.examen.correccionesPorRotacion()[rotacion]?.faltas.length ?? 0) > 0,
-    })),
-  );
+      tieneFalta: conFalta.has(rotacion),
+    }));
+  });
 
   /** Fichas dadas (atenuadas, no arrastrables) más las ya colocadas por el alumno. Sin corregir
    * todavía la rotación activa, el estado siempre es 'normal' para las del alumno — eso
@@ -143,7 +154,13 @@ export class ExamenTablero {
     this.examen.pendientes().map((j) => ({ id: j.id, etiqueta: etiquetaDe(j, CONFIGURACION_ROLES_POR_DEFECTO) })),
   );
 
-  protected readonly rotacionValidada = computed(() => this.examen.correccionRotacionActiva() !== null);
+  /** Para el examen en curso: si la rotación activa ya se validó (spec 060) — no si se ve su
+   * veredicto, que durante el examen nunca. */
+  protected readonly rotacionValidada = computed(() => this.examen.rotacionRegistrada());
+
+  /** Texto corto del botón comparar del boletín (spec 059, móvil primero): el label dice qué
+   * hace en dos palabras como mucho; la rotación con la que se compara va aparte, en pequeño. */
+  protected readonly textoComparar = computed(() => (this.comparando() ? 'Solo la mía' : 'Comparar'));
 
   protected seleccionarEquipo(equipo: 'masculino' | 'femenino'): void {
     this.examen.seleccionarEquipo(equipo);
