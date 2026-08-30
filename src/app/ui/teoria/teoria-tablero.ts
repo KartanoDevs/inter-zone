@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { Pista, PALETA_COLORES, PUNTO_POR_SITUACION, type CeldaConjunto, type FichaVista } from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorCaso } from '../rotaciones/selector-caso';
@@ -46,16 +46,13 @@ export class TeoriaTablero {
   protected readonly paletaColores = PALETA_COLORES;
 
   constructor() {
-    // Activa el primer sistema validado en cuanto haya alguno, sin pisar una elección ya hecha
-    // (spec 052, E1/E2/E8): mismo patrón que `App` disparando `SistemaStore.cargar()`.
-    effect(() => {
-      if (this.teoria.sistemaActivoId() === null) {
-        const primero = this.teoria.catalogo()[0];
-        if (primero) {
-          this.teoria.activarSistema(primero.id);
-        }
-      }
-    });
+    // Al abrir Teoría se arranca siempre en el primer sistema validado del catálogo, no en el
+    // que quedara de una visita anterior: `TeoriaStore` es singleton y conserva su navegación
+    // toda la sesión, así que sin esto reabrir la ventana tras estudiar una defensa la volvía a
+    // mostrar esa defensa en vez de la recepción de partida (spec 052, E1/E2/E8). `catalogo()`
+    // ya está poblado aquí: `SistemaStore.cargar()` corre en `provideAppInitializer`, antes de
+    // que se monte ninguna ventana.
+    this.teoria.activarSistema(this.teoria.catalogo()[0]?.id ?? null);
   }
 
   protected seleccionarEquipo(equipo: EquipoId): void {
