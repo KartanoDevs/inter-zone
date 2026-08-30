@@ -16,10 +16,10 @@
 
       <label class="app-perfil__campo">
         Posición favorita
-        <select #posicionCampo [value]="usuario.posicionFavorita ?? ''">
-          <option value="">Sin elegir</option>
+        <select #posicionCampo>
+          <option value="" [selected]="!usuario.posicionFavorita">Sin elegir</option>
           @for (opcion of opcionesRol; track opcion.id) {
-            <option [value]="opcion.id">{{ opcion.nombre }}</option>
+            <option [value]="opcion.id" [selected]="opcion.id === usuario.posicionFavorita">{{ opcion.nombre }}</option>
           }
         </select>
       </label>
