@@ -13,6 +13,62 @@
   padding: var(--space-3);
 }
 
+/* Conmutador de dos vistas (spec 061): recuadro con indicador cian bajo la vista activa. */
+.app-perfil__conmutador {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.app-perfil__tab {
+  position: relative;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+
+.app-perfil__tab--activa {
+  color: var(--text-main);
+}
+
+/* La barra-indicador va debajo, y se distingue del inactivo por posición y grosor, no solo
+   por color (spec 061, E22). */
+.app-perfil__tab--activa::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.app-perfil__tab:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-perfil__tab {
+    transition: none;
+  }
+  .app-perfil__tab--activa::after {
+    box-shadow: none;
+  }
+}
+
 .app-perfil__cabecera {
   display: flex;
   flex-direction: column;

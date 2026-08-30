@@ -172,6 +172,14 @@ Modelos y reglas. Aquí vive el voleibol.
   el tipo de los tres campos de perfil, siempre los tres juntos, nunca un parche parcial. Nada
   de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en `server/`, que es quien
   lo usa (invariante 2).
+- `insignias.ts` — `InsigniaGanada` (spec 056: qué sistema, qué tipo de examen y, si aplica, qué
+  titular). `resumenDeMedallas(sistemaId, plantilla, insignias)` y `recuentoDeSistemas(sistemas,
+  insignias)` (spec 061): agrupan las insignias de una cuenta para la vitrina de la ventana
+  Cuenta — qué puestos tienen bronce (examen por puesto) y plata (por línea), la fecha del oro
+  (examen de sistema completo) si lo hay y si el sistema está dominado, y cuántos sistemas de
+  recepción están dominados sobre el total. La etiqueta de cada puesto se deriva con `etiquetaDe`
+  y la configuración de roles por defecto, igual que `ficha-vista.ts` para el resto de la pista;
+  una insignia cuyo sistema ya no está en el catálogo (borrado) no aparece.
 - `puertos.ts` — las interfaces `SistemaRepository`, `AjustesRepository`, `AccesoRepository`,
   `ListaBlancaRepository` e `InsigniasRepository` (spec 056), sin implementación. Asíncronas
   todas; `SistemaRepository` además es granular —
@@ -229,6 +237,12 @@ Angular, las tres testeables sin `TestBed`.
   rol, equipoClave)` y `retirar(email)` recargan la lista entera tras cada escritura en vez de
   parchear en local — la lista es corta (una fila por correo invitado) y así el estado nunca
   puede divergir del servidor tras un reintento o un fallo a medias.
+- `InsigniasStore` (spec 061) — `new InsigniasStore(repositorio)` (`insignias.store.spec.ts`):
+  `insignias`, `cargando`, `cargadas`, `error`. Solo lee (`InsigniasRepository.registrar` lo
+  sigue llamando `ExamenStore` al terminar un examen). `cargadas` distingue "aún no se ha
+  pedido / se está pidiendo" de "se pidió y vino vacío", para que una cuenta sin ninguna medalla
+  y una carga en curso no se vean igual. `PerfilCuenta` dispara `cargar()` la primera vez que se
+  abre la vista "Logros", nunca al abrir la ventana Cuenta.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -351,7 +365,11 @@ Adaptadores hacia el mundo exterior.
   Mismo criterio: `fetch` nativo, `credentials: 'include'`, contra `GET`/`POST
   /api/examen/insignias`. No traduce ningún motivo de fallo propio — cualquier rechazo del
   servidor se señala como `ErrorDelServidor`, porque el único caso especial de este puerto (sin
-  sesión) ya lo cubre ese mismo error, sin necesitar una clase nueva.
+  sesión) ya lo cubre ese mismo error, sin necesitar una clase nueva. Desde la spec 061 se
+  provee una sola vez (un `InjectionToken` en `app.config.ts`) y lo comparten `ExamenStore`
+  —que registra la insignia al terminar un examen— e `InsigniasStore` —que las lista en la
+  vitrina—; antes se instanciaba inline dentro de la factoría de `ExamenStore`, sin forma de que
+  nadie más lo tomara.
 - Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
 
 ### `ui/`
@@ -361,13 +379,17 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 
 - `ui/acceso/` — `PantallaAcceso` (spec 050): entrar o crear cuenta, con una pestaña para cada
   modo. Es lo que `App` muestra cuando `AccesoStore.usuario()` es `null`. `PerfilCuenta`
-  (spec 053): la ventana "Cuenta" real — correo y rol de solo lectura, los tres campos de
-  perfil, y cambiar la contraseña en un `Modal` aparte (`ui/comun/modal.ts`). `ListaBlancaAdmin`
+  (spec 053, ampliada por la 061): la ventana "Cuenta" real, ahora con un conmutador de dos
+  vistas — "Datos usuario" (correo y rol de solo lectura, los tres campos de perfil, cambiar la
+  contraseña en un `Modal` aparte) y "Logros" (`VitrinaMedallas`). `VitrinaMedallas` (spec 061):
+  el mosaico con una pieza por sistema de recepción de los equipos del usuario, cada una con las
+  tres ranuras de medalla, y un panel de detalle —sobre `Modal`— con los puestos de cada tier;
+  toda la lógica está en `domain/insignias.ts`. `ListaBlancaAdmin`
   (spec 054): formulario de invitar (correo, rol, equipo si no es `admin`) más tabla de
   invitaciones pendientes con botón de retirar tras confirmar en `DialogoConfirmacion`
   (`ui/comun/`) — solo visible en la pestaña "Lista blanca", que `Tablero` solo muestra si
-  `esAdmin()`. Ninguno de los tres lleva test de componente, como el resto de `ui/` — la lógica
-  que importa ya está probada en `AccesoStore`/`ListaBlancaStore`.
+  `esAdmin()`. Ninguno lleva test de componente, como el resto de `ui/` — la lógica que importa
+  ya está probada en `AccesoStore`/`ListaBlancaStore`/`domain/insignias`.
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
@@ -560,7 +582,11 @@ src/app/
 │   ├── teoria.store.ts
 │   ├── teoria.store.spec.ts
 │   ├── lista-blanca.store.ts
-│   └── lista-blanca.store.spec.ts
+│   ├── lista-blanca.store.spec.ts
+│   ├── examen.store.ts
+│   ├── examen.store.spec.ts
+│   ├── insignias.store.ts
+│   └── insignias.store.spec.ts
 ├── infrastructure/
 │   ├── http-acceso.repository.ts             # en uso (spec 050)
 │   ├── http-sistema.repository.ts            # en uso (spec 034)
@@ -569,7 +595,7 @@ src/app/
 │   ├── local-storage-ajustes.repository.ts   # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/
-│   ├── acceso/         # PantallaAcceso, PerfilCuenta, ListaBlancaAdmin
+│   ├── acceso/         # PantallaAcceso, PerfilCuenta, VitrinaMedallas, ListaBlancaAdmin
 │   ├── teoria/
 │   ├── tablero/
 │   ├── pista/

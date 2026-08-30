@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuenta · Diseño 1 — HUD Consola</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap');
+
+  :root {
+    --bg-darker: #05050a;
+    --bg-dark: #090b14;
+    --bg-card-alt: #0a0a1a;
+    --bg-card: #12162d;
+    --neon-cyan: #00e5ff;
+    --neon-magenta: #ff00ff;
+    --neon-green: #39ff14;
+    --neon-amber: #ffaa00;
+    --neon-pink: #ff0055;
+    --text-main: #ffffff;
+    --text-secondary: #e0e6ed;
+    --text-muted: #8aa4c8;
+    --text-muted-alt: #8b9bb4;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Orbitron', sans-serif;
+    --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px;
+    --facet: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-4) var(--space-2);
+    display: flex;
+    justify-content: center;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 560px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: var(--space-3);
+  }
+
+  .panel__titulo {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-main);
+  }
+  .panel__sub {
+    margin: 4px 0 var(--space-3);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* Segmented control: dos pestañas facetadas, firma clip-path de la app */
+  .conmutador {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+  }
+  .conmutador__btn {
+    appearance: none;
+    min-height: 44px;
+    padding: 8px var(--space-2);
+    background: var(--text-muted);
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 0;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+    transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  }
+  .conmutador__btn::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    z-index: -1;
+    background: var(--bg-card);
+    clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  }
+  .conmutador__btn[aria-selected="true"] {
+    background: var(--neon-cyan);
+    color: var(--text-main);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
+  }
+  .conmutador__btn:focus-visible {
+    outline: 2px solid var(--neon-cyan);
+    outline-offset: 2px;
+  }
+
+  .vista[hidden] { display: none; }
+
+  /* --- Datos usuario --- */
+  .rol {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: rgba(0, 229, 255, 0.14);
+    color: var(--neon-cyan);
+    font-size: 12px;
+    margin-bottom: var(--space-2);
+  }
+  .campo {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: var(--space-2);
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 14px;
+  }
+  .campo__k { color: var(--text-muted); }
+  .campo__v { color: var(--text-main); font-weight: 500; }
+
+  .acciones {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .app-boton {
+    --boton-fondo: var(--bg-card);
+    position: relative;
+    z-index: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px var(--space-2);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    border: 0;
+    cursor: pointer;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+    transition: box-shadow 150ms ease, background 150ms ease;
+  }
+  .app-boton::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    z-index: -1;
+    background: var(--boton-fondo);
+    clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  }
+  .app-boton--primario {
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+    color: var(--text-main);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.22);
+  }
+  .app-boton--secundario { background: var(--neon-cyan); color: var(--neon-cyan); --boton-fondo: var(--bg-card); }
+  .app-boton--secundario:hover { color: var(--text-main); }
+  .app-boton--destructivo { background: var(--neon-pink); color: var(--neon-pink); --boton-fondo: var(--bg-card); }
+  .app-boton--destructivo:hover { --boton-fondo: rgba(255, 0, 85, 0.1); }
+  .app-boton:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+
+  /* --- Logros --- */
+  .marcador {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: var(--space-2);
+  }
+  .marcador__cifra {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--neon-cyan);
+  }
+  .marcador__label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .marcador__barra {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-card-alt);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .marcador__barra span { display: block; height: 100%; width: 66%; background: var(--neon-cyan); }
+
+  .lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .item {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: var(--space-2);
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-card-alt);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left-width: 3px;
+    border-radius: 8px;
+  }
+  .item--hecha { border-left-color: var(--neon-green); }
+  .item--pendiente { border-left-color: var(--neon-amber); border-style: solid solid solid dashed; }
+  .sigla {
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text-main);
+    background: var(--bg-card);
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  .item--pendiente .sigla { color: var(--text-muted-alt); }
+  .item__nombre { font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+  .item__fecha { font-size: 12px; color: var(--text-muted); }
+  .item__estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .item--hecha .item__estado { color: var(--neon-green); }
+  .item--pendiente .item__estado { color: var(--neon-amber); }
+  .item__icono { width: 14px; height: 14px; flex-shrink: 0; }
+
+  @media (max-width: 420px) {
+    .campo { grid-template-columns: 1fr; gap: 2px; }
+    .item { grid-template-columns: 36px 1fr; }
+    .item__estado { grid-column: 2; }
+    .sigla { width: 36px; height: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<section class="panel" aria-label="Ventana de cuenta">
+  <h1 class="panel__titulo">Mi cuenta</h1>
+  <p class="panel__sub">InterZone · pizarra táctica de recepción</p>
+
+  <div class="conmutador" role="tablist" aria-label="Secciones de la cuenta">
+    <button class="conmutador__btn" role="tab" id="tab-datos" aria-controls="v-datos" aria-selected="true">Datos usuario</button>
+    <button class="conmutador__btn" role="tab" id="tab-logros" aria-controls="v-logros" aria-selected="false" tabindex="-1">Logros</button>
+  </div>
+
+  <div class="vista" id="v-datos" role="tabpanel" aria-labelledby="tab-datos">
+    <span class="rol">Entrenador</span>
+    <div class="campo"><span class="campo__k">Nombre o apodo</span><span class="campo__v">Alberto Martínez</span></div>
+    <div class="campo"><span class="campo__k">Correo</span><span class="campo__v">alberto@ejemplo.com</span></div>
+    <div class="campo"><span class="campo__k">Posición favorita</span><span class="campo__v">Colocador</span></div>
+    <div class="campo"><span class="campo__k">Dorsal</span><span class="campo__v">7</span></div>
+    <div class="acciones">
+      <button class="app-boton app-boton--primario">Guardar</button>
+      <button class="app-boton app-boton--secundario">Cambiar contraseña</button>
+      <button class="app-boton app-boton--destructivo">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="vista" id="v-logros" role="tabpanel" aria-labelledby="tab-logros" hidden>
+    <div class="marcador">
+      <span class="marcador__cifra">6/9</span>
+      <span class="marcador__label">Medallas</span>
+      <span class="marcador__barra" role="img" aria-label="6 de 9 sistemas superados"><span></span></span>
+    </div>
+    <ul class="lista">
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">5-1</span><span><span class="item__nombre">5-1</span><br><span class="item__fecha">Examen 12 feb 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">4-2</span><span><span class="item__nombre">4-2</span><br><span class="item__fecha">Examen 3 feb 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">6-2</span><span><span class="item__nombre">6-2</span><br><span class="item__fecha">Examen 28 ene 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">W</span><span><span class="item__nombre">Recepción en W</span><br><span class="item__fecha">Examen 20 ene 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">◗</span><span><span class="item__nombre">Recepción en semicírculo</span><br><span class="item__fecha">Examen 15 ene 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--hecha"><span class="sigla" aria-hidden="true">L</span><span><span class="item__nombre">Rotación con líbero</span><br><span class="item__fecha">Examen 8 ene 2026</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Superado</span></li>
+      <li class="item item--pendiente"><span class="sigla" aria-hidden="true">✦</span><span><span class="item__nombre">Doble cambio</span><br><span class="item__fecha">Sin examinar</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Pendiente</span></li>
+      <li class="item item--pendiente"><span class="sigla" aria-hidden="true">3-3</span><span><span class="item__nombre">Sistema en 3-3</span><br><span class="item__fecha">Sin examinar</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Pendiente</span></li>
+      <li class="item item--pendiente"><span class="sigla" aria-hidden="true">·</span><span><span class="item__nombre">Recepción en línea</span><br><span class="item__fecha">Sin examinar</span></span><span class="item__estado"><svg class="item__icono" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>Pendiente</span></li>
+    </ul>
+  </div>
+</section>
+
+<script>
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function activar(tab) {
+    tabs.forEach(t => {
+      const sel = t === tab;
+      t.setAttribute('aria-selected', sel);
+      t.tabIndex = sel ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !sel;
+    });
+    tab.focus();
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => activar(tab));
+    tab.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        activar(tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]);
+      }
+    });
+  });
+</script>
+</body>
+</html>

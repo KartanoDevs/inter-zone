@@ -1,45 +1,86 @@
 @if (acceso.usuario(); as usuario) {
   <div class="app-perfil">
-    <div class="app-perfil__cabecera">
-      <span class="app-perfil__correo">{{ usuario.email }}</span>
-      <span class="app-perfil__rol">{{ etiquetaRol() }}</span>
+    <div class="app-perfil__conmutador" role="tablist" aria-label="Secciones de la cuenta">
+      <button
+        type="button"
+        role="tab"
+        id="app-perfil-tab-datos"
+        class="app-perfil__tab"
+        [class.app-perfil__tab--activa]="vista() === 'datos'"
+        [attr.aria-selected]="vista() === 'datos'"
+        [tabindex]="vista() === 'datos' ? 0 : -1"
+        aria-controls="app-perfil-panel-datos"
+        (click)="verVista('datos')"
+        (keydown.arrowright)="verVista('logros')"
+        (keydown.arrowleft)="verVista('logros')"
+      >
+        Datos usuario
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="app-perfil-tab-logros"
+        class="app-perfil__tab"
+        [class.app-perfil__tab--activa]="vista() === 'logros'"
+        [attr.aria-selected]="vista() === 'logros'"
+        [tabindex]="vista() === 'logros' ? 0 : -1"
+        aria-controls="app-perfil-panel-logros"
+        (click)="verVista('logros')"
+        (keydown.arrowright)="verVista('datos')"
+        (keydown.arrowleft)="verVista('datos')"
+      >
+        Logros
+      </button>
     </div>
 
-    <form
-      class="app-perfil__form"
-      (submit)="$event.preventDefault(); guardarPerfil(nombreCampo.value, posicionCampo.value, dorsalCampo.value)"
-    >
-      <label class="app-perfil__campo">
-        Nombre o apodo
-        <input #nombreCampo type="text" [value]="usuario.nombre ?? ''" maxlength="60" />
-      </label>
+    @if (vista() === 'datos') {
+      <div id="app-perfil-panel-datos" role="tabpanel" aria-labelledby="app-perfil-tab-datos">
+        <div class="app-perfil__cabecera">
+          <span class="app-perfil__correo">{{ usuario.email }}</span>
+          <span class="app-perfil__rol">{{ etiquetaRol() }}</span>
+        </div>
 
-      <label class="app-perfil__campo">
-        Posición favorita
-        <select #posicionCampo>
-          <option value="" [selected]="!usuario.posicionFavorita">Sin elegir</option>
-          @for (opcion of opcionesRol; track opcion.id) {
-            <option [value]="opcion.id" [selected]="opcion.id === usuario.posicionFavorita">{{ opcion.nombre }}</option>
+        <form
+          class="app-perfil__form"
+          (submit)="$event.preventDefault(); guardarPerfil(nombreCampo.value, posicionCampo.value, dorsalCampo.value)"
+        >
+          <label class="app-perfil__campo">
+            Nombre o apodo
+            <input #nombreCampo type="text" [value]="usuario.nombre ?? ''" maxlength="60" />
+          </label>
+
+          <label class="app-perfil__campo">
+            Posición favorita
+            <select #posicionCampo>
+              <option value="" [selected]="!usuario.posicionFavorita">Sin elegir</option>
+              @for (opcion of opcionesRol; track opcion.id) {
+                <option [value]="opcion.id" [selected]="opcion.id === usuario.posicionFavorita">{{ opcion.nombre }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="app-perfil__campo">
+            Dorsal
+            <input #dorsalCampo type="number" min="1" max="99" [value]="usuario.dorsal ?? ''" />
+          </label>
+
+          @if (acceso.error(); as error) {
+            <p class="app-perfil__error" role="alert">{{ error }}</p>
           }
-        </select>
-      </label>
+          @if (guardado()) {
+            <p class="app-perfil__exito">Perfil guardado.</p>
+          }
 
-      <label class="app-perfil__campo">
-        Dorsal
-        <input #dorsalCampo type="number" min="1" max="99" [value]="usuario.dorsal ?? ''" />
-      </label>
+          <button type="submit" class="app-boton app-boton--primario" [disabled]="guardando()">Guardar</button>
+        </form>
 
-      @if (acceso.error(); as error) {
-        <p class="app-perfil__error" role="alert">{{ error }}</p>
-      }
-      @if (guardado()) {
-        <p class="app-perfil__exito">Perfil guardado.</p>
-      }
-
-      <button type="submit" class="app-boton app-boton--primario" [disabled]="guardando()">Guardar</button>
-    </form>
-
-    <button type="button" class="app-boton app-boton--secundario" (click)="abrirCambioContrasena()">Cambiar contraseña</button>
+        <button type="button" class="app-boton app-boton--secundario" (click)="abrirCambioContrasena()">Cambiar contraseña</button>
+      </div>
+    } @else {
+      <div id="app-perfil-panel-logros" role="tabpanel" aria-labelledby="app-perfil-tab-logros">
+        <app-vitrina-medallas></app-vitrina-medallas>
+      </div>
+    }
   </div>
 
   @if (cambiandoContrasena()) {

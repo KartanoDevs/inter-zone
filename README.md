@@ -52,7 +52,10 @@ sin cubrir.
   entra directo en Teoría. `GET /sistemas` sigue sin filtrar por rol — ver "Qué NO hace".
 - La ventana "Cuenta" es real (spec 053): correo y rol de solo lectura, más nombre o apodo,
   posición favorita y dorsal —los tres opcionales, y en blanco es un estado válido— y cambiar
-  la contraseña, exigiendo acertar la actual.
+  la contraseña, exigiendo acertar la actual. Tiene dos vistas (spec 061): "Datos usuario" y
+  "Logros", una vitrina con una pieza por sistema de recepción que muestra qué medallas tiene
+  ganadas la cuenta —bronce por puesto, plata por línea, oro por el sistema completo— y de qué
+  puestos, con un recuento de sistemas dominados.
 - El admin gestiona la lista blanca desde la propia aplicación (spec 054): invitar un correo con
   un rol y, si no es `admin`, un equipo; reinvitar un correo ya invitado y sin usar cambia su rol
   en vez de duplicar la fila; invitar un correo que ya tiene cuenta se rechaza; retirar una
@@ -206,7 +209,8 @@ Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de cort
    empezar, arrastre con faltas visibles solo al validar cada rotación, boletín de resultado con
    desglose por rotación y comparación con el modelo del entrenador, e insignia guardada en
    Cuenta (spec 056). El líbero también se puede elegir como sujeto de examen, por posición y por
-   línea, con su propia insignia (spec 058).
+   línea, con su propia insignia (spec 058). Esas insignias ya se ven: la ventana Cuenta tiene
+   una vitrina de medallas, sistema a sistema, con el desglose por puesto (spec 061).
 5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
    028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
    Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs

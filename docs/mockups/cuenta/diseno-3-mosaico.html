@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuenta · Diseño 3 — Mosaico + medallas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap');
+
+  :root {
+    --bg-darker: #05050a;
+    --bg-dark: #090b14;
+    --bg-card-alt: #0a0a1a;
+    --bg-card: #12162d;
+    --neon-cyan: #00e5ff;
+    --neon-magenta: #ff00ff;
+    --neon-green: #39ff14;
+    --neon-amber: #ffaa00;
+    --neon-pink: #ff0055;
+    --text-main: #ffffff;
+    --text-secondary: #e0e6ed;
+    --text-muted: #8aa4c8;
+    --text-muted-alt: #8b9bb4;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Orbitron', sans-serif;
+    --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px;
+    --facet: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-4) var(--space-2);
+    display: flex;
+    justify-content: center;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 580px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .cabecera {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .avatar {
+    width: 48px; height: 48px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+    color: var(--text-main);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+  }
+  .cabecera__nombre { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: 0.03em; color: var(--text-main); }
+  .cabecera__correo { font-size: 13px; color: var(--text-muted); }
+
+  /* Segmented control: recuadro con barra-indicador deslizante */
+  .conmutador {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: var(--space-3) var(--space-3) 0;
+    background: var(--bg-card-alt);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+  }
+  .conmutador__ind {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 50%;
+    height: 2px;
+    background: var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    transition: transform 200ms ease;
+  }
+  .conmutador[data-activo="logros"] .conmutador__ind { transform: translateX(100%); }
+  .conmutador__btn {
+    position: relative;
+    appearance: none;
+    background: none;
+    border: 0;
+    min-height: 44px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 150ms ease;
+  }
+  .conmutador__btn[aria-selected="true"] { color: var(--text-main); }
+  .conmutador__btn:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: -2px; border-radius: 6px; }
+
+  .vista { padding: var(--space-3); }
+  .vista[hidden] { display: none; }
+
+  /* --- Datos usuario --- */
+  .campo {
+    padding: 12px 14px;
+    background: var(--bg-card-alt);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .campo__k { font-family: var(--font-display); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--neon-cyan); }
+  .campo__v { font-size: 15px; color: var(--text-main); margin-top: 3px; }
+
+  .acciones { display: flex; flex-direction: column; gap: 10px; margin-top: var(--space-3); }
+  .app-boton {
+    --boton-fondo: var(--bg-card);
+    position: relative; z-index: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 8px var(--space-2);
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    border: 0; cursor: pointer;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+    transition: box-shadow 150ms ease, background 150ms ease;
+  }
+  .app-boton::before {
+    content: ''; position: absolute; inset: 1px; z-index: -1;
+    background: var(--boton-fondo);
+    clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  }
+  .app-boton--primario { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta)); color: var(--text-main); box-shadow: 0 0 14px rgba(0, 229, 255, 0.22); }
+  .app-boton--secundario { background: var(--neon-cyan); color: var(--neon-cyan); }
+  .app-boton--secundario:hover { color: var(--text-main); }
+  .app-boton--destructivo { background: var(--neon-pink); color: var(--neon-pink); }
+  .app-boton--destructivo:hover { --boton-fondo: rgba(255, 0, 85, 0.1); }
+  .app-boton:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+
+  /* --- Logros: contador + mosaico de sistemas --- */
+  .progreso { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-3); }
+  .progreso__cifra { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--neon-cyan); white-space: nowrap; }
+  .progreso__pista { flex: 1; height: 4px; background: var(--bg-card-alt); border-radius: 999px; overflow: hidden; }
+  .progreso__pista span { display: block; height: 100%; background: var(--neon-cyan); }
+  .progreso__label { font-family: var(--font-display); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+  .mosaico {
+    list-style: none; margin: 0; padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .pieza {
+    position: relative;
+    width: 100%;
+    display: block;
+    padding: 12px;
+    text-align: left;
+    background: var(--bg-card-alt);
+    border: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+    transition: background 150ms ease;
+  }
+  .pieza::before {
+    content: '';
+    position: absolute; inset: 1px; z-index: 0;
+    background: var(--bg-card-alt);
+    clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  }
+  .pieza > * { position: relative; z-index: 1; }
+  .pieza--dominado { background: var(--neon-cyan); }
+  .pieza:hover::before { background: var(--bg-card); }
+  .pieza:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+
+  .pieza__nombre {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pieza--dominado .pieza__nombre { color: var(--bg-darker); }
+
+  .ranuras { display: flex; align-items: center; gap: 8px; }
+  .ranura {
+    width: 30px; height: 30px;
+    object-fit: contain;
+    display: block;
+  }
+  .ranura--off {
+    filter: grayscale(1) brightness(0.55);
+    opacity: 0.4;
+  }
+  .pieza__conteo {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .pieza--dominado .pieza__conteo { color: rgba(5, 5, 10, 0.65); }
+  .pieza__candado {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 13px; height: 13px;
+    color: var(--text-muted-alt);
+    z-index: 1;
+  }
+
+  /* --- Panel de detalle (modal, lenguaje app-modal) --- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--space-2);
+    background: rgba(5, 5, 10, 0.75);
+  }
+  .overlay[hidden] { display: none; }
+  .detalle {
+    width: 100%;
+    max-width: 360px;
+    max-height: 80dvh;
+    overflow-y: auto;
+    padding: var(--space-3);
+    background: var(--bg-card);
+    border: 1px solid var(--neon-cyan);
+    border-radius: 8px;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.15);
+  }
+  .detalle__cabecera {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: var(--space-1); margin-bottom: var(--space-2);
+  }
+  .detalle__titulo {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    color: var(--text-main);
+  }
+  .detalle__cerrar {
+    position: relative;
+    flex: 0 0 auto;
+    width: 24px; height: 24px;
+    padding: 0;
+    background: transparent;
+    border: 0; border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 20px; line-height: 1;
+    cursor: pointer;
+  }
+  .detalle__cerrar::after { content: ''; position: absolute; inset: -10px; }
+  .detalle__cerrar:hover, .detalle__cerrar:focus-visible { color: var(--text-secondary); }
+
+  .tier {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .tier:last-child { border-bottom: 0; }
+  .tier__medalla { width: 52px; height: 52px; object-fit: contain; flex: 0 0 auto; }
+  .tier--off .tier__medalla { filter: grayscale(1) brightness(0.55); opacity: 0.4; }
+  .tier__cuerpo { min-width: 0; }
+  .tier__nombre {
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+  .tier__desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .tier__puestos { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .puesto {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(0, 229, 255, 0.14);
+    color: var(--neon-cyan);
+  }
+  .tier__pendiente {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted-alt);
+    margin-top: 6px;
+  }
+  .tier__pendiente svg { width: 11px; height: 11px; }
+
+  @media (max-width: 380px) {
+    .mosaico { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .conmutador__ind { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<section class="panel" aria-label="Ventana de cuenta">
+  <header class="cabecera">
+    <span class="avatar" aria-hidden="true">AM</span>
+    <span>
+      <span class="cabecera__nombre">Alberto Martínez</span><br>
+      <span class="cabecera__correo">alberto@ejemplo.com</span>
+    </span>
+  </header>
+
+  <div class="conmutador" role="tablist" aria-label="Secciones de la cuenta" data-activo="datos">
+    <span class="conmutador__ind" aria-hidden="true"></span>
+    <button class="conmutador__btn" role="tab" id="x-datos" aria-controls="w-datos" aria-selected="true">Datos usuario</button>
+    <button class="conmutador__btn" role="tab" id="x-logros" aria-controls="w-logros" aria-selected="false" tabindex="-1">Logros</button>
+  </div>
+
+  <div class="vista" id="w-datos" role="tabpanel" aria-labelledby="x-datos">
+    <div class="campo"><div class="campo__k">Nombre o apodo</div><div class="campo__v">Alberto Martínez</div></div>
+    <div class="campo"><div class="campo__k">Correo</div><div class="campo__v">alberto@ejemplo.com</div></div>
+    <div class="campo"><div class="campo__k">Posición favorita</div><div class="campo__v">Colocador · dorsal 7</div></div>
+    <div class="acciones">
+      <button class="app-boton app-boton--primario">Guardar</button>
+      <button class="app-boton app-boton--secundario">Cambiar contraseña</button>
+      <button class="app-boton app-boton--destructivo">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="vista" id="w-logros" role="tabpanel" aria-labelledby="x-logros" hidden>
+    <div class="progreso">
+      <span class="progreso__cifra" id="progreso-cifra">2 / 9</span>
+      <span class="progreso__pista" role="img" id="progreso-pista"><span></span></span>
+      <span class="progreso__label">Sistemas<br>dominados</span>
+    </div>
+    <ul class="mosaico" id="mosaico"></ul>
+  </div>
+</section>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="detalle" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo">
+    <div class="detalle__cabecera">
+      <h2 class="detalle__titulo" id="detalle-titulo">Sistema</h2>
+      <button class="detalle__cerrar" id="detalle-cerrar" aria-label="Cerrar detalle">&times;</button>
+    </div>
+    <div id="detalle-tiers"></div>
+  </div>
+</div>
+
+<script>
+  const MEDALLAS = {
+    bronce: '../../../public/medals/bronze.png',
+    plata: '../../../public/medals/silver.png',
+    oro: '../../../public/medals/gold.png',
+  };
+  const TIER_NOMBRE = { bronce: 'Bronce', plata: 'Plata', oro: 'Oro' };
+  const TIER_DESC = {
+    bronce: 'Examen por puesto',
+    plata: 'Examen por línea',
+    oro: 'Examen de sistema completo',
+  };
+
+  // Datos de ejemplo — el catálogo real es dinámico (por equipo y trabajo del entrenador).
+  // Nombres de voleibol plausibles; estados de medalla variados para ver el diseño lleno.
+  const SISTEMAS = [
+    { nombre: '5-1', bronce: ['C1', 'R1', 'R2'], plata: ['R1', 'C1'], oro: '12 feb 2026' },
+    { nombre: 'Recepción en semicírculo', bronce: ['C1', 'C2', 'R1', 'R2'], plata: ['R1', 'R2'], oro: '15 ene 2026' },
+    { nombre: '4-2', bronce: ['C1'], plata: ['R2'], oro: null },
+    { nombre: 'Recepción en W', bronce: ['R1', 'R2'], plata: [], oro: null },
+    { nombre: 'Rotación con líbero', bronce: ['L'], plata: [], oro: null },
+    { nombre: 'Sistema en 3-3', bronce: ['C'], plata: [], oro: null },
+    { nombre: '6-2', bronce: [], plata: [], oro: null },
+    { nombre: 'Doble cambio', bronce: [], plata: [], oro: null },
+    { nombre: 'Recepción en línea', bronce: [], plata: [], oro: null },
+  ];
+
+  const tieneMedalla = (s, t) => t === 'oro' ? !!s.oro : s[t].length > 0;
+  const totalMedallas = (s) => s.bronce.length + s.plata.length + (s.oro ? 1 : 0);
+
+  // --- Contador: sistemas dominados (con oro) / total ---
+  const dominados = SISTEMAS.filter((s) => s.oro).length;
+  document.getElementById('progreso-cifra').textContent = `${dominados} / ${SISTEMAS.length}`;
+  document.getElementById('progreso-pista').setAttribute('aria-label', `${dominados} de ${SISTEMAS.length} sistemas dominados`);
+  document.querySelector('#progreso-pista span').style.width = `${(dominados / SISTEMAS.length) * 100}%`;
+
+  const CANDADO = '<svg class="pieza__candado" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+  // --- Mosaico ---
+  const mosaico = document.getElementById('mosaico');
+  SISTEMAS.forEach((s, i) => {
+    const total = totalMedallas(s);
+    const li = document.createElement('li');
+    const tiers = ['bronce', 'plata', 'oro'];
+    const resumen = tiers.filter((t) => tieneMedalla(s, t)).map((t) => TIER_NOMBRE[t]).join(', ');
+    const etiqueta = total === 0
+      ? `${s.nombre}: sin medallas todavía. Abrir detalle.`
+      : `${s.nombre}: ${resumen} conseguidas${s.oro ? ', sistema dominado' : ''}. Abrir detalle.`;
+    li.innerHTML = `
+      <button class="pieza ${s.oro ? 'pieza--dominado' : ''}" aria-label="${etiqueta}" data-i="${i}">
+        ${total === 0 ? CANDADO : ''}
+        <span class="pieza__nombre">${s.nombre}</span>
+        <span class="ranuras">
+          ${tiers.map((t) => `<img class="ranura ${tieneMedalla(s, t) ? '' : 'ranura--off'}" src="${MEDALLAS[t]}" alt="" aria-hidden="true">`).join('')}
+          <span class="pieza__conteo">${total || '0'}</span>
+        </span>
+      </button>`;
+    mosaico.appendChild(li);
+  });
+
+  // --- Detalle ---
+  const overlay = document.getElementById('overlay');
+  const tiersBox = document.getElementById('detalle-tiers');
+  const cerrarBtn = document.getElementById('detalle-cerrar');
+  let ultimoFoco = null;
+
+  const RELOJ = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" stroke-width="1.7"/></svg>';
+
+  function abrir(i) {
+    const s = SISTEMAS[i];
+    ultimoFoco = document.activeElement;
+    document.getElementById('detalle-titulo').textContent = s.nombre;
+    tiersBox.innerHTML = ['bronce', 'plata', 'oro'].map((t) => {
+      const on = tieneMedalla(s, t);
+      let cuerpo;
+      if (t === 'oro') {
+        cuerpo = on
+          ? `<div class="tier__desc">Sistema completo · ${s.oro}</div>`
+          : `<div class="tier__pendiente">${RELOJ} Pendiente</div>`;
+      } else if (on) {
+        cuerpo = `<div class="tier__puestos">${s[t].map((p) => `<span class="puesto">${p}</span>`).join('')}</div>`;
+      } else {
+        cuerpo = `<div class="tier__pendiente">${RELOJ} Sin examinar</div>`;
+      }
+      return `
+        <div class="tier ${on ? '' : 'tier--off'}">
+          <img class="tier__medalla" src="${MEDALLAS[t]}" alt="Medalla de ${TIER_NOMBRE[t].toLowerCase()}">
+          <div class="tier__cuerpo">
+            <div class="tier__nombre">${TIER_NOMBRE[t]}</div>
+            <div class="tier__desc">${TIER_DESC[t]}</div>
+            ${cuerpo}
+          </div>
+        </div>`;
+    }).join('');
+    overlay.hidden = false;
+    cerrarBtn.focus();
+    document.addEventListener('keydown', onKey);
+  }
+  function cerrar() {
+    overlay.hidden = true;
+    document.removeEventListener('keydown', onKey);
+    if (ultimoFoco) ultimoFoco.focus();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') cerrar();
+    if (e.key === 'Tab') {
+      // foco atrapado: solo hay un control real, el botón cerrar
+      e.preventDefault();
+      cerrarBtn.focus();
+    }
+  }
+  mosaico.addEventListener('click', (e) => {
+    const btn = e.target.closest('.pieza');
+    if (btn) abrir(Number(btn.dataset.i));
+  });
+  cerrarBtn.addEventListener('click', cerrar);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+
+  // --- Conmutador de vistas ---
+  const conmutador = document.querySelector('.conmutador');
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function activar(tab) {
+    tabs.forEach((t) => {
+      const sel = t === tab;
+      t.setAttribute('aria-selected', sel);
+      t.tabIndex = sel ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !sel;
+    });
+    conmutador.dataset.activo = tab === tabs[1] ? 'logros' : 'datos';
+    tab.focus();
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => activar(tab));
+    tab.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        activar(tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]);
+      }
+    });
+  });
+</script>
+</body>
+</html>

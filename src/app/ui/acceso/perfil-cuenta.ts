@@ -2,7 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import type { RolId } from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { AccesoStore } from '../../application/acceso.store';
+import { InsigniasStore } from '../../application/insignias.store';
 import { Modal } from '../comun/modal';
+import { VitrinaMedallas } from './vitrina-medallas';
+
+type VistaCuenta = 'datos' | 'logros';
 
 interface OpcionRol {
   readonly id: RolId;
@@ -15,25 +19,40 @@ const OPCIONES_ROL: readonly OpcionRol[] = (Object.keys(CONFIGURACION_ROLES_POR_
 }));
 
 /**
- * La ventana "Cuenta" real (spec 053): correo y rol de solo lectura, los tres campos de perfil
- * opcionales, y cambiar la contraseña en un modal aparte. Sin componente de test — como el
- * resto de `ui/` — la lógica de guardado ya está probada en `AccesoStore`.
+ * La ventana "Cuenta" real (spec 053, ampliada por la 061): un conmutador de dos vistas —"Datos
+ * usuario" (correo y rol de solo lectura, los tres campos de perfil, cambiar contraseña) y
+ * "Logros" (la vitrina de medallas)—. Sin componente de test — como el resto de `ui/` — la
+ * lógica de guardado ya está probada en `AccesoStore` y la de las medallas en `domain/insignias`.
  */
 @Component({
   selector: 'app-perfil-cuenta',
-  imports: [Modal],
+  imports: [Modal, VitrinaMedallas],
   templateUrl: './perfil-cuenta.html',
   styleUrl: './perfil-cuenta.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PerfilCuenta {
   protected readonly acceso = inject(AccesoStore);
+  private readonly insignias = inject(InsigniasStore);
   protected readonly opcionesRol = OPCIONES_ROL;
+
+  /** Qué vista se ve. Empieza en "datos" (E8). Cambiar de vista no toca los campos del
+   * formulario, que están sin ligar a signals, así que un cambio sin guardar sobrevive (E9). */
+  protected readonly vista = signal<VistaCuenta>('datos');
 
   protected readonly guardando = signal(false);
   protected readonly guardado = signal(false);
   protected readonly cambiandoContrasena = signal(false);
   protected readonly errorContrasena = signal<string | null>(null);
+
+  /** Cambia de vista y, la primera vez que se abre "Logros", pide las medallas al servidor —
+   * nunca al abrir la ventana Cuenta, que casi siempre se abre para "Datos usuario". */
+  protected verVista(vista: VistaCuenta): void {
+    this.vista.set(vista);
+    if (vista === 'logros' && !this.insignias.cargadas() && !this.insignias.cargando()) {
+      void this.insignias.cargar();
+    }
+  }
 
   /** Global (`admin`) o el más alto de sus membresías — una cuenta con `entrenador` en un
    * equipo y `usuario` en otro se enseña como "Entrenador": ese es el rol que de verdad importa

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuenta · Diseño 2 — Placas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap');
+
+  :root {
+    --bg-darker: #05050a;
+    --bg-dark: #090b14;
+    --bg-card-alt: #0a0a1a;
+    --bg-card: #12162d;
+    --neon-cyan: #00e5ff;
+    --neon-magenta: #ff00ff;
+    --neon-green: #39ff14;
+    --neon-amber: #ffaa00;
+    --neon-pink: #ff0055;
+    --text-main: #ffffff;
+    --text-secondary: #e0e6ed;
+    --text-muted: #8aa4c8;
+    --text-muted-alt: #8b9bb4;
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Orbitron', sans-serif;
+    --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px;
+    --facet: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-4) var(--space-2);
+    display: flex;
+    justify-content: center;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 560px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: var(--space-4);
+  }
+
+  .cabecera { text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .cabecera__nombre { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.04em; color: var(--text-main); }
+  .cabecera__correo { font-size: 14px; color: var(--text-secondary); }
+  .rol {
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: rgba(0, 229, 255, 0.14);
+    color: var(--neon-cyan);
+    font-size: 12px;
+  }
+
+  /* Segmented control: contenedor píldora, activo con relleno cian translúcido (como el badge de rol) */
+  .conmutador {
+    display: inline-flex;
+    align-self: center;
+    margin: var(--space-3) auto var(--space-4);
+    padding: 4px;
+    background: var(--bg-card-alt);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+  }
+  .conmutador-wrap { display: flex; justify-content: center; }
+  .conmutador__btn {
+    appearance: none;
+    min-height: 40px;
+    padding: 0 22px;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .conmutador__btn[aria-selected="true"] {
+    background: rgba(0, 229, 255, 0.14);
+    color: var(--neon-cyan);
+  }
+  .conmutador__btn:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+
+  .vista[hidden] { display: none; }
+
+  /* --- Datos usuario --- */
+  .form { display: flex; flex-direction: column; gap: var(--space-2); }
+  .campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-muted); }
+  .campo__valor {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-2);
+    background: var(--bg-card-alt);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 15px;
+  }
+  .acciones { display: flex; flex-direction: column; gap: 10px; margin-top: var(--space-2); }
+  .app-boton {
+    --boton-fondo: var(--bg-card);
+    position: relative; z-index: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 8px var(--space-2);
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    border: 0; cursor: pointer;
+    clip-path: polygon(var(--facet) 0, 100% 0, 100% calc(100% - var(--facet)), calc(100% - var(--facet)) 100%, 0 100%, 0 var(--facet));
+    transition: box-shadow 150ms ease, background 150ms ease;
+  }
+  .app-boton::before {
+    content: ''; position: absolute; inset: 1px; z-index: -1;
+    background: var(--boton-fondo);
+    clip-path: polygon(calc(var(--facet) - 1.4px) 0, 100% 0, 100% calc(100% - var(--facet) + 1.4px), calc(100% - var(--facet) + 1.4px) 100%, 0 100%, 0 calc(var(--facet) - 1.4px));
+  }
+  .app-boton--primario { background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta)); color: var(--text-main); box-shadow: 0 0 14px rgba(0, 229, 255, 0.22); }
+  .app-boton--secundario { background: var(--neon-cyan); color: var(--neon-cyan); }
+  .app-boton--secundario:hover { color: var(--text-main); }
+  .app-boton--destructivo { background: var(--neon-pink); color: var(--neon-pink); }
+  .app-boton--destructivo:hover { --boton-fondo: rgba(255, 0, 85, 0.1); }
+  .app-boton:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 2px; }
+
+  /* --- Logros: rejilla de placas circulares --- */
+  .conteo {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .conteo b { color: var(--neon-cyan); font-size: 18px; }
+  .conteo-sub { text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); }
+
+  .placas {
+    list-style: none; margin: 0; padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3) var(--space-2);
+  }
+  .placa { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .placa__disco {
+    position: relative;
+    width: 68px; height: 68px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--bg-card-alt);
+  }
+  .placa--hecha .placa__disco {
+    border: 2px solid var(--neon-green);
+    color: var(--text-main);
+  }
+  .placa--hecha .placa__disco::after {
+    content: '';
+    position: absolute;
+    right: -2px; bottom: -2px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5L13 4.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat, linear-gradient(#000, #000);
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5L13 4.5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    box-shadow: 0 0 0 2px var(--bg-card);
+  }
+  .placa--bloqueada .placa__disco {
+    border: 2px dashed var(--text-muted-alt);
+    color: var(--text-muted-alt);
+    opacity: 0.65;
+  }
+  .placa--bloqueada .placa__disco::after {
+    content: '';
+    position: absolute;
+    right: -3px; bottom: -3px;
+    width: 20px; height: 20px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3.5' y='7' width='9' height='6.5' rx='1' fill='none' stroke='black' stroke-width='1.8'/%3E%3Cpath d='M5.5 7V5a2.5 2.5 0 015 0v2' fill='none' stroke='black' stroke-width='1.8'/%3E%3C/svg%3E") center / 13px no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3.5' y='7' width='9' height='6.5' rx='1' fill='none' stroke='black' stroke-width='1.8'/%3E%3Cpath d='M5.5 7V5a2.5 2.5 0 015 0v2' fill='none' stroke='black' stroke-width='1.8'/%3E%3C/svg%3E") center / 13px no-repeat;
+    background-color: var(--text-muted);
+  }
+  .placa__nombre { font-size: 12px; font-weight: 600; color: var(--text-secondary); line-height: 1.3; }
+  .placa--bloqueada .placa__nombre { color: var(--text-muted); }
+  .placa__fecha { font-size: 11px; color: var(--text-muted); }
+  .placa__fecha--bloq { font-family: var(--font-display); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted-alt); }
+
+  @media (max-width: 400px) {
+    .panel { padding: var(--space-3); }
+    .placas { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<section class="panel" aria-label="Ventana de cuenta">
+  <div class="cabecera">
+    <span class="cabecera__nombre">Alberto Martínez</span>
+    <span class="cabecera__correo">alberto@ejemplo.com</span>
+    <span class="rol">Entrenador</span>
+  </div>
+
+  <div class="conmutador-wrap">
+    <div class="conmutador" role="tablist" aria-label="Secciones de la cuenta">
+      <button class="conmutador__btn" role="tab" id="t-datos" aria-controls="p-datos" aria-selected="true">Datos usuario</button>
+      <button class="conmutador__btn" role="tab" id="t-logros" aria-controls="p-logros" aria-selected="false" tabindex="-1">Logros</button>
+    </div>
+  </div>
+
+  <div class="vista" id="p-datos" role="tabpanel" aria-labelledby="t-datos">
+    <div class="form">
+      <div class="campo">Nombre o apodo<span class="campo__valor">Alberto Martínez</span></div>
+      <div class="campo">Correo<span class="campo__valor">alberto@ejemplo.com</span></div>
+      <div class="campo">Posición favorita<span class="campo__valor">Colocador</span></div>
+      <div class="acciones">
+        <button class="app-boton app-boton--primario">Guardar</button>
+        <button class="app-boton app-boton--secundario">Cambiar contraseña</button>
+        <button class="app-boton app-boton--destructivo">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="vista" id="p-logros" role="tabpanel" aria-labelledby="t-logros" hidden>
+    <p class="conteo"><b>6</b> de 9 medallas</p>
+    <p class="conteo-sub">Una por cada sistema superado en el examen</p>
+    <ul class="placas">
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">5-1</span><span class="placa__nombre">5-1</span><span class="placa__fecha">12 feb 2026</span></li>
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">4-2</span><span class="placa__nombre">4-2</span><span class="placa__fecha">3 feb 2026</span></li>
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">6-2</span><span class="placa__nombre">6-2</span><span class="placa__fecha">28 ene 2026</span></li>
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">W</span><span class="placa__nombre">Recepción en W</span><span class="placa__fecha">20 ene 2026</span></li>
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">◗</span><span class="placa__nombre">Recepción en semicírculo</span><span class="placa__fecha">15 ene 2026</span></li>
+      <li class="placa placa--hecha"><span class="placa__disco" aria-hidden="true">L</span><span class="placa__nombre">Rotación con líbero</span><span class="placa__fecha">8 ene 2026</span></li>
+      <li class="placa placa--bloqueada"><span class="placa__disco" aria-hidden="true">✦</span><span class="placa__nombre">Doble cambio</span><span class="placa__fecha placa__fecha--bloq">Bloqueada</span></li>
+      <li class="placa placa--bloqueada"><span class="placa__disco" aria-hidden="true">3-3</span><span class="placa__nombre">Sistema en 3-3</span><span class="placa__fecha placa__fecha--bloq">Bloqueada</span></li>
+      <li class="placa placa--bloqueada"><span class="placa__disco" aria-hidden="true">·</span><span class="placa__nombre">Recepción en línea</span><span class="placa__fecha placa__fecha--bloq">Bloqueada</span></li>
+    </ul>
+  </div>
+</section>
+
+<script>
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function activar(tab) {
+    tabs.forEach(t => {
+      const sel = t === tab;
+      t.setAttribute('aria-selected', sel);
+      t.tabIndex = sel ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !sel;
+    });
+    tab.focus();
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => activar(tab));
+    tab.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        activar(tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]);
+      }
+    });
+  });
+</script>
+</body>
+</html>

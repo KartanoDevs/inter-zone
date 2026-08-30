@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventana de Cuenta · 3 diseños</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap');
+  :root {
+    --bg-dark: #090b14; --bg-card: #12162d; --bg-card-alt: #0a0a1a;
+    --neon-cyan: #00e5ff; --neon-green: #39ff14; --neon-amber: #ffaa00;
+    --text-main: #fff; --text-secondary: #e0e6ed; --text-muted: #8aa4c8;
+  }
+  body { font-family: 'Inter', sans-serif; margin: 0; padding: 32px 20px; background: var(--bg-dark); color: var(--text-secondary); line-height: 1.55; }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-family: 'Orbitron', sans-serif; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-main); margin: 0 0 4px; }
+  p.intro { color: var(--text-muted); margin: 0 0 28px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; }
+  .card h2 { font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--neon-cyan); margin: 0 0 8px; }
+  .card p { font-size: 13px; color: var(--text-muted); margin: 0 0 14px; }
+  .card a { display: inline-block; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-main); text-decoration: none; border-bottom: 2px solid var(--neon-cyan); padding-bottom: 2px; }
+  .card a:focus-visible { outline: 2px solid var(--neon-cyan); outline-offset: 3px; }
+  table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); vertical-align: top; }
+  th { background: var(--bg-card-alt); font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
+  td:first-child { color: var(--text-muted); }
+  tr:last-child td { border-bottom: none; }
+  .reco { margin-top: 28px; background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.25); border-radius: 10px; padding: 20px; font-size: 14px; }
+  .reco b { color: var(--neon-cyan); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ventana de Cuenta</h1>
+  <p class="intro">Tres direcciones sobre el sistema de diseño real de InterZone (tokens de <code>src/styles.css</code> y <code>docs/voley/design-guidelines.md</code>): fondo oscuro, Orbitron/Inter, botones facetados, neón como puntuación. Dos vistas —Datos usuario / Logros— con un segmented control. Solo mockups estáticos.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1 · HUD Consola</h2>
+      <p>Segmented control de dos pestañas facetadas (firma clip-path de la app). Logros como lista vertical de filas: chip con sigla, nombre, fecha y estado. Verde = superado, ámbar = pendiente. Denso, técnico, un solo glow (pestaña activa).</p>
+      <a href="diseno-1-consola.html">Abrir diseño 1</a>
+    </div>
+    <div class="card">
+      <h2>2 · Placas</h2>
+      <p>Segmented control tipo píldora con relleno cian translúcido (mismo lenguaje que el badge de rol). Logros como rejilla de 3 placas circulares: anillo verde + check en las conseguidas, contorno discontinuo + candado en las bloqueadas. Aireado.</p>
+      <a href="diseno-2-placas.html">Abrir diseño 2</a>
+    </div>
+    <div class="card" style="border-color: rgba(0,229,255,0.4);">
+      <h2>3 · Mosaico + medallas &nbsp;<span style="color:var(--neon-green)">← elegido</span></h2>
+      <p>Base elegida, ya evolucionada. Segmented control con barra-indicador deslizante. Logros = mosaico con <b>una pieza por sistema</b>; cada pieza lleva las 3 ranuras de medalla (bronce/plata/oro, PNG reales de <code>public/medals/</code>) encendidas o apagadas. Al tocar una pieza se abre un panel con el desglose por titular (C, R1, R2, C1, C2, O, L). Contador = sistemas con oro / total.</p>
+      <a href="diseno-3-mosaico.html">Abrir diseño 3</a>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Criterio</th><th>1 · HUD Consola</th><th>2 · Placas</th><th>3 · Mosaico facetado</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Segmented control</td><td>Dos pestañas facetadas</td><td>Píldora, relleno cian translúcido</td><td>Barra-indicador deslizante</td></tr>
+      <tr><td>Layout de medallas</td><td>Lista vertical (1 col.)</td><td>Rejilla 3 col., placa circular</td><td>Mosaico auto-fill de piezas facetadas</td></tr>
+      <tr><td>Medalla conseguida</td><td>Borde izq. verde + check</td><td>Anillo verde + check en esquina</td><td>Pieza cian sólida</td></tr>
+      <tr><td>Medalla bloqueada</td><td>Borde ámbar discontinuo + candado</td><td>Contorno discontinuo + candado + opacidad</td><td>Trama diagonal + candado + opacidad</td></tr>
+      <tr><td>Sin depender del color</td><td>Icono check/candado + texto de estado</td><td>Icono en esquina + borde discontinuo</td><td>Trama + candado + etiqueta "Bloqueada"</td></tr>
+      <tr><td>Densidad</td><td>Media-alta</td><td>Baja (respira)</td><td>Alta</td></tr>
+      <tr><td>Encaje 375px</td><td>Filas apiladas, chip 36px</td><td>Rejilla a 2 col.</td><td>Mosaico a 3 col.</td></tr>
+      <tr><td>Metadato por medalla</td><td>Fecha completa de examen</td><td>Fecha completa de examen</td><td>Fecha corta (día + mes)</td></tr>
+      <tr><td>Coste de implementación</td><td>Bajo (reutiliza .app-boton)</td><td>Medio (máscaras SVG del check)</td><td>Medio (doble clip-path por pieza)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="reco">
+    <b>Estado:</b> elegido el <b>Diseño 3</b> y evolucionado con el sistema real de medallas (dominio <code>insignias.ts</code> / <code>examen.ts</code>):
+    <ul style="margin:8px 0 0; padding-left:18px;">
+      <li>Por sistema puedes ganar <b>bronce</b> (examen por puesto), <b>plata</b> (por línea) y <b>oro</b> (sistema completo). Bronce y plata van <b>por titular</b>, así que un sistema puede acumular varios (bronce de C1 + bronce de R1…).</li>
+      <li>Cada pieza del mosaico muestra las 3 ranuras de medalla con las PNG de <code>public/medals/</code>; apagadas si no conseguidas. Pieza en cian sólido = sistema dominado (tiene oro).</li>
+      <li>Tocar una pieza abre el panel de detalle: fila por tier con la medalla grande y los puestos ganados como chips (<code>C1</code>, <code>R1</code>…), o "Sin examinar / Pendiente".</li>
+      <li>Contador: <b>2 / 9 sistemas dominados</b> (los que tienen oro).</li>
+      <li>Datos de ejemplo inventados (9 sistemas); el catálogo real es dinámico por equipo.</li>
+    </ul>
+    <b style="display:block; margin-top:10px;">Siguiente paso sugerido:</b> congelar esto en una spec de <code>ui/</code> — toca <code>perfil-cuenta</code>, así que su "Fuera de alcance" debe autorizar tocar la capa <code>ui/</code> explícitamente.
+  </div>
+</main>
+</body>
+</html>
