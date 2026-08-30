@@ -67,3 +67,10 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# graphify (CLAUDE.md): grafo de conocimiento regenerable con `graphify update .`. 27 MB de
+# salida derivada del propio repo — se reconstruye, no se versiona.
+/graphify-out
+
+# Bytecode de los scripts Python de las skills en `.agents/`.
+__pycache__/
