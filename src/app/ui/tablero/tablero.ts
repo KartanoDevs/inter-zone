@@ -15,6 +15,7 @@ import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { PanelAjustes } from '../ajustes/panel-ajustes';
 import { AccesoStore } from '../../application/acceso.store';
+import { ExamenStore } from '../../application/examen.store';
 import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
 import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { ExamenTablero } from '../examen/examen-tablero';
@@ -196,6 +197,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 export class Tablero {
   protected readonly store = inject(SistemaStore);
   protected readonly acceso = inject(AccesoStore);
+  protected readonly examen = inject(ExamenStore);
 
   protected readonly arrastre = signal<Arrastre | null>(null);
   protected readonly idArrastrada = computed(() => this.arrastre()?.jugadorId ?? null);
@@ -236,13 +238,52 @@ export class Tablero {
    * `AccesoStore.usuario()` deja de ser `null`. */
   protected readonly ventana = signal<Ventana>(this.puedeEditar() ? 'editor' : 'teoria');
 
+  /** La ventana desde la que se entró a Examen, para volver a ella al cerrar la hoja de
+   * inscripción (bug: el modal no tenía salida). */
+  protected readonly ventanaAnterior = signal<Ventana>('teoria');
+
+  /** Destino pendiente mientras se confirma abandonar un examen en curso, o `null` si no hay
+   * confirmación abierta. */
+  protected readonly confirmandoSalidaExamen = signal<Ventana | null>(null);
+
   protected alternarDialAdmin(): void {
     this.dialAdminAbierto.update((valor) => !valor);
   }
 
+  /** Cambia de ventana, pero si hay un examen empezado (no en la hoja de inscripción) primero
+   * pide confirmación: aceptar cancela el examen. `ExamenStore` es singleton, así que sin esto
+   * el examen a medias seguía vivo al volver. */
+  protected irAVentana(destino: Ventana): void {
+    if (this.ventana() === 'examen' && this.examen.fase() !== 'configurando') {
+      this.confirmandoSalidaExamen.set(destino);
+      return;
+    }
+    this.ventanaAnterior.set(this.ventana());
+    this.ventana.set(destino);
+  }
+
+  protected confirmarSalidaExamen(): void {
+    const destino = this.confirmandoSalidaExamen();
+    this.confirmandoSalidaExamen.set(null);
+    if (destino) {
+      this.examen.cancelarExamen();
+      this.ventanaAnterior.set('examen');
+      this.ventana.set(destino);
+    }
+  }
+
+  protected cancelarSalidaExamen(): void {
+    this.confirmandoSalidaExamen.set(null);
+  }
+
+  /** Vuelve de Examen a la ventana desde la que se entró (cerrar la hoja de inscripción). */
+  protected volverDeExamen(): void {
+    this.ventana.set(this.ventanaAnterior());
+  }
+
   protected irAVentanaDesdeDial(destino: Ventana): void {
     this.dialAdminAbierto.set(false);
-    this.ventana.set(destino);
+    this.irAVentana(destino);
   }
 
   protected readonly tab = signal<PestanaTablero>('banquillo');

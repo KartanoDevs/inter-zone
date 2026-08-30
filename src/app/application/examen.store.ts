@@ -203,17 +203,17 @@ export class ExamenStore {
 
   activarSistema(id: string | null): void {
     this.sistemaActivoId.set(id);
-    this.reiniciar();
+    this.cancelarExamen();
   }
 
   seleccionarTipo(tipo: TipoExamen): void {
     this.tipo.set(tipo);
-    this.reiniciar();
+    this.cancelarExamen();
   }
 
   seleccionarTitular(titularId: string | null): void {
     this.titularId.set(titularId);
-    this.reiniciar();
+    this.cancelarExamen();
   }
 
   seleccionarRotacion(rotacion: RotacionValida): void {
@@ -319,7 +319,11 @@ export class ExamenStore {
       .filter((c): c is NonNullable<typeof c> => c !== undefined);
   }
 
-  private reiniciar(): void {
+  /** Vuelve a la hoja de inscripción y descarta lo que el alumno llevara colocado (spec 057):
+   * lo usan los `seleccionar*` de la configuración y el botón "Reiniciar examen" desde
+   * `en-curso`/`terminado`, además del guard de navegación de `Tablero`. No toca la elección
+   * de equipo/sistema/tipo/titular: solo el progreso del examen. */
+  cancelarExamen(): void {
     this.fase.set('configurando');
     this.rotacionActiva.set(1);
     this.entrega.set({});

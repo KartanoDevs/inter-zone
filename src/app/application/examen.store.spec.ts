@@ -269,6 +269,26 @@ describe('ExamenStore', () => {
     expect(examen.fase()).toBe('en-curso');
   });
 
+  it('cancelarExamen vuelve a la hoja de inscripción y descarta lo colocado y validado', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('puesto');
+    examen.seleccionarTitular('receptor1');
+    examen.empezarExamen();
+    const puntoIdeal = sistema.formaciones[1]!.find((c) => c.jugador.id === 'receptor1')!.punto;
+    examen.colocar('receptor1', puntoIdeal);
+    examen.confirmarRotacion();
+    expect(examen.fase()).toBe('en-curso');
+
+    examen.cancelarExamen();
+
+    expect(examen.fase()).toBe('configurando');
+    expect(examen.entrega()).toEqual({});
+    expect(examen.correccionesPorRotacion()).toEqual({});
+    expect(examen.correccionExamen()).toBeNull();
+  });
+
   it('057-E5: la nota final es la media de las rotaciones examinadas, no de las seis', async () => {
     const plantillaEquipo = plantillaConLiberoQueSustituyeACentral2();
     const sistema = sistemaExaminableConPlantilla('s1', plantillaEquipo);

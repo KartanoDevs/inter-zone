@@ -51,6 +51,7 @@ export class DialogoConfiguracionExamen {
   readonly elegirTipo = output<TipoExamen>();
   readonly elegirTitular = output<string>();
   readonly continuar = output<void>();
+  readonly cerrar = output<void>();
 
   protected readonly tiposExamen: readonly TipoExamen[] = ['puesto', 'linea', 'sistema'];
   protected readonly nombreTipo = NOMBRE_TIPO;

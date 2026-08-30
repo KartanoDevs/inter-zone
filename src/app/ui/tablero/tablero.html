@@ -1,13 +1,13 @@
 <div class="app-tablero">
   <nav class="app-tablero__nav" [style.grid-template-columns]="'repeat(' + columnasNav() + ', 1fr)'" aria-label="Ventana">
-    <button type="button" [attr.aria-current]="ventana() === 'teoria' ? 'page' : null" (click)="ventana.set('teoria')">
+    <button type="button" [attr.aria-current]="ventana() === 'teoria' ? 'page' : null" (click)="irAVentana('teoria')">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4.5 5.2c2.3-1 4.9-1 7.5.4 2.6-1.4 5.2-1.4 7.5-.4v13.6c-2.3-1-4.9-1-7.5.4-2.6-1.4-5.2-1.4-7.5-.4z" />
         <line x1="12" y1="5.6" x2="12" y2="19.2" />
       </svg>
       Teoría
     </button>
-    <button type="button" [attr.aria-current]="ventana() === 'examen' ? 'page' : null" (click)="ventana.set('examen')">
+    <button type="button" [attr.aria-current]="ventana() === 'examen' ? 'page' : null" (click)="irAVentana('examen')">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4.2 21 8.6 12 13 3 8.6z" />
         <path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4" />
@@ -15,7 +15,7 @@
       </svg>
       Examen
     </button>
-    <button type="button" [attr.aria-current]="ventana() === 'cuenta' ? 'page' : null" (click)="ventana.set('cuenta')">
+    <button type="button" [attr.aria-current]="ventana() === 'cuenta' ? 'page' : null" (click)="irAVentana('cuenta')">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="8.6" r="3.4" />
         <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
@@ -23,7 +23,7 @@
       Cuenta
     </button>
     @if (muestraPestanaEdicion()) {
-      <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="ventana.set('editor')">
+      <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="irAVentana('editor')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6" />
           <line x1="12" y1="17.4" x2="12" y2="20" />
@@ -320,7 +320,7 @@
   }
 
   @if (ventana() === 'examen') {
-    <app-examen-tablero></app-examen-tablero>
+    <app-examen-tablero (salir)="volverDeExamen()"></app-examen-tablero>
   }
 
   @if (ventana() === 'cuenta') {
@@ -336,6 +336,16 @@
 
   @if (arrastre(); as a) {
     <div class="app-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">{{ a.etiqueta }}</div>
+  }
+
+  @if (confirmandoSalidaExamen()) {
+    <app-dialogo-confirmacion
+      titulo="Examen en curso"
+      mensaje="Si sales ahora se cancelará el examen y perderás lo que llevas hecho."
+      textoConfirmar="Salir y cancelar el examen"
+      (confirmar)="confirmarSalidaExamen()"
+      (cancelar)="cancelarSalidaExamen()"
+    ></app-dialogo-confirmacion>
   }
 
   @if (store.cambioPendiente(); as pendiente) {

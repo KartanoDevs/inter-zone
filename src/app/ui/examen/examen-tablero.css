@@ -26,9 +26,18 @@
 .app-examen__campo {
   position: relative;
   width: 100%;
-  max-width: 340px;
+  max-width: 420px;
   margin: 0 auto;
-  aspect-ratio: 9 / 9;
+  aspect-ratio: 10.5 / 13.35;
+}
+
+.app-examen__campo > app-pista {
+  display: block;
+  height: 100%;
+}
+
+.app-examen__reiniciar {
+  width: 100%;
 }
 
 .app-examen__acciones {

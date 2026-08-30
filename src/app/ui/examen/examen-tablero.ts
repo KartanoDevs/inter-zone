@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal, viewChild } from '@angular/core';
 import { PALETA_COLORES, Pista, type FichaAgarrada, type FichaComparada, type FichaVista } from '../pista/pista';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
@@ -47,12 +47,31 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 export class ExamenTablero {
   protected readonly examen = inject(ExamenStore);
 
+  /** Salir de la ventana Examen: lo pide la "×"/backdrop/Escape del modal de configuración
+   * (no queda nada bajo él). Quien decide a qué ventana volver es `Tablero`. */
+  readonly salir = output<void>();
+
   protected readonly paletaColores = PALETA_COLORES;
   protected readonly nombreTipo = NOMBRE_TIPO;
   protected readonly nombreInsignia = NOMBRE_INSIGNIA;
 
   protected readonly pidiendoInicio = signal(false);
+  protected readonly reiniciando = signal(false);
   protected readonly comparando = signal(false);
+
+  constructor() {
+    // Activa el primer sistema examinable en cuanto haya catálogo, sin pisar una elección ya
+    // hecha: mismo patrón que `TeoriaTablero`. Sin esto la hoja de inscripción no muestra las
+    // filas de tipo y titular hasta que se toca el selector de sistema o de equipo.
+    effect(() => {
+      if (this.examen.sistemaActivoId() === null) {
+        const primero = this.examen.catalogo()[0];
+        if (primero) {
+          this.examen.activarSistema(primero.id);
+        }
+      }
+    });
+  }
 
   private readonly pistaCmp = viewChild.required(Pista);
 
@@ -153,6 +172,29 @@ export class ExamenTablero {
   protected empezar(): void {
     this.pidiendoInicio.set(false);
     this.examen.empezarExamen();
+  }
+
+  /** Cerrar el modal de configuración (spec 057, E1): si el sub-diálogo "¿Empezamos?" está
+   * abierto, Escape lo cierra solo a él; si no, se abandona la ventana Examen. */
+  protected cerrarConfiguracion(): void {
+    if (this.pidiendoInicio()) {
+      this.pidiendoInicio.set(false);
+      return;
+    }
+    this.salir.emit();
+  }
+
+  protected pedirReinicio(): void {
+    this.reiniciando.set(true);
+  }
+
+  protected cancelarReinicio(): void {
+    this.reiniciando.set(false);
+  }
+
+  protected confirmarReinicio(): void {
+    this.reiniciando.set(false);
+    this.examen.cancelarExamen();
   }
 
   /** `SelectorRotacion.seleccionar` emite `number` a secas (lo comparte con cualquier posible

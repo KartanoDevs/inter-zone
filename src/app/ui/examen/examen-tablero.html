@@ -13,6 +13,7 @@
     (elegirTipo)="elegirTipo($event)"
     (elegirTitular)="elegirTitular($event)"
     (continuar)="pedirInicio()"
+    (cerrar)="cerrarConfiguracion()"
   ></app-dialogo-configuracion-examen>
 
   @if (pidiendoInicio()) {
@@ -47,6 +48,10 @@
   </div>
 
   <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+
+  <button type="button" class="app-boton app-boton--secundario app-examen__reiniciar" (click)="pedirReinicio()">
+    Reiniciar examen
+  </button>
 
   <div class="app-examen__acciones">
     @if (examen.permiteCorregirRotacionSuelta()) {
@@ -143,4 +148,18 @@
   <button type="button" class="app-boton app-boton--secundario app-examen__comparar" (click)="alternarComparar()">
     {{ comparando() ? 'Ver solo mi colocación' : 'Comparar con el modelo (R' + examen.rotacionActiva() + ')' }}
   </button>
+
+  <button type="button" class="app-boton app-boton--secundario app-examen__reiniciar" (click)="pedirReinicio()">
+    Hacer otro examen
+  </button>
+}
+
+@if (reiniciando()) {
+  <app-dialogo-confirmacion
+    titulo="Reiniciar examen"
+    mensaje="Perderás lo que hayas colocado y las rotaciones validadas. Volverás a la hoja de inscripción."
+    textoConfirmar="Reiniciar"
+    (confirmar)="confirmarReinicio()"
+    (cancelar)="cancelarReinicio()"
+  ></app-dialogo-confirmacion>
 }

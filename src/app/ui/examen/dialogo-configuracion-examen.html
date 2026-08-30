@@ -1,4 +1,4 @@
-<app-modal titulo="Hoja de inscripción" [rol]="'dialog'">
+<app-modal titulo="Hoja de inscripción" [rol]="'dialog'" (cerrar)="cerrar.emit()">
   <div class="app-examen-config__kicker">Nuevo examen</div>
 
   <div class="app-examen-config__fila">
