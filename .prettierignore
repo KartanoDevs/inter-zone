@@ -15,5 +15,9 @@ graphify-out/
 *.sh
 *.bat
 
+# Markdown: las tablas de docs/ van alineadas a mano; Prettier las colapsa.
+*.md
+docs/
+
 # Bocetos congelados (ADR: no se tocan)
 src/app/maqueta/
