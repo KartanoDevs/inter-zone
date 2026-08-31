@@ -56,3 +56,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0040](0040-el-libero-sustituye-siempre-al-central-de-zaga.md) | El líbero sustituye siempre al central de zaga; se retira el selector de la interfaz | Aceptada |
 | [0041](0041-despliegue-en-un-solo-origen-y-pwa-instalable.md) | Despliegue Docker en un solo origen (nginx + proxy a la API) y PWA instalable, no offline | Aceptada |
 | [0042](0042-copia-semanal-por-pg_dump-en-el-host.md) | Copia semanal de la base por `pg_dump -Fc` en el host, con `cron` y retención por número | Aceptada |
+| [0043](0043-pasada-de-seguridad-owasp.md) | Pasada de seguridad OWASP: limitador de intentos propio, hash de contraseña versionado con rehash al entrar, e IP real por número de saltos de proxy | Aceptada |

@@ -144,9 +144,10 @@ partir de una spec en `Borrador`.
    backend y base de datos (decisión 0023, que sustituye a la 0001). La autenticación, que esa
    misma decisión anunciaba y la 0028 aplazó, se retoma en la decisión 0036: lista blanca,
    cuentas con contraseña y sesión (spec 035) ya existen en `/api/auth`. **`/api/sistemas`
-   sigue sin exigir sesión** — cerrar esa puerta según el rol de quien pregunta es la spec 037,
-   todavía sin hacer, así que hoy sigue siendo pertinente no exponer el servidor a una red que
-   no sea de confianza. Lo que permite compartir el dominio entre navegador y servidor es el
+   exige sesión**: rol al escribir (spec 037) y, desde la pasada de seguridad de la ADR 0043,
+   sesión también al leer. Aun así, la API no está pensada para vivir en una red que no sea de
+   confianza: no hay registro de auditoría (A09) y la sesión no se revoca al cambiar la
+   contraseña. Lo que permite compartir el dominio entre navegador y servidor es el
    invariante 2, así que romperlo ahora cuesta el doble que antes.
 
 ## Errores que ya se han cometido y no hay que repetir

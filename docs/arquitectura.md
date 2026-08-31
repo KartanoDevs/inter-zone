@@ -483,18 +483,24 @@ navegador, ejecutándose en Node.
   eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
-- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`. `GET` sigue **sin exigir
-  sesión**, sin spec asignada para cambiarlo. Las cuatro de escritura (`POST`, `PUT`,
-  `PUT /:id/estado`, `DELETE`) sí la exigen, y el rol (spec 037/051, ADR 0038):
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`. `GET` exige sesión (cualquier
+  rol) desde la pasada de seguridad de la ADR 0043; no exige membresía del equipo, para que
+  Teoría siga funcionando con cuentas sin membresía. Las cuatro de escritura (`POST`, `PUT`,
+  `PUT /:id/estado`, `DELETE`) exigen además el rol (spec 037/051, ADR 0038):
   `exigirPermisoDeEquipo`, un helper local, resuelve la sesión con
   `acceso.repositorio.quienSoy` y comprueba `domain/acceso.puedeGestionarEquipo` contra el
   equipo real del sistema — nunca el que traiga el cuerpo de la petición, para que no valga
   mentir sobre `equipoId` al editar o borrar uno ya existente. `PUT /sistemas/:id` sigue
   exigiendo además la cabecera `If-Match` con el testigo de concurrencia (`409` si caducó),
   comprobada antes que el permiso.
-- `src/http/auth.rutas.ts` — las rutas de `/api/auth` (spec 035, ADR 0036): registro, entrar,
-  salir, "quién soy", y guardar el perfil o cambiar la contraseña de la propia sesión
-  (spec 053) — nunca de otra cuenta, porque el id sale de la sesión, no de la petición.
+- `src/http/auth.rutas.ts` — la factoría `crearAuthRutas(limitador)` monta las rutas de
+  `/api/auth` (spec 035, ADR 0036): registro, entrar, salir, "quién soy", y guardar el perfil o
+  cambiar la contraseña de la propia sesión (spec 053) — nunca de otra cuenta, porque el id sale
+  de la sesión, no de la petición. `entrar`, `registro` y `contrasena` pasan por el limitador de
+  intentos (`src/http/limitador.ts`, ADR 0043): `429` por IP tras 20 fallos en la ventana.
+- `src/http/limitador.ts` — `crearLimitadorDeIntentos()`: middleware `guardia` y contador
+  `registrarFallo`, en memoria, por IP. Sin dependencias, mismo criterio que el CORS y el lector
+  de cookies escritos a mano (ADR 0043).
 - `src/http/lista-blanca.rutas.ts` — las rutas de `/api/lista-blanca` (spec 054): `GET` (listar),
   `POST` (invitar o reinvitar con otro rol) y `DELETE /:email` (retirar). `exigirAdmin`, un
   helper local, resuelve la sesión con `resolverSesion` y rechaza si el rol no es `admin` — a

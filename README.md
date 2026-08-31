@@ -49,7 +49,8 @@ sin cubrir.
   vacía.
 - Solo `admin` y `entrenador` crean, editan, clonan o borran sistemas (spec 037): un
   entrenador, en los suyos; el admin, en cualquiera. Un `usuario` no ve la pestaña Editor y
-  entra directo en Teoría. `GET /sistemas` sigue sin filtrar por rol — ver "Qué NO hace".
+  entra directo en Teoría. Leer el catálogo exige sesión (ADR 0043) pero no filtra por rol qué
+  sistemas ve cada cuenta — ver "Qué NO hace".
 - La ventana "Cuenta" es real (spec 053): correo y rol de solo lectura, más nombre o apodo,
   posición favorita y dorsal —los tres opcionales, y en blanco es un estado válido— y cambiar
   la contraseña, exigiendo acertar la actual. Tiene dos vistas (spec 061): "Datos usuario" y
@@ -71,17 +72,16 @@ a la 0028). La condición que la v1 puso para el backend —que el equipo pidier
 varios dispositivos— se cumplió; la decisión está en
 `docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
 
-**Con las cuentas ya construidas, la puerta de escritura ya está cerrada (spec 037): sigue
-abierta la de lectura.** Crear, editar, clonar, borrar y validar exigen sesión y rol
-(`admin`/`entrenador` sí, `usuario` no). `GET /sistemas`, en cambio, sigue sin exigir sesión ni
-filtrar por rol — cualquiera puede seguir leyendo el catálogo entero, borradores incluidos, sin
-entrar. Filtrar la lectura por rol (qué ve un `usuario` frente a un `entrenador`) no tiene spec
-asignada todavía; hasta entonces, sigue sin ser buena idea exponer el servidor a una red que no
-sea de confianza.
+**Toda `/api/sistemas` exige sesión.** Crear, editar, clonar, borrar y validar exigen además el
+rol (`admin`/`entrenador` sí, `usuario` no) — spec 037, ADR 0038. `GET /sistemas` exige sesión
+de cualquier rol desde la pasada de seguridad de la ADR 0043; no filtra por rol qué sistemas ve
+cada cuenta (eso no tiene spec). Lo que sigue pendiente: no hay registro de auditoría (A09) y la
+sesión no se revoca al cambiar la contraseña.
 
-> **Prioridad: baja por ahora.** En producción el servidor solo se alcanza desde la red
-> interna de Docker (`docker-compose.prod.yml` no publica su puerto), con nginx delante. El
-> agujero es real pero está contenido; no bloquea nada y no urge.
+> **La API no está pensada para una red que no sea de confianza.** En producción el servidor
+> solo se alcanza desde la red interna de Docker (`docker-compose.prod.yml` no publica su
+> puerto), con nginx delante. Los huecos que quedan (A09, revocación de sesión) están
+> contenidos por eso; no bloquean nada y no urgen.
 
 **Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
 
@@ -189,9 +189,10 @@ cualquier sistema falla: las filas de `equipo` y `jugador` no existen todavía):
 
 Por último, dar de alta el dominio en el proxy inverso del servidor apuntando al contenedor
 `web` (alias de red `interzone-web`, puerto 80) y activar TLS ahí — no lo hace este compose.
-Detalle completo, alternativas descartadas y riesgos aceptados (en particular, que
-`GET /sistemas` sigue abierto sin sesión — ver "Qué NO hace" más arriba) en
-`docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`.
+Detalle completo, alternativas descartadas y riesgos aceptados en
+`docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`. La pasada de seguridad
+posterior está en `docs/decisiones/0043-pasada-de-seguridad-owasp.md` (limitador de intentos,
+hash de contraseña endurecido, `SALTOS_PROXY`).
 
 ### Copias de seguridad
 
