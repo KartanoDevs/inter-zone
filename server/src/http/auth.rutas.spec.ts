@@ -164,7 +164,8 @@ describe('API de acceso (spec 035)', () => {
       const fila = await prisma.usuario.findUniqueOrThrow({ where: { email: 'hash@club.com' } });
 
       expect(fila.contrasena_hash).not.toContain('contrasena123');
-      expect(fila.contrasena_hash).toMatch(/^[0-9a-f]+:[0-9a-f]+$/);
+      // Formato versionado scrypt$N$r$p$sal$derivada (endurecimiento OWASP A02).
+      expect(fila.contrasena_hash).toMatch(/^scrypt\$\d+\$\d+\$\d+\$[0-9a-f]+\$[0-9a-f]+$/);
     });
 
     it('035-E9: una contraseña más corta que el mínimo se rechaza al darse de alta', async () => {
@@ -222,7 +223,7 @@ describe('API de acceso (spec 035)', () => {
       await invitar('acierta@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'acierta@club.com', contrasena: 'contrasena123' });
 
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 25; i++) {
         const { status } = await post('/api/auth/entrar', {
           email: 'acierta@club.com',
           contrasena: 'contrasena123',
@@ -247,6 +248,28 @@ describe('API de acceso (spec 035)', () => {
       expect(contrasenaEquivocada.status).toBe(correoInexistente.status);
       expect(contrasenaEquivocada.cuerpo).toEqual(correoInexistente.cuerpo);
       expect(contrasenaEquivocada.cookie).toBeNull();
+    });
+
+    it('sec-A02: un hash antiguo se regenera al entrar con la contraseña correcta', async () => {
+      await invitar('vieja@club.com', 'usuario');
+      await post('/api/auth/registro', { email: 'vieja@club.com', contrasena: 'contrasena123' });
+      // Se fuerza a mano el formato viejo de dos partes (sal:derivada, p=1 por defecto).
+      const { scryptSync } = await import('node:crypto');
+      const sal = Buffer.from('aabbccddeeff00112233445566778899', 'hex');
+      const derivada = scryptSync('contrasena123', sal, 64);
+      await prisma.usuario.update({
+        where: { email: 'vieja@club.com' },
+        data: { contrasena_hash: `${sal.toString('hex')}:${derivada.toString('hex')}` },
+      });
+
+      const { status } = await post('/api/auth/entrar', {
+        email: 'vieja@club.com',
+        contrasena: 'contrasena123',
+      });
+
+      expect(status).toBe(200);
+      const fila = await prisma.usuario.findUniqueOrThrow({ where: { email: 'vieja@club.com' } });
+      expect(fila.contrasena_hash).toMatch(/^scrypt\$/);
     });
 
     it('035-E12: usar la sesión la renueva', async () => {

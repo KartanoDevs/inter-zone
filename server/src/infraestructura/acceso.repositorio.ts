@@ -12,7 +12,7 @@ import {
 } from '../../../src/app/domain/acceso';
 import { esRolIdValido } from '../../../src/app/domain/roles';
 import { prisma } from './prisma';
-import { hashContrasena, verificarContrasena } from './contrasena';
+import { hashContrasena, necesitaRehash, verificarContrasena } from './contrasena';
 import { DURACION_SESION_MS, generarTestigoSesion, huellaTestigo } from './sesion';
 
 export class InvitacionNoDisponible extends Error {}
@@ -124,12 +124,13 @@ export async function registrar(emailBruto: string, contrasena: string): Promise
   );
 
   const usuarioId = randomUUID();
+  const contrasenaHash = await hashContrasena(contrasena);
   await prisma.$transaction([
     prisma.usuario.create({
       data: {
         id: usuarioId,
         email,
-        contrasena_hash: hashContrasena(contrasena),
+        contrasena_hash: contrasenaHash,
         es_admin: alta.esAdmin,
       },
     }),
@@ -168,8 +169,17 @@ export async function entrar(
 ): Promise<{ readonly usuario: UsuarioIdentificado; readonly sesion: SesionCreada }> {
   const email = normalizarEmail(emailBruto);
   const fila = await prisma.usuario.findUnique({ where: { email }, include: { membresias: true } });
-  if (!fila || !verificarContrasena(contrasena, fila.contrasena_hash)) {
+  if (!fila || !(await verificarContrasena(contrasena, fila.contrasena_hash))) {
     throw new CredencialesInvalidas();
+  }
+  // Rehash al vuelo (endurecimiento OWASP A02): si el hash guardado es de un formato o coste
+  // viejo, ahora que se tiene la contraseña en claro se regenera con los parámetros actuales.
+  // Sin migración ni reseteo: cada cuenta se actualiza sola la próxima vez que entra.
+  if (necesitaRehash(fila.contrasena_hash)) {
+    await prisma.usuario.update({
+      where: { id: fila.id },
+      data: { contrasena_hash: await hashContrasena(contrasena) },
+    });
   }
   const { porId } = await mapaEquipos();
   const sesion = await abrirSesion(fila.id);
@@ -232,7 +242,7 @@ export async function cambiarContrasena(
   nueva: string,
 ): Promise<void> {
   const fila = await prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } });
-  if (!verificarContrasena(actual, fila.contrasena_hash)) {
+  if (!(await verificarContrasena(actual, fila.contrasena_hash))) {
     throw new CredencialesInvalidas();
   }
   if (nueva.length < LONGITUD_MINIMA_CONTRASENA) {
@@ -240,7 +250,7 @@ export async function cambiarContrasena(
   }
   await prisma.usuario.update({
     where: { id: usuarioId },
-    data: { contrasena_hash: hashContrasena(nueva) },
+    data: { contrasena_hash: await hashContrasena(nueva) },
   });
 }
 
