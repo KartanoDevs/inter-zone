@@ -236,7 +236,7 @@ verificar_copia() {
     SELECT
       (SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'),
       (SELECT count(*) FROM pg_constraint WHERE contype = 'c'),
-      (SELECT celdas_validas(ARRAY[1,2]))::text,
+      (SELECT CASE WHEN celdas_validas(ARRAY[1,2]) THEN 'si' ELSE 'no' END),
       (SELECT count(*) FROM sistema),
       (SELECT count(*) FROM usuario)")"
 
@@ -247,8 +247,8 @@ verificar_copia() {
     || morir "paso=comprobacion esperaba $TABLAS_ESPERADAS tablas, encontré $tablas"
   [ "$checks" = "$CHECKS_ESPERADOS" ] \
     || morir "paso=comprobacion esperaba $CHECKS_ESPERADOS CHECK, encontré $checks"
-  [ "$celdas" = "t" ] \
-    || morir "paso=comprobacion celdas_validas(ARRAY[1,2]) devolvió '$celdas', esperaba 't'"
+  [ "$celdas" = "si" ] \
+    || morir "paso=comprobacion celdas_validas(ARRAY[1,2]) no respondió como se esperaba ('$celdas')"
 
   log "VERIFICADA $(basename "$fichero") — $tablas tablas, $checks CHECK, celdas_validas OK, $sistemas sistemas, $usuarios usuarios"
   eval "$limpiar"
