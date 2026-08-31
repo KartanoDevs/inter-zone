@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { CasoColocador } from '../../domain/modelos';
 
-const ETIQUETAS: Readonly<Record<CasoColocador, string>> = { delantero: 'Colocador delantero', trasero: 'Colocador trasero' };
+const ETIQUETAS: Readonly<Record<CasoColocador, string>> = {
+  delantero: 'Colocador delantero',
+  trasero: 'Colocador trasero',
+};
 const CASOS: readonly CasoColocador[] = ['delantero', 'trasero'];
 
 /**

@@ -39,7 +39,11 @@ listaBlancaRutas.post('/lista-blanca', async (req: Request, res: Response) => {
   if (!sesion) {
     return;
   }
-  const { email, rol, equipoId } = req.body as { email?: unknown; rol?: unknown; equipoId?: unknown };
+  const { email, rol, equipoId } = req.body as {
+    email?: unknown;
+    rol?: unknown;
+    equipoId?: unknown;
+  };
   if (typeof email !== 'string') {
     res.status(400).json({ error: 'email es obligatorio' });
     return;
@@ -49,14 +53,21 @@ listaBlancaRutas.post('/lista-blanca', async (req: Request, res: Response) => {
     return;
   }
   try {
-    await accesoRepositorio.invitar(email, rol as string, equipoId as EquipoId | null, sesion.usuario.id);
+    await accesoRepositorio.invitar(
+      email,
+      rol as string,
+      equipoId as EquipoId | null,
+      sesion.usuario.id,
+    );
   } catch (error) {
     if (error instanceof RolAccesoInvalido) {
       res.status(400).json({ error: 'rol debe ser "admin", "entrenador" o "usuario"' });
       return;
     }
     if (error instanceof CorreoYaRegistrado) {
-      res.status(409).json({ error: 'Ese correo ya tiene cuenta; su rol se cambia desde la cuenta, no desde aquí' });
+      res.status(409).json({
+        error: 'Ese correo ya tiene cuenta; su rol se cambia desde la cuenta, no desde aquí',
+      });
       return;
     }
     throw error;

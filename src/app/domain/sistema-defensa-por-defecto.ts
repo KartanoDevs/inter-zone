@@ -1,4 +1,16 @@
-import type { CasoColocador, Celda, EquipoId, FormacionDefensa, NumeroBloqueadores, PlantillaEquipo, Punto, PuestoDefensa, Sistema, SituacionDefensa, VarianteDefensa } from './modelos';
+import type {
+  CasoColocador,
+  Celda,
+  EquipoId,
+  FormacionDefensa,
+  NumeroBloqueadores,
+  PlantillaEquipo,
+  Punto,
+  PuestoDefensa,
+  Sistema,
+  SituacionDefensa,
+  VarianteDefensa,
+} from './modelos';
 
 const CASOS: readonly CasoColocador[] = ['delantero', 'trasero'];
 
@@ -88,7 +100,12 @@ const PUNTOS: Readonly<Record<SituacionDefensa, Readonly<Record<PuestoDefensa, P
 
 /** Un bloque rectangular de celdas, por índices inclusivos (la rejilla del campo propio va de 0
  * a 17 en las dos direcciones, a 0,5 m por celda). */
-function bloque(columnaInicio: number, columnaFin: number, filaInicio: number, filaFin: number): readonly Celda[] {
+function bloque(
+  columnaInicio: number,
+  columnaFin: number,
+  filaInicio: number,
+  filaFin: number,
+): readonly Celda[] {
   const celdas: Celda[] = [];
   for (let fila = filaInicio; fila <= filaFin; fila++) {
     for (let columna = columnaInicio; columna <= columnaFin; columna++) {
@@ -98,14 +115,23 @@ function bloque(columnaInicio: number, columnaFin: number, filaInicio: number, f
   return celdas;
 }
 
-const SIN_CELDAS: Readonly<Record<PuestoDefensa, readonly Celda[]>> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+const SIN_CELDAS: Readonly<Record<PuestoDefensa, readonly Celda[]>> = {
+  1: [],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+};
 
 /**
  * La zona de responsabilidad de cada puesto contra cada situación con material: exactamente lo
  * que el documento le encarga. Los dos bloqueadores comparten siempre una columna: es la costura
  * que el doble bloqueo cierra, y verla es justo lo que el documento pide vigilar.
  */
-const CELDAS: Readonly<Record<SituacionDefensa, Readonly<Record<PuestoDefensa, readonly Celda[]>>>> = {
+const CELDAS: Readonly<
+  Record<SituacionDefensa, Readonly<Record<PuestoDefensa, readonly Celda[]>>>
+> = {
   inicial: SIN_CELDAS,
   z1: SIN_CELDAS,
   z2: {
@@ -142,7 +168,14 @@ const CELDAS: Readonly<Record<SituacionDefensa, Readonly<Record<PuestoDefensa, r
   },
 };
 
-const SIN_EXPLICACION: Readonly<Record<PuestoDefensa, string>> = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '' };
+const SIN_EXPLICACION: Readonly<Record<PuestoDefensa, string>> = {
+  1: '',
+  2: '',
+  3: '',
+  4: '',
+  5: '',
+  6: '',
+};
 
 /** Qué hace cada puesto contra cada situación con material. Sale del documento del equipo. */
 const EXPLICACIONES: Readonly<Record<SituacionDefensa, Readonly<Record<PuestoDefensa, string>>>> = {
@@ -224,11 +257,41 @@ const Y_BLOQUEADOR = 0.4;
  * anterior de su mismo lado). `pipe`, `z1` e `inicial` no tienen entrada aquí: siempre devuelven
  * la postura base sin bascular y sin nadie reubicado (E11). */
 const REGLA_BLOQUEO_POR_DEFECTO: Readonly<
-  Partial<Record<SituacionDefensa, { basculacion: number; principal: PuestoDefensa; vecinos: readonly { puesto: PuestoDefensa; signo: 1 | -1 }[] }>>
+  Partial<
+    Record<
+      SituacionDefensa,
+      {
+        basculacion: number;
+        principal: PuestoDefensa;
+        vecinos: readonly { puesto: PuestoDefensa; signo: 1 | -1 }[];
+      }
+    >
+  >
 > = {
-  z4: { basculacion: 1, principal: 2, vecinos: [{ puesto: 3, signo: -1 }, { puesto: 4, signo: -1 }] },
-  z3: { basculacion: 0, principal: 3, vecinos: [{ puesto: 2, signo: 1 }, { puesto: 4, signo: -1 }] },
-  z2: { basculacion: -1, principal: 4, vecinos: [{ puesto: 3, signo: 1 }, { puesto: 2, signo: 1 }] },
+  z4: {
+    basculacion: 1,
+    principal: 2,
+    vecinos: [
+      { puesto: 3, signo: -1 },
+      { puesto: 4, signo: -1 },
+    ],
+  },
+  z3: {
+    basculacion: 0,
+    principal: 3,
+    vecinos: [
+      { puesto: 2, signo: 1 },
+      { puesto: 4, signo: -1 },
+    ],
+  },
+  z2: {
+    basculacion: -1,
+    principal: 4,
+    vecinos: [
+      { puesto: 3, signo: 1 },
+      { puesto: 2, signo: 1 },
+    ],
+  },
 };
 
 /** La postura por defecto de una variante de defensa que aún no se ha guardado (spec 042,
@@ -245,7 +308,10 @@ const REGLA_BLOQUEO_POR_DEFECTO: Readonly<
  * nadie reubicado, con cualquier número de bloqueadores (spec 049, E11) — a diferencia de las
  * otras tres, el ataque por pipe es individual (spec 030) y no tiene un "lado" hacia el que
  * pegar bloqueadores. */
-export function formacionDefensaPorDefecto(situacion: SituacionDefensa, bloqueadores: NumeroBloqueadores = 0): FormacionDefensa {
+export function formacionDefensaPorDefecto(
+  situacion: SituacionDefensa,
+  bloqueadores: NumeroBloqueadores = 0,
+): FormacionDefensa {
   if (situacion === 'inicial' || situacion === 'z1' || situacion === 'pipe') {
     return PUESTOS.map((puesto) => ({ puesto, punto: POSTURA_BASE[puesto] }));
   }
@@ -266,7 +332,9 @@ export function formacionDefensaPorDefecto(situacion: SituacionDefensa, bloquead
     const distancia = SEPARACION_BLOQUEADORES * contadorPorLado[vecino.signo];
     nuevosPuntos.set(vecino.puesto, { x: atacante.x + vecino.signo * distancia, y: Y_BLOQUEADOR });
   }
-  return base.map((c) => (nuevosPuntos.has(c.puesto) ? { ...c, punto: nuevosPuntos.get(c.puesto)! } : c));
+  return base.map((c) =>
+    nuevosPuntos.has(c.puesto) ? { ...c, punto: nuevosPuntos.get(c.puesto)! } : c,
+  );
 }
 
 /** El sistema defensivo de `docs/voley/sistema_defensivo_unificado.md` (spec 030, reescrito en
@@ -274,7 +342,10 @@ export function formacionDefensaPorDefecto(situacion: SituacionDefensa, bloquead
  * al de recepción cuando el servidor no tiene nada guardado. Del equipo masculino por defecto
  * (spec 032), mismo motivo que `sistemaPorDefecto`. Deja sin colocación la posición inicial y el
  * ataque por 1: no hay material de referencia que las cubra (spec 038, E20). */
-export function sistemaDefensaPorDefecto(plantilla: PlantillaEquipo, equipoId: EquipoId = 'masculino'): Sistema {
+export function sistemaDefensaPorDefecto(
+  plantilla: PlantillaEquipo,
+  equipoId: EquipoId = 'masculino',
+): Sistema {
   const defensas: VarianteDefensa[] = [];
   for (const caso of CASOS) {
     for (const situacion of SITUACIONES_CON_MATERIAL) {

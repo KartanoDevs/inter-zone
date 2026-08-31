@@ -29,7 +29,14 @@ function ordenConLibero(): OrdenSaque {
  * permitiera un valor distinto por rotación. Sigue siendo una plantilla válida: un mapa por
  * rotación con el mismo valor en las seis. */
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
+  const sustitutosPorRotacion = {
+    1: sustituidoId,
+    2: sustituidoId,
+    3: sustituidoId,
+    4: sustituidoId,
+    5: sustituidoId,
+    6: sustituidoId,
+  };
   return {
     nombre: 'Equipo A',
     ordenSaque: ordenConLibero(),
@@ -230,7 +237,10 @@ describe('jugadoresEnPista', () => {
     const plantilla: PlantillaEquipo = {
       nombre: 'Equipo A',
       ordenSaque: orden,
-      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: sustitutosLiberoPorDefecto(orden) },
+      libero: {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: sustitutosLiberoPorDefecto(orden),
+      },
     };
 
     const rotacionesConLibero = [1, 2, 3, 4, 5, 6].filter((rotacion) =>
@@ -248,7 +258,10 @@ describe('jugadoresEnPista', () => {
     const plantilla: PlantillaEquipo = {
       nombre: 'Equipo A',
       ordenSaque: orden,
-      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { ...defecto, 1: null } },
+      libero: {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: { ...defecto, 1: null },
+      },
     };
 
     const enR1 = jugadoresEnPista(plantilla, 1);
@@ -266,7 +279,10 @@ describe('jugadoresEnPista', () => {
     const plantilla: PlantillaEquipo = {
       nombre: 'Equipo A',
       ordenSaque: orden,
-      libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'central1', 2: null, 3: null, 4: null, 5: null, 6: null } },
+      libero: {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: { 1: 'central1', 2: null, 3: null, 4: null, 5: null, 6: null },
+      },
     };
 
     const enR1 = jugadoresEnPista(plantilla, 1);

@@ -20,7 +20,10 @@ function ponerCookieSesion(res: Response, testigo: string, expiraEn: Date): void
 }
 
 function borrarCookieSesion(res: Response): void {
-  res.setHeader('Set-Cookie', `${NOMBRE_COOKIE_SESION}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`);
+  res.setHeader(
+    'Set-Cookie',
+    `${NOMBRE_COOKIE_SESION}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`,
+  );
 }
 
 export const authRutas: Router = Router();
@@ -103,7 +106,11 @@ authRutas.put('/auth/perfil', async (req: Request, res: Response) => {
     res.status(401).json({ error: 'Hace falta iniciar sesión' });
     return;
   }
-  const { nombre, posicionFavorita, dorsal } = req.body as { nombre?: unknown; posicionFavorita?: unknown; dorsal?: unknown };
+  const { nombre, posicionFavorita, dorsal } = req.body as {
+    nombre?: unknown;
+    posicionFavorita?: unknown;
+    dorsal?: unknown;
+  };
   if (nombre !== null && typeof nombre !== 'string') {
     res.status(400).json({ error: 'nombre debe ser texto o null' });
     return;
@@ -121,7 +128,9 @@ authRutas.put('/auth/perfil', async (req: Request, res: Response) => {
     await accesoRepositorio.actualizarPerfil(sesion.usuario.id, datos);
   } catch (error) {
     if (error instanceof PosicionFavoritaInvalida) {
-      res.status(400).json({ error: 'posicionFavorita debe ser uno de los cinco roles de voleibol' });
+      res
+        .status(400)
+        .json({ error: 'posicionFavorita debe ser uno de los cinco roles de voleibol' });
       return;
     }
     if (error instanceof DorsalInvalido) {

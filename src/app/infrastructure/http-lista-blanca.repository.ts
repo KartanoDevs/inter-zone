@@ -1,6 +1,11 @@
 import type { EquipoId } from '../domain/modelos';
 import type { InvitacionListada, RolAcceso } from '../domain/acceso';
-import { type ListaBlancaRepository, CorreoYaRegistrado, ErrorDelServidor, ErrorDeRed } from '../domain/puertos';
+import {
+  type ListaBlancaRepository,
+  CorreoYaRegistrado,
+  ErrorDelServidor,
+  ErrorDeRed,
+} from '../domain/puertos';
 
 /**
  * Adaptador de `ListaBlancaRepository` contra `/api/lista-blanca` (spec 054). Mismo criterio
@@ -16,7 +21,9 @@ export class HttpListaBlancaRepository implements ListaBlancaRepository {
   async listar(): Promise<readonly InvitacionListada[]> {
     const respuesta = await this.peticion('/lista-blanca', { method: 'GET' });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
     return (await respuesta.json()) as readonly InvitacionListada[];
   }
@@ -31,14 +38,20 @@ export class HttpListaBlancaRepository implements ListaBlancaRepository {
       throw new CorreoYaRegistrado(await mensajeDe(respuesta, 'Ese correo ya tiene cuenta'));
     }
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 
   async retirar(email: string): Promise<void> {
-    const respuesta = await this.peticion(`/lista-blanca/${encodeURIComponent(email)}`, { method: 'DELETE' });
+    const respuesta = await this.peticion(`/lista-blanca/${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+    });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 

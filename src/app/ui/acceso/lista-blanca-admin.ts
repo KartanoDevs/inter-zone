@@ -29,9 +29,17 @@ export class ListaBlancaAdmin {
     void this.store.cargar();
   }
 
-  protected async invitar(campoEmail: HTMLInputElement, rol: string, equipoId: string): Promise<void> {
+  protected async invitar(
+    campoEmail: HTMLInputElement,
+    rol: string,
+    equipoId: string,
+  ): Promise<void> {
     this.invitando.set(true);
-    const exito = await this.store.invitar(campoEmail.value, rol as RolAcceso, equipoId === '' ? null : (equipoId as EquipoId));
+    const exito = await this.store.invitar(
+      campoEmail.value,
+      rol as RolAcceso,
+      equipoId === '' ? null : (equipoId as EquipoId),
+    );
     this.invitando.set(false);
     if (exito) {
       campoEmail.value = '';

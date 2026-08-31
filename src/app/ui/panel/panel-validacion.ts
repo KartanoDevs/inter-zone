@@ -24,7 +24,9 @@ export class PanelValidacion {
   readonly avisos = input.required<readonly ItemValidacion[]>();
 
   protected readonly hayFalta = computed(() => this.completo() && this.infracciones().length > 0);
-  protected readonly hayAviso = computed(() => this.completo() && !this.hayFalta() && this.avisos().length > 0);
+  protected readonly hayAviso = computed(
+    () => this.completo() && !this.hayFalta() && this.avisos().length > 0,
+  );
   protected readonly visible = computed(() => this.hayFalta() || this.hayAviso());
 
   protected readonly etiquetas = computed(() => {

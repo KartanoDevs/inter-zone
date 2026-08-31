@@ -23,7 +23,10 @@ describe('acceso', () => {
 
   it('E4: un correo invitado como entrenador de un equipo nace entrenador solo de ese equipo', () => {
     const alta = resolverAltaDesdeInvitacion({ rol: 'entrenador', equipoId: 'femenino' }, EQUIPOS);
-    expect(alta).toEqual({ esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'entrenador' }] });
+    expect(alta).toEqual({
+      esAdmin: false,
+      membresias: [{ equipoId: 'femenino', rol: 'entrenador' }],
+    });
   });
 
   it('E5: un correo invitado sin equipo asignado nace con el rol invitado en los dos equipos', () => {
@@ -42,17 +45,26 @@ describe('acceso', () => {
   });
 
   it('051-E2: un entrenador del equipo dueño puede validar el sistema', () => {
-    const entrenador = { esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'entrenador' }] } as const;
+    const entrenador = {
+      esAdmin: false,
+      membresias: [{ equipoId: 'femenino', rol: 'entrenador' }],
+    } as const;
     expect(puedeGestionarEquipo(entrenador, 'femenino')).toBe(true);
   });
 
   it('051-E4: un entrenador de otro equipo no puede validar ese sistema', () => {
-    const entrenador = { esAdmin: false, membresias: [{ equipoId: 'masculino', rol: 'entrenador' }] } as const;
+    const entrenador = {
+      esAdmin: false,
+      membresias: [{ equipoId: 'masculino', rol: 'entrenador' }],
+    } as const;
     expect(puedeGestionarEquipo(entrenador, 'femenino')).toBe(false);
   });
 
   it('051-E4: un usuario (no entrenador) de ese mismo equipo no puede validar', () => {
-    const usuario = { esAdmin: false, membresias: [{ equipoId: 'femenino', rol: 'usuario' }] } as const;
+    const usuario = {
+      esAdmin: false,
+      membresias: [{ equipoId: 'femenino', rol: 'usuario' }],
+    } as const;
     expect(puedeGestionarEquipo(usuario, 'femenino')).toBe(false);
   });
 
@@ -61,7 +73,10 @@ describe('acceso', () => {
   });
 
   it('037-E7: un entrenador de al menos un equipo puede editar algo', () => {
-    const entrenador = { esAdmin: false, membresias: [{ equipoId: 'masculino', rol: 'entrenador' }] } as const;
+    const entrenador = {
+      esAdmin: false,
+      membresias: [{ equipoId: 'masculino', rol: 'entrenador' }],
+    } as const;
     expect(puedeEditarAlgo(entrenador)).toBe(true);
   });
 

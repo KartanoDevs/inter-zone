@@ -2,7 +2,11 @@ import { Router, type Request, type Response } from 'express';
 import type { EquipoId, EstadoSistema, Sistema } from '../../../src/app/domain/modelos';
 import { puedeGestionarEquipo } from '../../../src/app/domain/acceso';
 import * as sistemaRepositorio from '../infraestructura/sistema.repositorio';
-import { ConflictoDeConcurrencia, RosterInvalido, SistemaNoEncontrado } from '../infraestructura/sistema.repositorio';
+import {
+  ConflictoDeConcurrencia,
+  RosterInvalido,
+  SistemaNoEncontrado,
+} from '../infraestructura/sistema.repositorio';
 import { resolverSesion } from './cookies';
 
 const EQUIPOS_VALIDOS: readonly EquipoId[] = ['masculino', 'femenino'];
@@ -14,7 +18,11 @@ function esEquipoValido(valor: unknown): valor is EquipoId {
 /** Crear, editar, clonar y borrar sistemas exige sesión y rol (spec 037): el admin, o un
  * entrenador con membresía en `equipoId`. Devuelve la sesión si el permiso es real, o `null`
  * tras haber escrito ya la respuesta de rechazo — el llamador solo tiene que cortar si es `null`. */
-async function exigirPermisoDeEquipo(req: Request, res: Response, equipoId: EquipoId): Promise<Awaited<ReturnType<typeof resolverSesion>>> {
+async function exigirPermisoDeEquipo(
+  req: Request,
+  res: Response,
+  equipoId: EquipoId,
+): Promise<Awaited<ReturnType<typeof resolverSesion>>> {
   const sesion = await resolverSesion(req);
   if (!sesion) {
     res.status(401).json({ error: 'Hace falta iniciar sesión' });
@@ -71,7 +79,9 @@ sistemasRutas.post('/sistemas', async (req: Request, res: Response) => {
 sistemasRutas.put('/sistemas/:id', async (req: Request, res: Response) => {
   const testigo = req.get('If-Match');
   if (!testigo) {
-    res.status(400).json({ error: 'Falta la cabecera If-Match con la marca de última modificación' });
+    res
+      .status(400)
+      .json({ error: 'Falta la cabecera If-Match con la marca de última modificación' });
     return;
   }
   const id = req.params['id'] as string;
@@ -125,7 +135,11 @@ sistemasRutas.put('/sistemas/:id/estado', async (req: Request, res: Response) =>
   if (!sesion) {
     return;
   }
-  await sistemaRepositorio.cambiarEstadoSistema(id, estado as EstadoSistema, estado === 'validado' ? sesion.usuario.id : null);
+  await sistemaRepositorio.cambiarEstadoSistema(
+    id,
+    estado as EstadoSistema,
+    estado === 'validado' ? sesion.usuario.id : null,
+  );
   res.status(200).json({ estado });
 });
 
@@ -152,5 +166,10 @@ sistemasRutas.delete('/sistemas/:id', async (req: Request, res: Response) => {
 });
 
 function esViolacionDeUnicidad(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && (error as { code: unknown }).code === 'P2002';
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === 'P2002'
+  );
 }

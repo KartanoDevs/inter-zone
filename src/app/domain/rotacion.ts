@@ -72,7 +72,9 @@ export function jugadoresEnPista(plantilla: PlantillaEquipo, rotacion: number): 
  * (una plantilla con las centrales sin la separación habitual), esa rotación queda en `null`:
  * el dominio no supone un sustituto donde no hay un central en zaga que lo justifique.
  */
-export function sustitutosLiberoPorDefecto(orden: OrdenSaque): Record<1 | 2 | 3 | 4 | 5 | 6, string | null> {
+export function sustitutosLiberoPorDefecto(
+  orden: OrdenSaque,
+): Record<1 | 2 | 3 | 4 | 5 | 6, string | null> {
   const resultado = {} as Record<1 | 2 | 3 | 4 | 5 | 6, string | null>;
   for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
     const centralEnZaga = zaguerosEnRotacion(orden, rotacion).find((j) => j.rol === 'central');

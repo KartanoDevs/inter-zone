@@ -16,7 +16,9 @@ export class HttpInsigniasRepository implements InsigniasRepository {
   async listar(): Promise<readonly InsigniaGanada[]> {
     const respuesta = await this.peticion('/examen/insignias', { method: 'GET' });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
     return (await respuesta.json()) as readonly InsigniaGanada[];
   }
@@ -28,7 +30,9 @@ export class HttpInsigniasRepository implements InsigniasRepository {
       body: JSON.stringify({ sistemaId, tipo, titularId }),
     });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 

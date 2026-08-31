@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CredencialesInvalidas, ErrorDeRed, ErrorDelServidor, InvitacionNoDisponible } from '../domain/puertos';
+import {
+  CredencialesInvalidas,
+  ErrorDeRed,
+  ErrorDelServidor,
+  InvitacionNoDisponible,
+} from '../domain/puertos';
 import type { SesionUsuario } from '../domain/acceso';
 import { HttpAccesoRepository } from './http-acceso.repository';
 
@@ -10,7 +15,10 @@ interface LlamadaFalsa {
 
 type Responder = () => Response | never;
 
-function crearFetchFalso(respuestas: readonly Responder[]): { readonly fetchFn: typeof fetch; readonly llamadas: LlamadaFalsa[] } {
+function crearFetchFalso(respuestas: readonly Responder[]): {
+  readonly fetchFn: typeof fetch;
+  readonly llamadas: LlamadaFalsa[];
+} {
   let indice = 0;
   const llamadas: LlamadaFalsa[] = [];
   const fetchFn = (async (url: string, init?: RequestInit) => {
@@ -50,7 +58,10 @@ const USUARIO: SesionUsuario = {
 
 describe('HttpAccesoRepository', () => {
   it('050-E2: entrar con credenciales correctas abre sesión y devuelve quién ha entrado', async () => {
-    const { fetchFn, llamadas } = crearFetchFalso([() => respuestaJson(200, { ok: true }), () => respuestaJson(200, { usuario: USUARIO })]);
+    const { fetchFn, llamadas } = crearFetchFalso([
+      () => respuestaJson(200, { ok: true }),
+      () => respuestaJson(200, { usuario: USUARIO }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
     const usuario = await repositorio.entrar('entrenadora@club.com', 'contrasena123');
@@ -62,10 +73,14 @@ describe('HttpAccesoRepository', () => {
   });
 
   it('050-E3: entrar con credenciales incorrectas se señala como CredencialesInvalidas', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(401, { error: 'Correo o contraseña incorrectos' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(401, { error: 'Correo o contraseña incorrectos' }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
-    await expect(repositorio.entrar('nadie@club.com', 'mala')).rejects.toBeInstanceOf(CredencialesInvalidas);
+    await expect(repositorio.entrar('nadie@club.com', 'mala')).rejects.toBeInstanceOf(
+      CredencialesInvalidas,
+    );
   });
 
   it('050-E4: registrar con un correo invitado no lanza', async () => {
@@ -76,10 +91,14 @@ describe('HttpAccesoRepository', () => {
   });
 
   it('050-E5: registrar sin invitación disponible se señala como InvitacionNoDisponible', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(403, { error: 'Ese correo no tiene una invitación disponible' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(403, { error: 'Ese correo no tiene una invitación disponible' }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
-    await expect(repositorio.registrar('nadie@club.com', 'contrasena123')).rejects.toBeInstanceOf(InvitacionNoDisponible);
+    await expect(repositorio.registrar('nadie@club.com', 'contrasena123')).rejects.toBeInstanceOf(
+      InvitacionNoDisponible,
+    );
   });
 
   it('quienSoy sin sesión devuelve null, sin lanzar (soporta E1/E6/E8)', async () => {
@@ -106,10 +125,14 @@ describe('HttpAccesoRepository', () => {
   });
 
   it('un rechazo del servidor que no es de acceso se señala como ErrorDelServidor', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(400, { error: 'La contraseña es demasiado corta' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(400, { error: 'La contraseña es demasiado corta' }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
-    await expect(repositorio.registrar('a@club.com', 'abc')).rejects.toBeInstanceOf(ErrorDelServidor);
+    await expect(repositorio.registrar('a@club.com', 'abc')).rejects.toBeInstanceOf(
+      ErrorDelServidor,
+    );
   });
 
   it('053-E2: actualizarPerfil manda los tres campos a /auth/perfil', async () => {
@@ -119,20 +142,32 @@ describe('HttpAccesoRepository', () => {
     await repositorio.actualizarPerfil({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
 
     expect(llamadas[0]?.url).toContain('/auth/perfil');
-    expect(JSON.parse(llamadas[0]?.init?.body as string)).toEqual({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
+    expect(JSON.parse(llamadas[0]?.init?.body as string)).toEqual({
+      nombre: 'Ana',
+      posicionFavorita: 'colocador',
+      dorsal: 7,
+    });
   });
 
   it('053-E7: cambiarContrasena con la actual incorrecta se señala como CredencialesInvalidas', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(401, { error: 'La contraseña actual no es correcta' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(401, { error: 'La contraseña actual no es correcta' }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
-    await expect(repositorio.cambiarContrasena('mala', 'nuevaclave123')).rejects.toBeInstanceOf(CredencialesInvalidas);
+    await expect(repositorio.cambiarContrasena('mala', 'nuevaclave123')).rejects.toBeInstanceOf(
+      CredencialesInvalidas,
+    );
   });
 
   it('053-E8: cambiarContrasena con la nueva demasiado corta se señala como ErrorDelServidor', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(400, { error: 'La nueva contraseña es demasiado corta' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(400, { error: 'La nueva contraseña es demasiado corta' }),
+    ]);
     const repositorio = new HttpAccesoRepository('http://api', fetchFn);
 
-    await expect(repositorio.cambiarContrasena('actual123', 'corta')).rejects.toBeInstanceOf(ErrorDelServidor);
+    await expect(repositorio.cambiarContrasena('actual123', 'corta')).rejects.toBeInstanceOf(
+      ErrorDelServidor,
+    );
   });
 });

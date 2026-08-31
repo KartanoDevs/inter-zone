@@ -16,7 +16,10 @@ export function situacionesDe(caso: CasoColocador): readonly SituacionDefensa[] 
 
 /** La situación que corresponde al cambiar de caso (spec 038, E5): se conserva si sigue
  * existiendo en el caso nuevo, y si no, cae en la postura de base. */
-export function situacionTrasCambioDeCaso(situacion: SituacionDefensa, casoNuevo: CasoColocador): SituacionDefensa {
+export function situacionTrasCambioDeCaso(
+  situacion: SituacionDefensa,
+  casoNuevo: CasoColocador,
+): SituacionDefensa {
   return situacionesDe(casoNuevo).includes(situacion) ? situacion : 'inicial';
 }
 

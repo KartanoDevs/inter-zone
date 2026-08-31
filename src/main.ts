@@ -11,5 +11,4 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 
-bootstrapApplication(App, appConfig)
-  .catch((err) => console.error(err));
+bootstrapApplication(App, appConfig).catch((err) => console.error(err));

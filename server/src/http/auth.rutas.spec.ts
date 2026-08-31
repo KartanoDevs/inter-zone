@@ -36,8 +36,14 @@ beforeEach(async () => {
   await prisma.lista_blanca.deleteMany({});
 });
 
-async function invitar(email: string, rol: 'admin' | 'entrenador' | 'usuario', equipoClave?: 'masculino' | 'femenino') {
-  const equipoId = equipoClave ? (await prisma.equipo.findUniqueOrThrow({ where: { clave: equipoClave } })).id : null;
+async function invitar(
+  email: string,
+  rol: 'admin' | 'entrenador' | 'usuario',
+  equipoClave?: 'masculino' | 'femenino',
+) {
+  const equipoId = equipoClave
+    ? (await prisma.equipo.findUniqueOrThrow({ where: { clave: equipoClave } })).id
+    : null;
   await prisma.lista_blanca.create({ data: { email, rol, equipo_id: equipoId } });
 }
 
@@ -111,7 +117,10 @@ function valorTestigo(cookie: string): string {
 describe('API de acceso (spec 035)', () => {
   describe('registro', () => {
     it('035-E2: un correo que no está en la lista blanca no puede darse de alta', async () => {
-      const { status } = await post('/api/auth/registro', { email: 'nadie@club.com', contrasena: 'contrasena123' });
+      const { status } = await post('/api/auth/registro', {
+        email: 'nadie@club.com',
+        contrasena: 'contrasena123',
+      });
 
       expect(status).toBe(403);
       expect(await prisma.usuario.findUnique({ where: { email: 'nadie@club.com' } })).toBeNull();
@@ -119,10 +128,16 @@ describe('API de acceso (spec 035)', () => {
 
     it('035-E6: la invitación se sella al usarse y no sirve una segunda vez', async () => {
       await invitar('sellada@club.com', 'usuario');
-      const primera = await post('/api/auth/registro', { email: 'sellada@club.com', contrasena: 'contrasena123' });
+      const primera = await post('/api/auth/registro', {
+        email: 'sellada@club.com',
+        contrasena: 'contrasena123',
+      });
       expect(primera.status).toBe(201);
 
-      const segunda = await post('/api/auth/registro', { email: 'sellada@club.com', contrasena: 'otra12345' });
+      const segunda = await post('/api/auth/registro', {
+        email: 'sellada@club.com',
+        contrasena: 'otra12345',
+      });
 
       expect(segunda.status).toBe(403);
     });
@@ -149,7 +164,10 @@ describe('API de acceso (spec 035)', () => {
     it('035-E9: una contraseña más corta que el mínimo se rechaza al darse de alta', async () => {
       await invitar('corta@club.com', 'usuario');
 
-      const { status } = await post('/api/auth/registro', { email: 'corta@club.com', contrasena: 'abc123' });
+      const { status } = await post('/api/auth/registro', {
+        email: 'corta@club.com',
+        contrasena: 'abc123',
+      });
 
       expect(status).toBe(400);
       expect(await prisma.usuario.findUnique({ where: { email: 'corta@club.com' } })).toBeNull();
@@ -161,11 +179,16 @@ describe('API de acceso (spec 035)', () => {
       await invitar('entra@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'entra@club.com', contrasena: 'contrasena123' });
 
-      const { status, cookie } = await post('/api/auth/entrar', { email: 'entra@club.com', contrasena: 'contrasena123' });
+      const { status, cookie } = await post('/api/auth/entrar', {
+        email: 'entra@club.com',
+        contrasena: 'contrasena123',
+      });
 
       expect(status).toBe(200);
       expect(cookie).not.toBeNull();
-      const sesion = await prisma.sesion.findFirstOrThrow({ where: { usuario: { email: 'entra@club.com' } } });
+      const sesion = await prisma.sesion.findFirstOrThrow({
+        where: { usuario: { email: 'entra@club.com' } },
+      });
       expect(sesion.expira_en.getTime()).toBeGreaterThan(Date.now() + 29 * 24 * 60 * 60 * 1000);
     });
 
@@ -173,8 +196,14 @@ describe('API de acceso (spec 035)', () => {
       await invitar('valida@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'valida@club.com', contrasena: 'contrasena123' });
 
-      const contrasenaEquivocada = await post('/api/auth/entrar', { email: 'valida@club.com', contrasena: 'mala-clave' });
-      const correoInexistente = await post('/api/auth/entrar', { email: 'nadie@club.com', contrasena: 'contrasena123' });
+      const contrasenaEquivocada = await post('/api/auth/entrar', {
+        email: 'valida@club.com',
+        contrasena: 'mala-clave',
+      });
+      const correoInexistente = await post('/api/auth/entrar', {
+        email: 'nadie@club.com',
+        contrasena: 'contrasena123',
+      });
 
       expect(contrasenaEquivocada.status).toBe(correoInexistente.status);
       expect(contrasenaEquivocada.cuerpo).toEqual(correoInexistente.cuerpo);
@@ -184,9 +213,17 @@ describe('API de acceso (spec 035)', () => {
     it('035-E12: usar la sesión la renueva', async () => {
       await invitar('renueva@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'renueva@club.com', contrasena: 'contrasena123' });
-      const { cookie } = await post('/api/auth/entrar', { email: 'renueva@club.com', contrasena: 'contrasena123' });
-      const antes = await prisma.sesion.findFirstOrThrow({ where: { usuario: { email: 'renueva@club.com' } } });
-      await prisma.sesion.update({ where: { id: antes.id }, data: { expira_en: new Date(Date.now() + 1000) } });
+      const { cookie } = await post('/api/auth/entrar', {
+        email: 'renueva@club.com',
+        contrasena: 'contrasena123',
+      });
+      const antes = await prisma.sesion.findFirstOrThrow({
+        where: { usuario: { email: 'renueva@club.com' } },
+      });
+      await prisma.sesion.update({
+        where: { id: antes.id },
+        data: { expira_en: new Date(Date.now() + 1000) },
+      });
 
       const { status } = await get('/api/auth/quien-soy', cookie as string);
 
@@ -198,9 +235,17 @@ describe('API de acceso (spec 035)', () => {
     it('035-E13: una sesión caducada deja de identificar a nadie', async () => {
       await invitar('caduca@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'caduca@club.com', contrasena: 'contrasena123' });
-      const { cookie } = await post('/api/auth/entrar', { email: 'caduca@club.com', contrasena: 'contrasena123' });
-      const sesion = await prisma.sesion.findFirstOrThrow({ where: { usuario: { email: 'caduca@club.com' } } });
-      await prisma.sesion.update({ where: { id: sesion.id }, data: { expira_en: new Date(Date.now() - 1000) } });
+      const { cookie } = await post('/api/auth/entrar', {
+        email: 'caduca@club.com',
+        contrasena: 'contrasena123',
+      });
+      const sesion = await prisma.sesion.findFirstOrThrow({
+        where: { usuario: { email: 'caduca@club.com' } },
+      });
+      await prisma.sesion.update({
+        where: { id: sesion.id },
+        data: { expira_en: new Date(Date.now() - 1000) },
+      });
 
       const { status, cuerpo } = await get('/api/auth/quien-soy', cookie as string);
 
@@ -211,14 +256,19 @@ describe('API de acceso (spec 035)', () => {
     it('035-E14: salir invalida la sesión al instante', async () => {
       await invitar('sale@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'sale@club.com', contrasena: 'contrasena123' });
-      const { cookie } = await post('/api/auth/entrar', { email: 'sale@club.com', contrasena: 'contrasena123' });
+      const { cookie } = await post('/api/auth/entrar', {
+        email: 'sale@club.com',
+        contrasena: 'contrasena123',
+      });
 
       const salida = await post('/api/auth/salir', {}, cookie as string);
       expect(salida.status).toBe(204);
 
       const { cuerpo } = await get('/api/auth/quien-soy', cookie as string);
       expect(cuerpo).toEqual({ usuario: null });
-      expect(await prisma.sesion.findFirst({ where: { usuario: { email: 'sale@club.com' } } })).toBeNull();
+      expect(
+        await prisma.sesion.findFirst({ where: { usuario: { email: 'sale@club.com' } } }),
+      ).toBeNull();
     });
 
     it('035-E15: preguntar quién ha entrado sin tener sesión responde que nadie, no un error', async () => {
@@ -231,10 +281,15 @@ describe('API de acceso (spec 035)', () => {
     it('035-E16: el testigo de sesión no se guarda tal cual, solo su huella', async () => {
       await invitar('huella@club.com', 'usuario');
       await post('/api/auth/registro', { email: 'huella@club.com', contrasena: 'contrasena123' });
-      const { cookie } = await post('/api/auth/entrar', { email: 'huella@club.com', contrasena: 'contrasena123' });
+      const { cookie } = await post('/api/auth/entrar', {
+        email: 'huella@club.com',
+        contrasena: 'contrasena123',
+      });
       const testigo = valorTestigo(cookie as string);
 
-      const sesion = await prisma.sesion.findFirstOrThrow({ where: { usuario: { email: 'huella@club.com' } } });
+      const sesion = await prisma.sesion.findFirstOrThrow({
+        where: { usuario: { email: 'huella@club.com' } },
+      });
 
       expect(sesion.testigo_hash).not.toBe(testigo);
       expect(sesion.testigo_hash).toBe(createHash('sha256').update(testigo).digest('hex'));
@@ -244,7 +299,10 @@ describe('API de acceso (spec 035)', () => {
   describe('alta por rol e invitación', () => {
     it('035-E4: un correo invitado como entrenador de un equipo nace entrenador solo de ese equipo', async () => {
       await invitar('entrenadora@club.com', 'entrenador', 'femenino');
-      await post('/api/auth/registro', { email: 'entrenadora@club.com', contrasena: 'contrasena123' });
+      await post('/api/auth/registro', {
+        email: 'entrenadora@club.com',
+        contrasena: 'contrasena123',
+      });
 
       const usuario = await prisma.usuario.findUniqueOrThrow({
         where: { email: 'entrenadora@club.com' },
@@ -266,7 +324,10 @@ describe('API de acceso (spec 035)', () => {
         include: { membresias: { include: { equipo: true } } },
       });
 
-      expect(usuario.membresias.map((m) => m.equipo.clave).sort()).toEqual(['femenino', 'masculino']);
+      expect(usuario.membresias.map((m) => m.equipo.clave).sort()).toEqual([
+        'femenino',
+        'masculino',
+      ]);
     });
 
     it('035-E17: el primer admin nace de una invitación sembrada al arrancar el servidor', async () => {
@@ -275,14 +336,21 @@ describe('API de acceso (spec 035)', () => {
       await sembrarPrimerAdmin();
       delete process.env['ADMIN_EMAIL_INICIAL'];
 
-      const invitacion = await prisma.lista_blanca.findUniqueOrThrow({ where: { email: 'admin-inicial@club.com' } });
+      const invitacion = await prisma.lista_blanca.findUniqueOrThrow({
+        where: { email: 'admin-inicial@club.com' },
+      });
       expect(invitacion.rol).toBe('admin');
       expect(invitacion.equipo_id).toBeNull();
       expect(invitacion.usada_en).toBeNull();
 
-      const registro = await post('/api/auth/registro', { email: 'admin-inicial@club.com', contrasena: 'contrasena123' });
+      const registro = await post('/api/auth/registro', {
+        email: 'admin-inicial@club.com',
+        contrasena: 'contrasena123',
+      });
       expect(registro.status).toBe(201);
-      const usuario = await prisma.usuario.findUniqueOrThrow({ where: { email: 'admin-inicial@club.com' } });
+      const usuario = await prisma.usuario.findUniqueOrThrow({
+        where: { email: 'admin-inicial@club.com' },
+      });
       expect(usuario.es_admin).toBe(true);
     });
   });
@@ -290,17 +358,29 @@ describe('API de acceso (spec 035)', () => {
   describe('perfil (spec 053)', () => {
     it('053-E1: quien-soy incluye los campos de perfil ya guardados', async () => {
       const cookie = await crearYEntrar('perfil1@club.com');
-      await put('/api/auth/perfil', { nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 }, cookie);
+      await put(
+        '/api/auth/perfil',
+        { nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 },
+        cookie,
+      );
 
       const { cuerpo } = await get('/api/auth/quien-soy', cookie);
 
-      expect(cuerpo.usuario).toMatchObject({ nombre: 'Ana', posicionFavorita: 'colocador', dorsal: 7 });
+      expect(cuerpo.usuario).toMatchObject({
+        nombre: 'Ana',
+        posicionFavorita: 'colocador',
+        dorsal: 7,
+      });
     });
 
     it('053-E2: un nombre guardado sigue ahí en una petición posterior', async () => {
       const cookie = await crearYEntrar('perfil2@club.com');
 
-      await put('/api/auth/perfil', { nombre: 'Bea', posicionFavorita: null, dorsal: null }, cookie);
+      await put(
+        '/api/auth/perfil',
+        { nombre: 'Bea', posicionFavorita: null, dorsal: null },
+        cookie,
+      );
       const { cuerpo } = await get('/api/auth/quien-soy', cookie);
 
       expect(cuerpo.usuario.nombre).toBe('Bea');
@@ -309,7 +389,11 @@ describe('API de acceso (spec 035)', () => {
     it('053-E3: una posición favorita que no es un rol de voleibol se rechaza', async () => {
       const cookie = await crearYEntrar('perfil3@club.com');
 
-      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: 'entrenador', dorsal: null }, cookie);
+      const { status } = await put(
+        '/api/auth/perfil',
+        { nombre: null, posicionFavorita: 'entrenador', dorsal: null },
+        cookie,
+      );
 
       expect(status).toBe(400);
     });
@@ -318,7 +402,11 @@ describe('API de acceso (spec 035)', () => {
       const cookie = await crearYEntrar('perfil4@club.com');
       await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: 10 }, cookie);
 
-      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: 150 }, cookie);
+      const { status } = await put(
+        '/api/auth/perfil',
+        { nombre: null, posicionFavorita: null, dorsal: 150 },
+        cookie,
+      );
 
       expect(status).toBe(400);
       const { cuerpo } = await get('/api/auth/quien-soy', cookie);
@@ -328,7 +416,11 @@ describe('API de acceso (spec 035)', () => {
     it('053-E5: guardar los tres campos en blanco no da error', async () => {
       const cookie = await crearYEntrar('perfil5@club.com');
 
-      const { status } = await put('/api/auth/perfil', { nombre: null, posicionFavorita: null, dorsal: null }, cookie);
+      const { status } = await put(
+        '/api/auth/perfil',
+        { nombre: null, posicionFavorita: null, dorsal: null },
+        cookie,
+      );
 
       expect(status).toBe(200);
     });
@@ -346,7 +438,11 @@ describe('API de acceso (spec 035)', () => {
     it('053-E7: cambiar la contraseña exige acertar la actual', async () => {
       const cookie = await crearYEntrar('perfil7@club.com');
 
-      const { status } = await put('/api/auth/contrasena', { actual: 'mala-clave', nueva: 'nuevaclave123' }, cookie);
+      const { status } = await put(
+        '/api/auth/contrasena',
+        { actual: 'mala-clave', nueva: 'nuevaclave123' },
+        cookie,
+      );
 
       expect(status).toBe(401);
     });
@@ -354,17 +450,28 @@ describe('API de acceso (spec 035)', () => {
     it('053-E7: cambiar la contraseña con la actual correcta funciona, y sirve para entrar después', async () => {
       const cookie = await crearYEntrar('perfil7b@club.com');
 
-      const { status } = await put('/api/auth/contrasena', { actual: 'contrasena123', nueva: 'nuevaclave123' }, cookie);
+      const { status } = await put(
+        '/api/auth/contrasena',
+        { actual: 'contrasena123', nueva: 'nuevaclave123' },
+        cookie,
+      );
       expect(status).toBe(204);
 
-      const entrada = await post('/api/auth/entrar', { email: 'perfil7b@club.com', contrasena: 'nuevaclave123' });
+      const entrada = await post('/api/auth/entrar', {
+        email: 'perfil7b@club.com',
+        contrasena: 'nuevaclave123',
+      });
       expect(entrada.status).toBe(200);
     });
 
     it('053-E8: la nueva contraseña también tiene que llegar al mínimo', async () => {
       const cookie = await crearYEntrar('perfil8@club.com');
 
-      const { status } = await put('/api/auth/contrasena', { actual: 'contrasena123', nueva: 'corta' }, cookie);
+      const { status } = await put(
+        '/api/auth/contrasena',
+        { actual: 'contrasena123', nueva: 'corta' },
+        cookie,
+      );
 
       expect(status).toBe(400);
     });
@@ -372,7 +479,17 @@ describe('API de acceso (spec 035)', () => {
     it('053-E9: el correo y el rol no cambian aunque se manden en la petición', async () => {
       const cookie = await crearYEntrar('perfil9@club.com');
 
-      await put('/api/auth/perfil', { email: 'otro@club.com', rol: 'admin', nombre: null, posicionFavorita: null, dorsal: null }, cookie);
+      await put(
+        '/api/auth/perfil',
+        {
+          email: 'otro@club.com',
+          rol: 'admin',
+          nombre: null,
+          posicionFavorita: null,
+          dorsal: null,
+        },
+        cookie,
+      );
 
       const { cuerpo } = await get('/api/auth/quien-soy', cookie);
       expect(cuerpo.usuario.email).toBe('perfil9@club.com');
@@ -380,7 +497,11 @@ describe('API de acceso (spec 035)', () => {
     });
 
     it('sin sesión no se puede guardar el perfil ni cambiar la contraseña', async () => {
-      const perfil = await put('/api/auth/perfil', { nombre: 'X', posicionFavorita: null, dorsal: null });
+      const perfil = await put('/api/auth/perfil', {
+        nombre: 'X',
+        posicionFavorita: null,
+        dorsal: null,
+      });
       const contrasena = await put('/api/auth/contrasena', { actual: 'a', nueva: 'contrasena123' });
 
       expect(perfil.status).toBe(401);

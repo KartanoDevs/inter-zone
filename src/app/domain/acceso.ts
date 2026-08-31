@@ -69,8 +69,14 @@ export interface InvitacionListada {
  * (specs 037 y 051, docs/modelo-de-datos.md §4): el admin, o un entrenador con membresía en ese
  * equipo — nunca un `usuario`, y nunca un entrenador de otro equipo. Es la misma regla para las
  * dos acciones: la matriz de permisos les da idéntica respuesta por rol. */
-export function puedeGestionarEquipo(usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>, equipoId: EquipoId): boolean {
-  return usuario.esAdmin || usuario.membresias.some((m) => m.equipoId === equipoId && m.rol === 'entrenador');
+export function puedeGestionarEquipo(
+  usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>,
+  equipoId: EquipoId,
+): boolean {
+  return (
+    usuario.esAdmin ||
+    usuario.membresias.some((m) => m.equipoId === equipoId && m.rol === 'entrenador')
+  );
 }
 
 /** Si la cuenta puede editar el sistema de algún equipo, sea cual sea (spec 037): decide si se
@@ -105,7 +111,10 @@ export function normalizarNombre(texto: string): string | null {
  * (spec 035, E3-E5): admin nace global y sin membresías; entrenador y usuario nacen con una
  * membresía por cada equipo que les toque — uno solo, o los dos si la invitación no fijó
  * ninguno en concreto. */
-export function resolverAltaDesdeInvitacion(invitacion: Invitacion, equipos: readonly EquipoId[]): AltaResuelta {
+export function resolverAltaDesdeInvitacion(
+  invitacion: Invitacion,
+  equipos: readonly EquipoId[],
+): AltaResuelta {
   const { rol, equipoId } = invitacion;
   if (rol === 'admin') {
     return { esAdmin: true, membresias: [] };

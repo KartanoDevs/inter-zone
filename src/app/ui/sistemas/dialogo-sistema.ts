@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { EquipoId, TipoSistema } from '../../domain/modelos';
 import { EQUIPOS, NOMBRE_EQUIPO } from '../../domain/equipos';
 import { Modal } from '../comun/modal';

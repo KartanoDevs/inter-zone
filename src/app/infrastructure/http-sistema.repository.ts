@@ -1,5 +1,10 @@
 import type { EquipoId, EstadoSistema, Sistema } from '../domain/modelos';
-import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type SistemaRepository } from '../domain/puertos';
+import {
+  ConflictoDeEdicion,
+  ErrorDelServidor,
+  ErrorDeRed,
+  type SistemaRepository,
+} from '../domain/puertos';
 
 const EQUIPOS: readonly EquipoId[] = ['masculino', 'femenino'];
 
@@ -97,10 +102,14 @@ export class HttpSistemaRepository implements SistemaRepository {
       throw new ErrorDeRed('No se pudo conectar con el servidor');
     }
     if (respuesta.status === 409) {
-      throw new ConflictoDeEdicion(await mensajeDe(respuesta, 'Alguien más ha modificado este sistema mientras tanto'));
+      throw new ConflictoDeEdicion(
+        await mensajeDe(respuesta, 'Alguien más ha modificado este sistema mientras tanto'),
+      );
     }
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
     return respuesta;
   }

@@ -7,7 +7,9 @@
   <div class="app-ensenanza__cuerpo">
     <p class="app-ensenanza__texto">{{ texto() || 'Sin explicación todavía.' }}</p>
     @if (!soloLectura()) {
-      <button type="button" class="app-boton app-boton--secundario" (click)="iniciarEdicion()">Editar</button>
+      <button type="button" class="app-boton app-boton--secundario" (click)="iniciarEdicion()">
+        Editar
+      </button>
     }
   </div>
 </details>
@@ -22,8 +24,12 @@
       placeholder="¿Por qué se coloca aquí?"
     ></textarea>
     <ng-container acciones>
-      <button type="button" class="app-boton app-boton--secundario" (click)="cancelar()">Cancelar</button>
-      <button type="button" class="app-boton app-boton--primario" (click)="confirmar()">Guardar</button>
+      <button type="button" class="app-boton app-boton--secundario" (click)="cancelar()">
+        Cancelar
+      </button>
+      <button type="button" class="app-boton app-boton--primario" (click)="confirmar()">
+        Guardar
+      </button>
     </ng-container>
   </app-modal>
 }

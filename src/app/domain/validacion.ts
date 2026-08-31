@@ -40,7 +40,13 @@ function evaluarProfundidad(
   avisos: Aviso[],
 ): void {
   const margen = zaguero.punto.y - delantero.punto.y;
-  evaluarMargen(margen, 'zaguero-delantero', [zaguero.jugador, delantero.jugador], infracciones, avisos);
+  evaluarMargen(
+    margen,
+    'zaguero-delantero',
+    [zaguero.jugador, delantero.jugador],
+    infracciones,
+    avisos,
+  );
 }
 
 function evaluarLibero(colocacion: Colocacion, infracciones: Infraccion[]): void {
@@ -56,7 +62,13 @@ function evaluarLateral(
   avisos: Aviso[],
 ): void {
   const margen = derecha.punto.x - izquierda.punto.x;
-  evaluarMargen(margen, 'orden-lateral', [izquierda.jugador, derecha.jugador], infracciones, avisos);
+  evaluarMargen(
+    margen,
+    'orden-lateral',
+    [izquierda.jugador, derecha.jugador],
+    infracciones,
+    avisos,
+  );
 }
 
 /**
@@ -64,7 +76,10 @@ function evaluarLateral(
  * corresponde (spec 011). Quien llama los deriva con `formacionEnRotacion` (sin líbero) o
  * `jugadoresEnPista` (con líbero); esta función no necesita saber cuál de las dos se usó.
  */
-export function validarFormacion(formacion: Formacion, posiciones: OrdenSaque): ResultadoValidacion {
+export function validarFormacion(
+  formacion: Formacion,
+  posiciones: OrdenSaque,
+): ResultadoValidacion {
   const [p1, p2, p3, p4, p5, p6] = posiciones.map((jugador) => colocacionDe(formacion, jugador));
 
   const infracciones: Infraccion[] = [];

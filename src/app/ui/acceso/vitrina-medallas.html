@@ -3,19 +3,26 @@
 } @else if (error(); as mensaje) {
   <div class="app-vitrina__estado app-vitrina__estado--error" role="alert">
     <p>{{ mensaje }}</p>
-    <button type="button" class="app-boton app-boton--secundario" (click)="cargar()">Reintentar</button>
+    <button type="button" class="app-boton app-boton--secundario" (click)="cargar()">
+      Reintentar
+    </button>
   </div>
 } @else if (vacia()) {
   <p class="app-vitrina__estado">
-    Todavía no tienes ninguna medalla. Se consiguen superando el examen de un sistema: bronce por
-    un puesto, plata por una línea, oro por el sistema completo.
+    Todavía no tienes ninguna medalla. Se consiguen superando el examen de un sistema: bronce por un
+    puesto, plata por una línea, oro por el sistema completo.
   </p>
 } @else {
   <div class="app-vitrina__recuento">
     <span class="app-vitrina__cifra">{{ recuento().dominados }} / {{ recuento().total }}</span>
-    <span class="app-vitrina__pista" role="img"
-      [attr.aria-label]="recuento().dominados + ' de ' + recuento().total + ' sistemas dominados'">
-      <span [style.width.%]="recuento().total ? (recuento().dominados / recuento().total) * 100 : 0"></span>
+    <span
+      class="app-vitrina__pista"
+      role="img"
+      [attr.aria-label]="recuento().dominados + ' de ' + recuento().total + ' sistemas dominados'"
+    >
+      <span
+        [style.width.%]="recuento().total ? (recuento().dominados / recuento().total) * 100 : 0"
+      ></span>
     </span>
     <span class="app-vitrina__label">Sistemas<br />dominados</span>
   </div>
@@ -54,15 +61,24 @@
   <app-modal [titulo]="d.pieza.sistema.nombre" (cerrar)="cerrarDetalle()">
     <div class="app-vitrina__tiers">
       @for (tier of tiers; track tier) {
-        <div class="app-vitrina__tier" [class.app-vitrina__tier--off]="!tieneMedalla(d.pieza.resumen, tier)">
-          <img class="app-vitrina__tier-medalla" [src]="medallaSrc[tier]" [alt]="'Medalla de ' + tierNombre(tier)" />
+        <div
+          class="app-vitrina__tier"
+          [class.app-vitrina__tier--off]="!tieneMedalla(d.pieza.resumen, tier)"
+        >
+          <img
+            class="app-vitrina__tier-medalla"
+            [src]="medallaSrc[tier]"
+            [alt]="'Medalla de ' + tierNombre(tier)"
+          />
           <div class="app-vitrina__tier-cuerpo">
             <div class="app-vitrina__tier-nombre">{{ tierNombre(tier) }}</div>
             <div class="app-vitrina__tier-desc">{{ tierDesc(tier) }}</div>
 
             @if (tier === 'oro') {
               @if (d.pieza.resumen.oro) {
-                <div class="app-vitrina__tier-desc">Dominado el {{ fechaOro(d.pieza.resumen) }}</div>
+                <div class="app-vitrina__tier-desc">
+                  Dominado el {{ fechaOro(d.pieza.resumen) }}
+                </div>
               } @else {
                 <div class="app-vitrina__pendiente">Pendiente de examen</div>
               }

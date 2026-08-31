@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { DatosPerfil, SesionUsuario } from '../domain/acceso';
-import { CredencialesInvalidas, ErrorDelServidor, InvitacionNoDisponible, type AccesoRepository } from '../domain/puertos';
+import {
+  CredencialesInvalidas,
+  ErrorDelServidor,
+  InvitacionNoDisponible,
+  type AccesoRepository,
+} from '../domain/puertos';
 import { AccesoStore } from './acceso.store';
 
 const USUARIO: SesionUsuario = {
@@ -149,7 +154,11 @@ describe('AccesoStore', () => {
     );
     await store.entrar('entrenadora@club.com', 'contrasena123');
 
-    const exito = await store.actualizarPerfil({ nombre: null, posicionFavorita: null, dorsal: 150 });
+    const exito = await store.actualizarPerfil({
+      nombre: null,
+      posicionFavorita: null,
+      dorsal: 150,
+    });
 
     expect(exito).toBe(false);
     expect(store.error()).toBe('dorsal debe estar entre 1 y 99');

@@ -79,7 +79,9 @@ function plantillaDesde(
   return {
     nombre: nombreEquipo,
     ordenSaque: ordenSaque as unknown as PlantillaEquipo['ordenSaque'],
-    ...(liberoFila ? { libero: { jugador: jugadorDeFila(liberoFila), sustitutosPorRotacion } } : {}),
+    ...(liberoFila
+      ? { libero: { jugador: jugadorDeFila(liberoFila), sustitutosPorRotacion } }
+      : {}),
   };
 }
 
@@ -127,7 +129,9 @@ interface FilaColocacionDefensaCruda {
 
 /** Todas las colocaciones de defensa de un sistema, con su variante de origen, en una sola
  * consulta — en un sistema de defensa completo son hasta 34 variantes (spec 039). */
-async function colocacionesDefensaDe(sistemaId: string): Promise<readonly FilaColocacionDefensaCruda[]> {
+async function colocacionesDefensaDe(
+  sistemaId: string,
+): Promise<readonly FilaColocacionDefensaCruda[]> {
   return prisma.$queryRaw<FilaColocacionDefensaCruda[]>`
     SELECT fd.id AS formacion_id, fd.caso, fd.situacion, fd.bloqueadores,
            fd.explicacion AS variante_explicacion, fd.sombra_dx, fd.sombra_dy,
@@ -152,10 +156,20 @@ interface FilaSistema {
   }[];
 }
 
-function ensamblarDefensas(colocacionesCrudas: readonly FilaColocacionDefensaCruda[]): readonly VarianteDefensa[] {
+function ensamblarDefensas(
+  colocacionesCrudas: readonly FilaColocacionDefensaCruda[],
+): readonly VarianteDefensa[] {
   const porVariante = new Map<
     string,
-    { caso: string; situacion: string; bloqueadores: number; explicacion: string | null; sombra_dx: number | null; sombra_dy: number | null; colocaciones: ColocacionDefensa[] }
+    {
+      caso: string;
+      situacion: string;
+      bloqueadores: number;
+      explicacion: string | null;
+      sombra_dx: number | null;
+      sombra_dy: number | null;
+      colocaciones: ColocacionDefensa[];
+    }
   >();
   for (const c of colocacionesCrudas) {
     let entrada = porVariante.get(c.formacion_id);
@@ -171,7 +185,10 @@ function ensamblarDefensas(colocacionesCrudas: readonly FilaColocacionDefensaCru
       };
       porVariante.set(c.formacion_id, entrada);
     }
-    let colocacion: ColocacionDefensa = { puesto: c.puesto as PuestoValido, punto: { x: c.x, y: c.y } };
+    let colocacion: ColocacionDefensa = {
+      puesto: c.puesto as PuestoValido,
+      punto: { x: c.x, y: c.y },
+    };
     if (c.explicacion !== null) {
       colocacion = { ...colocacion, explicacion: c.explicacion };
     }
@@ -189,7 +206,9 @@ function ensamblarDefensas(colocacionesCrudas: readonly FilaColocacionDefensaCru
     bloqueadores: v.bloqueadores as VarianteDefensa['bloqueadores'],
     formacion: v.colocaciones as FormacionDefensa,
     ...(v.explicacion !== null ? { explicacion: v.explicacion } : {}),
-    ...(v.sombra_dx !== null && v.sombra_dy !== null ? { desplazamientoSombra: { x: v.sombra_dx, y: v.sombra_dy } } : {}),
+    ...(v.sombra_dx !== null && v.sombra_dy !== null
+      ? { desplazamientoSombra: { x: v.sombra_dx, y: v.sombra_dy } }
+      : {}),
   }));
 }
 
@@ -201,7 +220,10 @@ function ensamblarSistema(
   colocacionesCrudas: readonly FilaColocacionCruda[],
   colocacionesDefensaCrudas: readonly FilaColocacionDefensaCruda[],
 ): Sistema {
-  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null } as Record<RotacionValida, string | null>;
+  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null } as Record<
+    RotacionValida,
+    string | null
+  >;
   const explicacionesRotacion: Partial<Record<RotacionValida, string>> = {};
   for (const r of fila.rotaciones) {
     const rotacion = r.rotacion as RotacionValida;
@@ -271,7 +293,14 @@ export async function listar(equipoId: EquipoId): Promise<readonly SistemaConMet
   for (const fila of sistemas) {
     const colocacionesCrudas = await colocacionesDe(fila.id);
     const colocacionesDefensaCrudas = await colocacionesDefensaDe(fila.id);
-    const sistema = ensamblarSistema(fila, equipoId, equipoRow.nombre, filasJugador, colocacionesCrudas, colocacionesDefensaCrudas);
+    const sistema = ensamblarSistema(
+      fila,
+      equipoId,
+      equipoRow.nombre,
+      filasJugador,
+      colocacionesCrudas,
+      colocacionesDefensaCrudas,
+    );
     resultado.push({ ...sistema, actualizadoEn: fila.actualizado_en.toISOString() });
   }
   return resultado;
@@ -285,7 +314,10 @@ export async function listar(equipoId: EquipoId): Promise<readonly SistemaConMet
 async function plantillaConfiable(sistema: Sistema): Promise<PlantillaEquipo> {
   const equipoRow = await prisma.equipo.findUniqueOrThrow({ where: { clave: sistema.equipoId } });
   const filasJugador = await prisma.jugador.findMany();
-  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null } as Record<RotacionValida, string | null>;
+  const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null } as Record<
+    RotacionValida,
+    string | null
+  >;
   for (const r of ROTACIONES) {
     sustitutosPorRotacion[r] = sistema.plantilla.libero?.sustitutosPorRotacion[r] ?? null;
   }
@@ -309,7 +341,9 @@ function comprobarRoster(sistema: Sistema, plantilla: PlantillaEquipo): void {
     const mismoTamano = rosterEsperado.size === rosterRecibido.size;
     const mismosIds = mismoTamano && [...rosterEsperado].every((id) => rosterRecibido.has(id));
     if (!mismosIds) {
-      throw new RosterInvalido(`Roster inválido en R${rotacion}: se esperaba ${[...rosterEsperado].join(', ')}`);
+      throw new RosterInvalido(
+        `Roster inválido en R${rotacion}: se esperaba ${[...rosterEsperado].join(', ')}`,
+      );
     }
   }
 }
@@ -353,7 +387,8 @@ async function escribirDefensas(tx: Transaccion, sistema: Sistema): Promise<void
     });
     for (const colocacion of variante.formacion) {
       const celdas = colocacion.celdas === undefined ? null : colocacion.celdas.map(celdaAIndice);
-      const celdasFinta = colocacion.celdasFinta === undefined ? null : colocacion.celdasFinta.map(celdaAIndice);
+      const celdasFinta =
+        colocacion.celdasFinta === undefined ? null : colocacion.celdasFinta.map(celdaAIndice);
       await tx.$executeRaw`
         INSERT INTO colocacion_defensa (formacion_id, puesto, x, y, explicacion, celdas, celdas_finta)
         VALUES (${formacionId}::uuid, ${colocacion.puesto}, ${colocacion.punto.x}, ${colocacion.punto.y},
@@ -409,7 +444,11 @@ export async function actualizar(sistema: Sistema, testigoIfMatch: string): Prom
     }
     const actualizado = await tx.sistema.update({
       where: { id: sistema.id },
-      data: { nombre: sistema.nombre, descripcion: sistema.descripcion ?? null, actualizado_en: new Date() },
+      data: {
+        nombre: sistema.nombre,
+        descripcion: sistema.descripcion ?? null,
+        actualizado_en: new Date(),
+      },
     });
     for (const r of ROTACIONES) {
       await tx.sistema_rotacion.update({
@@ -451,7 +490,12 @@ export async function cambiarEstadoSistema(
           : { estado, validado_por: null, validado_en: null },
     });
   } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: unknown }).code === 'P2025') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: unknown }).code === 'P2025'
+    ) {
       throw new SistemaNoEncontrado(id);
     }
     throw error;
@@ -464,7 +508,12 @@ export async function borrar(id: string): Promise<void> {
   } catch (error) {
     // P2025: Prisma no encontró la fila a borrar. Sin este catch, un id inexistente devolvía
     // 500 en vez de 404 — encontrado probando la API a mano, no lo cubría ningún escenario.
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code: unknown }).code === 'P2025') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: unknown }).code === 'P2025'
+    ) {
       throw new SistemaNoEncontrado(id);
     }
     throw error;

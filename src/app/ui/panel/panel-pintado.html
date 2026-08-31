@@ -7,7 +7,14 @@
     (click)="seleccionarAccionArrastre.emit('pintar')"
   />
   <label for="app-pintado-accion-pintar" class="app-pintado__rol-pintar">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
       <path d="M12 19l7-7 3 3-7 7-3-3z" />
       <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
       <circle cx="11" cy="11" r="2" />
@@ -26,9 +33,19 @@
     for="app-pintado-accion-mover"
     class="app-pintado__rol-mover"
     [class.app-pintado__rol--deshabilitado]="!puedeMoverBloqueo()"
-    [attr.title]="puedeMoverBloqueo() ? null : 'Sin bloqueadores en esta variante no hay nada que mover'"
+    [attr.title]="
+      puedeMoverBloqueo() ? null : 'Sin bloqueadores en esta variante no hay nada que mover'
+    "
   >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
       <polyline points="5 9 2 12 5 15" />
       <polyline points="9 5 12 2 15 5" />
       <polyline points="15 19 12 22 9 19" />
@@ -42,7 +59,12 @@
 
 <div class="app-pintado__control">
   <span class="app-pintado__control-etiqueta">Ancho del bloqueo</span>
-  <app-barra class="app-pintado__barra" [valor]="escalaSombra()" etiqueta="Ancho del bloqueo" (valorCambiado)="cambiarEscalaSombra.emit($event)"></app-barra>
+  <app-barra
+    class="app-pintado__barra"
+    [valor]="escalaSombra()"
+    etiqueta="Ancho del bloqueo"
+    (valorCambiado)="cambiarEscalaSombra.emit($event)"
+  ></app-barra>
 </div>
 
 <div class="app-pintado__modo" role="radiogroup" aria-label="Qué se pinta">
@@ -71,7 +93,10 @@
     <span class="app-pintado__chip">
       <span class="app-pintado__chip-par">
         <span [style.background]="'var(' + paletaColores()[entrada.indiceColor] + ')'"></span>
-        <span class="app-pintado__chip-finta" [style.background-color]="'var(' + paletaColores()[entrada.indiceColor] + ')'"></span>
+        <span
+          class="app-pintado__chip-finta"
+          [style.background-color]="'var(' + paletaColores()[entrada.indiceColor] + ')'"
+        ></span>
       </span>
       {{ entrada.etiqueta }}
     </span>

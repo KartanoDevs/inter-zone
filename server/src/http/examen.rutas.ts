@@ -30,7 +30,11 @@ examenRutas.post('/examen/insignias', async (req: Request, res: Response) => {
     res.status(401).json({ error: 'Hace falta iniciar sesión' });
     return;
   }
-  const { sistemaId, tipo, titularId } = req.body as { sistemaId?: unknown; tipo?: unknown; titularId?: unknown };
+  const { sistemaId, tipo, titularId } = req.body as {
+    sistemaId?: unknown;
+    tipo?: unknown;
+    titularId?: unknown;
+  };
   if (typeof sistemaId !== 'string') {
     res.status(400).json({ error: 'sistemaId es obligatorio' });
     return;

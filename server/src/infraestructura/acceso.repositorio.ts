@@ -79,7 +79,10 @@ async function mapaEquipos(): Promise<{
   };
 }
 
-function usuarioIdentificadoDeFila(fila: FilaUsuarioConMembresias, porId: Map<string, EquipoId>): UsuarioIdentificado {
+function usuarioIdentificadoDeFila(
+  fila: FilaUsuarioConMembresias,
+  porId: Map<string, EquipoId>,
+): UsuarioIdentificado {
   return {
     id: fila.id,
     email: fila.email,
@@ -113,7 +116,8 @@ export async function registrar(emailBruto: string, contrasena: string): Promise
   }
 
   const { porId, porClave } = await mapaEquipos();
-  const equipoIdInvitacion = invitacion.equipo_id === null ? null : (porId.get(invitacion.equipo_id) ?? null);
+  const equipoIdInvitacion =
+    invitacion.equipo_id === null ? null : (porId.get(invitacion.equipo_id) ?? null);
   const alta = resolverAltaDesdeInvitacion(
     { rol: invitacion.rol as RolAcceso, equipoId: equipoIdInvitacion },
     EQUIPOS,
@@ -122,11 +126,20 @@ export async function registrar(emailBruto: string, contrasena: string): Promise
   const usuarioId = randomUUID();
   await prisma.$transaction([
     prisma.usuario.create({
-      data: { id: usuarioId, email, contrasena_hash: hashContrasena(contrasena), es_admin: alta.esAdmin },
+      data: {
+        id: usuarioId,
+        email,
+        contrasena_hash: hashContrasena(contrasena),
+        es_admin: alta.esAdmin,
+      },
     }),
     ...alta.membresias.map((membresia) =>
       prisma.membresia.create({
-        data: { usuario_id: usuarioId, equipo_id: porClave.get(membresia.equipoId) as string, rol: membresia.rol },
+        data: {
+          usuario_id: usuarioId,
+          equipo_id: porClave.get(membresia.equipoId) as string,
+          rol: membresia.rol,
+        },
       }),
     ),
     prisma.lista_blanca.update({ where: { email }, data: { usada_en: new Date() } }),
@@ -137,7 +150,12 @@ async function abrirSesion(usuarioId: string): Promise<SesionCreada> {
   const testigo = generarTestigoSesion();
   const expiraEn = new Date(Date.now() + DURACION_SESION_MS);
   await prisma.sesion.create({
-    data: { id: randomUUID(), usuario_id: usuarioId, testigo_hash: huellaTestigo(testigo), expira_en: expiraEn },
+    data: {
+      id: randomUUID(),
+      usuario_id: usuarioId,
+      testigo_hash: huellaTestigo(testigo),
+      expira_en: expiraEn,
+    },
   });
   return { testigo, expiraEn };
 }
@@ -169,7 +187,10 @@ export async function quienSoy(testigo: string): Promise<QuienSoyResultado | nul
   }
   const nuevaExpiracion = new Date(Date.now() + DURACION_SESION_MS);
   const [usuario] = await prisma.$transaction([
-    prisma.usuario.findUniqueOrThrow({ where: { id: sesion.usuario_id }, include: { membresias: true } }),
+    prisma.usuario.findUniqueOrThrow({
+      where: { id: sesion.usuario_id },
+      include: { membresias: true },
+    }),
     prisma.sesion.update({ where: { id: sesion.id }, data: { expira_en: nuevaExpiracion } }),
   ]);
   const { porId } = await mapaEquipos();
@@ -205,7 +226,11 @@ export async function actualizarPerfil(usuarioId: string, datos: DatosPerfil): P
 
 /** Cambia la contraseña, exigiendo acertar la actual (spec 053, E7) y que la nueva llegue al
  * mínimo (E8) — mismas reglas que al darse de alta. */
-export async function cambiarContrasena(usuarioId: string, actual: string, nueva: string): Promise<void> {
+export async function cambiarContrasena(
+  usuarioId: string,
+  actual: string,
+  nueva: string,
+): Promise<void> {
   const fila = await prisma.usuario.findUniqueOrThrow({ where: { id: usuarioId } });
   if (!verificarContrasena(actual, fila.contrasena_hash)) {
     throw new CredencialesInvalidas();
@@ -213,7 +238,10 @@ export async function cambiarContrasena(usuarioId: string, actual: string, nueva
   if (nueva.length < LONGITUD_MINIMA_CONTRASENA) {
     throw new ContrasenaDemasiadoCorta();
   }
-  await prisma.usuario.update({ where: { id: usuarioId }, data: { contrasena_hash: hashContrasena(nueva) } });
+  await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { contrasena_hash: hashContrasena(nueva) },
+  });
 }
 
 /** Todas las invitaciones, pendientes y ya usadas (spec 054, E6). */
@@ -234,7 +262,12 @@ export async function listarInvitaciones(): Promise<readonly InvitacionListada[]
 /** Invita un correo, o actualiza su rol y equipo si ya estaba invitado y sin usar (spec 054,
  * E1-E2). Rechaza si el rol no es válido (E1) o si el correo ya tiene cuenta (E3) — el rol de
  * una cuenta ya creada no se toca desde aquí, solo desde el registro que ya la creó. */
-export async function invitar(emailBruto: string, rol: string, equipoClave: EquipoId | null, invitadoPor: string): Promise<void> {
+export async function invitar(
+  emailBruto: string,
+  rol: string,
+  equipoClave: EquipoId | null,
+  invitadoPor: string,
+): Promise<void> {
   if (!esRolAccesoValido(rol)) {
     throw new RolAccesoInvalido();
   }

@@ -16,7 +16,13 @@ import type {
   SituacionDefensa,
   TipoSistema,
 } from '../domain/modelos';
-import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
+import {
+  ConflictoDeEdicion,
+  ErrorDelServidor,
+  ErrorDeRed,
+  type AjustesRepository,
+  type SistemaRepository,
+} from '../domain/puertos';
 import {
   borrarSistema,
   cambiarSustitutoLibero,
@@ -30,7 +36,11 @@ import {
 import { jugadoresEnPista } from '../domain/rotacion';
 import { situacionTrasCambioDeCaso, situacionesDe } from '../domain/defensa';
 import { explicarJugador, explicarRotacion, guardarFormacion } from '../domain/sistema-recepcion';
-import { explicarPuesto, explicarVariante, guardarVarianteDefensa } from '../domain/sistema-defensa';
+import {
+  explicarPuesto,
+  explicarVariante,
+  guardarVarianteDefensa,
+} from '../domain/sistema-defensa';
 import { formacionDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 import { validarFormacion } from '../domain/validacion';
 import { PLANTILLA_GLOBAL } from '../domain/plantilla-global';
@@ -84,7 +94,10 @@ function mensajeDeError(error: unknown): string {
   return 'Ha ocurrido un error inesperado al guardar.';
 }
 
-function formacionesIguales(a: readonly ColocacionBorrador[], b: readonly ColocacionBorrador[]): boolean {
+function formacionesIguales(
+  a: readonly ColocacionBorrador[],
+  b: readonly ColocacionBorrador[],
+): boolean {
   if (a.length !== b.length) {
     return false;
   }
@@ -140,7 +153,10 @@ export class SistemaStore {
   /** Último fallo al escribir, con un reintento explícito (spec 034). `null` cuando no hay
    * ningún aviso pendiente — ni al arrancar, ni tras un reintento que tuvo éxito, ni tras
    * cerrarlo a mano. */
-  readonly errorGuardado = signal<{ readonly mensaje: string; readonly reintentar: () => void } | null>(null);
+  readonly errorGuardado = signal<{
+    readonly mensaje: string;
+    readonly reintentar: () => void;
+  } | null>(null);
 
   /** Solo los sistemas del equipo activo (spec 032): dos entrenadores nunca ven mezclados los
    * sistemas del otro equipo. */
@@ -148,7 +164,9 @@ export class SistemaStore {
     ordenarCatalogo(this.sistemas().filter((sistema) => sistema.equipoId === this.equipoActivo())),
   );
 
-  readonly sistemaActivo = computed(() => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null);
+  readonly sistemaActivo = computed(
+    () => this.sistemas().find((s) => s.id === this.sistemaActivoId()) ?? null,
+  );
   /** "borrador" o "validado" del sistema activo (spec 051). Ausente en el sistema equivale a
    * "borrador" — ver `estadoDe`. */
   readonly estadoActivo = computed(() => {
@@ -171,7 +189,10 @@ export class SistemaStore {
    * 039. `undefined` si esa combinación nunca se ha guardado. */
   private readonly varianteDefensaActiva = computed(() =>
     this.sistemaActivo()?.defensas?.find(
-      (v) => v.caso === this.casoActivo() && v.situacion === this.situacionActiva() && v.bloqueadores === this.bloqueadoresActivos(),
+      (v) =>
+        v.caso === this.casoActivo() &&
+        v.situacion === this.situacionActiva() &&
+        v.bloqueadores === this.bloqueadoresActivos(),
     ),
   );
 
@@ -186,12 +207,17 @@ export class SistemaStore {
     if (sistema.tipo === 'defensa') {
       // spec 042: una variante nunca guardada nace ya colocada (la defensa de referencia de su
       // situación, o la postura base en `inicial`/`z1`), no vacía.
-      return this.varianteDefensaActiva()?.formacion ?? formacionDefensaPorDefecto(this.situacionActiva(), this.bloqueadoresActivos());
+      return (
+        this.varianteDefensaActiva()?.formacion ??
+        formacionDefensaPorDefecto(this.situacionActiva(), this.bloqueadoresActivos())
+      );
     }
     return sistema.formaciones[this.rotacionActiva()] ?? [];
   });
 
-  readonly hayCambiosSinGuardar = computed(() => !formacionesIguales(this.borrador(), this.formacionGuardadaActiva()));
+  readonly hayCambiosSinGuardar = computed(
+    () => !formacionesIguales(this.borrador(), this.formacionGuardadaActiva()),
+  );
 
   /**
    * `null` si falta completar el borrador, si la validación está desactivada (spec 017), o si
@@ -238,7 +264,9 @@ export class SistemaStore {
   });
 
   readonly explicacionMostrada = computed(() =>
-    this.jugadorSeleccionadoId() ? this.explicacionJugadorSeleccionado() : this.explicacionRotacionActiva(),
+    this.jugadorSeleccionadoId()
+      ? this.explicacionJugadorSeleccionado()
+      : this.explicacionRotacionActiva(),
   );
 
   /**
@@ -298,7 +326,10 @@ export class SistemaStore {
    * principio", nunca como "reanuda a medias" — para que el entrenador decida si reintentar o
    * cerrar el aviso sin perder lo que tenía a medio hacer (spec 034).
    */
-  private async ejecutarEscritura(accion: () => Promise<void>, reintentar: () => void): Promise<boolean> {
+  private async ejecutarEscritura(
+    accion: () => Promise<void>,
+    reintentar: () => void,
+  ): Promise<boolean> {
     try {
       await accion();
       this.errorGuardado.set(null);
@@ -409,7 +440,9 @@ export class SistemaStore {
    * usan tanto `seleccionarEquipo` (cambio directo) como `confirmarCambio` (cambio pendiente). */
   private cambiarEquipo(equipoId: EquipoId): void {
     this.equipoActivo.set(equipoId);
-    const primero = ordenarCatalogo(this.sistemas().filter((sistema) => sistema.equipoId === equipoId))[0] ?? null;
+    const primero =
+      ordenarCatalogo(this.sistemas().filter((sistema) => sistema.equipoId === equipoId))[0] ??
+      null;
     this.sistemaActivoId.set(primero?.id ?? null);
     this.rotacionActiva.set(1);
     this.cambiarContexto();
@@ -530,7 +563,10 @@ export class SistemaStore {
     }
     const nuevos: Sistema[] = [];
     for (const equipoId of equiposId) {
-      const nuevo = crearSistema(crypto.randomUUID(), nombre, tipo, equipoId, PLANTILLA_GLOBAL, [...this.sistemas(), ...nuevos]);
+      const nuevo = crearSistema(crypto.randomUUID(), nombre, tipo, equipoId, PLANTILLA_GLOBAL, [
+        ...this.sistemas(),
+        ...nuevos,
+      ]);
       if (!nuevo) {
         return false;
       }
@@ -586,13 +622,19 @@ export class SistemaStore {
   }
 
   /** A quién sustituye el líbero del sistema activo, en una rotación concreta (spec 017). */
-  async cambiarSustitutoLibero(rotacion: RotacionValida, sustituidoId: string | null): Promise<void> {
+  async cambiarSustitutoLibero(
+    rotacion: RotacionValida,
+    sustituidoId: string | null,
+  ): Promise<void> {
     const sistema = this.sistemaActivo();
     if (!sistema) {
       return;
     }
     const actualizado = cambiarSustitutoLibero(sistema, rotacion, sustituidoId);
-    const exito = await this.reemplazarSistema(actualizado, () => void this.cambiarSustitutoLibero(rotacion, sustituidoId));
+    const exito = await this.reemplazarSistema(
+      actualizado,
+      () => void this.cambiarSustitutoLibero(rotacion, sustituidoId),
+    );
     if (exito) {
       this.borrador.set(this.formacionGuardadaActiva());
     }
@@ -625,7 +667,9 @@ export class SistemaStore {
     await this.ejecutarEscritura(
       async () => {
         await this.repositorio.cambiarEstado(sistema.id, estado);
-        this.sistemas.update((lista) => lista.map((s) => (s.id === sistema.id ? { ...s, estado } : s)));
+        this.sistemas.update((lista) =>
+          lista.map((s) => (s.id === sistema.id ? { ...s, estado } : s)),
+        );
       },
       () => void this.cambiarEstadoActivo(estado),
     );
@@ -642,8 +686,21 @@ export class SistemaStore {
       const puesto = ocupanteId === null ? null : SistemaStore.puestoDeId(ocupanteId);
       actualizado =
         puesto !== null
-          ? explicarPuesto(sistema, this.casoActivo(), this.situacionActiva(), this.bloqueadoresActivos(), puesto, texto)
-          : explicarVariante(sistema, this.casoActivo(), this.situacionActiva(), this.bloqueadoresActivos(), texto);
+          ? explicarPuesto(
+              sistema,
+              this.casoActivo(),
+              this.situacionActiva(),
+              this.bloqueadoresActivos(),
+              puesto,
+              texto,
+            )
+          : explicarVariante(
+              sistema,
+              this.casoActivo(),
+              this.situacionActiva(),
+              this.bloqueadoresActivos(),
+              texto,
+            );
     } else {
       actualizado = ocupanteId
         ? explicarJugador(sistema, this.rotacionActiva(), ocupanteId, texto)
@@ -661,7 +718,10 @@ export class SistemaStore {
     if (!sistema) {
       return;
     }
-    await this.reemplazarSistema(describirSistema(sistema, texto), () => void this.guardarDescripcion(texto));
+    await this.reemplazarSistema(
+      describirSistema(sistema, texto),
+      () => void this.guardarDescripcion(texto),
+    );
   }
 
   cancelarCambio(): void {
@@ -684,7 +744,8 @@ export class SistemaStore {
     const puesto = SistemaStore.puestoDeId(ocupanteId);
     if (puesto !== null) {
       this.borrador.update((formacion) => {
-        const previa = formacion.find((c) => idDe(c) === ocupanteId) as ColocacionDefensa | undefined;
+        const previa = formacion.find((c) => idDe(c) === ocupanteId) as
+          ColocacionDefensa | undefined;
         const resto = formacion.filter((c) => idDe(c) !== ocupanteId);
         const puntoLibre = separarDeOtros(
           punto,
@@ -797,14 +858,21 @@ export class SistemaStore {
             this.borrador() as FormacionDefensa,
             this.desplazamientoSombraEdicion() ?? undefined,
           )
-        : guardarFormacion(sistema, this.rotacionActiva(), this.borrador() as Formacion, !this.validacionDesactivada());
+        : guardarFormacion(
+            sistema,
+            this.rotacionActiva(),
+            this.borrador() as Formacion,
+            !this.validacionDesactivada(),
+          );
     if (!guardado) {
       return;
     }
     const exito = await this.reemplazarSistema(guardado, () => void this.guardar());
     if (exito) {
       this.borrador.set(this.formacionGuardadaActiva());
-      this.desplazamientoSombraEdicion.set(this.varianteDefensaActiva()?.desplazamientoSombra ?? null);
+      this.desplazamientoSombraEdicion.set(
+        this.varianteDefensaActiva()?.desplazamientoSombra ?? null,
+      );
     }
   }
 
@@ -814,7 +882,9 @@ export class SistemaStore {
   private async reemplazarSistema(actualizado: Sistema, reintentar: () => void): Promise<boolean> {
     return this.ejecutarEscritura(async () => {
       await this.repositorio.actualizar(actualizado);
-      this.sistemas.update((lista) => lista.map((s) => (s.id === actualizado.id ? actualizado : s)));
+      this.sistemas.update((lista) =>
+        lista.map((s) => (s.id === actualizado.id ? actualizado : s)),
+      );
     }, reintentar);
   }
 
@@ -822,7 +892,9 @@ export class SistemaStore {
   private cambiarContexto(): void {
     this.borrador.set(this.formacionGuardadaActiva());
     this.jugadorSeleccionadoId.set(null);
-    this.desplazamientoSombraEdicion.set(this.varianteDefensaActiva()?.desplazamientoSombra ?? null);
+    this.desplazamientoSombraEdicion.set(
+      this.varianteDefensaActiva()?.desplazamientoSombra ?? null,
+    );
     // spec 045, E6: si "mover bloqueo" deja de tener sentido (0 bloqueadores tras el cambio de
     // contexto), se apaga — y no se reactiva sola si más tarde vuelven a existir bloqueadores.
     if (this.accionArrastre() === 'mover' && !this.puedeMoverBloqueo()) {

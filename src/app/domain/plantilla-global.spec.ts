@@ -23,7 +23,9 @@ describe('PLANTILLA_GLOBAL — rotaciones de referencia', () => {
     it(`020-E2: R${rotacion} coloca a cada jugador en su Pn esperado`, () => {
       const enPista = jugadoresEnPista(PLANTILLA_GLOBAL, Number(rotacion));
 
-      const etiquetas = enPista.map((jugador) => etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO));
+      const etiquetas = enPista.map((jugador) =>
+        etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      );
 
       expect(etiquetas).toEqual(etiquetasEsperadas);
     });

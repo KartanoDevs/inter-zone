@@ -17,7 +17,9 @@
         <option [value]="equipo">{{ nombreEquipo[equipo] }}</option>
       }
     </select>
-    <button type="submit" class="app-boton app-boton--primario" [disabled]="invitando()">Invitar</button>
+    <button type="submit" class="app-boton app-boton--primario" [disabled]="invitando()">
+      Invitar
+    </button>
   </form>
 
   @if (store.error(); as error) {
@@ -52,7 +54,13 @@
               </span>
             </td>
             <td>
-              <button type="button" class="app-boton app-boton--secundario" (click)="pedirRetiro(invitacion.email)">Retirar</button>
+              <button
+                type="button"
+                class="app-boton app-boton--secundario"
+                (click)="pedirRetiro(invitacion.email)"
+              >
+                Retirar
+              </button>
             </td>
           </tr>
         }

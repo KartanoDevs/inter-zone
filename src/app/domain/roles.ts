@@ -10,7 +10,9 @@ export const CONFIGURACION_ROLES_POR_DEFECTO: ConfiguracionRoles = {
 
 export function etiquetaDe(jugador: Jugador, configuracion: ConfiguracionRoles): string {
   const definicion = configuracion[jugador.rol];
-  return definicion.llevaIndice ? `${definicion.abreviatura}${jugador.indice}` : definicion.abreviatura;
+  return definicion.llevaIndice
+    ? `${definicion.abreviatura}${jugador.indice}`
+    : definicion.abreviatura;
 }
 
 const ROLES_VALIDOS: readonly RolId[] = Object.keys(CONFIGURACION_ROLES_POR_DEFECTO) as RolId[];
@@ -21,7 +23,9 @@ export function esRolIdValido(valor: unknown): valor is RolId {
   return typeof valor === 'string' && (ROLES_VALIDOS as readonly string[]).includes(valor);
 }
 
-export function validarConfiguracionRoles(configuracion: ConfiguracionRoles): ColisionAbreviatura[] {
+export function validarConfiguracionRoles(
+  configuracion: ConfiguracionRoles,
+): ColisionAbreviatura[] {
   const rolesPorEtiquetaBase = new Map<string, { abreviatura: string; roles: RolId[] }>();
   for (const rolId of Object.keys(configuracion) as RolId[]) {
     const { abreviatura, llevaIndice } = configuracion[rolId];

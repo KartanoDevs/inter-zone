@@ -60,13 +60,17 @@ export async function sembrarCatalogoBase(): Promise<void> {
  * entrenador validara algo a mano — y el objetivo de sembrarlos es precisamente tener algo que
  * enseñar desde el principio. `validado_por` queda `null`: los validó la semilla, no una cuenta. */
 export async function sembrarEjemplos(): Promise<void> {
-  const recepcionExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'recepcion' } });
+  const recepcionExistente = await prisma.sistema.count({
+    where: { equipo: { clave: 'masculino' }, tipo: 'recepcion' },
+  });
   if (recepcionExistente === 0) {
     const id = crypto.randomUUID();
     await crear({ ...sistemaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id });
     await cambiarEstadoSistema(id, 'validado', null);
   }
-  const defensaExistente = await prisma.sistema.count({ where: { equipo: { clave: 'masculino' }, tipo: 'defensa' } });
+  const defensaExistente = await prisma.sistema.count({
+    where: { equipo: { clave: 'masculino' }, tipo: 'defensa' },
+  });
   if (defensaExistente === 0) {
     const id = crypto.randomUUID();
     await crear({ ...sistemaDefensaPorDefecto(PLANTILLA_GLOBAL, 'masculino'), id });
@@ -99,7 +103,11 @@ async function main(): Promise<void> {
 
 // Solo se ejecuta como script (`npm run seed` / `prisma db seed`), nunca al importar desde
 // los tests, que llaman a `sembrarCatalogoBase`/`sembrarEjemplos` por separado.
-const esScript = process.argv[1] && fileURLToPath(import.meta.url).endsWith(process.argv[1].replace(/\\/g, '/').split('/').pop() || '');
+const esScript =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url).endsWith(
+    process.argv[1].replace(/\\/g, '/').split('/').pop() || '',
+  );
 if (esScript) {
   main()
     .then(() => prisma.$disconnect())

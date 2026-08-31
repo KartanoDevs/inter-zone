@@ -9,7 +9,9 @@ import { jugadoresEnPista } from './rotacion';
  * traducción entre ambas numeraciones. El líbero, no declarado aquí, lo resuelve
  * `jugadoresEnPista`: ocupa el punto de a quién sustituye.
  */
-const PUNTOS_POR_ROTACION: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, readonly [Punto, Punto, Punto, Punto, Punto, Punto]>> = {
+const PUNTOS_POR_ROTACION: Readonly<
+  Record<1 | 2 | 3 | 4 | 5 | 6, readonly [Punto, Punto, Punto, Punto, Punto, Punto]>
+> = {
   1: [
     { x: 7.8, y: 7.6 },
     { x: 7.0, y: 4.2 },
@@ -62,7 +64,9 @@ const PUNTOS_POR_ROTACION: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, readonly [Punt
 
 /** Explicación de P1..P6 en cada rotación (guía, §2 por rol + §3 por rotación), en el mismo
  * orden e indexado igual que `PUNTOS_POR_ROTACION`. */
-const EXPLICACIONES_JUGADOR: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, readonly [string, string, string, string, string, string]>> = {
+const EXPLICACIONES_JUGADOR: Readonly<
+  Record<1 | 2 | 3 | 4 | 5 | 6, readonly [string, string, string, string, string, string]>
+> = {
   1: [
     'Zaguero, escondido en el fondo derecho: no recibe. Ruta corta, una diagonal de 6-7 m hacia la red.',
     'Desciende adelantado para cubrir los saques cortos y medios de su lado.',
@@ -133,9 +137,18 @@ const EXPLICACIONES_ROTACION: Readonly<Record<1 | 2 | 3 | 4 | 5 | 6, string>> = 
 /** El sistema de recepción a 3 en 5-1 de `docs/voley/Guia_Sistema_Recepcion_3_Esquema_5-1.md`
  * (spec 025), con el que arranca la app cuando el navegador no tiene nada guardado. Del equipo
  * masculino por defecto (spec 032): no hay guía de referencia para sembrar también el femenino. */
-export function sistemaPorDefecto(plantilla: PlantillaEquipo, equipoId: EquipoId = 'masculino'): Sistema {
-  const formaciones: Record<1 | 2 | 3 | 4 | 5 | 6, Formacion> = {} as Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>;
-  const explicacionesRotacion: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {} as Record<1 | 2 | 3 | 4 | 5 | 6, string>;
+export function sistemaPorDefecto(
+  plantilla: PlantillaEquipo,
+  equipoId: EquipoId = 'masculino',
+): Sistema {
+  const formaciones: Record<1 | 2 | 3 | 4 | 5 | 6, Formacion> = {} as Record<
+    1 | 2 | 3 | 4 | 5 | 6,
+    Formacion
+  >;
+  const explicacionesRotacion: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {} as Record<
+    1 | 2 | 3 | 4 | 5 | 6,
+    string
+  >;
   for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
     const puntos = PUNTOS_POR_ROTACION[rotacion];
     const explicaciones = EXPLICACIONES_JUGADOR[rotacion];

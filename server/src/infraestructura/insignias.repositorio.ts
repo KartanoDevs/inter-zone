@@ -13,7 +13,12 @@ function titularColumna(titularId: string | null): string {
  * lo exige). Idempotente: repetir el mismo examen y volver a superarlo no crea una segunda fila
  * ni mueve `obtenida_en` (spec 056, E3) — el `@@id` compuesto ya lo impide, así que basta con
  * ignorar el conflicto. */
-export async function registrarInsignia(usuarioId: string, sistemaId: string, tipo: TipoExamen, titularId: string | null): Promise<void> {
+export async function registrarInsignia(
+  usuarioId: string,
+  sistemaId: string,
+  tipo: TipoExamen,
+  titularId: string | null,
+): Promise<void> {
   await prisma.insignia_examen.upsert({
     where: {
       usuario_id_sistema_id_tipo_titular_id: {

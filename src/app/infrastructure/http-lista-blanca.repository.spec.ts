@@ -5,7 +5,10 @@ import { HttpListaBlancaRepository } from './http-lista-blanca.repository';
 
 type Responder = () => Response | never;
 
-function crearFetchFalso(respuestas: readonly Responder[]): { readonly fetchFn: typeof fetch; readonly llamadas: { url: string; init?: RequestInit }[] } {
+function crearFetchFalso(respuestas: readonly Responder[]): {
+  readonly fetchFn: typeof fetch;
+  readonly llamadas: { url: string; init?: RequestInit }[];
+} {
   let indice = 0;
   const llamadas: { url: string; init?: RequestInit }[] = [];
   const fetchFn = (async (url: string, init?: RequestInit) => {
@@ -60,14 +63,20 @@ describe('HttpListaBlancaRepository', () => {
   });
 
   it('054-E3: invitar un correo ya registrado se señala como CorreoYaRegistrado', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(409, { error: 'Ese correo ya tiene cuenta' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(409, { error: 'Ese correo ya tiene cuenta' }),
+    ]);
     const repositorio = new HttpListaBlancaRepository('http://api', fetchFn);
 
-    await expect(repositorio.invitar('x@club.com', 'usuario', null)).rejects.toBeInstanceOf(CorreoYaRegistrado);
+    await expect(repositorio.invitar('x@club.com', 'usuario', null)).rejects.toBeInstanceOf(
+      CorreoYaRegistrado,
+    );
   });
 
   it('054-E7: un rechazo por rol insuficiente se señala como ErrorDelServidor', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(403, { error: 'Solo el admin gestiona la lista blanca' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(403, { error: 'Solo el admin gestiona la lista blanca' }),
+    ]);
     const repositorio = new HttpListaBlancaRepository('http://api', fetchFn);
 
     await expect(repositorio.listar()).rejects.toBeInstanceOf(ErrorDelServidor);

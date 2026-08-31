@@ -9,7 +9,10 @@ function mismosJugadores(formacion: Formacion, posiciones: OrdenSaque): boolean 
 }
 
 /** Reaplica, por id de jugador, la explicación que tuviera en la formación anterior de esa rotación. */
-function conExplicacionesConservadas(formacion: Formacion, anterior: Formacion | undefined): Formacion {
+function conExplicacionesConservadas(
+  formacion: Formacion,
+  anterior: Formacion | undefined,
+): Formacion {
   if (!anterior) {
     return formacion;
   }
@@ -31,7 +34,12 @@ function conExplicacionesConservadas(formacion: Formacion, anterior: Formacion |
  * seis colocados sean exactamente quienes están en pista en esa rotación— nunca se salta: no
  * tendría sentido guardar con un jugador que no juega esa rotación, se valide o no la postura.
  */
-export function guardarFormacion(sistema: Sistema, rotacion: number, formacion: Formacion, validar = true): Sistema | null {
+export function guardarFormacion(
+  sistema: Sistema,
+  rotacion: number,
+  formacion: Formacion,
+  validar = true,
+): Sistema | null {
   const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
   if (!mismosJugadores(formacion, posiciones)) {
     return null;
@@ -45,7 +53,9 @@ export function guardarFormacion(sistema: Sistema, rotacion: number, formacion: 
 }
 
 export function sistemaCompleto(sistema: Sistema): boolean {
-  return [1, 2, 3, 4, 5, 6].every((rotacion) => sistema.formaciones[rotacion as 1 | 2 | 3 | 4 | 5 | 6] !== undefined);
+  return [1, 2, 3, 4, 5, 6].every(
+    (rotacion) => sistema.formaciones[rotacion as 1 | 2 | 3 | 4 | 5 | 6] !== undefined,
+  );
 }
 
 export function borrarRotacion(sistema: Sistema, rotacion: number): Sistema {
@@ -68,13 +78,20 @@ export function explicarRotacion(sistema: Sistema, rotacion: number, texto: stri
   return { ...sistema, explicacionesRotacion };
 }
 
-export function explicarJugador(sistema: Sistema, rotacion: number, jugadorId: string, texto: string): Sistema | null {
+export function explicarJugador(
+  sistema: Sistema,
+  rotacion: number,
+  jugadorId: string,
+  texto: string,
+): Sistema | null {
   const r = rotacion as 1 | 2 | 3 | 4 | 5 | 6;
   const formacion = sistema.formaciones[r];
   if (!formacion?.some((c) => c.jugador.id === jugadorId)) {
     return null;
   }
   const explicacion = texto.trim().length === 0 ? undefined : texto;
-  const nuevaFormacion = formacion.map((c) => (c.jugador.id === jugadorId ? { ...c, explicacion } : c));
+  const nuevaFormacion = formacion.map((c) =>
+    c.jugador.id === jugadorId ? { ...c, explicacion } : c,
+  );
   return { ...sistema, formaciones: { ...sistema.formaciones, [r]: nuevaFormacion } };
 }

@@ -21,7 +21,15 @@ function ordenSaque(): OrdenSaque {
 const PLANTILLA: PlantillaEquipo = { nombre: 'Equipo', ordenSaque: ordenSaque() };
 
 function sistema(id: string, nombre: string): Sistema {
-  return { id, nombre, tipo: 'recepcion', equipoId: 'masculino', plantilla: PLANTILLA, formaciones: {}, explicacionesRotacion: {} };
+  return {
+    id,
+    nombre,
+    tipo: 'recepcion',
+    equipoId: 'masculino',
+    plantilla: PLANTILLA,
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 interface LlamadaFalsa {
@@ -31,7 +39,10 @@ interface LlamadaFalsa {
 
 type Responder = () => Response | never;
 
-function crearFetchFalso(respuestas: readonly Responder[]): { readonly fetchFn: typeof fetch; readonly llamadas: LlamadaFalsa[] } {
+function crearFetchFalso(respuestas: readonly Responder[]): {
+  readonly fetchFn: typeof fetch;
+  readonly llamadas: LlamadaFalsa[];
+} {
   let indice = 0;
   const llamadas: LlamadaFalsa[] = [];
   const fetchFn = (async (url: string, init?: RequestInit) => {
@@ -87,20 +98,32 @@ describe('HttpSistemaRepository', () => {
     });
 
     it('034-E3: un rechazo del servidor se señala como ErrorDelServidor, con su motivo', async () => {
-      const { fetchFn } = crearFetchFalso([() => respuestaJson(400, { error: 'Roster inválido en R1' })]);
+      const { fetchFn } = crearFetchFalso([
+        () => respuestaJson(400, { error: 'Roster inválido en R1' }),
+      ]);
       const repositorio = new HttpSistemaRepository('http://api', fetchFn);
 
-      await expect(repositorio.crear(sistema('s1', 'Uno'))).rejects.toThrow('Roster inválido en R1');
-      await expect(new HttpSistemaRepository('http://api', crearFetchFalso([() => respuestaJson(400, {})]).fetchFn).crear(sistema('s1', 'Uno'))).rejects.toBeInstanceOf(
-        ErrorDelServidor,
+      await expect(repositorio.crear(sistema('s1', 'Uno'))).rejects.toThrow(
+        'Roster inválido en R1',
       );
+      await expect(
+        new HttpSistemaRepository(
+          'http://api',
+          crearFetchFalso([() => respuestaJson(400, {})]).fetchFn,
+        ).crear(sistema('s1', 'Uno')),
+      ).rejects.toBeInstanceOf(ErrorDelServidor);
     });
 
     it('034-E4: un conflicto de edición (409) se señala como ConflictoDeEdicion, no como ErrorDelServidor', async () => {
-      const { fetchFn } = crearFetchFalso([() => respuestaJson(409, { error: 'Alguien más ha modificado este sistema mientras tanto' })]);
+      const { fetchFn } = crearFetchFalso([
+        () =>
+          respuestaJson(409, { error: 'Alguien más ha modificado este sistema mientras tanto' }),
+      ]);
       const repositorio = new HttpSistemaRepository('http://api', fetchFn);
 
-      await expect(repositorio.actualizar(sistema('s1', 'Uno'))).rejects.toBeInstanceOf(ConflictoDeEdicion);
+      await expect(repositorio.actualizar(sistema('s1', 'Uno'))).rejects.toBeInstanceOf(
+        ConflictoDeEdicion,
+      );
     });
   });
 

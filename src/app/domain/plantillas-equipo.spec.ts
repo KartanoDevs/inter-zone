@@ -76,7 +76,10 @@ describe('puedeCrearPlantillaEquipo con líbero', () => {
       ordenValidoEstandar(),
       CONFIGURACION_ROLES_POR_DEFECTO,
       [],
-      { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'central2', 2: null, 3: null, 4: null, 5: null, 6: null } },
+      {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: { 1: 'central2', 2: null, 3: null, 4: null, 5: null, 6: null },
+      },
     );
 
     expect(resultado).toBe(true);
@@ -88,7 +91,10 @@ describe('puedeCrearPlantillaEquipo con líbero', () => {
       ordenValidoEstandar(),
       CONFIGURACION_ROLES_POR_DEFECTO,
       [],
-      { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: { 1: 'opuesto', 2: null, 3: null, 4: null, 5: null, 6: null } },
+      {
+        jugador: jugador('libero', 'libero'),
+        sustitutosPorRotacion: { 1: 'opuesto', 2: null, 3: null, 4: null, 5: null, 6: null },
+      },
     );
 
     expect(resultado).toBe(true);
@@ -102,7 +108,14 @@ describe('puedeCrearPlantillaEquipo con líbero', () => {
       [],
       {
         jugador: jugador('libero', 'libero'),
-        sustitutosPorRotacion: { 1: null, 2: null, 3: 'jugador-inexistente', 4: null, 5: null, 6: null },
+        sustitutosPorRotacion: {
+          1: null,
+          2: null,
+          3: 'jugador-inexistente',
+          4: null,
+          5: null,
+          6: null,
+        },
       },
     );
 

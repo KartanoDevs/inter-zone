@@ -1,5 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, output, signal, viewChild } from '@angular/core';
-import { PALETA_COLORES, Pista, type FichaAgarrada, type FichaComparada, type FichaVista } from '../pista/pista';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import {
+  PALETA_COLORES,
+  Pista,
+  type FichaAgarrada,
+  type FichaComparada,
+  type FichaVista,
+} from '../pista/pista';
 import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/paleta-jugadores';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
@@ -34,7 +49,9 @@ const RUTA_INSIGNIA: Readonly<Record<'bronce' | 'plata' | 'oro', string>> = {
 function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
   return items.map((item) => ({
     tipo: item.tipo,
-    etiquetas: item.jugadores.map((jugador) => etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO)),
+    etiquetas: item.jugadores.map((jugador) =>
+      etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+    ),
   }));
 }
 
@@ -47,7 +64,14 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
  */
 @Component({
   selector: 'app-examen-tablero',
-  imports: [Pista, PaletaJugadores, SelectorRotacion, PanelValidacion, DialogoConfirmacion, DialogoConfiguracionExamen],
+  imports: [
+    Pista,
+    PaletaJugadores,
+    SelectorRotacion,
+    PanelValidacion,
+    DialogoConfirmacion,
+    DialogoConfiguracionExamen,
+  ],
   templateUrl: './examen-tablero.html',
   styleUrl: './examen-tablero.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,7 +108,9 @@ export class ExamenTablero {
 
   private readonly pistaCmp = viewChild.required(Pista);
 
-  protected readonly opcionesSistema = computed(() => this.examen.catalogo().map((s) => ({ id: s.id, nombre: s.nombre, tipo: s.tipo })));
+  protected readonly opcionesSistema = computed(() =>
+    this.examen.catalogo().map((s) => ({ id: s.id, nombre: s.nombre, tipo: s.tipo })),
+  );
 
   /** Etiqueta de rol del titular examinado (o del líbero, spec 058), nunca su id crudo. */
   protected readonly etiquetaTitularActivo = computed(() => {
@@ -114,44 +140,46 @@ export class ExamenTablero {
    * o normal según corresponda, igual que en Edición. */
   protected readonly fichas = computed<readonly FichaVista[]>(() => {
     const correccion = this.examen.correccionRotacionActiva();
-    const idsEnFalta = new Set(correccion?.faltas.flatMap((f) => f.jugadores.map((j) => j.id)) ?? []);
-    const dadas = this.examen.dadosDeLaRotacion().map(
-      (c): FichaVista => ({
-        id: c.jugador.id,
-        punto: c.punto,
-        etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-        etiquetaPosicion: '',
-        estado: 'dada',
-        linea: 'delantera',
-        esLibero: c.jugador.rol === 'libero',
-        seleccionada: false,
-      }),
+    const idsEnFalta = new Set(
+      correccion?.faltas.flatMap((f) => f.jugadores.map((j) => j.id)) ?? [],
     );
-    const colocadas = this.examen.colocadosDeLaRotacion().map(
-      (c): FichaVista => ({
-        id: c.jugador.id,
-        punto: c.punto,
-        etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
-        etiquetaPosicion: '',
-        estado: idsEnFalta.has(c.jugador.id) ? 'falta' : 'normal',
-        linea: 'delantera',
-        esLibero: c.jugador.rol === 'libero',
-        seleccionada: false,
-      }),
-    );
+    const dadas = this.examen.dadosDeLaRotacion().map((c): FichaVista => ({
+      id: c.jugador.id,
+      punto: c.punto,
+      etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      etiquetaPosicion: '',
+      estado: 'dada',
+      linea: 'delantera',
+      esLibero: c.jugador.rol === 'libero',
+      seleccionada: false,
+    }));
+    const colocadas = this.examen.colocadosDeLaRotacion().map((c): FichaVista => ({
+      id: c.jugador.id,
+      punto: c.punto,
+      etiqueta: etiquetaDe(c.jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      etiquetaPosicion: '',
+      estado: idsEnFalta.has(c.jugador.id) ? 'falta' : 'normal',
+      linea: 'delantera',
+      esLibero: c.jugador.rol === 'libero',
+      seleccionada: false,
+    }));
     return [...dadas, ...colocadas];
   });
 
   /** Faltas de la rotación activa, ya traducidas para `PanelValidacion` (spec 057, E7): mismo
    * aviso que usa Edición, con los jugadores implicados. */
-  protected readonly infraccionesRotacion = computed<ItemValidacion[]>(() => itemsDe(this.examen.correccionRotacionActiva()?.faltas ?? []));
+  protected readonly infraccionesRotacion = computed<ItemValidacion[]>(() =>
+    itemsDe(this.examen.correccionRotacionActiva()?.faltas ?? []),
+  );
 
   protected readonly fichasComparadas = computed<readonly FichaComparada[]>(() =>
     this.comparando() ? this.examen.comparacionRotacionActiva() : [],
   );
 
   protected readonly pendientesChips = computed<readonly ChipJugador[]>(() =>
-    this.examen.pendientes().map((j) => ({ id: j.id, etiqueta: etiquetaDe(j, CONFIGURACION_ROLES_POR_DEFECTO) })),
+    this.examen
+      .pendientes()
+      .map((j) => ({ id: j.id, etiqueta: etiquetaDe(j, CONFIGURACION_ROLES_POR_DEFECTO) })),
   );
 
   /** Para el examen en curso: si la rotación activa ya se validó (spec 060) — no si se ve su
@@ -160,7 +188,9 @@ export class ExamenTablero {
 
   /** Texto corto del botón comparar del boletín (spec 059, móvil primero): el label dice qué
    * hace en dos palabras como mucho; la rotación con la que se compara va aparte, en pequeño. */
-  protected readonly textoComparar = computed(() => (this.comparando() ? 'Solo la mía' : 'Comparar'));
+  protected readonly textoComparar = computed(() =>
+    this.comparando() ? 'Solo la mía' : 'Comparar',
+  );
 
   protected seleccionarEquipo(equipo: 'masculino' | 'femenino'): void {
     this.examen.seleccionarEquipo(equipo);

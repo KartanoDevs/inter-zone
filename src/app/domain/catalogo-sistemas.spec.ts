@@ -33,7 +33,15 @@ function plantilla(): PlantillaEquipo {
 }
 
 function sistema(id: string, nombre: string, equipoId: EquipoId = 'masculino'): Sistema {
-  return { id, nombre, tipo: 'recepcion', equipoId, plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+  return {
+    id,
+    nombre,
+    tipo: 'recepcion',
+    equipoId,
+    plantilla: plantilla(),
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 function sistemaConLibero(id: string, nombre: string): Sistema {
@@ -49,13 +57,31 @@ function sistemaConLibero(id: string, nombre: string): Sistema {
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
-  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+  const sustitutosPorRotacion = {
+    1: sustituidoId,
+    2: sustituidoId,
+    3: sustituidoId,
+    4: sustituidoId,
+    5: sustituidoId,
+    6: sustituidoId,
+  };
+  return {
+    nombre: 'Equipo A',
+    ordenSaque: ordenConCentral2(),
+    libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
+  };
 }
 
 describe('crearSistema', () => {
   it('006-E1: crear un sistema de recepción se acepta', () => {
-    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), []);
+    const resultado = crearSistema(
+      's1',
+      'Recepción 5-1',
+      'recepcion',
+      'masculino',
+      plantilla(),
+      [],
+    );
 
     expect(resultado).not.toBeNull();
     expect(resultado?.tipo).toBe('recepcion');
@@ -76,7 +102,9 @@ describe('crearSistema', () => {
   it('006-E4: nombre duplicado dentro del mismo tipo y equipo se rechaza', () => {
     const existente = sistema('s1', 'Recepción 5-1');
 
-    const resultado = crearSistema('s2', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), [existente]);
+    const resultado = crearSistema('s2', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), [
+      existente,
+    ]);
 
     expect(resultado).toBeNull();
   });
@@ -159,7 +187,10 @@ describe('clonarSistema', () => {
       tipo: 'recepcion',
       equipoId: 'masculino',
       plantilla: plantilla(),
-      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }], 2: [{ jugador: colocador, punto: { x: 7, y: 1 } }] },
+      formaciones: {
+        1: [{ jugador: colocador, punto: { x: 8, y: 1 } }],
+        2: [{ jugador: colocador, punto: { x: 7, y: 1 } }],
+      },
       explicacionesRotacion: {},
     };
 
@@ -169,7 +200,10 @@ describe('clonarSistema', () => {
   });
 
   it('026-E2: el clon copia la descripción general', () => {
-    const original: Sistema = { ...sistema('s1', 'Original'), descripcion: 'Recepción a 3 en 5-1.' };
+    const original: Sistema = {
+      ...sistema('s1', 'Original'),
+      descripcion: 'Recepción a 3 en 5-1.',
+    };
 
     const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
 
@@ -180,7 +214,9 @@ describe('clonarSistema', () => {
     const [colocador] = plantilla().ordenSaque;
     const original: Sistema = {
       ...sistema('s1', 'Original'),
-      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Explicación del jugador' }] },
+      formaciones: {
+        1: [{ jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Explicación del jugador' }],
+      },
       explicacionesRotacion: { 1: 'Explicación de la rotación' },
     };
 
@@ -195,15 +231,23 @@ describe('clonarSistema', () => {
 
     const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
 
-    expect(resultado?.plantilla.libero?.sustitutosPorRotacion).toEqual(original.plantilla.libero?.sustitutosPorRotacion);
+    expect(resultado?.plantilla.libero?.sustitutosPorRotacion).toEqual(
+      original.plantilla.libero?.sustitutosPorRotacion,
+    );
   });
 
   it('026-E5: el clon es independiente, editarlo no toca el original', () => {
     const [colocador] = plantilla().ordenSaque;
-    const original: Sistema = { ...sistema('s1', 'Original'), formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } };
+    const original: Sistema = {
+      ...sistema('s1', 'Original'),
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
+    };
 
     const clon = clonarSistema(original, 's2', 'Original (copia)', [original])!;
-    const clonEditado = { ...clon, formaciones: { ...clon.formaciones, 1: [{ jugador: colocador, punto: { x: 1, y: 1 } }] } };
+    const clonEditado = {
+      ...clon,
+      formaciones: { ...clon.formaciones, 1: [{ jugador: colocador, punto: { x: 1, y: 1 } }] },
+    };
 
     expect(clonEditado.formaciones[1]?.[0]?.punto).toEqual({ x: 1, y: 1 });
     expect(original.formaciones[1]?.[0]?.punto).toEqual({ x: 8, y: 1 });
@@ -252,13 +296,25 @@ describe('ordenarCatalogo', () => {
 
     const resultado = ordenarCatalogo([defensaB, recepcionB, defensaA, recepcionA]);
 
-    expect(resultado.map((s) => s.nombre)).toEqual(['Recepción A', 'Recepción B', 'Defensa A', 'Defensa B']);
+    expect(resultado.map((s) => s.nombre)).toEqual([
+      'Recepción A',
+      'Recepción B',
+      'Defensa A',
+      'Defensa B',
+    ]);
   });
 });
 
 describe('crearSistema (spec 025)', () => {
   it('025-E11: un sistema creado a mano nace sin descripción', () => {
-    const resultado = crearSistema('s1', 'Recepción 5-1', 'recepcion', 'masculino', plantilla(), []);
+    const resultado = crearSistema(
+      's1',
+      'Recepción 5-1',
+      'recepcion',
+      'masculino',
+      plantilla(),
+      [],
+    );
 
     expect(resultado?.descripcion).toBeUndefined();
   });

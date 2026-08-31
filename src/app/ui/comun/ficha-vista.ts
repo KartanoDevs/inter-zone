@@ -33,7 +33,14 @@ export function esLineaDelantera(posicion: number): boolean {
 /** Índice de color de un puesto de defensa en la vista de conjunto (spec 023/038): fijo por
  * puesto, igual que hoy se deriva por rol — un color estable independiente de quién ocupe el
  * puesto en la realidad, porque en defensa ya no hay "quién". */
-export const INDICE_COLOR_POR_PUESTO: Readonly<Record<PuestoDefensa, number>> = { 1: 0, 2: 5, 3: 3, 4: 1, 5: 6, 6: 2 };
+export const INDICE_COLOR_POR_PUESTO: Readonly<Record<PuestoDefensa, number>> = {
+  1: 0,
+  2: 5,
+  3: 3,
+  4: 1,
+  5: 6,
+  6: 2,
+};
 
 // El índice de color de la vista de conjunto (spec 023) se deriva del mismo orden fijo de
 // roles que ya usan el banquillo y la leyenda de etiquetas — nunca se declara a mano, así que
@@ -61,7 +68,9 @@ export function idOcupanteDe(colocacion: ColocacionBorrador): string {
 /** La etiqueta de una colocación del borrador: derivada del rol en recepción (`etiquetaDe`), o
  * fija por puesto en defensa (spec 038, E12 — no depende de rol ni de plantilla). */
 export function etiquetaOcupanteDe(colocacion: ColocacionBorrador): string {
-  return 'jugador' in colocacion ? etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO) : ETIQUETA_PUESTO[colocacion.puesto];
+  return 'jugador' in colocacion
+    ? etiquetaDe(colocacion.jugador, CONFIGURACION_ROLES_POR_DEFECTO)
+    : ETIQUETA_PUESTO[colocacion.puesto];
 }
 
 /** Entrada de la leyenda de colores de la vista de conjunto (spec 023): qué color le tocó a

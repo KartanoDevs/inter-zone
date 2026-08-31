@@ -42,7 +42,10 @@
 
         <form
           class="app-perfil__form"
-          (submit)="$event.preventDefault(); guardarPerfil(nombreCampo.value, posicionCampo.value, dorsalCampo.value)"
+          (submit)="
+            $event.preventDefault();
+            guardarPerfil(nombreCampo.value, posicionCampo.value, dorsalCampo.value)
+          "
         >
           <label class="app-perfil__campo">
             Nombre o apodo
@@ -54,7 +57,9 @@
             <select #posicionCampo>
               <option value="" [selected]="!usuario.posicionFavorita">Sin elegir</option>
               @for (opcion of opcionesRol; track opcion.id) {
-                <option [value]="opcion.id" [selected]="opcion.id === usuario.posicionFavorita">{{ opcion.nombre }}</option>
+                <option [value]="opcion.id" [selected]="opcion.id === usuario.posicionFavorita">
+                  {{ opcion.nombre }}
+                </option>
               }
             </select>
           </label>
@@ -71,10 +76,18 @@
             <p class="app-perfil__exito">Perfil guardado.</p>
           }
 
-          <button type="submit" class="app-boton app-boton--primario" [disabled]="guardando()">Guardar</button>
+          <button type="submit" class="app-boton app-boton--primario" [disabled]="guardando()">
+            Guardar
+          </button>
         </form>
 
-        <button type="button" class="app-boton app-boton--secundario" (click)="abrirCambioContrasena()">Cambiar contraseña</button>
+        <button
+          type="button"
+          class="app-boton app-boton--secundario"
+          (click)="abrirCambioContrasena()"
+        >
+          Cambiar contraseña
+        </button>
       </div>
     } @else {
       <div id="app-perfil-panel-logros" role="tabpanel" aria-labelledby="app-perfil-tab-logros">
@@ -88,7 +101,10 @@
       <form
         id="app-perfil-form-contrasena"
         class="app-perfil__form"
-        (submit)="$event.preventDefault(); guardarContrasena(actualCampo.value, nuevaCampo.value, repetirCampo.value)"
+        (submit)="
+          $event.preventDefault();
+          guardarContrasena(actualCampo.value, nuevaCampo.value, repetirCampo.value)
+        "
       >
         <label class="app-perfil__campo">
           Contraseña actual
@@ -109,8 +125,20 @@
       </form>
 
       <ng-container acciones>
-        <button type="button" class="app-boton app-boton--secundario" (click)="cerrarCambioContrasena()">Cancelar</button>
-        <button type="submit" form="app-perfil-form-contrasena" class="app-boton app-boton--primario">Cambiar</button>
+        <button
+          type="button"
+          class="app-boton app-boton--secundario"
+          (click)="cerrarCambioContrasena()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          form="app-perfil-form-contrasena"
+          class="app-boton app-boton--primario"
+        >
+          Cambiar
+        </button>
       </ng-container>
     </app-modal>
   }

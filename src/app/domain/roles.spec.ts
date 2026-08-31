@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Jugador } from './modelos';
-import { CONFIGURACION_ROLES_POR_DEFECTO, esRolIdValido, etiquetaDe, validarConfiguracionRoles } from './roles';
+import {
+  CONFIGURACION_ROLES_POR_DEFECTO,
+  esRolIdValido,
+  etiquetaDe,
+  validarConfiguracionRoles,
+} from './roles';
 
 function jugador(id: string, rol: Jugador['rol'], indice?: 1 | 2): Jugador {
   return indice === undefined ? { id, rol } : { id, rol, indice };

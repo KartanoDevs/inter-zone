@@ -24,7 +24,9 @@ export interface ResumenDeMedallas {
 }
 
 function titularesDe(plantilla: PlantillaEquipo): readonly Jugador[] {
-  return plantilla.libero ? [...plantilla.ordenSaque, plantilla.libero.jugador] : plantilla.ordenSaque;
+  return plantilla.libero
+    ? [...plantilla.ordenSaque, plantilla.libero.jugador]
+    : plantilla.ordenSaque;
 }
 
 /** La etiqueta de puesto de un `titularId` de una insignia (spec 061): siempre desde la

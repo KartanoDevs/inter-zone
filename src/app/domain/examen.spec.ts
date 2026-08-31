@@ -34,14 +34,29 @@ function plantilla(): PlantillaEquipo {
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
-  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+  const sustitutosPorRotacion = {
+    1: sustituidoId,
+    2: sustituidoId,
+    3: sustituidoId,
+    4: sustituidoId,
+    5: sustituidoId,
+    6: sustituidoId,
+  };
+  return {
+    nombre: 'Equipo A',
+    ordenSaque: ordenValidoEstandar(),
+    libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
+  };
 }
 
 /** Spec 058-E5: el líbero está declarado pero nunca sustituye a nadie — caso degenerado. */
 function plantillaConLiberoQueNuncaJuega(): PlantillaEquipo {
   const sustitutosPorRotacion = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
-  return { nombre: 'Equipo A', ordenSaque: ordenValidoEstandar(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+  return {
+    nombre: 'Equipo A',
+    ordenSaque: ordenValidoEstandar(),
+    libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
+  };
 }
 
 const PUNTOS_LEGALES = [
@@ -236,9 +251,13 @@ describe('sePuedeExaminar', () => {
     // Formación de R1 con orden lateral invertido entre P4 y P3 (índices 3 y 2): falta a propósito.
     const formacionConFalta: Formacion = formacionEnRotacion(orden, 1).map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
-    const conFalta: Sistema = { ...sistema, formaciones: { ...sistema.formaciones, 1: formacionConFalta } };
+    const conFalta: Sistema = {
+      ...sistema,
+      formaciones: { ...sistema.formaciones, 1: formacionConFalta },
+    };
 
     expect(sePuedeExaminar(conFalta)).toBe(false);
   });
@@ -253,7 +272,8 @@ describe('faltasImputables', () => {
     const posiciones = formacionEnRotacion(orden, 1);
     const formacion: Formacion = posiciones.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
     // Le tocaba colocar a los tres de la línea delantera (examen por línea sobre central1).
     const jugadoresDelAlumno = [orden[3], orden[2], orden[1]];
@@ -271,7 +291,8 @@ describe('faltasImputables', () => {
     const posiciones = formacionEnRotacion(orden, 1);
     const formacion: Formacion = posiciones.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
     // Le tocaba colocar solo a central1 (examen por puesto).
     const jugadoresDelAlumno = [orden[3]];
@@ -289,7 +310,8 @@ describe('faltasImputables', () => {
     const posiciones = formacionEnRotacion(orden, 1);
     const formacion: Formacion = posiciones.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
     const jugadoresDelAlumno = [orden[5]];
 
@@ -384,7 +406,7 @@ describe('corregirExamen', () => {
     const sistema = sistemaConSeisFormaciones(plantilla());
     const examen = { tipo: 'sistema' as const };
     const orden = ordenValidoEstandar();
-    const entrega: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    const entrega: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>> = {};
     for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
       entrega[rotacion] = sistema.formaciones[rotacion]!;
     }
@@ -392,7 +414,8 @@ describe('corregirExamen', () => {
     const posicionesR1 = formacionEnRotacion(orden, 1);
     entrega[1] = posicionesR1.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
 
     const resultado = corregirExamen(examen, sistema, entrega);
@@ -410,7 +433,8 @@ describe('corregirExamen', () => {
     // falta), pero cada uno sigue a menos de 0,45 m (DISTANCIA_PERFECTA) de su punto del modelo.
     const entrega: Formacion = posicionesR1.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 1, y: 1 } : indice === 2 ? { x: 1.03, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 1, y: 1 } : indice === 2 ? { x: 1.03, y: 1 } : PUNTOS_LEGALES[indice],
     }));
 
     const resultado = corregirRotacion(examen, sistema, 1, entrega);
@@ -423,13 +447,21 @@ describe('corregirExamen', () => {
 
   it('013-E9: se supera el examen a partir de un siete, y cada tipo da su insignia', () => {
     const sistema = sistemaConSeisFormaciones(plantilla());
-    const entregaPerfecta: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    const entregaPerfecta: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>> = {};
     for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
       entregaPerfecta[rotacion] = sistema.formaciones[rotacion]!;
     }
 
-    const porPuesto = corregirExamen({ tipo: 'puesto', titularId: 'receptor1' }, sistema, entregaPerfecta);
-    const porLinea = corregirExamen({ tipo: 'linea', titularId: 'receptor1' }, sistema, entregaPerfecta);
+    const porPuesto = corregirExamen(
+      { tipo: 'puesto', titularId: 'receptor1' },
+      sistema,
+      entregaPerfecta,
+    );
+    const porLinea = corregirExamen(
+      { tipo: 'linea', titularId: 'receptor1' },
+      sistema,
+      entregaPerfecta,
+    );
     const porSistema = corregirExamen({ tipo: 'sistema' }, sistema, entregaPerfecta);
 
     expect(porPuesto.insignia).toBe('bronce');
@@ -440,7 +472,7 @@ describe('corregirExamen', () => {
   it('013-E10: con una falta en cualquiera de las seis rotaciones no hay insignia, aunque la nota llegue a siete', () => {
     const sistema = sistemaConSeisFormaciones(plantilla());
     const orden = ordenValidoEstandar();
-    const entrega: Partial<Record<1|2|3|4|5|6, Formacion>> = {};
+    const entrega: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>> = {};
     for (const rotacion of [1, 2, 3, 4, 5, 6] as const) {
       entrega[rotacion] = sistema.formaciones[rotacion]!;
     }
@@ -449,7 +481,8 @@ describe('corregirExamen', () => {
     const posicionesR1 = formacionEnRotacion(orden, 1);
     entrega[1] = posicionesR1.map((j, indice) => ({
       jugador: j,
-      punto: indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
+      punto:
+        indice === 3 ? { x: 4.5, y: 1 } : indice === 2 ? { x: 1, y: 1 } : PUNTOS_LEGALES[indice],
     }));
     const examen = { tipo: 'sistema' as const };
 

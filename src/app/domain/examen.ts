@@ -6,7 +6,8 @@ import { validarFormacion } from './validacion';
 
 export type TipoExamen = 'puesto' | 'linea' | 'sistema';
 
-export type Examen = { readonly tipo: 'puesto' | 'linea'; readonly titularId: string } | { readonly tipo: 'sistema' };
+export type Examen =
+  { readonly tipo: 'puesto' | 'linea'; readonly titularId: string } | { readonly tipo: 'sistema' };
 
 export type EntregaExamen = Readonly<Partial<Record<1 | 2 | 3 | 4 | 5 | 6, Formacion>>>;
 
@@ -23,7 +24,11 @@ export const NOTA_APROBADO = 7;
 const INDICES_DELANTERA = [3, 2, 1];
 const INDICES_ZAGA = [0, 4, 5];
 
-function jugadoresDesdeIndice(tipo: 'puesto' | 'linea', enPista: readonly Jugador[], indice: number): readonly Jugador[] {
+function jugadoresDesdeIndice(
+  tipo: 'puesto' | 'linea',
+  enPista: readonly Jugador[],
+  indice: number,
+): readonly Jugador[] {
   if (tipo === 'puesto') {
     return [enPista[indice]];
   }
@@ -31,7 +36,11 @@ function jugadoresDesdeIndice(tipo: 'puesto' | 'linea', enPista: readonly Jugado
   return indicesLinea.map((i) => enPista[i]);
 }
 
-export function jugadoresAColocar(examen: Examen, sistema: Sistema, rotacion: number): readonly Jugador[] {
+export function jugadoresAColocar(
+  examen: Examen,
+  sistema: Sistema,
+  rotacion: number,
+): readonly Jugador[] {
   if (examen.tipo === 'sistema') {
     return jugadoresEnPista(sistema.plantilla, rotacion);
   }
@@ -75,14 +84,23 @@ const TODAS_LAS_ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
 
 // Spec 057-E3/E4: qué rotaciones se examinan de verdad. Por sistema son siempre las seis; por
 // puesto o línea, solo aquellas en las que el titular examinado está físicamente en pista.
-export function rotacionesExaminables(examen: Examen, sistema: Sistema): readonly (1 | 2 | 3 | 4 | 5 | 6)[] {
+export function rotacionesExaminables(
+  examen: Examen,
+  sistema: Sistema,
+): readonly (1 | 2 | 3 | 4 | 5 | 6)[] {
   if (examen.tipo === 'sistema') {
     return TODAS_LAS_ROTACIONES;
   }
-  return TODAS_LAS_ROTACIONES.filter((rotacion) => jugadoresAColocar(examen, sistema, rotacion).length > 0);
+  return TODAS_LAS_ROTACIONES.filter(
+    (rotacion) => jugadoresAColocar(examen, sistema, rotacion).length > 0,
+  );
 }
 
-export function faltasImputables(jugadoresDelAlumno: readonly Jugador[], formacion: Formacion, posiciones: OrdenSaque): readonly Infraccion[] {
+export function faltasImputables(
+  jugadoresDelAlumno: readonly Jugador[],
+  formacion: Formacion,
+  posiciones: OrdenSaque,
+): readonly Infraccion[] {
   const idsAlumno = new Set(jugadoresDelAlumno.map((j) => j.id));
   const { infracciones } = validarFormacion(formacion, posiciones);
   return infracciones.filter((infraccion) => infraccion.jugadores.some((j) => idsAlumno.has(j.id)));
@@ -110,7 +128,12 @@ export interface CorreccionRotacion {
   readonly faltas: readonly Infraccion[];
 }
 
-export function corregirRotacion(examen: Examen, sistema: Sistema, rotacion: number, formacion: Formacion): CorreccionRotacion {
+export function corregirRotacion(
+  examen: Examen,
+  sistema: Sistema,
+  rotacion: number,
+  formacion: Formacion,
+): CorreccionRotacion {
   const jugadoresDelAlumno = jugadoresAColocar(examen, sistema, rotacion);
   const modelo = sistema.formaciones[rotacion as 1 | 2 | 3 | 4 | 5 | 6]!;
   const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
@@ -136,7 +159,11 @@ export interface CorreccionExamen {
   readonly insignia: Insignia | null;
 }
 
-export function corregirExamen(examen: Examen, sistema: Sistema, entrega: EntregaExamen): CorreccionExamen {
+export function corregirExamen(
+  examen: Examen,
+  sistema: Sistema,
+  entrega: EntregaExamen,
+): CorreccionExamen {
   // Spec 057-E5: la nota final es la media de las rotaciones examinadas, nunca de las seis — una
   // rotación fuera del examen (057-E3) no cuenta como cero, simplemente no entra en la media.
   const correcciones = rotacionesExaminables(examen, sistema).map((rotacion) => {

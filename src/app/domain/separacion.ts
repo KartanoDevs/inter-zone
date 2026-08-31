@@ -22,7 +22,11 @@ export function distancia(a: Punto, b: Punto): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-export function separarDeOtros(punto: Punto, otros: readonly Punto[], distanciaMinima: number): Punto {
+export function separarDeOtros(
+  punto: Punto,
+  otros: readonly Punto[],
+  distanciaMinima: number,
+): Punto {
   let resultado = punto;
   for (let pasada = 0; pasada < 3; pasada++) {
     for (const otro of otros) {

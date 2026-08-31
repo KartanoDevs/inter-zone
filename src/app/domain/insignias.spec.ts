@@ -23,7 +23,14 @@ function plantilla(): PlantillaEquipo {
 }
 
 function plantillaConLibero(): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: 'central1', 2: 'central1', 3: 'central1', 4: 'central1', 5: 'central1', 6: 'central1' };
+  const sustitutosPorRotacion = {
+    1: 'central1',
+    2: 'central1',
+    3: 'central1',
+    4: 'central1',
+    5: 'central1',
+    6: 'central1',
+  };
   return {
     nombre: 'Equipo A',
     ordenSaque: ordenValidoEstandar(),
@@ -31,7 +38,9 @@ function plantillaConLibero(): PlantillaEquipo {
   };
 }
 
-function insignia(datos: Partial<InsigniaGanada> & Pick<InsigniaGanada, 'sistemaId' | 'tipo' | 'titularId'>): InsigniaGanada {
+function insignia(
+  datos: Partial<InsigniaGanada> & Pick<InsigniaGanada, 'sistemaId' | 'tipo' | 'titularId'>,
+): InsigniaGanada {
   return { obtenidaEn: '2026-02-12T10:00:00.000Z', ...datos };
 }
 
@@ -59,7 +68,9 @@ describe('resumenDeMedallas', () => {
   });
 
   it('E2: superar el examen por puesto de un titular da el bronce de ese puesto y solo ese', () => {
-    const insignias = [insignia({ sistemaId: 'sistema-1', tipo: 'puesto', titularId: 'receptor1' })];
+    const insignias = [
+      insignia({ sistemaId: 'sistema-1', tipo: 'puesto', titularId: 'receptor1' }),
+    ];
 
     const resumen = resumenDeMedallas('sistema-1', plantilla(), insignias);
 
@@ -70,8 +81,18 @@ describe('resumenDeMedallas', () => {
 
   it('E3: varios puestos del mismo sistema acumulan varios bronces, en el orden en que se ganaron', () => {
     const insignias = [
-      insignia({ sistemaId: 'sistema-1', tipo: 'puesto', titularId: 'central1', obtenidaEn: '2026-01-10T09:00:00.000Z' }),
-      insignia({ sistemaId: 'sistema-1', tipo: 'puesto', titularId: 'receptor1', obtenidaEn: '2026-02-01T09:00:00.000Z' }),
+      insignia({
+        sistemaId: 'sistema-1',
+        tipo: 'puesto',
+        titularId: 'central1',
+        obtenidaEn: '2026-01-10T09:00:00.000Z',
+      }),
+      insignia({
+        sistemaId: 'sistema-1',
+        tipo: 'puesto',
+        titularId: 'receptor1',
+        obtenidaEn: '2026-02-01T09:00:00.000Z',
+      }),
     ];
 
     const resumen = resumenDeMedallas('sistema-1', plantilla(), insignias);
@@ -93,7 +114,12 @@ describe('resumenDeMedallas', () => {
 
   it('E5: el oro marca el sistema como dominado y guarda su fecha', () => {
     const insignias = [
-      insignia({ sistemaId: 'sistema-1', tipo: 'sistema', titularId: null, obtenidaEn: '2026-01-20T09:00:00.000Z' }),
+      insignia({
+        sistemaId: 'sistema-1',
+        tipo: 'sistema',
+        titularId: null,
+        obtenidaEn: '2026-01-20T09:00:00.000Z',
+      }),
     ];
 
     const resumen = resumenDeMedallas('sistema-1', plantilla(), insignias);

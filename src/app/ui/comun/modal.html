@@ -1,8 +1,16 @@
 <div class="app-modal-overlay" (click)="cerrar.emit()">
-  <div class="app-modal" [attr.role]="rol()" aria-modal="true" [attr.aria-label]="titulo()" (click)="$event.stopPropagation()">
+  <div
+    class="app-modal"
+    [attr.role]="rol()"
+    aria-modal="true"
+    [attr.aria-label]="titulo()"
+    (click)="$event.stopPropagation()"
+  >
     <div class="app-modal__cabecera">
       <h2 class="app-modal__titulo">{{ titulo() }}</h2>
-      <button type="button" class="app-modal__cerrar" aria-label="Cerrar" (click)="cerrar.emit()">×</button>
+      <button type="button" class="app-modal__cerrar" aria-label="Cerrar" (click)="cerrar.emit()">
+        ×
+      </button>
     </div>
     <div class="app-modal__cuerpo">
       <ng-content></ng-content>

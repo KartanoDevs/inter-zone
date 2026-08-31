@@ -1,13 +1,27 @@
 <div class="app-tablero">
-  <nav class="app-tablero__nav" [style.grid-template-columns]="'repeat(' + columnasNav() + ', 1fr)'" aria-label="Ventana">
-    <button type="button" [attr.aria-current]="ventana() === 'teoria' ? 'page' : null" (click)="irAVentana('teoria')">
+  <nav
+    class="app-tablero__nav"
+    [style.grid-template-columns]="'repeat(' + columnasNav() + ', 1fr)'"
+    aria-label="Ventana"
+  >
+    <button
+      type="button"
+      [attr.aria-current]="ventana() === 'teoria' ? 'page' : null"
+      (click)="irAVentana('teoria')"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4.5 5.2c2.3-1 4.9-1 7.5.4 2.6-1.4 5.2-1.4 7.5-.4v13.6c-2.3-1-4.9-1-7.5.4-2.6-1.4-5.2-1.4-7.5-.4z" />
+        <path
+          d="M4.5 5.2c2.3-1 4.9-1 7.5.4 2.6-1.4 5.2-1.4 7.5-.4v13.6c-2.3-1-4.9-1-7.5.4-2.6-1.4-5.2-1.4-7.5-.4z"
+        />
         <line x1="12" y1="5.6" x2="12" y2="19.2" />
       </svg>
       Teoría
     </button>
-    <button type="button" [attr.aria-current]="ventana() === 'examen' ? 'page' : null" (click)="irAVentana('examen')">
+    <button
+      type="button"
+      [attr.aria-current]="ventana() === 'examen' ? 'page' : null"
+      (click)="irAVentana('examen')"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4.2 21 8.6 12 13 3 8.6z" />
         <path d="M6.6 10.5v4.4c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1v-4.4" />
@@ -15,7 +29,11 @@
       </svg>
       Examen
     </button>
-    <button type="button" [attr.aria-current]="ventana() === 'cuenta' ? 'page' : null" (click)="irAVentana('cuenta')">
+    <button
+      type="button"
+      [attr.aria-current]="ventana() === 'cuenta' ? 'page' : null"
+      (click)="irAVentana('cuenta')"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="8.6" r="3.4" />
         <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
@@ -23,7 +41,11 @@
       Cuenta
     </button>
     @if (muestraPestanaEdicion()) {
-      <button type="button" [attr.aria-current]="ventana() === 'editor' ? 'page' : null" (click)="irAVentana('editor')">
+      <button
+        type="button"
+        [attr.aria-current]="ventana() === 'editor' ? 'page' : null"
+        (click)="irAVentana('editor')"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="3.6" y="4.4" width="16.8" height="13" rx="1.6" />
           <line x1="12" y1="17.4" x2="12" y2="20" />
@@ -49,7 +71,12 @@
           Admin
         </button>
         @if (dialAdminAbierto()) {
-          <button type="button" class="app-tablero__dial-admin-fondo" aria-label="Cerrar menú" (click)="dialAdminAbierto.set(false)"></button>
+          <button
+            type="button"
+            class="app-tablero__dial-admin-fondo"
+            aria-label="Cerrar menú"
+            (click)="dialAdminAbierto.set(false)"
+          ></button>
           <div class="app-tablero__dial-admin-menu" role="menu">
             @if (puedeEditar()) {
               <button type="button" role="menuitem" (click)="irAVentanaDesdeDial('editor')">
@@ -83,7 +110,10 @@
          salga de pantalla — que era justo el bug que `overflow: hidden` evitaba antes. -->
     <div class="app-tablero__central">
       <div class="app-tablero__cabecera">
-        <app-selector-equipo [equipoActivo]="store.equipoActivo()" (seleccionar)="elegirEquipo($event)"></app-selector-equipo>
+        <app-selector-equipo
+          [equipoActivo]="store.equipoActivo()"
+          (seleccionar)="elegirEquipo($event)"
+        ></app-selector-equipo>
         <app-barra-sistemas
           [sistemas]="opcionesSistema()"
           [sistemaActivoId]="store.sistemaActivoId()"
@@ -95,7 +125,11 @@
             class="app-tablero__validar"
             [class.app-tablero__validar--ok]="store.estadoActivo() === 'validado'"
             [attr.title]="store.estadoActivo() === 'validado' ? 'Quitar validación' : 'Validar'"
-            (click)="store.cambiarEstadoActivo(store.estadoActivo() === 'validado' ? 'borrador' : 'validado')"
+            (click)="
+              store.cambiarEstadoActivo(
+                store.estadoActivo() === 'validado' ? 'borrador' : 'validado'
+              )
+            "
           >
             @if (store.estadoActivo() === 'validado') {
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -113,7 +147,10 @@
       </div>
 
       @if (esDefensa()) {
-        <app-selector-caso [casoActivo]="store.casoActivo()" (seleccionar)="seleccionarCaso($event)"></app-selector-caso>
+        <app-selector-caso
+          [casoActivo]="store.casoActivo()"
+          (seleccionar)="seleccionarCaso($event)"
+        ></app-selector-caso>
         <app-selector-situacion
           [casoActivo]="store.casoActivo()"
           [situacionActiva]="store.situacionActiva()"
@@ -168,8 +205,15 @@
               </svg>
             </button>
           }
-          <app-speeddial [acciones]="accionesSistema()" (elegir)="elegirAccionSistema($event)"></app-speeddial>
-          <app-panel-validacion [completo]="completo()" [infracciones]="infracciones()" [avisos]="avisos()"></app-panel-validacion>
+          <app-speeddial
+            [acciones]="accionesSistema()"
+            (elegir)="elegirAccionSistema($event)"
+          ></app-speeddial>
+          <app-panel-validacion
+            [completo]="completo()"
+            [infracciones]="infracciones()"
+            [avisos]="avisos()"
+          ></app-panel-validacion>
         </div>
       </div>
 
@@ -181,9 +225,16 @@
           </svg>
           Vaciar
         </button>
-        <button type="button" class="app-boton app-boton--primario" [disabled]="!store.puedeGuardar()" (click)="pedirGuardado()">
+        <button
+          type="button"
+          class="app-boton app-boton--primario"
+          [disabled]="!store.puedeGuardar()"
+          (click)="pedirGuardado()"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z" />
+            <path
+              d="M5.6 4.5h9.6L19.5 8.8V18a1.5 1.5 0 0 1-1.5 1.5H5.6A1.5 1.5 0 0 1 4.1 18V6a1.5 1.5 0 0 1 1.5-1.5z"
+            />
             <polyline points="7.8,4.5 7.8,9.2 14.4,9.2 14.4,4.5" />
             <rect x="7.8" y="12.6" width="8.4" height="6.9" />
           </svg>
@@ -212,7 +263,10 @@
       <div class="app-tablero__tabpanel" role="tabpanel">
         @switch (tab()) {
           @case ('banquillo') {
-            <app-paleta-jugadores [pendientes]="pendientesChips()" (agarrar)="onAgarrarPaleta($event)"></app-paleta-jugadores>
+            <app-paleta-jugadores
+              [pendientes]="pendientesChips()"
+              (agarrar)="onAgarrarPaleta($event)"
+            ></app-paleta-jugadores>
           }
           @case ('ensenanza') {
             <app-panel-ensenanza
@@ -282,8 +336,12 @@
           (click)="seleccionarTab('ensenanza')"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z" />
-            <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z" />
+            <path
+              d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5z"
+            />
+            <path
+              d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z"
+            />
           </svg>
           Enseñanza
         </button>
@@ -292,7 +350,9 @@
           role="tab"
           [attr.aria-selected]="tab() === 'pintado'"
           [disabled]="!esDefensa()"
-          [attr.title]="esDefensa() ? null : 'El pintado de zonas solo existe en defensa (spec 024)'"
+          [attr.title]="
+            esDefensa() ? null : 'El pintado de zonas solo existe en defensa (spec 024)'
+          "
           (click)="seleccionarTab('pintado')"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -336,7 +396,9 @@
     <div class="app-tablero__cuenta">
       <app-perfil-cuenta></app-perfil-cuenta>
       <div class="app-tablero__cuenta-salir">
-        <button type="button" class="app-boton app-boton--secundario" (click)="salir()">Salir</button>
+        <button type="button" class="app-boton app-boton--secundario" (click)="salir()">
+          Salir
+        </button>
       </div>
     </div>
   }
@@ -346,7 +408,9 @@
   }
 
   @if (arrastre(); as a) {
-    <div class="app-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">{{ a.etiqueta }}</div>
+    <div class="app-tablero__fantasma" [style.left.px]="a.clientX" [style.top.px]="a.clientY">
+      {{ a.etiqueta }}
+    </div>
   }
 
   @if (confirmandoSalidaExamen()) {
@@ -394,8 +458,20 @@
 
   @if (dialogoSistema(); as modo) {
     <app-dialogo-sistema
-      [titulo]="modo === 'crear' ? 'Nuevo sistema' : modo === 'clonar' ? 'Clonar sistema' : 'Renombrar sistema'"
-      [nombreInicial]="modo === 'editar' ? (store.sistemaActivo()?.nombre ?? '') : modo === 'clonar' ? nombreClonSugerido() : ''"
+      [titulo]="
+        modo === 'crear'
+          ? 'Nuevo sistema'
+          : modo === 'clonar'
+            ? 'Clonar sistema'
+            : 'Renombrar sistema'
+      "
+      [nombreInicial]="
+        modo === 'editar'
+          ? (store.sistemaActivo()?.nombre ?? '')
+          : modo === 'clonar'
+            ? nombreClonSugerido()
+            : ''
+      "
       [mostrarTipo]="modo === 'crear'"
       [equipoInicial]="store.equipoActivo()"
       (confirmar)="confirmarDialogoSistema($event)"
@@ -419,7 +495,9 @@
       [mensaje]="
         esDefensa()
           ? 'Se quitarán de la pista los seis puestos de esta situación. No se puede deshacer.'
-          : ('Se quitarán de la pista los seis jugadores de R' + store.rotacionActiva() + '. No se puede deshacer.')
+          : 'Se quitarán de la pista los seis jugadores de R' +
+            store.rotacionActiva() +
+            '. No se puede deshacer.'
       "
       textoConfirmar="Vaciar"
       (confirmar)="confirmarVaciado()"
@@ -433,7 +511,7 @@
       [mensaje]="
         esDefensa()
           ? 'Se guardarán las posiciones actuales de esta situación.'
-          : ('Se guardarán las posiciones actuales de R' + store.rotacionActiva() + '.')
+          : 'Se guardarán las posiciones actuales de R' + store.rotacionActiva() + '.'
       "
       textoConfirmar="Guardar"
       [peligro]="false"

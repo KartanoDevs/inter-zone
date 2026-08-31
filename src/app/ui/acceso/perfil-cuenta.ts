@@ -13,7 +13,9 @@ interface OpcionRol {
   readonly nombre: string;
 }
 
-const OPCIONES_ROL: readonly OpcionRol[] = (Object.keys(CONFIGURACION_ROLES_POR_DEFECTO) as RolId[]).map((id) => ({
+const OPCIONES_ROL: readonly OpcionRol[] = (
+  Object.keys(CONFIGURACION_ROLES_POR_DEFECTO) as RolId[]
+).map((id) => ({
   id,
   nombre: CONFIGURACION_ROLES_POR_DEFECTO[id].nombre,
 }));
@@ -68,7 +70,11 @@ export class PerfilCuenta {
     return usuario.membresias.some((m) => m.rol === 'entrenador') ? 'Entrenador' : 'Usuario';
   });
 
-  protected async guardarPerfil(nombre: string, posicionFavorita: string, dorsal: string): Promise<void> {
+  protected async guardarPerfil(
+    nombre: string,
+    posicionFavorita: string,
+    dorsal: string,
+  ): Promise<void> {
     this.guardando.set(true);
     this.guardado.set(false);
     const exito = await this.acceso.actualizarPerfil({

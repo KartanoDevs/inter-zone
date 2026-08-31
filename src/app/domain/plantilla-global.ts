@@ -33,5 +33,8 @@ const ORDEN_TITULARES: OrdenSaque = [
 export const PLANTILLA_GLOBAL: PlantillaEquipo = {
   nombre: 'Equipo',
   ordenSaque: ORDEN_TITULARES,
-  libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion: sustitutosLiberoPorDefecto(ORDEN_TITULARES) },
+  libero: {
+    jugador: jugador('libero', 'libero'),
+    sustitutosPorRotacion: sustitutosLiberoPorDefecto(ORDEN_TITULARES),
+  },
 };

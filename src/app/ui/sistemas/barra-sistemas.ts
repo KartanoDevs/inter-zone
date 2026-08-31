@@ -27,7 +27,9 @@ export class BarraSistemas {
 
   readonly elegir = output<string>();
 
-  protected readonly sistemaActivo = computed(() => this.sistemas().find((sistema) => sistema.id === this.sistemaActivoId()) ?? null);
+  protected readonly sistemaActivo = computed(
+    () => this.sistemas().find((sistema) => sistema.id === this.sistemaActivoId()) ?? null,
+  );
 
   protected onElegir(evento: Event): void {
     const id = (evento.target as HTMLSelectElement).value;

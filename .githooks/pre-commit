@@ -1,0 +1,19 @@
+#!/bin/sh
+# Comprueba el formato de los ficheros staged antes de cada commit (spec de deuda técnica).
+# Se instala con `npm install` (script `prepare`) o a mano con `npm run hooks:install`,
+# copiándose a `.git/hooks/pre-commit` sin tocar los hooks de graphify.
+#
+# Si un fichero no pasa Prettier, el commit se aborta con la orden para arreglarlo.
+# Para saltárselo puntualmente: `git commit --no-verify`.
+
+FILES=$(git diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.js' '*.cjs' '*.mjs' '*.html' '*.css' '*.json' | tr '\n' ' ')
+[ -z "$FILES" ] && exit 0
+
+# shellcheck disable=SC2086
+if ! npx prettier --check $FILES; then
+  echo
+  echo "Prettier ha encontrado ficheros sin formatear. Arréglalos con:"
+  echo "  npm run format"
+  echo "y vuelve a añadirlos (git add) antes de commitear."
+  exit 1
+fi

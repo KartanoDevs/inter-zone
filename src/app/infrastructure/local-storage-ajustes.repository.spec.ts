@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LocalStorageAjustesRepository, type AlmacenClaveValor } from './local-storage-ajustes.repository';
+import {
+  LocalStorageAjustesRepository,
+  type AlmacenClaveValor,
+} from './local-storage-ajustes.repository';
 
 class AlmacenEnMemoria implements AlmacenClaveValor {
   private readonly valores = new Map<string, string>();
@@ -76,7 +79,10 @@ describe('LocalStorageAjustesRepository', () => {
     const almacen = new AlmacenEnMemoria();
     almacen.setItem(
       'interzone.ajustes',
-      JSON.stringify({ version: 2, data: { validacionDesactivada: true, ayudaPosicionDesactivada: true } }),
+      JSON.stringify({
+        version: 2,
+        data: { validacionDesactivada: true, ayudaPosicionDesactivada: true },
+      }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);
 
@@ -90,7 +96,11 @@ describe('LocalStorageAjustesRepository', () => {
       'interzone.ajustes',
       JSON.stringify({
         version: 3,
-        data: { validacionDesactivada: true, ayudaPosicionDesactivada: true, ordenRotacionCronologico: true },
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
+        },
       }),
     );
     const repositorio = new LocalStorageAjustesRepository(almacen);

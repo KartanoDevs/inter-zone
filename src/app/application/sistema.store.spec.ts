@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { ColocacionDefensa, EquipoId, EstadoSistema, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
-import { ConflictoDeEdicion, ErrorDelServidor, ErrorDeRed, type Ajustes, type AjustesRepository, type SistemaRepository } from '../domain/puertos';
+import type {
+  ColocacionDefensa,
+  EquipoId,
+  EstadoSistema,
+  Formacion,
+  Jugador,
+  OrdenSaque,
+  PlantillaEquipo,
+  Sistema,
+} from '../domain/modelos';
+import {
+  ConflictoDeEdicion,
+  ErrorDelServidor,
+  ErrorDeRed,
+  type Ajustes,
+  type AjustesRepository,
+  type SistemaRepository,
+} from '../domain/puertos';
 import { SistemaStore, type ColocacionBorrador } from './sistema.store';
 import { formacionDefensaPorDefecto } from '../domain/sistema-defensa-por-defecto';
 
@@ -10,7 +26,16 @@ function esDeJugador(c: ColocacionBorrador, id: string): boolean {
   return 'jugador' in c && c.jugador.id === id;
 }
 
-function colocacionDeJugador(borrador: readonly ColocacionBorrador[], id: string): { punto: { x: number; y: number }; celdas?: readonly { columna: number; fila: number }[]; explicacion?: string } | undefined {
+function colocacionDeJugador(
+  borrador: readonly ColocacionBorrador[],
+  id: string,
+):
+  | {
+      punto: { x: number; y: number };
+      celdas?: readonly { columna: number; fila: number }[];
+      explicacion?: string;
+    }
+  | undefined {
   const c = borrador.find((c) => esDeJugador(c, id));
   return c && 'jugador' in c ? c : undefined;
 }
@@ -35,12 +60,31 @@ function plantilla(): PlantillaEquipo {
 }
 
 function sistemaBase(id: string, nombre: string, equipoId: EquipoId = 'masculino'): Sistema {
-  return { id, nombre, tipo: 'recepcion', equipoId, plantilla: plantilla(), formaciones: {}, explicacionesRotacion: {} };
+  return {
+    id,
+    nombre,
+    tipo: 'recepcion',
+    equipoId,
+    plantilla: plantilla(),
+    formaciones: {},
+    explicacionesRotacion: {},
+  };
 }
 
 function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: sustituidoId, 2: sustituidoId, 3: sustituidoId, 4: sustituidoId, 5: sustituidoId, 6: sustituidoId };
-  return { nombre: 'Equipo A', ordenSaque: ordenConCentral2(), libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
+  const sustitutosPorRotacion = {
+    1: sustituidoId,
+    2: sustituidoId,
+    3: sustituidoId,
+    4: sustituidoId,
+    5: sustituidoId,
+    6: sustituidoId,
+  };
+  return {
+    nombre: 'Equipo A',
+    ordenSaque: ordenConCentral2(),
+    libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
+  };
 }
 
 function sistemaConLibero(id: string, nombre: string): Sistema {
@@ -58,7 +102,10 @@ function sistemaConLibero(id: string, nombre: string): Sistema {
 type Llamada =
   | { readonly metodo: 'crear'; readonly argumento: Sistema }
   | { readonly metodo: 'actualizar'; readonly argumento: Sistema }
-  | { readonly metodo: 'cambiarEstado'; readonly argumento: { readonly id: string; readonly estado: EstadoSistema } }
+  | {
+      readonly metodo: 'cambiarEstado';
+      readonly argumento: { readonly id: string; readonly estado: EstadoSistema };
+    }
   | { readonly metodo: 'borrar'; readonly argumento: string };
 
 /** Doble en memoria, granular (spec 031): un mapa por id en vez de un array reemplazado entero,
@@ -396,8 +443,12 @@ describe('SistemaStore', () => {
       const creado = await store.crear('5-1 recepción', 'recepcion', ['masculino', 'femenino']);
 
       expect(creado).toBe(true);
-      const enMasculino = store.sistemas().find((s) => s.equipoId === 'masculino' && s.nombre === '5-1 recepción');
-      const enFemenino = store.sistemas().find((s) => s.equipoId === 'femenino' && s.nombre === '5-1 recepción');
+      const enMasculino = store
+        .sistemas()
+        .find((s) => s.equipoId === 'masculino' && s.nombre === '5-1 recepción');
+      const enFemenino = store
+        .sistemas()
+        .find((s) => s.equipoId === 'femenino' && s.nombre === '5-1 recepción');
       expect(enMasculino).toBeDefined();
       expect(enFemenino).toBeDefined();
       expect(enMasculino!.id).not.toBe(enFemenino!.id);
@@ -422,7 +473,9 @@ describe('SistemaStore', () => {
 
       expect(creado).toBe(false);
       expect(store.sistemas().filter((s) => s.nombre === 'Dos')).toHaveLength(1); // solo la ya existente
-      expect(store.sistemas().some((s) => s.equipoId === 'masculino' && s.nombre === 'Dos')).toBe(false);
+      expect(store.sistemas().some((s) => s.equipoId === 'masculino' && s.nombre === 'Dos')).toBe(
+        false,
+      );
     });
 
     it('048-E4: el equipo activo tras crear es el del primer equipo marcado', async () => {
@@ -495,7 +548,10 @@ describe('SistemaStore', () => {
 
   it('026-E10: clonar el sistema activo deja el clon activo, en R1', async () => {
     const [colocador] = plantilla().ordenSaque;
-    const original: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] } };
+    const original: Sistema = {
+      ...sistemaBase('r1', 'Uno'),
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
+    };
     const store = new SistemaStore(new RepositorioFake([original]));
     await store.cargar();
     store.seleccionarRotacion(1);
@@ -514,9 +570,24 @@ describe('SistemaStore', () => {
       ...sistemaBase('d1', 'Defensa'),
       tipo: 'defensa',
       defensas: [
-        { caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: [{ puesto: 1, punto: { x: 1, y: 1 } }] },
-        { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: [{ puesto: 1, punto: { x: 2, y: 2 } }] },
-        { caso: 'trasero', situacion: 'pipe', bloqueadores: 1, formacion: [{ puesto: 1, punto: { x: 3, y: 3 } }] },
+        {
+          caso: 'delantero',
+          situacion: 'z4',
+          bloqueadores: 0,
+          formacion: [{ puesto: 1, punto: { x: 1, y: 1 } }],
+        },
+        {
+          caso: 'delantero',
+          situacion: 'z4',
+          bloqueadores: 2,
+          formacion: [{ puesto: 1, punto: { x: 2, y: 2 } }],
+        },
+        {
+          caso: 'trasero',
+          situacion: 'pipe',
+          bloqueadores: 1,
+          formacion: [{ puesto: 1, punto: { x: 3, y: 3 } }],
+        },
       ],
     };
     const store = new SistemaStore(new RepositorioFake([original]));
@@ -549,7 +620,9 @@ describe('SistemaStore', () => {
   });
 
   it('010-E7: borrar un sistema lo quita del catálogo y activa otro', async () => {
-    const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Recepción A'), sistemaBase('r2', 'Recepción B')]));
+    const store = new SistemaStore(
+      new RepositorioFake([sistemaBase('r1', 'Recepción A'), sistemaBase('r2', 'Recepción B')]),
+    );
     await store.cargar();
     store.activarSistema('r1');
 
@@ -568,11 +641,17 @@ describe('SistemaStore', () => {
     await store.cambiarEstadoActivo('validado');
 
     expect(store.sistemaActivo()?.estado).toBe('validado');
-    expect(repositorio.llamadas).toContainEqual({ metodo: 'cambiarEstado', argumento: { id: 'r1', estado: 'validado' } });
+    expect(repositorio.llamadas).toContainEqual({
+      metodo: 'cambiarEstado',
+      argumento: { id: 'r1', estado: 'validado' },
+    });
   });
 
   it('010-E8: sin jugador seleccionado, el panel muestra la explicación de la rotación', async () => {
-    const conExplicacion: Sistema = { ...sistemaBase('r1', 'Uno'), explicacionesRotacion: { 1: 'Explicación de la rotación' } };
+    const conExplicacion: Sistema = {
+      ...sistemaBase('r1', 'Uno'),
+      explicacionesRotacion: { 1: 'Explicación de la rotación' },
+    };
     const store = new SistemaStore(new RepositorioFake([conExplicacion]));
     await store.cargar();
 
@@ -583,7 +662,11 @@ describe('SistemaStore', () => {
     const [colocador] = plantilla().ordenSaque;
     const conJugadorExplicado: Sistema = {
       ...sistemaBase('r1', 'Uno'),
-      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Se esconde tras el opuesto' }] },
+      formaciones: {
+        1: [
+          { jugador: colocador, punto: { x: 8, y: 1 }, explicacion: 'Se esconde tras el opuesto' },
+        ],
+      },
     };
     const store = new SistemaStore(new RepositorioFake([conJugadorExplicado]));
     await store.cargar();
@@ -622,7 +705,9 @@ describe('SistemaStore', () => {
 
     await store.guardarExplicacion('Explicación nueva de la rotación');
 
-    expect(store.sistemaActivo()?.explicacionesRotacion[1]).toBe('Explicación nueva de la rotación');
+    expect(store.sistemaActivo()?.explicacionesRotacion[1]).toBe(
+      'Explicación nueva de la rotación',
+    );
   });
 
   it('010-E13b: editar el texto con un jugador seleccionado lo guarda como explicación suya', async () => {
@@ -637,7 +722,9 @@ describe('SistemaStore', () => {
 
     await store.guardarExplicacion('Explicación nueva del jugador');
 
-    const colocacion = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === colocador.id);
+    const colocacion = store
+      .sistemaActivo()
+      ?.formaciones[1]?.find((c) => c.jugador.id === colocador.id);
     expect(colocacion?.explicacion).toBe('Explicación nueva del jugador');
   });
 
@@ -649,7 +736,10 @@ describe('SistemaStore', () => {
   });
 
   it('025 (aplicación): la descripción del sistema activo se lee del store', async () => {
-    const conDescripcion: Sistema = { ...sistemaBase('r1', 'Uno'), descripcion: 'Recepción a 3 en 5-1.' };
+    const conDescripcion: Sistema = {
+      ...sistemaBase('r1', 'Uno'),
+      descripcion: 'Recepción a 3 en 5-1.',
+    };
     const store = new SistemaStore(new RepositorioFake([conDescripcion]));
     await store.cargar();
 
@@ -737,7 +827,10 @@ describe('SistemaStore', () => {
     });
 
     it('038-E5: cambiar de caso sin cambios pendientes carga lo guardado en la nueva combinación', async () => {
-      const sistemaDefensa: Sistema = { ...sistemaDefensaVacio(), defensas: [{ caso: 'trasero', situacion: 'z3', bloqueadores: 0, formacion: [puesto3] }] };
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'trasero', situacion: 'z3', bloqueadores: 0, formacion: [puesto3] }],
+      };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
       store.seleccionarSituacion('z3');
@@ -776,10 +869,16 @@ describe('SistemaStore', () => {
 
       store.colocarOMover('p3', { x: 1, y: 1 });
       expect(store.borrador()).toHaveLength(6);
-      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)).toEqual({ puesto: 3, punto: { x: 1, y: 1 } });
+      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)).toEqual({
+        puesto: 3,
+        punto: { x: 1, y: 1 },
+      });
 
       store.colocarOMover('p3', { x: 2, y: 2 });
-      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)).toEqual({ puesto: 3, punto: { x: 2, y: 2 } });
+      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)).toEqual({
+        puesto: 3,
+        punto: { x: 2, y: 2 },
+      });
 
       store.quitar('p3');
       expect(store.borrador()).toHaveLength(5);
@@ -787,7 +886,10 @@ describe('SistemaStore', () => {
     });
 
     it('038 (vaciar): vaciar la situación activa la deja sin ningún puesto, sin afectar a otras', async () => {
-      const sistemaDefensa: Sistema = { ...sistemaDefensaVacio(), defensas: [{ caso: 'delantero', situacion: 'z3', bloqueadores: 0, formacion: [puesto3] }] };
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'delantero', situacion: 'z3', bloqueadores: 0, formacion: [puesto3] }],
+      };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
       store.seleccionarSituacion('z3');
@@ -820,7 +922,9 @@ describe('SistemaStore', () => {
 
       await store.guardar();
 
-      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      const variante = store
+        .sistemaActivo()
+        ?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
       expect(variante?.formacion).toEqual(store.borrador());
       expect(store.hayCambiosSinGuardar()).toBe(false);
     });
@@ -838,7 +942,10 @@ describe('SistemaStore', () => {
       expect(store.casoActivo()).toBe('trasero');
       expect(store.cambioPendiente()).toBeNull();
       expect(store.borrador()).toHaveLength(6);
-      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)?.punto).not.toEqual({ x: 1, y: 1 });
+      expect(store.borrador().find((c) => 'puesto' in c && c.puesto === 3)?.punto).not.toEqual({
+        x: 1,
+        y: 1,
+      });
     });
 
     it('039-E2: cada número de bloqueadores guarda su propia colocación, sin arrastrar nada de otra', async () => {
@@ -852,8 +959,16 @@ describe('SistemaStore', () => {
       otraFormacion.forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
       await store.guardar();
 
-      const variante0 = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 0);
-      const variante2 = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 2);
+      const variante0 = store
+        .sistemaActivo()
+        ?.defensas?.find(
+          (v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 0,
+        );
+      const variante2 = store
+        .sistemaActivo()
+        ?.defensas?.find(
+          (v) => v.caso === 'delantero' && v.situacion === 'z4' && v.bloqueadores === 2,
+        );
       expect(variante0?.formacion[0].punto).toEqual({ x: 4.5, y: 4.5 });
       expect(variante2?.formacion[0].punto).toEqual({ x: 1, y: 1 });
     });
@@ -861,7 +976,9 @@ describe('SistemaStore', () => {
     it('039-E3 (corregido por 042): cambiar a un número de bloqueadores nunca guardado vuelve a la postura por defecto de la situación, no la variante de 2', async () => {
       const sistemaDefensa: Sistema = {
         ...sistemaDefensaVacio(),
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() }],
+        defensas: [
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -891,7 +1008,10 @@ describe('SistemaStore', () => {
 
     it('042-E3: una variante ya guardada muestra lo guardado, no el defecto', async () => {
       // Mismo caso que 038-E5, con el foco puesto en que NO aparece la defensa de referencia.
-      const sistemaDefensa: Sistema = { ...sistemaDefensaVacio(), defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: [puesto3] }] };
+      const sistemaDefensa: Sistema = {
+        ...sistemaDefensaVacio(),
+        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: [puesto3] }],
+      };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
 
@@ -922,7 +1042,9 @@ describe('SistemaStore', () => {
     it('049-E12: una variante guardada no se ve afectada por el defecto por número de bloqueadores', async () => {
       const sistemaDefensa: Sistema = {
         ...sistemaDefensaVacio(),
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() }],
+        defensas: [
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -934,7 +1056,9 @@ describe('SistemaStore', () => {
     it('049-E13: ninguna variante hereda la colocación guardada de otra — la de 3 bloqueadores sin guardar muestra el defecto, no la de 2 ya guardada', async () => {
       const sistemaDefensa: Sistema = {
         ...sistemaDefensaVacio(),
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() }],
+        defensas: [
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 2, formacion: seisPuestosEnCentro() },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -983,14 +1107,24 @@ describe('SistemaStore', () => {
 
       await store.guardar();
 
-      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      const variante = store
+        .sistemaActivo()
+        ?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
       expect(variante?.desplazamientoSombra).toEqual({ x: 1, y: 0.5 });
     });
 
     it('040-E11: al recargar el contexto, el desplazamiento guardado se recupera', async () => {
       const sistemaDefensa: Sistema = {
         ...sistemaDefensaVacio(),
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: seisPuestosEnCentro(), desplazamientoSombra: { x: 0.5, y: -0.2 } }],
+        defensas: [
+          {
+            caso: 'delantero',
+            situacion: 'z4',
+            bloqueadores: 0,
+            formacion: seisPuestosEnCentro(),
+            desplazamientoSombra: { x: 0.5, y: -0.2 },
+          },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
 
@@ -1002,7 +1136,15 @@ describe('SistemaStore', () => {
     it('040-E13: recentrar descarta el retoque; guardar de nuevo lo borra de la variante', async () => {
       const sistemaDefensa: Sistema = {
         ...sistemaDefensaVacio(),
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: seisPuestosEnCentro(), desplazamientoSombra: { x: 0.5, y: -0.2 } }],
+        defensas: [
+          {
+            caso: 'delantero',
+            situacion: 'z4',
+            bloqueadores: 0,
+            formacion: seisPuestosEnCentro(),
+            desplazamientoSombra: { x: 0.5, y: -0.2 },
+          },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -1012,7 +1154,9 @@ describe('SistemaStore', () => {
 
       await store.guardar();
 
-      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      const variante = store
+        .sistemaActivo()
+        ?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
       expect(variante?.desplazamientoSombra).toBeUndefined();
     });
   });
@@ -1072,8 +1216,12 @@ describe('SistemaStore', () => {
       store.pintarCelda(receptor1.id, { columna: 2, fila: 2 });
 
       const formacion = store.borrador();
-      expect(colocacionDeJugador(formacion, colocador.id)?.celdas).toEqual([{ columna: 2, fila: 2 }]);
-      expect(colocacionDeJugador(formacion, receptor1.id)?.celdas).toEqual([{ columna: 2, fila: 2 }]);
+      expect(colocacionDeJugador(formacion, colocador.id)?.celdas).toEqual([
+        { columna: 2, fila: 2 },
+      ]);
+      expect(colocacionDeJugador(formacion, receptor1.id)?.celdas).toEqual([
+        { columna: 2, fila: 2 },
+      ]);
     });
 
     it('mover un jugador con celdas pintadas conserva sus celdas', async () => {
@@ -1096,7 +1244,15 @@ describe('SistemaStore', () => {
       const [colocador] = plantilla().ordenSaque;
       const sistema: Sistema = {
         ...sistemaBase('r1', 'Uno'),
-        formaciones: { 1: [{ jugador: colocador, punto: { x: 1, y: 1 }, explicacion: 'Se esconde tras el opuesto' }] },
+        formaciones: {
+          1: [
+            {
+              jugador: colocador,
+              punto: { x: 1, y: 1 },
+              explicacion: 'Se esconde tras el opuesto',
+            },
+          ],
+        },
       };
       const store = new SistemaStore(new RepositorioFake([sistema]));
       await store.cargar();
@@ -1122,14 +1278,19 @@ describe('SistemaStore', () => {
         punto: puntosLegalesR1[indice],
         ...(indice === 0 ? { celdas: [] } : {}),
       }));
-      const sistema: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: formacionInicial } };
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: formacionInicial },
+      };
       const store = new SistemaStore(new RepositorioFake([sistema]));
       await store.cargar();
       store.pintarCelda(orden[0].id, { columna: 16, fila: 16 });
 
       await store.guardar();
 
-      const guardado = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
+      const guardado = store
+        .sistemaActivo()
+        ?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
       expect(guardado?.celdas).toEqual([{ columna: 16, fila: 16 }]);
     });
 
@@ -1159,7 +1320,9 @@ describe('SistemaStore', () => {
       const sistemaDefensa: Sistema = {
         ...sistemaBase('d1', 'Defensa'),
         tipo: 'defensa',
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: formacionInicial }],
+        defensas: [
+          { caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: formacionInicial },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -1167,7 +1330,9 @@ describe('SistemaStore', () => {
 
       await store.guardar();
 
-      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      const variante = store
+        .sistemaActivo()
+        ?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
       const guardado = variante?.formacion.find((c) => c.puesto === 1);
       expect(guardado?.celdas).toEqual([{ columna: 9, fila: 9 }]);
     });
@@ -1200,13 +1365,18 @@ describe('SistemaStore', () => {
         punto: puntosLegalesR1[indice],
         ...(indice === 0 ? { celdas: [{ columna: 16, fila: 16 }] } : {}),
       }));
-      const sistema: Sistema = { ...sistemaBase('r1', 'Uno'), formaciones: { 1: formacionConCeldas } };
+      const sistema: Sistema = {
+        ...sistemaBase('r1', 'Uno'),
+        formaciones: { 1: formacionConCeldas },
+      };
       const store = new SistemaStore(new RepositorioFake([sistema]));
       await store.cargar();
 
       await store.guardar();
 
-      const guardado = store.sistemaActivo()?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
+      const guardado = store
+        .sistemaActivo()
+        ?.formaciones[1]?.find((c) => c.jugador.id === orden[0].id);
       expect(guardado?.celdas).toEqual([{ columna: 16, fila: 16 }]);
     });
 
@@ -1263,13 +1433,18 @@ describe('SistemaStore', () => {
       const sistemaDefensa: Sistema = { ...sistemaBase('d1', 'Defensa'), tipo: 'defensa' };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
-      const puestos: ColocacionDefensa[] = ([1, 2, 3, 4, 5, 6] as const).map((puesto) => ({ puesto, punto: { x: 4.5, y: 4.5 } }));
+      const puestos: ColocacionDefensa[] = ([1, 2, 3, 4, 5, 6] as const).map((puesto) => ({
+        puesto,
+        punto: { x: 4.5, y: 4.5 },
+      }));
       puestos.forEach((c) => store.colocarOMover(`p${c.puesto}`, c.punto));
       store.seleccionarJugador('p1');
 
       await store.guardar();
 
-      const variante = store.sistemaActivo()?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
+      const variante = store
+        .sistemaActivo()
+        ?.defensas?.find((v) => v.caso === 'delantero' && v.situacion === 'z4');
       const guardado = variante?.formacion.find((c) => c.puesto === 1);
       expect(guardado?.celdas).toBeUndefined();
     });
@@ -1282,7 +1457,14 @@ describe('SistemaStore', () => {
       const sistemaDefensa: Sistema = {
         ...sistemaBase('d1', 'Defensa'),
         tipo: 'defensa',
-        defensas: [{ caso: 'delantero', situacion: 'z4', bloqueadores: 0, formacion: [{ puesto: 1, punto: { x: 1, y: 1 }, celdas: celdasGuardadas }] }],
+        defensas: [
+          {
+            caso: 'delantero',
+            situacion: 'z4',
+            bloqueadores: 0,
+            formacion: [{ puesto: 1, punto: { x: 1, y: 1 }, celdas: celdasGuardadas }],
+          },
+        ],
       };
       const store = new SistemaStore(new RepositorioFake([sistemaDefensa]));
       await store.cargar();
@@ -1319,7 +1501,12 @@ describe('SistemaStore', () => {
       const cColocador = colocacionDeJugador(store.borrador(), colocador.id)!;
       const cReceptor1 = colocacionDeJugador(store.borrador(), receptor1.id)!;
       expect(cColocador.punto).toEqual({ x: 4.5, y: 4.5 });
-      expect(Math.hypot(cReceptor1.punto.x - cColocador.punto.x, cReceptor1.punto.y - cColocador.punto.y)).toBeCloseTo(0.9, 6);
+      expect(
+        Math.hypot(
+          cReceptor1.punto.x - cColocador.punto.x,
+          cReceptor1.punto.y - cColocador.punto.y,
+        ),
+      ).toBeCloseTo(0.9, 6);
     });
 
     it('046: sin nadie cerca, colocarOMover no desplaza el punto pedido', async () => {
@@ -1464,12 +1651,18 @@ describe('SistemaStore', () => {
 
     it('044-E8: cambiar la escala la persiste a través de AjustesRepository', async () => {
       const ajustesRepositorio = new AjustesRepositorioFake();
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]), ajustesRepositorio);
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('r1', 'Uno')]),
+        ajustesRepositorio,
+      );
       await store.cargar();
 
       await store.cambiarEscalaSombra(8);
 
-      const store2 = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]), ajustesRepositorio);
+      const store2 = new SistemaStore(
+        new RepositorioFake([sistemaBase('r1', 'Uno')]),
+        ajustesRepositorio,
+      );
       await store2.cargar();
       expect(store2.escalaSombra()).toBe(8);
     });
@@ -1514,7 +1707,9 @@ describe('SistemaStore', () => {
 
       await store.guardar();
 
-      expect(repositorio.llamadas).toEqual([{ metodo: 'actualizar', argumento: expect.objectContaining({ id: 'r1' }) }]);
+      expect(repositorio.llamadas).toEqual([
+        { metodo: 'actualizar', argumento: expect.objectContaining({ id: 'r1' }) },
+      ]);
     });
 
     it('031-E2: crear un sistema no reescribe los que ya existían', async () => {
@@ -1524,7 +1719,9 @@ describe('SistemaStore', () => {
 
       await store.crear('Recepción nueva', 'recepcion', ['masculino']);
 
-      expect(repositorio.llamadas).toEqual([{ metodo: 'crear', argumento: expect.objectContaining({ nombre: 'Recepción nueva' }) }]);
+      expect(repositorio.llamadas).toEqual([
+        { metodo: 'crear', argumento: expect.objectContaining({ nombre: 'Recepción nueva' }) },
+      ]);
     });
 
     it('031-E3: borrar un sistema no reescribe los que quedan', async () => {
@@ -1561,7 +1758,9 @@ describe('SistemaStore', () => {
     });
 
     it('031-E6: al terminar de cargar, el catálogo ya está completo', async () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Recepción A'), sistemaBase('r2', 'Recepción B')]));
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('r1', 'Recepción A'), sistemaBase('r2', 'Recepción B')]),
+      );
       expect(store.sistemas()).toEqual([]);
 
       await store.cargar();
@@ -1584,7 +1783,12 @@ describe('SistemaStore', () => {
 
       const clonado = await store.clonar('Dos renombrado (copia)');
       expect(clonado).toBe(true);
-      expect(store.catalogo().map((s) => s.nombre).sort()).toEqual(['Dos renombrado', 'Dos renombrado (copia)', 'Uno'].sort());
+      expect(
+        store
+          .catalogo()
+          .map((s) => s.nombre)
+          .sort(),
+      ).toEqual(['Dos renombrado', 'Dos renombrado (copia)', 'Uno'].sort());
 
       const idClon = store.sistemaActivoId()!;
       await store.borrar(idClon);
@@ -1596,7 +1800,10 @@ describe('SistemaStore', () => {
   describe('spec 032 — cada sistema pertenece a un equipo', () => {
     it('032-E5: el catálogo solo muestra los sistemas del equipo activo', async () => {
       const store = new SistemaStore(
-        new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino'), sistemaBase('f1', 'Recepción F', 'femenino')]),
+        new RepositorioFake([
+          sistemaBase('m1', 'Recepción M', 'masculino'),
+          sistemaBase('f1', 'Recepción F', 'femenino'),
+        ]),
       );
 
       await store.cargar();
@@ -1606,7 +1813,10 @@ describe('SistemaStore', () => {
 
     it('032-E6: cambiar de equipo activa el primero del catálogo del equipo nuevo', async () => {
       const store = new SistemaStore(
-        new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino'), sistemaBase('f1', 'Recepción F', 'femenino')]),
+        new RepositorioFake([
+          sistemaBase('m1', 'Recepción M', 'masculino'),
+          sistemaBase('f1', 'Recepción F', 'femenino'),
+        ]),
       );
       await store.cargar();
 
@@ -1618,7 +1828,9 @@ describe('SistemaStore', () => {
     });
 
     it('032-E6b: cambiar a un equipo sin sistemas no deja ninguno activo', async () => {
-      const store = new SistemaStore(new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino')]));
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('m1', 'Recepción M', 'masculino')]),
+      );
       await store.cargar();
 
       store.seleccionarEquipo('femenino');
@@ -1641,7 +1853,10 @@ describe('SistemaStore', () => {
 
     it('032-E7b: confirmar el cambio pendiente de equipo lo aplica y descarta los cambios', async () => {
       const store = new SistemaStore(
-        new RepositorioFake([sistemaBase('m1', 'Uno', 'masculino'), sistemaBase('f1', 'Dos', 'femenino')]),
+        new RepositorioFake([
+          sistemaBase('m1', 'Uno', 'masculino'),
+          sistemaBase('f1', 'Dos', 'femenino'),
+        ]),
       );
       await store.cargar();
       const [colocador] = plantilla().ordenSaque;
@@ -1705,7 +1920,9 @@ describe('SistemaStore', () => {
     ];
 
     function colocarFormacionValida(store: SistemaStore): void {
-      plantilla().ordenSaque.forEach((jugador, indice) => store.colocarOMover(jugador.id, puntosLegalesR1[indice]));
+      plantilla().ordenSaque.forEach((jugador, indice) =>
+        store.colocarOMover(jugador.id, puntosLegalesR1[indice]),
+      );
     }
 
     it('034-E5: si guardar falla, el borrador sigue ahí, sin persistirse', async () => {
@@ -1799,7 +2016,12 @@ describe('SistemaStore', () => {
       await flushPromesas();
 
       expect(store.errorGuardado()).toBeNull();
-      expect(store.catalogo().map((s) => s.nombre).sort()).toEqual(['Dos', 'Uno']);
+      expect(
+        store
+          .catalogo()
+          .map((s) => s.nombre)
+          .sort(),
+      ).toEqual(['Dos', 'Uno']);
 
       repositorio.fallarProximaVez(new ErrorDeRed('sin conexion'));
       const idNuevo = store.sistemaActivoId()!;

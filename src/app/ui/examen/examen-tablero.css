@@ -95,7 +95,11 @@
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: radial-gradient(circle at 50% 40%, rgba(255, 213, 74, 0.22), rgba(255, 213, 74, 0.04) 70%);
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(255, 213, 74, 0.22),
+    rgba(255, 213, 74, 0.04) 70%
+  );
 }
 
 .app-examen__medalla-grande img {

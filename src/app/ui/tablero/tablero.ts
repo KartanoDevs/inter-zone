@@ -1,5 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { PALETA_COLORES, PUNTO_POR_SITUACION, Pista, type CeldaConjunto, type FichaAgarrada, type FichaVista } from '../pista/pista';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import {
+  PALETA_COLORES,
+  PUNTO_POR_SITUACION,
+  Pista,
+  type CeldaConjunto,
+  type FichaAgarrada,
+  type FichaVista,
+} from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorCaso } from '../rotaciones/selector-caso';
 import { SelectorSituacion } from '../rotaciones/selector-situacion';
@@ -16,7 +30,11 @@ import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { PanelAjustes } from '../ajustes/panel-ajustes';
 import { AccesoStore } from '../../application/acceso.store';
 import { ExamenStore } from '../../application/examen.store';
-import { SistemaStore, type ColocacionBorrador, type RotacionValida } from '../../application/sistema.store';
+import {
+  SistemaStore,
+  type ColocacionBorrador,
+  type RotacionValida,
+} from '../../application/sistema.store';
 import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { ExamenTablero } from '../examen/examen-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
@@ -127,12 +145,18 @@ function distancia(a: Punto, b: Punto): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-function distanciaPantalla(a: { clientX: number; clientY: number }, b: { clientX: number; clientY: number }): number {
+function distanciaPantalla(
+  a: { clientX: number; clientY: number },
+  b: { clientX: number; clientY: number },
+): number {
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
 
 /** Ver docs/arquitectura.md: con fichas solapadas, se busca la más cercana al punto real del toque. */
-function colocacionMasCercana(formacion: readonly ColocacionBorrador[], punto: Punto): ColocacionBorrador | null {
+function colocacionMasCercana(
+  formacion: readonly ColocacionBorrador[],
+  punto: Punto,
+): ColocacionBorrador | null {
   return formacion.reduce<ColocacionBorrador | null>((mejor, actual) => {
     if (!mejor || distancia(actual.punto, punto) < distancia(mejor.punto, punto)) {
       return actual;
@@ -141,7 +165,10 @@ function colocacionMasCercana(formacion: readonly ColocacionBorrador[], punto: P
   }, null);
 }
 
-function estadoDe(resultado: ResultadoValidacion | null, jugadorId: string): 'falta' | 'aviso' | 'normal' {
+function estadoDe(
+  resultado: ResultadoValidacion | null,
+  jugadorId: string,
+): 'falta' | 'aviso' | 'normal' {
   if (!resultado) {
     return 'normal';
   }
@@ -157,7 +184,9 @@ function estadoDe(resultado: ResultadoValidacion | null, jugadorId: string): 'fa
 function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
   return items.map((item) => ({
     tipo: item.tipo,
-    etiquetas: item.jugadores.map((jugador) => etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO)),
+    etiquetas: item.jugadores.map((jugador) =>
+      etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+    ),
   }));
 }
 
@@ -225,7 +254,9 @@ export class Tablero {
 
   /** Teoría, Examen y Cuenta siempre están; Edición se suma si tiene pestaña propia y Admin si
    * es admin (el dial ocupa una sola columna) — nunca un hueco vacío en el nav. */
-  protected readonly columnasNav = computed(() => 3 + (this.muestraPestanaEdicion() ? 1 : 0) + (this.esAdmin() ? 1 : 0));
+  protected readonly columnasNav = computed(
+    () => 3 + (this.muestraPestanaEdicion() ? 1 : 0) + (this.esAdmin() ? 1 : 0),
+  );
 
   /** Si el dial de Admin está desplegado (mejora posterior a la 054): abre Edición y Lista
    * blanca, mismo patrón de abrir/cerrar que `Speeddial` pero sin acoplarse a él, porque ese
@@ -295,7 +326,6 @@ export class Tablero {
    * pinta cada muestra con `var(paletaColores[indiceColor])`. */
   protected readonly paletaColores = PALETA_COLORES;
 
-
   private readonly pistaCmp = viewChild.required(Pista);
 
   protected readonly completo = computed(() => this.store.borrador().length === 6);
@@ -310,8 +340,12 @@ export class Tablero {
     return mapa;
   });
 
-  protected readonly infracciones = computed(() => itemsDe(this.store.resultadoValidacion()?.infracciones ?? []));
-  protected readonly avisos = computed(() => itemsDe(this.store.resultadoValidacion()?.avisos ?? []));
+  protected readonly infracciones = computed(() =>
+    itemsDe(this.store.resultadoValidacion()?.infracciones ?? []),
+  );
+  protected readonly avisos = computed(() =>
+    itemsDe(this.store.resultadoValidacion()?.avisos ?? []),
+  );
 
   /** En defensa un puesto delantero se pinta en línea delantera y el resto en zaga (spec 038,
    * E12): es fijo por puesto, no depende de ninguna rotación. En recepción sigue derivándose de
@@ -358,7 +392,9 @@ export class Tablero {
   /** El índice de color de una colocación del borrador: por rol en recepción, fijo por puesto en
    * defensa (spec 038) — igual de estable, porque en defensa ya no hay "quién" que lo derive. */
   private indiceColorDeColocacion(colocacion: ColocacionBorrador): number {
-    return 'jugador' in colocacion ? indiceColorDe(colocacion.jugador) : INDICE_COLOR_POR_PUESTO[colocacion.puesto];
+    return 'jugador' in colocacion
+      ? indiceColorDe(colocacion.jugador)
+      : INDICE_COLOR_POR_PUESTO[colocacion.puesto];
   }
 
   /** Índice de color del ocupante seleccionado (spec 024): qué zona de `celdasVistaConjunto` se
@@ -379,7 +415,10 @@ export class Tablero {
     const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
     for (const colocacion of this.store.borrador()) {
       const indice = this.indiceColorDeColocacion(colocacion);
-      const celdas = idOcupanteDe(colocacion) === seleccionadoId ? this.store.celdasJugadorSeleccionado() : (colocacion.celdas ?? []);
+      const celdas =
+        idOcupanteDe(colocacion) === seleccionadoId
+          ? this.store.celdasJugadorSeleccionado()
+          : (colocacion.celdas ?? []);
       for (const celda of celdas) {
         const clave = `${celda.columna},${celda.fila}`;
         const existente = porClave.get(clave);
@@ -390,7 +429,11 @@ export class Tablero {
         }
       }
     }
-    return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
+    return [...porClave.values()].map((c) => ({
+      columna: c.columna,
+      fila: c.fila,
+      indicesColor: c.indices,
+    }));
   });
 
   /** Las celdas de zona de finta de la formación activa (spec 041): mismo agregado que
@@ -410,7 +453,11 @@ export class Tablero {
         }
       }
     }
-    return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
+    return [...porClave.values()].map((c) => ({
+      columna: c.columna,
+      fila: c.fila,
+      indicesColor: c.indices,
+    }));
   });
 
   /** Leyenda de la vista de conjunto: los seis, con o sin zona pintada (spec 023, E2). */
@@ -440,7 +487,10 @@ export class Tablero {
     return posiciones
       .filter((jugador) => !colocadosIds.has(jugador.id))
       .sort((a, b) => claveOrdenRol(a.rol, a.indice) - claveOrdenRol(b.rol, b.indice))
-      .map((jugador) => ({ id: jugador.id, etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO) }));
+      .map((jugador) => ({
+        id: jugador.id,
+        etiqueta: etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      }));
   });
 
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
@@ -452,7 +502,8 @@ export class Tablero {
     return orden.map((rotacion) => {
       const formacion = sistema.formaciones[rotacion] ?? [];
       const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
-      const tieneFalta = formacion.length === 6 && validarFormacion(formacion, posiciones).infracciones.length > 0;
+      const tieneFalta =
+        formacion.length === 6 && validarFormacion(formacion, posiciones).infracciones.length > 0;
       return { rotacion, tieneFalta };
     });
   });
@@ -460,7 +511,9 @@ export class Tablero {
   protected readonly esDefensa = computed(() => this.store.sistemaActivo()?.tipo === 'defensa');
 
   /** La situación inicial no admite variantes de bloqueo (spec 039, E4): siempre 0. */
-  protected readonly admiteBloqueadores = computed(() => this.esDefensa() && this.store.situacionActiva() !== 'inicial');
+  protected readonly admiteBloqueadores = computed(
+    () => this.esDefensa() && this.store.situacionActiva() !== 'inicial',
+  );
 
   /** Qué números de bloqueadores ya tienen una variante guardada para el (caso, situación)
    * activos (spec 039, E7) — el selector distingue las creadas de las vacías. */
@@ -470,7 +523,9 @@ export class Tablero {
       return [];
     }
     return (sistema.defensas ?? [])
-      .filter((v) => v.caso === this.store.casoActivo() && v.situacion === this.store.situacionActiva())
+      .filter(
+        (v) => v.caso === this.store.casoActivo() && v.situacion === this.store.situacionActiva(),
+      )
       .map((v) => v.bloqueadores);
   });
 
@@ -483,18 +538,32 @@ export class Tablero {
     if (!this.esDefensa()) {
       return [];
     }
-    const puntoAtacante = this.arrastreAtacante() ?? PUNTO_POR_SITUACION[this.store.situacionActiva()];
+    const puntoAtacante =
+      this.arrastreAtacante() ?? PUNTO_POR_SITUACION[this.store.situacionActiva()];
     if (!puntoAtacante) {
       return [];
     }
-    const puestosBloqueadores = puestosQueBloquean(this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[], this.store.bloqueadoresActivos());
+    const puestosBloqueadores = puestosQueBloquean(
+      this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[],
+      this.store.bloqueadoresActivos(),
+    );
     const puntosBloqueadores = puestosBloqueadores
-      .map((puesto) => (this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[]).find((c) => c.puesto === puesto)?.punto)
+      .map(
+        (puesto) =>
+          (this.store.borrador() as readonly { puesto: PuestoDefensa; punto: Punto }[]).find(
+            (c) => c.puesto === puesto,
+          )?.punto,
+      )
       .filter((p): p is Punto => p !== undefined);
     // El tope del dial (10) sale un 25% más ancho que el real calculado por el dominio, no el
     // 100% exacto; el resto de la escala se reparte proporcionalmente (spec 044/045).
     const escala = (this.store.escalaSombra() / 10) * 1.25;
-    return sombraDeBloqueo(puntoAtacante, puntosBloqueadores, this.store.desplazamientoSombraEdicion() ?? undefined, escala);
+    return sombraDeBloqueo(
+      puntoAtacante,
+      puntosBloqueadores,
+      this.store.desplazamientoSombraEdicion() ?? undefined,
+      escala,
+    );
   });
 
   /** Punto bajo el puntero mientras se arrastra la ficha "A" (spec 040, E3): la sombra se
@@ -502,9 +571,10 @@ export class Tablero {
    * y encaja en su punto canónico al soltar — nunca se persiste una posición libre (ADR 0020). */
   protected readonly arrastreAtacante = signal<Punto | null>(null);
 
-
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
-    this.store.catalogo().map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
+    this.store
+      .catalogo()
+      .map((sistema) => ({ id: sistema.id, nombre: sistema.nombre, tipo: sistema.tipo })),
   );
 
   /** Acciones del Speeddial: renombrar/clonar/borrar solo tienen sentido con un sistema activo
@@ -516,11 +586,19 @@ export class Tablero {
       { id: 'crear', etiqueta: 'Nuevo sistema', icono: 'nuevo' },
       { id: 'renombrar', etiqueta: 'Renombrar', icono: 'lapiz', deshabilitada: !haySistema },
       { id: 'clonar', etiqueta: 'Clonar', icono: 'clonar', deshabilitada: !haySistema },
-      { id: 'borrar', etiqueta: 'Borrar', icono: 'papelera', peligro: true, deshabilitada: !haySistema },
+      {
+        id: 'borrar',
+        etiqueta: 'Borrar',
+        icono: 'papelera',
+        peligro: true,
+        deshabilitada: !haySistema,
+      },
     ];
   });
 
-  protected readonly tituloDescripcionSistema = computed(() => `Sistema · ${this.store.sistemaActivo()?.nombre ?? ''}`);
+  protected readonly tituloDescripcionSistema = computed(
+    () => `Sistema · ${this.store.sistemaActivo()?.nombre ?? ''}`,
+  );
 
   /** Nombre sugerido al abrir el diálogo de clonar (spec 026, E7): «‹Nombre del original›
    * (copia)», editable antes de confirmar. */
@@ -665,7 +743,12 @@ export class Tablero {
     if (!jugador) {
       return;
     }
-    this.iniciarArrastre(chip.id, etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO), chip.evento, 'paleta');
+    this.iniciarArrastre(
+      chip.id,
+      etiquetaDe(jugador, CONFIGURACION_ROLES_POR_DEFECTO),
+      chip.evento,
+      'paleta',
+    );
   }
 
   /** Pulsar la pestaña ya activa pliega el panel en vez de no hacer nada — así el entrenador
@@ -721,11 +804,18 @@ export class Tablero {
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
     const borrador = this.store.borrador();
     const punto = this.pistaCmp().puntoDesde(agarrada.evento);
-    const colocacion = colocacionMasCercana(borrador, punto) ?? borrador.find((c) => idOcupanteDe(c) === agarrada.id);
+    const colocacion =
+      colocacionMasCercana(borrador, punto) ??
+      borrador.find((c) => idOcupanteDe(c) === agarrada.id);
     if (!colocacion) {
       return;
     }
-    this.iniciarArrastre(idOcupanteDe(colocacion), etiquetaOcupanteDe(colocacion), agarrada.evento, 'pista');
+    this.iniciarArrastre(
+      idOcupanteDe(colocacion),
+      etiquetaOcupanteDe(colocacion),
+      agarrada.evento,
+      'pista',
+    );
   }
 
   /**
@@ -737,11 +827,18 @@ export class Tablero {
   protected onAgarrarRival(evento: PointerEvent): void {
     evento.preventDefault();
     this.pistaCmp().capturarPuntero(evento);
-    this.arrastre.set({ jugadorId: '__rival__', etiqueta: 'Atacante', clientX: evento.clientX, clientY: evento.clientY });
+    this.arrastre.set({
+      jugadorId: '__rival__',
+      etiqueta: 'Atacante',
+      clientX: evento.clientX,
+      clientY: evento.clientY,
+    });
     this.arrastreAtacante.set(acotarPuntoRival(this.pistaCmp().puntoDesde(evento)));
 
     const mover = (e: PointerEvent): void => {
-      this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
+      this.arrastre.update((actual) =>
+        actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual,
+      );
       // La sombra se recalcula en vivo desde el punto bajo el puntero (spec 040, E3); la ficha
       // solo encaja en su punto canónico al soltar, nunca se persiste una posición libre.
       this.arrastreAtacante.set(acotarPuntoRival(this.pistaCmp().puntoDesde(e)));
@@ -867,8 +964,12 @@ export class Tablero {
       if (modo === null) {
         // spec 041: en modo finta se compara contra sus propias celdas, sin bloque por defecto.
         const celdasActuales =
-          this.store.modoPintado() === 'finta' ? this.store.celdasFintaJugadorSeleccionado() : this.store.celdasJugadorSeleccionado();
-        const yaPintada = celdasActuales.some((c) => c.columna === celda.columna && c.fila === celda.fila);
+          this.store.modoPintado() === 'finta'
+            ? this.store.celdasFintaJugadorSeleccionado()
+            : this.store.celdasJugadorSeleccionado();
+        const yaPintada = celdasActuales.some(
+          (c) => c.columna === celda.columna && c.fila === celda.fila,
+        );
         modo = yaPintada ? 'borrar' : 'pintar';
       }
       aplicar(celda);
@@ -934,7 +1035,12 @@ export class Tablero {
     this.store.guardar();
   }
 
-  private iniciarArrastre(jugadorId: string, etiqueta: string, evento: PointerEvent, origen: 'paleta' | 'pista'): void {
+  private iniciarArrastre(
+    jugadorId: string,
+    etiqueta: string,
+    evento: PointerEvent,
+    origen: 'paleta' | 'pista',
+  ): void {
     evento.preventDefault();
     const inicio = { clientX: evento.clientX, clientY: evento.clientY };
     this.pistaCmp().capturarPuntero(evento);
@@ -958,7 +1064,10 @@ export class Tablero {
       }
     };
 
-    const temporizador = window.setTimeout(() => armar(inicio.clientX, inicio.clientY), RETARDO_ARRASTRE_MS);
+    const temporizador = window.setTimeout(
+      () => armar(inicio.clientX, inicio.clientY),
+      RETARDO_ARRASTRE_MS,
+    );
 
     const mover = (e: PointerEvent): void => {
       if (!armado && distanciaPantalla(inicio, e) > UMBRAL_ARRASTRE_PX) {
@@ -967,7 +1076,9 @@ export class Tablero {
       if (!armado) {
         return;
       }
-      this.arrastre.update((actual) => (actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual));
+      this.arrastre.update((actual) =>
+        actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual,
+      );
       if (origen === 'pista' && this.pistaCmp().contiene(e)) {
         this.store.colocarOMover(jugadorId, acotarPunto(this.pistaCmp().puntoDesde(e)));
       }

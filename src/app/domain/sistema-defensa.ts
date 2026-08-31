@@ -1,4 +1,13 @@
-import type { CasoColocador, ColocacionDefensa, FormacionDefensa, NumeroBloqueadores, Punto, PuestoDefensa, SituacionDefensa, Sistema } from './modelos';
+import type {
+  CasoColocador,
+  ColocacionDefensa,
+  FormacionDefensa,
+  NumeroBloqueadores,
+  Punto,
+  PuestoDefensa,
+  SituacionDefensa,
+  Sistema,
+} from './modelos';
 
 const PUESTOS = [1, 2, 3, 4, 5, 6] as const;
 const PUESTOS_DELANTEROS: readonly PuestoDefensa[] = [2, 3, 4];
@@ -34,7 +43,16 @@ export function guardarVarianteDefensa(
   const otras = (sistema.defensas ?? []).filter(
     (v) => !(v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores),
   );
-  const defensas = [...otras, { caso, situacion, bloqueadores, formacion, ...(desplazamientoSombra ? { desplazamientoSombra } : {}) }];
+  const defensas = [
+    ...otras,
+    {
+      caso,
+      situacion,
+      bloqueadores,
+      formacion,
+      ...(desplazamientoSombra ? { desplazamientoSombra } : {}),
+    },
+  ];
   return { ...sistema, defensas };
 }
 
@@ -42,9 +60,15 @@ export function guardarVarianteDefensa(
  * E9-E11): los `n` más cercanos a la red (menor `y`), sin llegar nunca a más puestos delanteros
  * de los que estén colocados en el campo. Un puesto que se ha descolgado a la línea de 3 metros
  * o más allá deja de contar (E10) — la cercanía a la red decide, no una etiqueta fija. */
-export function puestosQueBloquean(formacion: FormacionDefensa, bloqueadores: NumeroBloqueadores): readonly PuestoDefensa[] {
+export function puestosQueBloquean(
+  formacion: FormacionDefensa,
+  bloqueadores: NumeroBloqueadores,
+): readonly PuestoDefensa[] {
   const candidatos = formacion
-    .filter((c): c is ColocacionDefensa => PUESTOS_DELANTEROS.includes(c.puesto) && c.punto.y < LIMITE_LINEA_TRES_METROS)
+    .filter(
+      (c): c is ColocacionDefensa =>
+        PUESTOS_DELANTEROS.includes(c.puesto) && c.punto.y < LIMITE_LINEA_TRES_METROS,
+    )
     .sort((a, b) => a.punto.y - b.punto.y);
   return candidatos.slice(0, bloqueadores).map((c) => c.puesto);
 }
@@ -61,7 +85,9 @@ export function explicarVariante(
 ): Sistema {
   const explicacion = texto.trim().length === 0 ? undefined : texto;
   const defensas = (sistema.defensas ?? []).map((v) =>
-    v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores ? { ...v, explicacion } : v,
+    v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores
+      ? { ...v, explicacion }
+      : v,
   );
   return { ...sistema, defensas };
 }
@@ -76,14 +102,20 @@ export function explicarPuesto(
   puesto: PuestoDefensa,
   texto: string,
 ): Sistema | null {
-  const variante = sistema.defensas?.find((v) => v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores);
+  const variante = sistema.defensas?.find(
+    (v) => v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores,
+  );
   if (!variante?.formacion.some((c) => c.puesto === puesto)) {
     return null;
   }
   const explicacion = texto.trim().length === 0 ? undefined : texto;
-  const nuevaFormacion = variante.formacion.map((c) => (c.puesto === puesto ? { ...c, explicacion } : c));
+  const nuevaFormacion = variante.formacion.map((c) =>
+    c.puesto === puesto ? { ...c, explicacion } : c,
+  );
   const defensas = sistema.defensas!.map((v) =>
-    v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores ? { ...v, formacion: nuevaFormacion } : v,
+    v.caso === caso && v.situacion === situacion && v.bloqueadores === bloqueadores
+      ? { ...v, formacion: nuevaFormacion }
+      : v,
   );
   return { ...sistema, defensas };
 }

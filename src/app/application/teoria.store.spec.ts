@@ -21,7 +21,12 @@ function ordenSaque(): OrdenSaque {
 
 const PLANTILLA: PlantillaEquipo = { nombre: 'Equipo', ordenSaque: ordenSaque() };
 
-function sistema(id: string, nombre: string, equipoId: EquipoId, opciones: Partial<Sistema> = {}): Sistema {
+function sistema(
+  id: string,
+  nombre: string,
+  equipoId: EquipoId,
+  opciones: Partial<Sistema> = {},
+): Sistema {
   return {
     id,
     nombre,
@@ -135,7 +140,9 @@ describe('TeoriaStore', () => {
 
     teoria.seleccionarEquipo('masculino');
     teoria.activarSistema(null);
-    const soloFemenino = crearTeoriaStore([sistema('v2', 'De femenino', 'femenino', { estado: 'validado' })]);
+    const soloFemenino = crearTeoriaStore([
+      sistema('v2', 'De femenino', 'femenino', { estado: 'validado' }),
+    ]);
     soloFemenino.seleccionarEquipo('masculino');
     expect(soloFemenino.sistemaActivoId()).toBeNull();
   });

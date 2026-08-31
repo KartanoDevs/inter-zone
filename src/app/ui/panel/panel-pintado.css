@@ -26,7 +26,9 @@
   color: var(--text-muted);
   cursor: pointer;
   background: var(--bg-card-alt);
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .app-pintado__segmentado label svg {
@@ -97,7 +99,10 @@
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 600;
-  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
 }
 
 .app-pintado__modo button::before {
@@ -111,7 +116,11 @@
 }
 
 .app-pintado__modo button:last-child::before {
-  background-image: radial-gradient(circle at 2.8px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 8.4px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 2.8px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px), radial-gradient(circle at 8.4px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px);
+  background-image:
+    radial-gradient(circle at 2.8px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px),
+    radial-gradient(circle at 8.4px 2.8px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px),
+    radial-gradient(circle at 2.8px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px),
+    radial-gradient(circle at 8.4px 8.4px, rgba(5, 6, 16, 0.9) 1.2px, transparent 1.3px);
   background-color: currentColor;
   opacity: 1;
 }

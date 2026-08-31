@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { EquipoId, Formacion, Jugador, OrdenSaque, PlantillaEquipo, Sistema } from '../domain/modelos';
+import type {
+  EquipoId,
+  Formacion,
+  Jugador,
+  OrdenSaque,
+  PlantillaEquipo,
+  Sistema,
+} from '../domain/modelos';
 import type { InsigniasRepository, SistemaRepository } from '../domain/puertos';
 import { formacionEnRotacion, jugadoresEnPista } from '../domain/rotacion';
 import { SistemaStore } from './sistema.store';
@@ -32,7 +39,10 @@ const PUNTOS_LEGALES = [
 ];
 
 function formacionLegalPara(orden: OrdenSaque, rotacion: number): Formacion {
-  return formacionEnRotacion(orden, rotacion).map((j, indice) => ({ jugador: j, punto: PUNTOS_LEGALES[indice] }));
+  return formacionEnRotacion(orden, rotacion).map((j, indice) => ({
+    jugador: j,
+    punto: PUNTOS_LEGALES[indice],
+  }));
 }
 
 function sistemaExaminable(id: string, equipoId: EquipoId = 'masculino'): Sistema {
@@ -56,7 +66,14 @@ function sistemaExaminable(id: string, equipoId: EquipoId = 'masculino'): Sistem
  * la interfaz ya solo ofrece este caso). No sustituye en las rotaciones donde central2 juega de
  * delantero — `jugadoresEnPista` ignora la declaración fuera de zaga. */
 function plantillaConLiberoQueSustituyeACentral2(): PlantillaEquipo {
-  const sustitutosPorRotacion = { 1: 'central2', 2: 'central2', 3: 'central2', 4: 'central2', 5: 'central2', 6: 'central2' };
+  const sustitutosPorRotacion = {
+    1: 'central2',
+    2: 'central2',
+    3: 'central2',
+    4: 'central2',
+    5: 'central2',
+    6: 'central2',
+  };
   return { ...PLANTILLA, libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion } };
 }
 
@@ -70,10 +87,17 @@ function plantillaConLiberoQueNuncaJuega(): PlantillaEquipo {
  * (`jugadoresEnPista`), no del orden de saque a secas — necesario cuando la plantilla tiene
  * líbero, para que la formación coincida con la que exige `sePuedeExaminar`. */
 function formacionLegalConLibero(plantillaEquipo: PlantillaEquipo, rotacion: number): Formacion {
-  return jugadoresEnPista(plantillaEquipo, rotacion).map((j, indice) => ({ jugador: j, punto: PUNTOS_LEGALES[indice] }));
+  return jugadoresEnPista(plantillaEquipo, rotacion).map((j, indice) => ({
+    jugador: j,
+    punto: PUNTOS_LEGALES[indice],
+  }));
 }
 
-function sistemaExaminableConPlantilla(id: string, plantillaEquipo: PlantillaEquipo, equipoId: EquipoId = 'masculino'): Sistema {
+function sistemaExaminableConPlantilla(
+  id: string,
+  plantillaEquipo: PlantillaEquipo,
+  equipoId: EquipoId = 'masculino',
+): Sistema {
   const formaciones: Record<number, Formacion> = {};
   for (const r of [1, 2, 3, 4, 5, 6]) {
     formaciones[r] = formacionLegalConLibero(plantillaEquipo, r);
@@ -98,7 +122,10 @@ const REPOSITORIO_SISTEMAS_SIN_USAR: SistemaRepository = {
   borrar: async () => {},
 };
 
-function crearExamenStore(sistemas: readonly Sistema[], insigniasRepositorio?: InsigniasRepository): ExamenStore {
+function crearExamenStore(
+  sistemas: readonly Sistema[],
+  insigniasRepositorio?: InsigniasRepository,
+): ExamenStore {
   const sistemaStore = new SistemaStore(REPOSITORIO_SISTEMAS_SIN_USAR);
   sistemaStore.sistemas.set(sistemas);
   const insignias: InsigniasRepository = insigniasRepositorio ?? {
@@ -125,7 +152,10 @@ function colocarLineaConFalta(examen: ExamenStore, sistema: Sistema): void {
 describe('ExamenStore', () => {
   it('012-E6/E7 (catálogo): solo aparecen sistemas de recepción examinables', () => {
     const examinable = sistemaExaminable('ok');
-    const incompleto: Sistema = { ...sistemaExaminable('incompleto'), formaciones: { 1: examinable.formaciones[1] } };
+    const incompleto: Sistema = {
+      ...sistemaExaminable('incompleto'),
+      formaciones: { 1: examinable.formaciones[1] },
+    };
     const examen = crearExamenStore([examinable, incompleto]);
 
     expect(examen.catalogo().map((s) => s.id)).toEqual(['ok']);
@@ -329,7 +359,9 @@ describe('ExamenStore', () => {
     for (const r of rotaciones) {
       examen.seleccionarRotacion(r);
       for (const colocacion of examen.jugadoresDelAlumno()) {
-        const puntoIdeal = sistema.formaciones[r]!.find((c) => c.jugador.id === colocacion.id)!.punto;
+        const puntoIdeal = sistema.formaciones[r]!.find(
+          (c) => c.jugador.id === colocacion.id,
+        )!.punto;
         examen.colocar(colocacion.id, puntoIdeal);
       }
     }
@@ -393,7 +425,10 @@ describe('ExamenStore', () => {
     enRegla.seleccionarTitular('central1');
     enRegla.empezarExamen();
     for (const c of enRegla.jugadoresDelAlumno()) {
-      enRegla.colocar(c.id, sistema.formaciones[enRegla.rotacionActiva()]!.find((x) => x.jugador.id === c.id)!.punto);
+      enRegla.colocar(
+        c.id,
+        sistema.formaciones[enRegla.rotacionActiva()]!.find((x) => x.jugador.id === c.id)!.punto,
+      );
     }
     enRegla.confirmarRotacion();
 
@@ -434,7 +469,7 @@ describe('ExamenStore', () => {
     const rotacion = examen.rotacionesExaminablesActuales()[0];
     examen.seleccionarRotacion(rotacion);
     expect(examen.correccionRotacionActiva()?.faltas.length ?? 0).toBeGreaterThan(0);
-    expect((examen.correccionesPorRotacion()[rotacion]?.faltas.length ?? 0)).toBeGreaterThan(0);
+    expect(examen.correccionesPorRotacion()[rotacion]?.faltas.length ?? 0).toBeGreaterThan(0);
   });
 
   it('060-E5: una falta oculta durante el examen sigue anulando la nota de esa rotación', async () => {

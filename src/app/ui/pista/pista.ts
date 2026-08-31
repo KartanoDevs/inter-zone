@@ -1,5 +1,19 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, input, output, signal, viewChild } from '@angular/core';
-import type { CasoColocador, ConfiguracionRoles, Punto, SituacionDefensa } from '../../domain/modelos';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import type {
+  CasoColocador,
+  ConfiguracionRoles,
+  Punto,
+  SituacionDefensa,
+} from '../../domain/modelos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { TAMANO_CELDA } from '../../domain/rejilla';
 import { PUNTO_POR_SITUACION } from '../../domain/sistema-defensa-por-defecto';
@@ -186,7 +200,9 @@ export class Pista {
   /** El punto de la ficha "C" del colocador rival: siempre presente mientras el sistema sea de
    * defensa, con independencia de la situación activa y del caso (spec 042: es el mismo punto
    * delantero o trasero). */
-  protected readonly puntoColocadorRival = computed<Punto | null>(() => (this.casoActivo() ? PUNTO_COLOCADOR_RIVAL : null));
+  protected readonly puntoColocadorRival = computed<Punto | null>(() =>
+    this.casoActivo() ? PUNTO_COLOCADOR_RIVAL : null,
+  );
 
   /** Un patrón de franjas diagonales por cada combinación de colores que comparte alguna
    * celda (spec 023, E3) — una celda de un solo jugador no necesita patrón, solo su color. */

@@ -50,7 +50,9 @@ export class ExamenStore {
   /** La corrección de cada rotación ya validada (spec 057, E7/E9-E10): a diferencia de la 055,
    * no se borra al cambiar de rotación — se acumula para poder mostrar el desglose completo al
    * terminar (E11). */
-  readonly correccionesPorRotacion = signal<Partial<Record<RotacionValida, CorreccionRotacion>>>({});
+  readonly correccionesPorRotacion = signal<Partial<Record<RotacionValida, CorreccionRotacion>>>(
+    {},
+  );
 
   /** La corrección del examen completo, solo tras terminar (fase 'terminado'). */
   readonly correccionExamen = signal<CorreccionExamen | null>(null);
@@ -69,11 +71,19 @@ export class ExamenStore {
     ordenarCatalogo(
       this.sistemaStore
         .sistemas()
-        .filter((s) => s.equipoId === this.equipoActivo() && s.tipo === 'recepcion' && estadoDe(s) === 'validado' && sePuedeExaminar(s)),
+        .filter(
+          (s) =>
+            s.equipoId === this.equipoActivo() &&
+            s.tipo === 'recepcion' &&
+            estadoDe(s) === 'validado' &&
+            sePuedeExaminar(s),
+        ),
     ),
   );
 
-  readonly sistemaActivo = computed(() => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null);
+  readonly sistemaActivo = computed(
+    () => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null,
+  );
 
   /** Los titulares del orden de saque, más el líbero si el sistema lo tiene y de verdad entra en
    * pista alguna rotación (spec 058, E1/E2/E5), para el selector de "a quién examinar" (spec
@@ -140,28 +150,36 @@ export class ExamenStore {
   });
 
   /** Lo que el alumno ha colocado hasta ahora en la rotación activa. */
-  readonly colocadosDeLaRotacion = computed<Formacion>(() => this.entrega()[this.rotacionActiva()] ?? []);
+  readonly colocadosDeLaRotacion = computed<Formacion>(
+    () => this.entrega()[this.rotacionActiva()] ?? [],
+  );
 
   readonly pendientes = computed<readonly Jugador[]>(() => {
     const colocadosIds = new Set(this.colocadosDeLaRotacion().map((c) => c.jugador.id));
     return this.jugadoresDelAlumno().filter((j) => !colocadosIds.has(j.id));
   });
 
-  readonly rotacionCompleta = computed(() => this.pendientes().length === 0 && this.jugadoresDelAlumno().length > 0);
+  readonly rotacionCompleta = computed(
+    () => this.pendientes().length === 0 && this.jugadoresDelAlumno().length > 0,
+  );
 
   readonly permiteCorregirRotacionSuelta = computed(() => permiteCorregirPorRotacion(this.tipo()));
 
   /** Si la rotación activa ya se ha validado (spec 060): distinto de ver su veredicto. Esto
    * decide si la interfaz del examen en curso muestra "Validar rotación" o el estado de "ya
    * hecha", sin filtrar nota ni faltas. */
-  readonly rotacionRegistrada = computed(() => this.rotacionActiva() in this.correccionesPorRotacion());
+  readonly rotacionRegistrada = computed(
+    () => this.rotacionActiva() in this.correccionesPorRotacion(),
+  );
 
   /** El veredicto de la rotación activa (spec 060): validar una rotación la registra en
    * `correccionesPorRotacion` para habilitar el boletín, pero su nota y sus faltas no se
    * exponen hasta que el examen entero ha terminado. Antes de eso, siempre `null` — validando
    * no se ve nada, igual que colocando (revisa 057-E7). */
   readonly correccionRotacionActiva = computed(() =>
-    this.fase() === 'terminado' ? (this.correccionesPorRotacion()[this.rotacionActiva()] ?? null) : null,
+    this.fase() === 'terminado'
+      ? (this.correccionesPorRotacion()[this.rotacionActiva()] ?? null)
+      : null,
   );
 
   /** Qué rotaciones examinadas tienen una falta que el alumno puede ver ya (spec 060): ninguna
@@ -183,7 +201,9 @@ export class ExamenStore {
   /** La comparación de la rotación activa con el modelo del entrenador (spec 057, E12): el punto
    * donde debía estar cada ficha del alumno frente a donde la colocó. Solo tiene sentido leerla
    * en la fase 'terminado', pero no depende de la fase — es una lectura más de `entrega`. */
-  readonly comparacionRotacionActiva = computed<readonly { puntoModelo: Punto; puntoAlumno: Punto }[]>(() => {
+  readonly comparacionRotacionActiva = computed<
+    readonly { puntoModelo: Punto; puntoAlumno: Punto }[]
+  >(() => {
     const sistema = this.sistemaActivo();
     const examen = this.examen();
     if (!sistema || !examen) {
@@ -318,11 +338,19 @@ export class ExamenStore {
     }
     const rotaciones = this.rotacionesExaminablesActuales();
     const entregaCompleta: EntregaExamen = Object.fromEntries(
-      rotaciones.map((r) => [r, [...this.dadosDeRotacion(r, sistema, examen), ...(this.entrega()[r] ?? [])]]),
+      rotaciones.map((r) => [
+        r,
+        [...this.dadosDeRotacion(r, sistema, examen), ...(this.entrega()[r] ?? [])],
+      ]),
     );
     const desglose: Partial<Record<RotacionValida, CorreccionRotacion>> = {};
     for (const rotacion of rotaciones) {
-      desglose[rotacion] = corregirRotacion(examen, sistema, rotacion, entregaCompleta[rotacion] ?? []);
+      desglose[rotacion] = corregirRotacion(
+        examen,
+        sistema,
+        rotacion,
+        entregaCompleta[rotacion] ?? [],
+      );
     }
     this.correccionesPorRotacion.set(desglose);
     const correccion = corregirExamen(examen, sistema, entregaCompleta);
@@ -330,7 +358,11 @@ export class ExamenStore {
     this.insigniaGuardada.set(false);
     this.fase.set('terminado');
     if (correccion.insignia) {
-      await this.insigniasRepositorio.registrar(sistema.id, examen.tipo, examen.tipo === 'sistema' ? null : examen.titularId);
+      await this.insigniasRepositorio.registrar(
+        sistema.id,
+        examen.tipo,
+        examen.tipo === 'sistema' ? null : examen.titularId,
+      );
       this.insigniaGuardada.set(true);
     }
   }

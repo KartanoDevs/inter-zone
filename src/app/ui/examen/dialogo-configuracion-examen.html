@@ -2,24 +2,37 @@
   <div class="app-examen-config__kicker">Nuevo examen</div>
 
   <div class="app-examen-config__fila">
-    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="true">1</span>
+    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="true"
+      >1</span
+    >
     <div class="app-examen-config__cuerpo">
       <span class="app-examen-config__etiqueta">Equipo</span>
-      <app-selector-equipo [equipoActivo]="equipoActivo()" (seleccionar)="seleccionarEquipo.emit($event)"></app-selector-equipo>
+      <app-selector-equipo
+        [equipoActivo]="equipoActivo()"
+        (seleccionar)="seleccionarEquipo.emit($event)"
+      ></app-selector-equipo>
     </div>
   </div>
 
   <div class="app-examen-config__fila">
-    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="sistemaElegido()">2</span>
+    <span
+      class="app-examen-config__casilla"
+      [class.app-examen-config__casilla--hecha]="sistemaElegido()"
+      >2</span
+    >
     <div class="app-examen-config__cuerpo">
       <span class="app-examen-config__etiqueta">Sistema</span>
       @if (sistemas().length === 0) {
         <p class="app-examen-config__vacio">
-          Solo se puede examinar un sistema de recepción validado, con sus seis rotaciones completas y sin ninguna
-          falta guardada a propósito.
+          Solo se puede examinar un sistema de recepción validado, con sus seis rotaciones completas
+          y sin ninguna falta guardada a propósito.
         </p>
       } @else {
-        <app-barra-sistemas [sistemas]="sistemas()" [sistemaActivoId]="sistemaActivoId()" (elegir)="elegirSistema.emit($event)"></app-barra-sistemas>
+        <app-barra-sistemas
+          [sistemas]="sistemas()"
+          [sistemaActivoId]="sistemaActivoId()"
+          (elegir)="elegirSistema.emit($event)"
+        ></app-barra-sistemas>
       }
     </div>
   </div>
@@ -39,7 +52,10 @@
               [class.app-examen-config__chip--activo]="tipo() === t"
               (click)="elegirTipo.emit(t)"
             >
-              <span class="app-examen-config__medalla" [class]="'app-examen-config__medalla--' + nombreInsignia[t]"></span>
+              <span
+                class="app-examen-config__medalla"
+                [class]="'app-examen-config__medalla--' + nombreInsignia[t]"
+              ></span>
               {{ nombreTipo[t] }}
             </button>
           }
@@ -49,7 +65,11 @@
 
     @if (necesitaTitular()) {
       <div class="app-examen-config__fila">
-        <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="titularElegido()">4</span>
+        <span
+          class="app-examen-config__casilla"
+          [class.app-examen-config__casilla--hecha]="titularElegido()"
+          >4</span
+        >
         <div class="app-examen-config__cuerpo">
           <span class="app-examen-config__etiqueta">A quién examinar</span>
           <div class="app-examen-config__chips" role="radiogroup" aria-label="A quién examinar">

@@ -1,0 +1,19 @@
+# Generado / de terceros
+dist/
+node_modules/
+.angular/
+coverage/
+server/node_modules/
+server/dist/
+server/prisma/migrations/
+
+# Artefactos de graphify (JSON enorme, HTML generado, informe)
+graphify-out/
+
+# Scripts de shell y hooks: no son ficheros que Prettier sepa formatear
+.githooks/
+*.sh
+*.bat
+
+# Bocetos congelados (ADR: no se tocan)
+src/app/maqueta/

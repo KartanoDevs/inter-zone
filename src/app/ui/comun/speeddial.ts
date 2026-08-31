@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 export type IconoSpeeddial = 'nuevo' | 'lapiz' | 'clonar' | 'papelera';
 

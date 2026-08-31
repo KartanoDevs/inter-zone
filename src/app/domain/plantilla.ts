@@ -51,6 +51,8 @@ function composicionValida(orden: OrdenSaque): boolean {
  */
 export function validarPlantilla(orden: OrdenSaque, configuracion: ConfiguracionRoles): boolean {
   return (
-    sinJugadoresRepetidos(orden) && indicesConsistentes(orden, configuracion) && composicionValida(orden)
+    sinJugadoresRepetidos(orden) &&
+    indicesConsistentes(orden, configuracion) &&
+    composicionValida(orden)
   );
 }

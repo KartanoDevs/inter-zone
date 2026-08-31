@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Celda, Punto } from './modelos';
-import { TAMANO_CELDA, bloquePorDefecto, celdaDe, celdasDeTrazo, centroDe, rellenarContorno, trazoCerrado } from './rejilla';
+import {
+  TAMANO_CELDA,
+  bloquePorDefecto,
+  celdaDe,
+  celdasDeTrazo,
+  centroDe,
+  rellenarContorno,
+  trazoCerrado,
+} from './rejilla';
 
 describe('celdaDe', () => {
   it('un punto dentro del campo cae en la celda de 0,5 m que lo contiene', () => {
@@ -23,7 +31,10 @@ describe('celdaDe', () => {
 
 describe('centroDe', () => {
   it('el centro de una celda está a media celda de su esquina', () => {
-    expect(centroDe({ columna: 2, fila: 7 })).toEqual({ x: 2 * TAMANO_CELDA + 0.25, y: 7 * TAMANO_CELDA + 0.25 });
+    expect(centroDe({ columna: 2, fila: 7 })).toEqual({
+      x: 2 * TAMANO_CELDA + 0.25,
+      y: 7 * TAMANO_CELDA + 0.25,
+    });
   });
 });
 
@@ -135,7 +146,9 @@ describe('rellenarContorno', () => {
 
     const resultado = rellenarContorno(contorno);
 
-    expect(resultado.every((c) => c.columna >= 0 && c.columna <= 17 && c.fila >= 0 && c.fila <= 17)).toBe(true);
+    expect(
+      resultado.every((c) => c.columna >= 0 && c.columna <= 17 && c.fila >= 0 && c.fila <= 17),
+    ).toBe(true);
   });
 });
 

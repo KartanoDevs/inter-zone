@@ -1,4 +1,11 @@
-import type { EquipoId, EstadoSistema, Jugador, PlantillaEquipo, Sistema, TipoSistema } from './modelos';
+import type {
+  EquipoId,
+  EstadoSistema,
+  Jugador,
+  PlantillaEquipo,
+  Sistema,
+  TipoSistema,
+} from './modelos';
 import { jugadoresEnPista } from './rotacion';
 
 function nombreValido(nombre: string): boolean {
@@ -15,7 +22,11 @@ function colisiona(
   nombre: string,
 ): boolean {
   return existentes.some(
-    (sistema) => sistema.id !== idPropio && sistema.equipoId === equipoId && sistema.tipo === tipo && sistema.nombre === nombre,
+    (sistema) =>
+      sistema.id !== idPropio &&
+      sistema.equipoId === equipoId &&
+      sistema.tipo === tipo &&
+      sistema.nombre === nombre,
   );
 }
 
@@ -33,8 +44,15 @@ export function crearSistema(
   return { id, nombre, tipo, equipoId, plantilla, formaciones: {}, explicacionesRotacion: {} };
 }
 
-export function renombrarSistema(sistema: Sistema, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
-  if (!nombreValido(nuevoNombre) || colisiona(existentes, sistema.id, sistema.equipoId, sistema.tipo, nuevoNombre)) {
+export function renombrarSistema(
+  sistema: Sistema,
+  nuevoNombre: string,
+  existentes: readonly Sistema[],
+): Sistema | null {
+  if (
+    !nombreValido(nuevoNombre) ||
+    colisiona(existentes, sistema.id, sistema.equipoId, sistema.tipo, nuevoNombre)
+  ) {
     return null;
   }
   return { ...sistema, nombre: nuevoNombre };
@@ -56,8 +74,16 @@ export function describirSistema(sistema: Sistema, texto: string): Sistema {
  * líbero que tuviera), formaciones, explicaciones y descripción — bajo un id y un nombre
  * nuevos (spec 026). Mismas reglas de nombre que `crearSistema`/`renombrarSistema`.
  */
-export function clonarSistema(sistema: Sistema, id: string, nuevoNombre: string, existentes: readonly Sistema[]): Sistema | null {
-  if (!nombreValido(nuevoNombre) || colisiona(existentes, null, sistema.equipoId, sistema.tipo, nuevoNombre)) {
+export function clonarSistema(
+  sistema: Sistema,
+  id: string,
+  nuevoNombre: string,
+  existentes: readonly Sistema[],
+): Sistema | null {
+  if (
+    !nombreValido(nuevoNombre) ||
+    colisiona(existentes, null, sistema.equipoId, sistema.tipo, nuevoNombre)
+  ) {
     return null;
   }
   return { ...sistema, id, nombre: nuevoNombre };
@@ -94,7 +120,11 @@ export function ordenarCatalogo(sistemas: readonly Sistema[]): readonly Sistema[
  * pizarra, no de quién lo ocupó antes (spec 043, corrige 017-E8). Las demás rotaciones no se
  * tocan, porque su sustituto no ha cambiado.
  */
-export function cambiarSustitutoLibero(sistema: Sistema, rotacion: 1 | 2 | 3 | 4 | 5 | 6, sustituidoId: string | null): Sistema {
+export function cambiarSustitutoLibero(
+  sistema: Sistema,
+  rotacion: 1 | 2 | 3 | 4 | 5 | 6,
+  sustituidoId: string | null,
+): Sistema {
   const libero = sistema.plantilla.libero;
   if (!libero) {
     return sistema;
@@ -102,7 +132,10 @@ export function cambiarSustitutoLibero(sistema: Sistema, rotacion: 1 | 2 | 3 | 4
   const rosterAnterior = jugadoresEnPista(sistema.plantilla, rotacion);
   const nuevaPlantilla = {
     ...sistema.plantilla,
-    libero: { ...libero, sustitutosPorRotacion: { ...libero.sustitutosPorRotacion, [rotacion]: sustituidoId } },
+    libero: {
+      ...libero,
+      sustitutosPorRotacion: { ...libero.sustitutosPorRotacion, [rotacion]: sustituidoId },
+    },
   };
   const formacionRotacion = sistema.formaciones[rotacion];
   if (!formacionRotacion) {

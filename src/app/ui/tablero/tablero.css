@@ -228,7 +228,10 @@
   font: 700 11.5px var(--font-body);
   white-space: nowrap;
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 /* Área táctil de al menos 44px de alto (spec 059, E13): la cabecera es demasiado compacta
@@ -395,7 +398,9 @@
   border-radius: 50%;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .app-tablero__panel-plegar:hover,

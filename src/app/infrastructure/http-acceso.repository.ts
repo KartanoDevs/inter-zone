@@ -1,5 +1,11 @@
 import type { DatosPerfil, SesionUsuario } from '../domain/acceso';
-import { type AccesoRepository, CredencialesInvalidas, ErrorDelServidor, ErrorDeRed, InvitacionNoDisponible } from '../domain/puertos';
+import {
+  type AccesoRepository,
+  CredencialesInvalidas,
+  ErrorDelServidor,
+  ErrorDeRed,
+  InvitacionNoDisponible,
+} from '../domain/puertos';
 
 /**
  * Adaptador de `AccesoRepository` contra la API del servidor (spec 050). Mismo criterio que
@@ -23,10 +29,14 @@ export class HttpAccesoRepository implements AccesoRepository {
       body: JSON.stringify({ email, contrasena }),
     });
     if (respuesta.status === 403) {
-      throw new InvitacionNoDisponible(await mensajeDe(respuesta, 'Ese correo no tiene una invitación disponible'));
+      throw new InvitacionNoDisponible(
+        await mensajeDe(respuesta, 'Ese correo no tiene una invitación disponible'),
+      );
     }
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 
@@ -37,10 +47,14 @@ export class HttpAccesoRepository implements AccesoRepository {
       body: JSON.stringify({ email, contrasena }),
     });
     if (respuesta.status === 401) {
-      throw new CredencialesInvalidas(await mensajeDe(respuesta, 'Correo o contraseña incorrectos'));
+      throw new CredencialesInvalidas(
+        await mensajeDe(respuesta, 'Correo o contraseña incorrectos'),
+      );
     }
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
     const usuario = await this.quienSoy();
     if (!usuario) {
@@ -52,7 +66,9 @@ export class HttpAccesoRepository implements AccesoRepository {
   async quienSoy(): Promise<SesionUsuario | null> {
     const respuesta = await this.peticion('/auth/quien-soy', { method: 'GET' });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
     const { usuario } = (await respuesta.json()) as { usuario: SesionUsuario | null };
     return usuario;
@@ -61,7 +77,9 @@ export class HttpAccesoRepository implements AccesoRepository {
   async salir(): Promise<void> {
     const respuesta = await this.peticion('/auth/salir', { method: 'POST' });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 
@@ -72,7 +90,9 @@ export class HttpAccesoRepository implements AccesoRepository {
       body: JSON.stringify(datos),
     });
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 
@@ -83,10 +103,14 @@ export class HttpAccesoRepository implements AccesoRepository {
       body: JSON.stringify({ actual, nueva }),
     });
     if (respuesta.status === 401) {
-      throw new CredencialesInvalidas(await mensajeDe(respuesta, 'La contraseña actual no es correcta'));
+      throw new CredencialesInvalidas(
+        await mensajeDe(respuesta, 'La contraseña actual no es correcta'),
+      );
     }
     if (!respuesta.ok) {
-      throw new ErrorDelServidor(await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`));
+      throw new ErrorDelServidor(
+        await mensajeDe(respuesta, `El servidor devolvió un error (${respuesta.status})`),
+      );
     }
   }
 

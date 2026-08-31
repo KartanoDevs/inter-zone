@@ -34,8 +34,14 @@ beforeEach(async () => {
   await prisma.lista_blanca.deleteMany({});
 });
 
-async function entrarComo(email: string, rol: 'admin' | 'entrenador' | 'usuario', equipoClave?: EquipoId): Promise<string> {
-  const equipoId = equipoClave ? (await prisma.equipo.findUniqueOrThrow({ where: { clave: equipoClave } })).id : null;
+async function entrarComo(
+  email: string,
+  rol: 'admin' | 'entrenador' | 'usuario',
+  equipoClave?: EquipoId,
+): Promise<string> {
+  const equipoId = equipoClave
+    ? (await prisma.equipo.findUniqueOrThrow({ where: { clave: equipoClave } })).id
+    : null;
   await prisma.lista_blanca.create({ data: { email, rol, equipo_id: equipoId } });
   await fetch(`${base}/api/auth/registro`, {
     method: 'POST',
@@ -86,10 +92,15 @@ describe('API de lista blanca (spec 054)', () => {
   it('054-E1: el admin invita un correo con un rol y un equipo', async () => {
     const cookie = await entrarComo('admin@club.com', 'admin');
 
-    const { status } = await invitar({ email: 'nueva@club.com', rol: 'entrenador', equipoId: 'femenino' }, cookie);
+    const { status } = await invitar(
+      { email: 'nueva@club.com', rol: 'entrenador', equipoId: 'femenino' },
+      cookie,
+    );
 
     expect(status).toBe(201);
-    const invitacion = await prisma.lista_blanca.findUniqueOrThrow({ where: { email: 'nueva@club.com' } });
+    const invitacion = await prisma.lista_blanca.findUniqueOrThrow({
+      where: { email: 'nueva@club.com' },
+    });
     expect(invitacion.rol).toBe('entrenador');
     expect(invitacion.usada_en).toBeNull();
   });
@@ -98,7 +109,10 @@ describe('API de lista blanca (spec 054)', () => {
     const cookie = await entrarComo('admin@club.com', 'admin');
     await invitar({ email: 'nueva@club.com', rol: 'usuario', equipoId: null }, cookie);
 
-    const { status } = await invitar({ email: 'nueva@club.com', rol: 'entrenador', equipoId: 'masculino' }, cookie);
+    const { status } = await invitar(
+      { email: 'nueva@club.com', rol: 'entrenador', equipoId: 'masculino' },
+      cookie,
+    );
 
     expect(status).toBe(201);
     const filas = await prisma.lista_blanca.findMany({ where: { email: 'nueva@club.com' } });
@@ -110,7 +124,10 @@ describe('API de lista blanca (spec 054)', () => {
     const cookieAdmin = await entrarComo('admin@club.com', 'admin');
     await entrarComo('yaexiste@club.com', 'usuario');
 
-    const { status } = await invitar({ email: 'yaexiste@club.com', rol: 'admin', equipoId: null }, cookieAdmin);
+    const { status } = await invitar(
+      { email: 'yaexiste@club.com', rol: 'admin', equipoId: null },
+      cookieAdmin,
+    );
 
     expect(status).toBe(409);
   });
@@ -122,7 +139,9 @@ describe('API de lista blanca (spec 054)', () => {
     const { status } = await retirar('pendiente@club.com', cookie);
 
     expect(status).toBe(204);
-    expect(await prisma.lista_blanca.findUnique({ where: { email: 'pendiente@club.com' } })).toBeNull();
+    expect(
+      await prisma.lista_blanca.findUnique({ where: { email: 'pendiente@club.com' } }),
+    ).toBeNull();
   });
 
   it('054-E5: retirar una invitación ya usada no toca la cuenta que salió de ella', async () => {
@@ -154,7 +173,10 @@ describe('API de lista blanca (spec 054)', () => {
     const cookie = await entrarComo('entrenador@club.com', 'entrenador', 'masculino');
 
     const ver = await listar(cookie);
-    const invitacion = await invitar({ email: 'x@club.com', rol: 'usuario', equipoId: null }, cookie);
+    const invitacion = await invitar(
+      { email: 'x@club.com', rol: 'usuario', equipoId: null },
+      cookie,
+    );
     const borrado = await retirar('x@club.com', cookie);
 
     expect(ver.status).toBe(403);

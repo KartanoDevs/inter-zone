@@ -14,7 +14,8 @@ export function puedeCrearPlantillaEquipo(
     validarPlantilla(ordenSaque, configuracion) &&
     (libero === undefined ||
       Object.values(libero.sustitutosPorRotacion).every(
-        (sustituidoId) => sustituidoId === null || ordenSaque.some((jugador) => jugador.id === sustituidoId),
+        (sustituidoId) =>
+          sustituidoId === null || ordenSaque.some((jugador) => jugador.id === sustituidoId),
       ))
   );
 }

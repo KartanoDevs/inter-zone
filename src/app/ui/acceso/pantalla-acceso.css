@@ -9,7 +9,8 @@
      su propio margen de seguridad frente al notch y la barra de gestos. */
   padding-top: max(var(--space-3), env(safe-area-inset-top));
   padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
-  padding-inline: max(var(--space-3), env(safe-area-inset-left)) max(var(--space-3), env(safe-area-inset-right));
+  padding-inline: max(var(--space-3), env(safe-area-inset-left))
+    max(var(--space-3), env(safe-area-inset-right));
 }
 
 .app-acceso__tarjeta {

@@ -52,14 +52,22 @@ export class TeoriaStore {
   /** Solo los sistemas validados (spec 051): en borrador no hay nada que un jugador deba
    * estudiar todavía. */
   readonly catalogo = computed<readonly Sistema[]>(() =>
-    ordenarCatalogo(this.sistemaStore.sistemas().filter((s) => s.equipoId === this.equipoActivo() && estadoDe(s) === 'validado')),
+    ordenarCatalogo(
+      this.sistemaStore
+        .sistemas()
+        .filter((s) => s.equipoId === this.equipoActivo() && estadoDe(s) === 'validado'),
+    ),
   );
 
-  readonly sistemaActivo = computed(() => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null);
+  readonly sistemaActivo = computed(
+    () => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null,
+  );
   readonly esDefensa = computed(() => this.sistemaActivo()?.tipo === 'defensa');
   readonly descripcionSistemaActivo = computed(() => this.sistemaActivo()?.descripcion ?? '');
   readonly situacionesPosibles = computed(() => situacionesDe(this.casoActivo()));
-  readonly admiteBloqueadores = computed(() => this.esDefensa() && this.situacionActiva() !== 'inicial');
+  readonly admiteBloqueadores = computed(
+    () => this.esDefensa() && this.situacionActiva() !== 'inicial',
+  );
 
   readonly bloqueadoresCreados = computed<readonly NumeroBloqueadores[]>(() => {
     const sistema = this.sistemaActivo();
@@ -74,7 +82,10 @@ export class TeoriaStore {
   private readonly varianteActiva = computed(
     () =>
       this.sistemaActivo()?.defensas?.find(
-        (v) => v.caso === this.casoActivo() && v.situacion === this.situacionActiva() && v.bloqueadores === this.bloqueadoresActivos(),
+        (v) =>
+          v.caso === this.casoActivo() &&
+          v.situacion === this.situacionActiva() &&
+          v.bloqueadores === this.bloqueadoresActivos(),
       ) ?? null,
   );
 
@@ -93,7 +104,9 @@ export class TeoriaStore {
 
   readonly posicionesActivas = computed(() => {
     const sistema = this.sistemaActivo();
-    return sistema && sistema.tipo === 'recepcion' ? jugadoresEnPista(sistema.plantilla, this.rotacionActiva()) : null;
+    return sistema && sistema.tipo === 'recepcion'
+      ? jugadoresEnPista(sistema.plantilla, this.rotacionActiva())
+      : null;
   });
 
   private readonly explicacionRotacionActiva = computed(() => {
@@ -116,7 +129,9 @@ export class TeoriaStore {
   });
 
   readonly explicacionMostrada = computed(() =>
-    this.jugadorSeleccionadoId() ? this.explicacionJugadorSeleccionado() : this.explicacionRotacionActiva(),
+    this.jugadorSeleccionadoId()
+      ? this.explicacionJugadorSeleccionado()
+      : this.explicacionRotacionActiva(),
   );
 
   readonly celdasJugadorSeleccionado = computed<readonly Celda[]>(() => {
@@ -153,7 +168,12 @@ export class TeoriaStore {
     const puntosBloqueadores = puestosBloqueadores
       .map((puesto) => formacion.find((c) => c.puesto === puesto)?.punto)
       .filter((p): p is Punto => p !== undefined);
-    return sombraDeBloqueo(puntoAtacante, puntosBloqueadores, this.varianteActiva()?.desplazamientoSombra, ESCALA_SOMBRA_FIJA);
+    return sombraDeBloqueo(
+      puntoAtacante,
+      puntosBloqueadores,
+      this.varianteActiva()?.desplazamientoSombra,
+      ESCALA_SOMBRA_FIJA,
+    );
   });
 
   /** Cambia de equipo y activa su primer sistema validado, o ninguno si no tiene (spec 052, E8). */

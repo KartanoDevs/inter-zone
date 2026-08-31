@@ -1,10 +1,21 @@
-<app-modal [titulo]="titulo()" [variante]="peligro() ? 'alerta' : 'normal'" rol="alertdialog" (cerrar)="cancelar.emit()">
+<app-modal
+  [titulo]="titulo()"
+  [variante]="peligro() ? 'alerta' : 'normal'"
+  rol="alertdialog"
+  (cerrar)="cancelar.emit()"
+>
   <p class="app-dialogo-confirmacion__mensaje">{{ mensaje() }}</p>
   <ng-container acciones>
     <button type="button" class="app-boton app-boton--secundario" (click)="cancelar.emit()">
       {{ textoCancelar() }}
     </button>
-    <button type="button" class="app-boton" [class.app-boton--destructivo]="peligro()" [class.app-boton--primario]="!peligro()" (click)="confirmar.emit()">
+    <button
+      type="button"
+      class="app-boton"
+      [class.app-boton--destructivo]="peligro()"
+      [class.app-boton--primario]="!peligro()"
+      (click)="confirmar.emit()"
+    >
       {{ textoConfirmar() }}
     </button>
   </ng-container>

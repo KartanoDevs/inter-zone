@@ -1,6 +1,9 @@
 <div class="app-teoria">
   <div class="app-teoria__cabecera">
-    <app-selector-equipo [equipoActivo]="teoria.equipoActivo()" (seleccionar)="seleccionarEquipo($event)"></app-selector-equipo>
+    <app-selector-equipo
+      [equipoActivo]="teoria.equipoActivo()"
+      (seleccionar)="seleccionarEquipo($event)"
+    ></app-selector-equipo>
     <app-barra-sistemas
       [sistemas]="opcionesSistema()"
       [sistemaActivoId]="teoria.sistemaActivoId()"
@@ -11,11 +14,16 @@
   @if (opcionesSistema().length === 0) {
     <div class="app-teoria__vacio">
       <h2>Todavía no hay nada validado</h2>
-      <p>Cuando tu entrenador valide un sistema de este equipo, aparecerá aquí para que lo estudies.</p>
+      <p>
+        Cuando tu entrenador valide un sistema de este equipo, aparecerá aquí para que lo estudies.
+      </p>
     </div>
   } @else {
     @if (teoria.esDefensa()) {
-      <app-selector-caso [casoActivo]="teoria.casoActivo()" (seleccionar)="teoria.seleccionarCaso($event)"></app-selector-caso>
+      <app-selector-caso
+        [casoActivo]="teoria.casoActivo()"
+        (seleccionar)="teoria.seleccionarCaso($event)"
+      ></app-selector-caso>
       <app-selector-situacion
         [casoActivo]="teoria.casoActivo()"
         [situacionActiva]="teoria.situacionActiva()"
@@ -66,7 +74,9 @@
       [soloLectura]="true"
     ></app-panel-ensenanza>
     <app-panel-ensenanza
-      [titulo]="teoria.jugadorSeleccionadoId() ? 'Explicación del jugador' : 'Explicación de la rotación'"
+      [titulo]="
+        teoria.jugadorSeleccionadoId() ? 'Explicación del jugador' : 'Explicación de la rotación'
+      "
       [texto]="teoria.explicacionMostrada()"
       [soloLectura]="true"
     ></app-panel-ensenanza>

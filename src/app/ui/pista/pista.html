@@ -35,7 +35,12 @@
         [attr.width]="tamanoCelda / 2"
         [attr.height]="tamanoCelda / 2"
       >
-        <circle [attr.cx]="tamanoCelda / 4" [attr.cy]="tamanoCelda / 4" [attr.r]="tamanoCelda / 10" class="app-pista__punto-finta"></circle>
+        <circle
+          [attr.cx]="tamanoCelda / 4"
+          [attr.cy]="tamanoCelda / 4"
+          [attr.r]="tamanoCelda / 10"
+          class="app-pista__punto-finta"
+        ></circle>
       </pattern>
     </defs>
   }
@@ -47,9 +52,18 @@
   <rect class="app-pista__borde-rival" x="0" y="-4" width="9" height="4"></rect>
 
   @if (mostrarRival() && puntoColocadorRival(); as puntoC) {
-    <g class="app-pista__colocador-rival" [attr.transform]="'translate(' + puntoC.x + ',' + puntoC.y + ')'">
+    <g
+      class="app-pista__colocador-rival"
+      [attr.transform]="'translate(' + puntoC.x + ',' + puntoC.y + ')'"
+    >
       <circle class="app-pista__colocador-rival-circulo" r="0.3"></circle>
-      <text class="app-pista__colocador-rival-etiqueta" text-anchor="middle" dominant-baseline="central">CR</text>
+      <text
+        class="app-pista__colocador-rival-etiqueta"
+        text-anchor="middle"
+        dominant-baseline="central"
+      >
+        CR
+      </text>
     </g>
   }
 
@@ -60,7 +74,9 @@
       (pointerdown)="onRivalPointerDown($event)"
     >
       <circle class="app-pista__rival-circulo" r="0.35"></circle>
-      <text class="app-pista__rival-etiqueta" text-anchor="middle" dominant-baseline="central">A</text>
+      <text class="app-pista__rival-etiqueta" text-anchor="middle" dominant-baseline="central">
+        A
+      </text>
     </g>
   }
 
@@ -68,8 +84,20 @@
 
   <g class="app-pista__rejilla">
     @for (linea of lineasRejilla; track linea) {
-      <line class="app-pista__rejilla-linea" [attr.x1]="linea" y1="0" [attr.x2]="linea" y2="9"></line>
-      <line class="app-pista__rejilla-linea" x1="0" [attr.y1]="linea" x2="9" [attr.y2]="linea"></line>
+      <line
+        class="app-pista__rejilla-linea"
+        [attr.x1]="linea"
+        y1="0"
+        [attr.x2]="linea"
+        y2="9"
+      ></line>
+      <line
+        class="app-pista__rejilla-linea"
+        x1="0"
+        [attr.y1]="linea"
+        x2="9"
+        [attr.y2]="linea"
+      ></line>
     }
   </g>
 
@@ -108,7 +136,10 @@
       }
     </g>
     <g class="app-pista__celdas-conjunto">
-      @for (celda of celdasFintaVistaConjunto(); track 'finta-' + celda.columna + '-' + celda.fila) {
+      @for (
+        celda of celdasFintaVistaConjunto();
+        track 'finta-' + celda.columna + '-' + celda.fila
+      ) {
         <rect
           class="app-pista__celda-conjunto"
           [attr.x]="celda.columna * tamanoCelda"
@@ -193,7 +224,13 @@
       }
     </dl>
     <ng-container acciones>
-      <button type="button" class="app-boton app-boton--secundario" (click)="leyendaAbierta.set(false)">Cerrar</button>
+      <button
+        type="button"
+        class="app-boton app-boton--secundario"
+        (click)="leyendaAbierta.set(false)"
+      >
+        Cerrar
+      </button>
     </ng-container>
   </app-modal>
 }

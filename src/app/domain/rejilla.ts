@@ -103,7 +103,12 @@ export function rellenarContorno(contorno: readonly Celda[]): readonly Celda[] {
   while (pila.length > 0) {
     const actual = pila.pop()!;
     for (const vecina of celdasVecinas(actual)) {
-      if (vecina.columna < 0 || vecina.columna > ULTIMA_CELDA || vecina.fila < 0 || vecina.fila > ULTIMA_CELDA) {
+      if (
+        vecina.columna < 0 ||
+        vecina.columna > ULTIMA_CELDA ||
+        vecina.fila < 0 ||
+        vecina.fila > ULTIMA_CELDA
+      ) {
         continue;
       }
       marcarSiLibre(vecina);

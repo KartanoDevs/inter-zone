@@ -58,9 +58,14 @@ export class DialogoConfiguracionExamen {
   protected readonly nombreInsignia = NOMBRE_INSIGNIA;
 
   protected readonly sistemaElegido = computed(() => this.sistemaActivoId() !== null);
-  protected readonly titularElegido = computed(() => !this.necesitaTitular() || this.titularId() !== null);
+  protected readonly titularElegido = computed(
+    () => !this.necesitaTitular() || this.titularId() !== null,
+  );
 
   protected readonly filasTitular = computed<readonly FilaTitular[]>(() =>
-    this.titulares().map((j) => ({ id: j.id, etiqueta: etiquetaDe(j, CONFIGURACION_ROLES_POR_DEFECTO) })),
+    this.titulares().map((j) => ({
+      id: j.id,
+      etiqueta: etiquetaDe(j, CONFIGURACION_ROLES_POR_DEFECTO),
+    })),
   );
 }

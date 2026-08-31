@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { Pista, PALETA_COLORES, PUNTO_POR_SITUACION, type CeldaConjunto, type FichaVista } from '../pista/pista';
+import {
+  Pista,
+  PALETA_COLORES,
+  PUNTO_POR_SITUACION,
+  type CeldaConjunto,
+  type FichaVista,
+} from '../pista/pista';
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { SelectorCaso } from '../rotaciones/selector-caso';
 import { SelectorSituacion } from '../rotaciones/selector-situacion';
@@ -36,7 +42,16 @@ const ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
  */
 @Component({
   selector: 'app-teoria-tablero',
-  imports: [Pista, SelectorEquipo, BarraSistemas, SelectorRotacion, SelectorCaso, SelectorSituacion, SelectorBloqueadores, PanelEnsenanza],
+  imports: [
+    Pista,
+    SelectorEquipo,
+    BarraSistemas,
+    SelectorRotacion,
+    SelectorCaso,
+    SelectorSituacion,
+    SelectorBloqueadores,
+    PanelEnsenanza,
+  ],
   templateUrl: './teoria-tablero.html',
   styleUrl: './teoria-tablero.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,10 +84,14 @@ export class TeoriaTablero {
     this.teoria.catalogo().map((s) => ({ id: s.id, nombre: s.nombre, tipo: s.tipo })),
   );
 
-  protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false })));
+  protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() =>
+    ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false })),
+  );
 
   private indiceColorDeColocacion(colocacion: ColocacionBorrador): number {
-    return 'jugador' in colocacion ? indiceColorDe(colocacion.jugador) : INDICE_COLOR_POR_PUESTO[colocacion.puesto];
+    return 'jugador' in colocacion
+      ? indiceColorDe(colocacion.jugador)
+      : INDICE_COLOR_POR_PUESTO[colocacion.puesto];
   }
 
   protected readonly fichas = computed<readonly FichaVista[]>(() => {
@@ -97,7 +116,9 @@ export class TeoriaTablero {
       });
     }
     const posicionPorId = new Map<string, number>();
-    (this.teoria.posicionesActivas() ?? []).forEach((jugador, indice) => posicionPorId.set(jugador.id, indice + 1));
+    (this.teoria.posicionesActivas() ?? []).forEach((jugador, indice) =>
+      posicionPorId.set(jugador.id, indice + 1),
+    );
     return (formacion as readonly Colocacion[]).map((c) => {
       const posicionRotacional = posicionPorId.get(c.jugador.id) ?? 0;
       return {
@@ -119,7 +140,9 @@ export class TeoriaTablero {
     return colocacion ? this.indiceColorDeColocacion(colocacion) : null;
   });
 
-  private vistaDeConjunto(celdasDe: (c: ColocacionBorrador) => readonly { columna: number; fila: number }[]): readonly CeldaConjunto[] {
+  private vistaDeConjunto(
+    celdasDe: (c: ColocacionBorrador) => readonly { columna: number; fila: number }[],
+  ): readonly CeldaConjunto[] {
     const seleccionadoId = this.teoria.jugadorSeleccionadoId();
     const porClave = new Map<string, { columna: number; fila: number; indices: number[] }>();
     for (const colocacion of this.teoria.formacionActiva() ?? []) {
@@ -140,20 +163,37 @@ export class TeoriaTablero {
         }
       }
     }
-    return [...porClave.values()].map((c) => ({ columna: c.columna, fila: c.fila, indicesColor: c.indices }));
+    return [...porClave.values()].map((c) => ({
+      columna: c.columna,
+      fila: c.fila,
+      indicesColor: c.indices,
+    }));
   }
 
-  private readonly celdasDeDefensa = (c: ColocacionBorrador): readonly { columna: number; fila: number }[] => c.celdas ?? [];
-  private readonly celdasDeFinta = (c: ColocacionBorrador): readonly { columna: number; fila: number }[] => c.celdasFinta ?? [];
+  private readonly celdasDeDefensa = (
+    c: ColocacionBorrador,
+  ): readonly { columna: number; fila: number }[] => c.celdas ?? [];
+  private readonly celdasDeFinta = (
+    c: ColocacionBorrador,
+  ): readonly { columna: number; fila: number }[] => c.celdasFinta ?? [];
 
-  protected readonly celdasVistaConjunto = computed<readonly CeldaConjunto[]>(() => this.vistaDeConjunto(this.celdasDeDefensa));
-  protected readonly celdasFintaVistaConjunto = computed<readonly CeldaConjunto[]>(() => this.vistaDeConjunto(this.celdasDeFinta));
-
-  protected readonly leyendaVistaConjunto = computed<readonly EntradaLeyendaColor[]>(() =>
-    (this.teoria.formacionActiva() ?? []).map((c) => ({ etiqueta: etiquetaOcupanteDe(c), indiceColor: this.indiceColorDeColocacion(c) })),
+  protected readonly celdasVistaConjunto = computed<readonly CeldaConjunto[]>(() =>
+    this.vistaDeConjunto(this.celdasDeDefensa),
+  );
+  protected readonly celdasFintaVistaConjunto = computed<readonly CeldaConjunto[]>(() =>
+    this.vistaDeConjunto(this.celdasDeFinta),
   );
 
-  protected readonly puntoAtacante = computed(() => PUNTO_POR_SITUACION[this.teoria.situacionActiva()]);
+  protected readonly leyendaVistaConjunto = computed<readonly EntradaLeyendaColor[]>(() =>
+    (this.teoria.formacionActiva() ?? []).map((c) => ({
+      etiqueta: etiquetaOcupanteDe(c),
+      indiceColor: this.indiceColorDeColocacion(c),
+    })),
+  );
+
+  protected readonly puntoAtacante = computed(
+    () => PUNTO_POR_SITUACION[this.teoria.situacionActiva()],
+  );
 
   protected seleccionarFicha(id: string): void {
     this.teoria.seleccionarJugador(id);

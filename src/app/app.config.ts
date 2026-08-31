@@ -1,4 +1,10 @@
-import { ApplicationConfig, inject, InjectionToken, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  InjectionToken,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { AccesoStore } from './application/acceso.store';
 import { ExamenStore } from './application/examen.store';
 import { InsigniasStore } from './application/insignias.store';
@@ -35,7 +41,11 @@ export const appConfig: ApplicationConfig = {
     },
     {
       provide: SistemaStore,
-      useFactory: () => new SistemaStore(new HttpSistemaRepository(URL_API), new LocalStorageAjustesRepository(localStorage)),
+      useFactory: () =>
+        new SistemaStore(
+          new HttpSistemaRepository(URL_API),
+          new LocalStorageAjustesRepository(localStorage),
+        ),
     },
     // Teoría (spec 052) lee el mismo catálogo que el editor, pero con su propia navegación —
     // nunca comparte borrador ni rotación activa con SistemaStore (E9).

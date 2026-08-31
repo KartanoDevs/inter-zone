@@ -36,8 +36,16 @@ beforeEach(async () => {
   // `registrar` afilia a un rol sin equipo (invitación con equipo_id null) a TODOS los equipos
   // conocidos por el dominio (acceso.ts: EQUIPOS) — hacen falta los dos sembrados, o falla al
   // buscar el id del que falte.
-  await prisma.equipo.upsert({ where: { clave: 'masculino' }, update: {}, create: { clave: 'masculino', nombre: 'Masculino' } });
-  await prisma.equipo.upsert({ where: { clave: 'femenino' }, update: {}, create: { clave: 'femenino', nombre: 'Femenino' } });
+  await prisma.equipo.upsert({
+    where: { clave: 'masculino' },
+    update: {},
+    create: { clave: 'masculino', nombre: 'Masculino' },
+  });
+  await prisma.equipo.upsert({
+    where: { clave: 'femenino' },
+    update: {},
+    create: { clave: 'femenino', nombre: 'Femenino' },
+  });
 });
 
 async function entrarComo(email: string): Promise<string> {
@@ -97,7 +105,9 @@ async function registrarInsignia(cuerpo: unknown, cookie?: string): Promise<Resp
 }
 
 async function listarInsignias(cookie?: string): Promise<RespuestaJson> {
-  const respuesta = await fetch(`${base}/api/examen/insignias`, { headers: cookie ? { cookie } : {} });
+  const respuesta = await fetch(`${base}/api/examen/insignias`, {
+    headers: cookie ? { cookie } : {},
+  });
   return { status: respuesta.status, cuerpo: await respuesta.json().catch(() => null) };
 }
 
@@ -106,7 +116,10 @@ describe('API de insignias del examen (spec 056)', () => {
     const cookie = await entrarComo('alumno@club.com');
     const sistemaId = await crearSistema('Recepción 4-2');
 
-    const { status } = await registrarInsignia({ sistemaId, tipo: 'puesto', titularId: 'receptor1' }, cookie);
+    const { status } = await registrarInsignia(
+      { sistemaId, tipo: 'puesto', titularId: 'receptor1' },
+      cookie,
+    );
 
     expect(status).toBe(201);
     const filas = await prisma.insignia_examen.findMany();
@@ -119,7 +132,10 @@ describe('API de insignias del examen (spec 056)', () => {
     const cookie = await entrarComo('alumno@club.com');
     const sistemaId = await crearSistema('Recepción 4-2');
 
-    const { status } = await registrarInsignia({ sistemaId, tipo: 'sistema', titularId: null }, cookie);
+    const { status } = await registrarInsignia(
+      { sistemaId, tipo: 'sistema', titularId: null },
+      cookie,
+    );
 
     expect(status).toBe(201);
     const fila = await prisma.insignia_examen.findFirstOrThrow();
@@ -176,7 +192,11 @@ describe('API de insignias del examen (spec 056)', () => {
   it('056-E7: guardar una insignia exige sesión iniciada', async () => {
     const sistemaId = await crearSistema('Recepción 4-2');
 
-    const { status } = await registrarInsignia({ sistemaId, tipo: 'puesto', titularId: 'receptor1' });
+    const { status } = await registrarInsignia({
+      sistemaId,
+      tipo: 'puesto',
+      titularId: 'receptor1',
+    });
 
     expect(status).toBe(401);
   });

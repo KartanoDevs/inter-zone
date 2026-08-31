@@ -57,7 +57,11 @@ function paredesDe(bloqueadores: readonly Punto[]): readonly Tramo[] {
 
 /** Recorta un polígono convexo contra un semiplano (Sutherland–Hodgman), quedándose con la parte
  * donde `dentro(punto)` es verdadero. Interpola linealmente los vértices que cruzan el borde. */
-function recortarContraSemiplano(poligono: readonly Punto[], dentro: (p: Punto) => boolean, interseccion: (a: Punto, b: Punto) => Punto): readonly Punto[] {
+function recortarContraSemiplano(
+  poligono: readonly Punto[],
+  dentro: (p: Punto) => boolean,
+  interseccion: (a: Punto, b: Punto) => Punto,
+): readonly Punto[] {
   const resultado: Punto[] = [];
   for (let i = 0; i < poligono.length; i++) {
     const actual = poligono[i];
@@ -78,7 +82,10 @@ function recortarContraSemiplano(poligono: readonly Punto[], dentro: (p: Punto) 
  * E12): nunca se dibuja fuera de las líneas. Un polígono que cae fuera por completo recorta a
  * una lista vacía — estado válido, no un error. */
 function recortarAlCampo(poligono: readonly Punto[]): readonly Punto[] {
-  const lerp = (a: Punto, b: Punto, t: number): Punto => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+  const lerp = (a: Punto, b: Punto, t: number): Punto => ({
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+  });
 
   let recortado = poligono;
   recortado = recortarContraSemiplano(
@@ -139,7 +146,8 @@ export function sombraDeBloqueo(
   }
   const ay = Math.min(atacante.y, -PROFUNDIDAD_MINIMA);
   const profundidad = -ay;
-  const xEn = (w: number, y: number): number => atacante.x + (w - atacante.x) * ((y + profundidad) / profundidad);
+  const xEn = (w: number, y: number): number =>
+    atacante.x + (w - atacante.x) * ((y + profundidad) / profundidad);
   const dx = desplazamiento?.x ?? 0;
   const dy = desplazamiento?.y ?? 0;
 

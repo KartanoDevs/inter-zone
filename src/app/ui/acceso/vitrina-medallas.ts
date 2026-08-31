@@ -23,7 +23,11 @@ const MEDALLA_SRC: Readonly<Record<Tier, string>> = {
   oro: 'medals/gold.png',
 };
 
-const TIER_NOMBRE: Readonly<Record<Tier, string>> = { bronce: 'Bronce', plata: 'Plata', oro: 'Oro' };
+const TIER_NOMBRE: Readonly<Record<Tier, string>> = {
+  bronce: 'Bronce',
+  plata: 'Plata',
+  oro: 'Oro',
+};
 const TIER_DESC: Readonly<Record<Tier, string>> = {
   bronce: 'Examen por puesto',
   plata: 'Examen por línea',
@@ -56,7 +60,10 @@ export class VitrinaMedallas {
 
   /** El detalle abierto, o `null`. Guarda el id del elemento del mosaico que lo abrió para
    * devolverle el foco al cerrar (E17). */
-  protected readonly detalle = signal<{ readonly pieza: PiezaVitrina; readonly origenId: string } | null>(null);
+  protected readonly detalle = signal<{
+    readonly pieza: PiezaVitrina;
+    readonly origenId: string;
+  } | null>(null);
 
   /** Los sistemas de recepción que le tocan al usuario (spec 061, P3): todos si es admin —igual
    * que en el resto de la app, `puedeGestionarEquipo`—, o los de los equipos donde tiene
@@ -108,7 +115,9 @@ export class VitrinaMedallas {
     if (pieza.total === 0) {
       return `${pieza.sistema.nombre}: sin medallas todavía. Abrir detalle.`;
     }
-    const ganadas = this.tiers.filter((t) => this.tieneMedalla(pieza.resumen, t)).map((t) => TIER_NOMBRE[t]);
+    const ganadas = this.tiers
+      .filter((t) => this.tieneMedalla(pieza.resumen, t))
+      .map((t) => TIER_NOMBRE[t]);
     const dominado = pieza.resumen.dominado ? ', sistema dominado' : '';
     return `${pieza.sistema.nombre}: ${ganadas.join(', ')} conseguidas${dominado}. Abrir detalle.`;
   }
@@ -147,7 +156,11 @@ export class VitrinaMedallas {
     if (!resumen.oro) {
       return null;
     }
-    return new Date(resumen.oro).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    return new Date(resumen.oro).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   }
 }
 

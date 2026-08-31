@@ -5,7 +5,10 @@ import { HttpInsigniasRepository } from './http-insignias.repository';
 
 type Responder = () => Response | never;
 
-function crearFetchFalso(respuestas: readonly Responder[]): { readonly fetchFn: typeof fetch; readonly llamadas: { url: string; init?: RequestInit }[] } {
+function crearFetchFalso(respuestas: readonly Responder[]): {
+  readonly fetchFn: typeof fetch;
+  readonly llamadas: { url: string; init?: RequestInit }[];
+} {
   let indice = 0;
   const llamadas: { url: string; init?: RequestInit }[] = [];
   const fetchFn = (async (url: string, init?: RequestInit) => {
@@ -72,7 +75,9 @@ describe('HttpInsigniasRepository', () => {
   });
 
   it('056-E7: sin sesión, el servidor rechaza y se señala como ErrorDelServidor', async () => {
-    const { fetchFn } = crearFetchFalso([() => respuestaJson(401, { error: 'Hace falta iniciar sesión' })]);
+    const { fetchFn } = crearFetchFalso([
+      () => respuestaJson(401, { error: 'Hace falta iniciar sesión' }),
+    ]);
     const repositorio = new HttpInsigniasRepository('http://api', fetchFn);
 
     await expect(repositorio.listar()).rejects.toBeInstanceOf(ErrorDelServidor);
