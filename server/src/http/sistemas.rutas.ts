@@ -46,6 +46,14 @@ sistemasRutas.get('/sistemas', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'equipoId debe ser "masculino" o "femenino"' });
     return;
   }
+  // Leer el catálogo exige sesión, cualquier rol (spec 037 lo dejó abierto, pero Teoría y la
+  // pizarra ya piden entrar antes — spec 050 — así que cerrarlo no cambia nada para la app).
+  // No se exige membresía del equipo: Teoría la consultan cuentas sin membresía.
+  const sesion = await resolverSesion(req);
+  if (!sesion) {
+    res.status(401).json({ error: 'Hace falta iniciar sesión' });
+    return;
+  }
   const sistemas = await sistemaRepositorio.listar(equipoId);
   res.json(sistemas);
 });

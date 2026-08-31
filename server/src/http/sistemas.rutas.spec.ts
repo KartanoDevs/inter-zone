@@ -144,9 +144,15 @@ async function putSistema(
   return { status: respuesta.status, cuerpo: await respuesta.json().catch(() => null) };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getCatalogo(equipoId: EquipoId): Promise<any[]> {
-  const respuesta = await fetch(`${base}/api/sistemas?equipoId=${equipoId}`);
+async function getCatalogo(
+  equipoId: EquipoId,
+  cookie: string | null = cookieAdmin,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any[]> {
+  const respuesta = await fetch(`${base}/api/sistemas?equipoId=${equipoId}`, {
+    headers: cookie ? { cookie } : {},
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (await respuesta.json()) as any[];
 }
 
@@ -197,10 +203,27 @@ function normalizarDefensas(defensas: readonly any[] | undefined): any[] {
 describe('API de sistemas (spec 033)', () => {
   describe('el catálogo', () => {
     it('033-E1: un catálogo vacío devuelve una lista vacía', async () => {
-      const respuesta = await fetch(`${base}/api/sistemas?equipoId=masculino`);
+      const respuesta = await fetch(`${base}/api/sistemas?equipoId=masculino`, {
+        headers: { cookie: cookieAdmin },
+      });
 
       expect(respuesta.status).toBe(200);
       expect(await respuesta.json()).toEqual([]);
+    });
+
+    it('sec-A01: leer el catálogo sin sesión devuelve 401', async () => {
+      const respuesta = await fetch(`${base}/api/sistemas?equipoId=masculino`);
+
+      expect(respuesta.status).toBe(401);
+    });
+
+    it('sec-A01: cualquier cuenta con sesión lee el catálogo', async () => {
+      const cookieUsuario = await entrarComo('lectora@club.com', 'usuario');
+      const respuesta = await fetch(`${base}/api/sistemas?equipoId=masculino`, {
+        headers: { cookie: cookieUsuario },
+      });
+
+      expect(respuesta.status).toBe(200);
     });
 
     it('033-E9: el catálogo se filtra por equipo', async () => {
