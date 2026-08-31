@@ -70,7 +70,21 @@ pasar al siguiente, sugiere un commit con el escenario en el mensaje, por ejempl
 `git commit -m "E4: falta si el zaguero esta por delante de su delantero"`. No hagas el
 commit tú solo sin que el usuario lo pida o lo apruebe: proponlo, no lo ejecutes por tu
 cuenta. Un commit por escenario deja un historial que documenta el propio ciclo rojo-verde,
-que es la parte más valiosa de tener esto versionado.
+que es la parte más valiosa de tener esto versionado. Antes de cualquier commit, carga la
+skill `caveman-commit`.
+
+**Ramas y merge.** El flujo es local, sin Pull Requests (no hay `gh` instalado y el
+historial se mantiene lineal):
+
+- Las ramas de trabajo salen de `main` actualizada y vuelven a `main` por **merge
+  fast-forward** (`git checkout main && git merge --ff-only <rama> && git push origin main`).
+  Si la rama se ha quedado atrás, se rebasa sobre `main` antes.
+- **Nunca borres una rama, local ni remota, sin que el usuario te lo pida explícitamente.**
+  Tampoco tras un merge: propón el borrado, no lo ejecutes.
+- Antes de pushear `main`: `npm test` y `npm run typecheck` en verde, y si se tocó UI,
+  relanzar la app (skill `relanzar-app`).
+- No hagas `push --force`, `reset --hard` sobre trabajo no versionado, ni reescribas
+  historia ya pusheada sin pedirlo.
 
 **Válvula de escape:** si el usuario dice explícitamente algo como "sigue hasta E8 sin
 parar" o "encadena los que queden", puedes hacerlo — pero manteniendo el ciclo
