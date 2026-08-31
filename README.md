@@ -211,7 +211,7 @@ La copia semanal la dispara `cron`, **instalado a mano una sola vez** por el usu
 despliegue (en un servidor nuevo hay que volver a hacerlo — no está en el repositorio):
 
 ```cron
-17 4 * * 0  flock -n /tmp/interzone-copia.lock bash ~/projects/interZone/copia-seguridad.sh copia semanal >> ~/copias-interzone/copia.log 2>&1
+17 4 * * 0  flock -n /tmp/interzone-copia.lock bash ~/projects/interZone/inter-zone/copia-seguridad.sh copia semanal >> ~/copias-interzone/copia.log 2>&1
 ```
 
 Para restaurar una copia en producción, el procedimiento paso a paso está en la spec 062,

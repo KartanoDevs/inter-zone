@@ -13,7 +13,7 @@
 #   bash copia-seguridad.sh verificar <fichero>      la restaura en un Postgres desechable
 #
 # El cron semanal (instalar a mano una vez, como el usuario del despliegue):
-#   17 4 * * 0  flock -n /tmp/interzone-copia.lock bash /home/ubuntu/projects/interZone/copia-seguridad.sh copia semanal >> /home/ubuntu/copias-interzone/copia.log 2>&1
+#   17 4 * * 0  flock -n /tmp/interzone-copia.lock bash /home/ubuntu/projects/interZone/inter-zone/copia-seguridad.sh copia semanal >> /home/ubuntu/copias-interzone/copia.log 2>&1
 #
 # `spec 062`. Ni pg_dump ni pg_restore hacen falta en el host: todo corre en el contenedor.
 set -euo pipefail
@@ -77,6 +77,7 @@ tomar_copia() {
   id="$(id_contenedor)" || morir "paso=contenedor el contenedor $CONTENEDOR no está en marcha"
 
   mkdir -p "$DESTINO"
+  chmod 700 "$DESTINO"
 
   local sello destino_final parcial
   sello="$(sello_utc)"
@@ -120,8 +121,11 @@ tomar_copia() {
   mv "$parcial" "$destino_final"
 
   # El .env viaja con la copia: sin él el stack no arranca y POSTGRES_PASSWORD no se recupera.
+  # `cp` sin -p para que el fichero nazca con el umask 077; luego un chmod explícito porque el
+  # .env de origen suele venir con permisos más laxos.
   if [ -f .env ]; then
-    cp -p .env "$DESTINO/entorno-${sello}.env"
+    cp .env "$DESTINO/entorno-${sello}.env"
+    chmod 600 "$DESTINO/entorno-${sello}.env"
   else
     log "AVISO no hay .env en la raíz; la copia $sello va sin él"
   fi
