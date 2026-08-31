@@ -24,9 +24,9 @@ fi
 ENTORNO="$(grep -E '^ENTORNO=' .env | tail -n1 | cut -d '=' -f2- || true)"
 
 if [ "$ENTORNO" = "local" ]; then
-  echo "==> ENTORNO=local: docker-compose.prod.yml + docker-compose.local.yml"
+  echo "==> ENTORNO=local: docker-compose.prod.yml + docker-compose.local.yml" >&2
   docker compose -f docker-compose.prod.yml -f docker-compose.local.yml "$@"
 else
-  echo "==> ENTORNO=${ENTORNO:-producción}: docker-compose.prod.yml"
+  echo "==> ENTORNO=${ENTORNO:-producción}: docker-compose.prod.yml" >&2
   docker compose -f docker-compose.prod.yml "$@"
 fi

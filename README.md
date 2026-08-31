@@ -193,6 +193,30 @@ Detalle completo, alternativas descartadas y riesgos aceptados (en particular, q
 `GET /sistemas` sigue abierto sin sesión — ver "Qué NO hace" más arriba) en
 `docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`.
 
+### Copias de seguridad
+
+`copia-seguridad.sh` toma un volcado lógico de Postgres (`pg_dump -Fc` dentro del contenedor,
+sin leer credenciales) en `~/copias-interzone/`, fuera del árbol del repositorio y de todo
+volumen de Docker. `deploy-servidor.sh` ya toma una copia `previa` antes de cada despliegue y
+avisa —sin bloquear— si la última semanal no está fresca. Detalle, retención y el porqué de
+cada decisión en `docs/decisiones/0042-copia-semanal-por-pg_dump-en-el-host.md` y la spec 062.
+
+```bash
+bash copia-seguridad.sh copia semanal      # toma y rota una copia semanal (8 en rotación)
+bash copia-seguridad.sh comprobar          # ¿hay una copia reciente y legible? (código de salida)
+bash copia-seguridad.sh verificar <dump>   # la restaura de verdad en un Postgres desechable
+```
+
+La copia semanal la dispara `cron`, **instalado a mano una sola vez** por el usuario del
+despliegue (en un servidor nuevo hay que volver a hacerlo — no está en el repositorio):
+
+```cron
+17 4 * * 0  flock -n /tmp/interzone-copia.lock bash ~/projects/interZone/copia-seguridad.sh copia semanal >> ~/copias-interzone/copia.log 2>&1
+```
+
+Para restaurar una copia en producción, el procedimiento paso a paso está en la spec 062,
+sección "Verificación y restauración".
+
 ## Documentación
 
 | Fichero | Para qué |

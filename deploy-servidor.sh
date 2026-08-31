@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # InterZone — actualiza y relanza el despliegue en el servidor, de una pasada:
 #
+#   0. Avisa si las copias de seguridad no están frescas, y toma una copia `previa`
+#      antes de tocar nada. Solo avisa: nunca aborta el despliegue por esto (spec 062).
 #   1. Trae la rama `develop` de origin y deja el working tree EXACTAMENTE igual
 #      que origin/develop (git reset --hard + git clean). Cualquier cambio local del
 #      servidor se descarta a propósito: esta máquina no se edita a mano.
@@ -27,6 +29,18 @@ cd "$RAIZ"
 if [ ! -f .env ]; then
   echo "No hay .env en la raíz ($RAIZ). Copia .env.produccion.example a .env y rellénalo." >&2
   exit 1
+fi
+
+echo "==> 0/5  Copias de seguridad"
+if [ -f copia-seguridad.sh ]; then
+  if ! bash copia-seguridad.sh comprobar; then
+    echo "    (el despliegue sigue: el aviso no lo bloquea)"
+  fi
+  # Una copia de lo que hay AHORA, antes de reconstruir y migrar. No aborta si falla.
+  bash copia-seguridad.sh copia previa \
+    || echo "    AVISO: no se pudo tomar la copia previa; el despliegue sigue"
+else
+  echo "    copia-seguridad.sh no está; me lo salto"
 fi
 
 echo "==> 1/5  Trayendo origin/$RAMA y descartando cambios locales"
