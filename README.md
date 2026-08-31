@@ -108,10 +108,26 @@ está fuera de alcance.
 - SVG nativo para el render (no Canvas, no Fabric.js).
 - TypeScript estricto.
 - Vitest para los tests.
+- Prettier para el formato, con un hook `pre-commit` que lo comprueba (ver "Formato" abajo).
 - Persistencia de los sistemas en PostgreSQL con Prisma, tras un backend de Node y Express en
   `server/`, hablado por HTTP desde un puerto asíncrono y granular (`domain/` declara el
   contrato; ni Angular ni Express se enteran de cómo lo cumple el otro lado). Los ajustes de
   pantalla siguen en `localStorage`, detrás del mismo tipo de puerto.
+
+## Formato
+
+Todo el código va formateado con Prettier (`.prettierrc`), fin de línea LF (`.gitattributes`).
+`npm install` instala un hook `pre-commit` (`scripts/instalar-hooks.mjs`) que rechaza el commit
+si algún fichero staged no está formateado; se salta con `git commit --no-verify`. A mano:
+
+```bash
+npm run format         # formatea src/, server/src/ y la config raíz
+npm run format:check   # solo comprueba, no escribe
+npm run hooks:install  # reinstala el hook si hiciera falta
+```
+
+El hook se copia a `.git/hooks/` sin usar `core.hooksPath`, para no desactivar los hooks de
+graphify. `src/app/maqueta/` queda fuera del formateo (boceto congelado).
 
 ## Arranque
 
