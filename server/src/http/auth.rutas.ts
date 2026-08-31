@@ -43,18 +43,15 @@ export function crearAuthRutas(limitador: LimitadorDeIntentos): Router {
     try {
       await accesoRepositorio.registrar(email, contrasena);
     } catch (error) {
-      if (error instanceof InvitacionNoDisponible) {
-        limitador.registrarFallo(req);
-        res.status(403).json({ error: 'Ese correo no tiene una invitación disponible' });
-        return;
-      }
-      if (error instanceof CorreoYaRegistrado) {
-        limitador.registrarFallo(req);
-        res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
-        return;
-      }
       if (error instanceof ContrasenaDemasiadoCorta) {
         res.status(400).json({ error: 'La contraseña es demasiado corta' });
+        return;
+      }
+      // "No invitado", "invitación ya usada" y "ya tiene cuenta" comparten respuesta exacta
+      // (endurecimiento OWASP A07): distinguirlas deja sondear la lista blanca correo a correo.
+      if (error instanceof InvitacionNoDisponible || error instanceof CorreoYaRegistrado) {
+        limitador.registrarFallo(req);
+        res.status(403).json({ error: 'Ese correo no puede darse de alta' });
         return;
       }
       throw error;

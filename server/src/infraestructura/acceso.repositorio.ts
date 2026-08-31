@@ -98,10 +98,17 @@ function usuarioIdentificadoDeFila(
 }
 
 /** Da de alta una cuenta a partir de una invitación de la lista blanca (spec 035). Rechaza si
- * no hay invitación disponible (E2, E6), si el correo ya tiene cuenta (E7) o si la contraseña
- * no llega al mínimo (E9). La invitación se sella dentro de la misma transacción que crea la
- * cuenta y sus membresías, para que las dos cosas queden o no queden juntas. */
+ * la contraseña no llega al mínimo (E9), si no hay invitación disponible (E2, E6) o si el
+ * correo ya tiene cuenta (E7). La invitación se sella dentro de la misma transacción que crea
+ * la cuenta y sus membresías, para que las dos cosas queden o no queden juntas.
+ *
+ * La longitud se comprueba ANTES de tocar `lista_blanca` (endurecimiento OWASP A07): así el
+ * rechazo por contraseña corta llega igual esté el correo invitado o no, y el atacante no
+ * puede deducir del código de respuesta si un correo está en la lista blanca. */
 export async function registrar(emailBruto: string, contrasena: string): Promise<void> {
+  if (contrasena.length < LONGITUD_MINIMA_CONTRASENA) {
+    throw new ContrasenaDemasiadoCorta();
+  }
   const email = normalizarEmail(emailBruto);
   const invitacion = await prisma.lista_blanca.findUnique({ where: { email } });
   if (!invitacion || invitacion.usada_en !== null) {
@@ -110,9 +117,6 @@ export async function registrar(emailBruto: string, contrasena: string): Promise
   const yaExiste = await prisma.usuario.findUnique({ where: { email } });
   if (yaExiste) {
     throw new CorreoYaRegistrado();
-  }
-  if (contrasena.length < LONGITUD_MINIMA_CONTRASENA) {
-    throw new ContrasenaDemasiadoCorta();
   }
 
   const { porId, porClave } = await mapaEquipos();

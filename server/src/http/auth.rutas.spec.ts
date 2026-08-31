@@ -132,6 +132,34 @@ describe('API de acceso (spec 035)', () => {
       expect(await prisma.usuario.findUnique({ where: { email: 'nadie@club.com' } })).toBeNull();
     });
 
+    it('sec-A07: no invitado y ya registrado responden exactamente igual', async () => {
+      await invitar('existe@club.com', 'usuario');
+      await post('/api/auth/registro', { email: 'existe@club.com', contrasena: 'contrasena123' });
+
+      const noInvitado = await post('/api/auth/registro', {
+        email: 'jamas@club.com',
+        contrasena: 'contrasena123',
+      });
+      const yaRegistrado = await post('/api/auth/registro', {
+        email: 'existe@club.com',
+        contrasena: 'contrasena123',
+      });
+
+      expect(noInvitado.status).toBe(yaRegistrado.status);
+      expect(noInvitado.cuerpo).toEqual(yaRegistrado.cuerpo);
+    });
+
+    it('sec-A07: la contraseña corta se rechaza antes de mirar la lista blanca', async () => {
+      // Un correo que nadie ha invitado: si el 400 por contraseña corta llega igual, el
+      // atacante no puede deducir del código de estado si el correo estaba invitado.
+      const { status } = await post('/api/auth/registro', {
+        email: 'sondeo@club.com',
+        contrasena: 'corta',
+      });
+
+      expect(status).toBe(400);
+    });
+
     it('035-E6: la invitación se sella al usarse y no sirve una segunda vez', async () => {
       await invitar('sellada@club.com', 'usuario');
       const primera = await post('/api/auth/registro', {
