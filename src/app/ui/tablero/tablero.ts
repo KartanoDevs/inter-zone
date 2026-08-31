@@ -700,7 +700,7 @@ export class Tablero {
     if (modo === 'crear') {
       this.store.crear(datos.nombre, datos.tipo, datos.equiposId);
     } else if (modo === 'clonar') {
-      this.store.clonar(datos.nombre);
+      this.store.clonar(datos.nombre, datos.equiposId);
     } else {
       this.store.renombrarActivo(datos.nombre);
     }

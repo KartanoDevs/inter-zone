@@ -587,25 +587,49 @@ export class SistemaStore {
     );
   }
 
-  /** Duplica el sistema activo bajo un nombre nuevo y lo deja activo (spec 026). */
-  async clonar(nombre: string): Promise<boolean> {
+  /**
+   * Duplica el sistema activo bajo un nombre nuevo, en uno o en los dos equipos (spec 026, spec
+   * 063). Una copia independiente por equipo marcado — mismo patrón "todo o nada" que `crear`
+   * desde la spec 048: se validan las `n` copias antes de tocar el repositorio, y si el nombre
+   * choca en cualquiera de los equipos marcados no se crea nada en ninguno.
+   *
+   * Queda activa la copia del equipo del original si estaba marcado; si no (se clonó solo al
+   * otro equipo), la del primer equipo marcado, y el equipo activo salta a ese (spec 063, E3/E11).
+   *
+   * Límite heredado de `crear` (spec 034/048): si la escritura falla a mitad de un clonado a dos
+   * equipos y el entrenador reintenta, el reintento genera ids nuevos; si una copia ya había
+   * llegado al servidor, queda una de más en ese equipo.
+   */
+  async clonar(nombre: string, equiposId: readonly EquipoId[]): Promise<boolean> {
     const sistema = this.sistemaActivo();
-    if (!sistema) {
+    if (!sistema || equiposId.length === 0) {
       return false;
     }
-    const clon = clonarSistema(sistema, crypto.randomUUID(), nombre, this.sistemas());
-    if (!clon) {
-      return false;
+    const clones: Sistema[] = [];
+    for (const equipoId of equiposId) {
+      const clon = clonarSistema(sistema, crypto.randomUUID(), nombre, equipoId, [
+        ...this.sistemas(),
+        ...clones,
+      ]);
+      if (!clon) {
+        return false;
+      }
+      clones.push(clon);
     }
+    const equipoTrasClonar = equiposId.includes(sistema.equipoId) ? sistema.equipoId : equiposId[0];
+    const clonActivo = clones.find((clon) => clon.equipoId === equipoTrasClonar) as Sistema;
     return this.ejecutarEscritura(
       async () => {
-        await this.repositorio.crear(clon);
-        this.sistemas.update((lista) => [...lista, clon]);
-        this.sistemaActivoId.set(clon.id);
+        for (const clon of clones) {
+          await this.repositorio.crear(clon);
+        }
+        this.sistemas.update((lista) => [...lista, ...clones]);
+        this.equipoActivo.set(equipoTrasClonar);
+        this.sistemaActivoId.set(clonActivo.id);
         this.rotacionActiva.set(1);
         this.cambiarContexto();
       },
-      () => void this.clonar(nombre),
+      () => void this.clonar(nombre, equiposId),
     );
   }
 

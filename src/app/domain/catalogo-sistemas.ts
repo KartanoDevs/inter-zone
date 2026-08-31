@@ -73,20 +73,25 @@ export function describirSistema(sistema: Sistema, texto: string): Sistema {
  * Duplica un sistema entero — mismo tipo, misma plantilla (con cualquier personalización del
  * líbero que tuviera), formaciones, explicaciones y descripción — bajo un id y un nombre
  * nuevos (spec 026). Mismas reglas de nombre que `crearSistema`/`renombrarSistema`.
+ *
+ * `equipoId` es el equipo de destino (spec 063): puede ser el del original o el otro. La
+ * unicidad del nombre se comprueba en el equipo de destino, no en el del original. El store
+ * llama una vez por equipo marcado, igual que `crear` desde la spec 048.
  */
 export function clonarSistema(
   sistema: Sistema,
   id: string,
   nuevoNombre: string,
+  equipoId: EquipoId,
   existentes: readonly Sistema[],
 ): Sistema | null {
   if (
     !nombreValido(nuevoNombre) ||
-    colisiona(existentes, null, sistema.equipoId, sistema.tipo, nuevoNombre)
+    colisiona(existentes, null, equipoId, sistema.tipo, nuevoNombre)
   ) {
     return null;
   }
-  return { ...sistema, id, nombre: nuevoNombre };
+  return { ...sistema, id, nombre: nuevoNombre, equipoId };
 }
 
 /** Ausente equivale a "borrador" (spec 051) — ver el comentario de `Sistema.estado`. */

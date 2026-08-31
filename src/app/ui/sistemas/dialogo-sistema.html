@@ -32,7 +32,9 @@
         Defensa
       </label>
     </fieldset>
+  }
 
+  @if (mostrarEquipo()) {
     <fieldset class="app-dialogo-sistema__tipo">
       <legend>Equipo</legend>
       @for (equipo of equipos; track equipo) {
@@ -55,7 +57,7 @@
     <button
       type="button"
       class="app-boton app-boton--primario"
-      [disabled]="mostrarTipo() && !puedeConfirmar()"
+      [disabled]="!puedeConfirmar()"
       (click)="emitirConfirmacion(nombreCampo.value)"
     >
       Confirmar

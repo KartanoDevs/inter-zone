@@ -117,7 +117,9 @@ Modelos y reglas. Aquí vive el voleibol.
   formación con el roster que le toca en su propia rotación — ADR 0014), `describirSistema`
   (descripción general del sistema, spec 025; texto en blanco la borra, igual que
   `explicarRotacion`), `clonarSistema` (spec 026: duplica un sistema entero bajo un id y un
-  nombre nuevos; mismas reglas de nombre que `crearSistema`/`renombrarSistema`), `estadoDe`
+  nombre nuevos; spec 063: recibe también el equipo de destino —el del original o el otro— y
+  comprueba la unicidad del nombre en ese equipo; mismas reglas que
+  `crearSistema`/`renombrarSistema`), `estadoDe`
   (spec 051: `Sistema.estado` es opcional, ausente equivale a `'borrador'`),
   `validarSistema`/`invalidarSistema` (cambian ese estado; quién puede hacerlo es
   `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero).
@@ -299,8 +301,9 @@ Angular, las tres testeables sin `TestBed`.
   o descartan el desplazamiento en edición; se persiste al llamar a `guardar`), `crear` (recibe el
   equipo del sistema nuevo, spec 032; cambia `equipoActivo` si es distinto del que ya estaba
   activo, para que el sistema recién creado se vea de inmediato), `clonar`
-  (spec 026, mismo patrón que `crear` pero a partir del sistema activo; mantiene su equipo, sin
-  parámetro propio), `renombrarActivo`,
+  (spec 026, mismo patrón que `crear` pero a partir del sistema activo; spec 063: recibe
+  `equiposId` como `crear` y clona a uno o a los dos equipos, todo o nada; queda activa la copia
+  del equipo del original si estaba marcado, si no la del primero marcado), `renombrarActivo`,
   `borrar`, `seleccionarJugador` (toggle: toca a la misma ficha deselecciona, a otra cambia el
   foco — spec 010), `enfocarJugador` (selecciona sin toggle, spec 027: se usa al terminar un
   arrastre que coloca una ficha), `deseleccionarJugador` (spec 027: pinchar el fondo cuando no
@@ -424,10 +427,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
 - `ui/sistemas/` — `BarraSistemas` (desplegable + crear/renombrar/clonar/borrar — el botón de
   clonar, spec 026, deshabilitado sin sistema activo igual que renombrar y borrar; recibe el
   catálogo ya filtrado por equipo, no sabe que existen equipos), `DialogoSistema` (alta, edición
-  y clonado — spec 026 añade un tercer modo en `Tablero.dialogoSistema`, reutilizando el
-  componente sin cambios: `mostrarTipo` en `false` como al editar, `nombreInicial` con el nombre
-  sugerido «‹Original› (copia)»; el campo de equipo, spec 032, comparte esa misma visibilidad —
-  ni el tipo ni el equipo cambian una vez creado), `SelectorEquipo` (pestañas del equipo activo,
+  y clonado — spec 026 añade un tercer modo en `Tablero.dialogoSistema`: `mostrarTipo` en `false`
+  como al editar, `nombreInicial` con el nombre sugerido «‹Original› (copia)». La spec 063 separa
+  `mostrarEquipo` de `mostrarTipo`: el bloque de equipo (spec 048, casillas de los dos equipos)
+  se muestra al crear y al clonar, no al renombrar — clonar puede llevar la copia a uno o a los
+  dos equipos), `SelectorEquipo` (pestañas del equipo activo,
   spec 032, mismo patrón que `SelectorCaso`).
 - `ui/comun/` — `DialogoConfirmacion`, reutilizado para "cambios sin guardar" y para confirmar
   el borrado de un sistema. `ficha-vista.ts` (spec 052): etiqueta y color de un puesto o un

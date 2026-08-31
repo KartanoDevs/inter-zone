@@ -556,7 +556,7 @@ describe('SistemaStore', () => {
     await store.cargar();
     store.seleccionarRotacion(1);
 
-    const clonado = await store.clonar('Uno (copia)');
+    const clonado = await store.clonar('Uno (copia)', ['masculino']);
 
     expect(clonado).toBe(true);
     expect(store.sistemaActivoId()).not.toBe('r1');
@@ -593,7 +593,7 @@ describe('SistemaStore', () => {
     const store = new SistemaStore(new RepositorioFake([original]));
     await store.cargar();
 
-    await store.clonar('Defensa (copia)');
+    await store.clonar('Defensa (copia)', ['masculino']);
 
     const clon = store.catalogo().find((s) => s.nombre === 'Defensa (copia)');
     expect(clon?.defensas).toEqual(original.defensas);
@@ -603,10 +603,125 @@ describe('SistemaStore', () => {
     const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno')]));
     await store.cargar();
 
-    const clonado = await store.clonar('Uno');
+    const clonado = await store.clonar('Uno', ['masculino']);
 
     expect(clonado).toBe(false);
     expect(store.catalogo().map((s) => s.id)).toEqual(['r1']);
+  });
+
+  describe('clonar a uno o a los dos equipos (spec 063)', () => {
+    it('063-E1: clonar marcando los dos equipos crea una copia independiente en cada uno', async () => {
+      const [colocador] = plantilla().ordenSaque;
+      const original: Sistema = {
+        ...sistemaBase('r1', 'Cinco-uno', 'masculino'),
+        formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
+      };
+      const store = new SistemaStore(new RepositorioFake([original]));
+      await store.cargar();
+
+      const clonado = await store.clonar('Cinco-uno M', ['masculino', 'femenino']);
+
+      expect(clonado).toBe(true);
+      const enMasculino = store
+        .sistemas()
+        .find((s) => s.equipoId === 'masculino' && s.nombre === 'Cinco-uno M');
+      const enFemenino = store
+        .sistemas()
+        .find((s) => s.equipoId === 'femenino' && s.nombre === 'Cinco-uno M');
+      expect(enMasculino?.formaciones).toEqual(original.formaciones);
+      expect(enFemenino?.formaciones).toEqual(original.formaciones);
+      expect(enMasculino!.id).not.toBe(enFemenino!.id);
+      expect(enMasculino!.id).not.toBe('r1');
+    });
+
+    it('063-E2: clonar marcando solo el equipo del original crea una sola copia, ahí', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno', 'masculino')]));
+      await store.cargar();
+
+      await store.clonar('Uno (copia)', ['masculino']);
+
+      expect(store.sistemas().filter((s) => s.nombre === 'Uno (copia)')).toHaveLength(1);
+      expect(store.sistemas().find((s) => s.nombre === 'Uno (copia)')?.equipoId).toBe('masculino');
+    });
+
+    it('063-E3: clonar solo al otro equipo lleva la copia allí, no deja nada en el de origen y salta a ese equipo', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno', 'masculino')]));
+      await store.cargar();
+
+      const clonado = await store.clonar('Uno (copia)', ['femenino']);
+
+      expect(clonado).toBe(true);
+      expect(
+        store.sistemas().some((s) => s.equipoId === 'masculino' && s.nombre === 'Uno (copia)'),
+      ).toBe(false);
+      expect(store.equipoActivo()).toBe('femenino');
+      expect(store.sistemaActivo()?.equipoId).toBe('femenino');
+      expect(store.sistemaActivo()?.nombre).toBe('Uno (copia)');
+      expect(store.rotacionActiva()).toBe(1);
+    });
+
+    it('063-E4: si el nombre colisiona en uno de los equipos marcados, no se crea en ninguno', async () => {
+      const yaEnFemenino = sistemaBase('f1', 'Choca', 'femenino');
+      const store = new SistemaStore(
+        new RepositorioFake([sistemaBase('r1', 'Original', 'masculino'), yaEnFemenino]),
+      );
+      await store.cargar();
+
+      const clonado = await store.clonar('Choca', ['masculino', 'femenino']);
+
+      expect(clonado).toBe(false);
+      expect(store.sistemas().filter((s) => s.nombre === 'Choca')).toHaveLength(1);
+      expect(store.sistemas().some((s) => s.equipoId === 'masculino' && s.nombre === 'Choca')).toBe(
+        false,
+      );
+    });
+
+    it('063-E5: sin ningún equipo marcado no se clona nada', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno', 'masculino')]));
+      await store.cargar();
+
+      const clonado = await store.clonar('Uno (copia)', []);
+
+      expect(clonado).toBe(false);
+      expect(store.sistemas()).toHaveLength(1);
+    });
+
+    it('063-E7: editar y guardar una copia no toca ni el original ni la otra copia', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Base', 'masculino')]));
+      await store.cargar();
+      await store.clonar('Base (copia)', ['masculino', 'femenino']);
+      // La copia de masculino queda activa (E11): se edita esa.
+      const orden = plantilla().ordenSaque;
+      const puntosLegalesR1 = [
+        { x: 8, y: 8 },
+        { x: 8, y: 1 },
+        { x: 4.5, y: 1 },
+        { x: 1, y: 1 },
+        { x: 1, y: 6 },
+        { x: 4.5, y: 6 },
+      ];
+      orden.forEach((jugador, indice) => store.colocarOMover(jugador.id, puntosLegalesR1[indice]));
+      await store.guardar();
+
+      const original = store.sistemas().find((s) => s.id === 'r1');
+      const copiaFemenino = store
+        .sistemas()
+        .find((s) => s.equipoId === 'femenino' && s.nombre === 'Base (copia)');
+      expect(original?.formaciones[1]).toBeUndefined();
+      expect(copiaFemenino?.formaciones[1]).toBeUndefined();
+    });
+
+    it('063-E11: con los dos equipos marcados, queda activo el del original', async () => {
+      const store = new SistemaStore(new RepositorioFake([sistemaBase('r1', 'Uno', 'femenino')]));
+      await store.cargar();
+      store.seleccionarEquipo('femenino');
+
+      await store.clonar('Uno (copia)', ['masculino', 'femenino']);
+
+      expect(store.equipoActivo()).toBe('femenino');
+      expect(store.sistemaActivo()?.equipoId).toBe('femenino');
+      expect(store.sistemaActivo()?.nombre).toBe('Uno (copia)');
+    });
   });
 
   it('010-E6: renombrar el sistema activo actualiza su nombre', async () => {
@@ -1781,7 +1896,7 @@ describe('SistemaStore', () => {
       expect(renombrado).toBe(true);
       expect(store.sistemaActivo()?.nombre).toBe('Dos renombrado');
 
-      const clonado = await store.clonar('Dos renombrado (copia)');
+      const clonado = await store.clonar('Dos renombrado (copia)', ['masculino']);
       expect(clonado).toBe(true);
       expect(
         store

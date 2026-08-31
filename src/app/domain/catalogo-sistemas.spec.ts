@@ -194,9 +194,46 @@ describe('clonarSistema', () => {
       explicacionesRotacion: {},
     };
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', 'masculino', [original]);
 
     expect(resultado?.formaciones).toEqual(original.formaciones);
+  });
+
+  it('063-E1/E3: el clon va al equipo indicado, no forzosamente al del original', () => {
+    const original = sistema('s1', 'Original', 'masculino');
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', 'femenino', [original]);
+
+    expect(resultado?.equipoId).toBe('femenino');
+  });
+
+  it('063-E4: se rechaza si el nombre ya existe en el equipo de destino aunque esté libre en el del original', () => {
+    const original = sistema('s1', 'Cinco-uno', 'masculino');
+    const chocaEnFemenino = sistema('s2', 'Cinco-uno', 'femenino');
+
+    const resultado = clonarSistema(original, 's3', 'Cinco-uno', 'femenino', [
+      original,
+      chocaEnFemenino,
+    ]);
+
+    expect(resultado).toBeNull();
+  });
+
+  it('063-E6: clonar a otro equipo conserva formaciones, descripción y plantilla', () => {
+    const [colocador] = plantilla().ordenSaque;
+    const original: Sistema = {
+      ...sistema('s1', 'Original', 'masculino'),
+      descripcion: 'Recepción a 3.',
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
+      explicacionesRotacion: { 1: 'Nota' },
+    };
+
+    const clon = clonarSistema(original, 's2', 'Original (copia)', 'femenino', [original]);
+
+    expect(clon?.descripcion).toBe('Recepción a 3.');
+    expect(clon?.formaciones).toEqual(original.formaciones);
+    expect(clon?.explicacionesRotacion).toEqual(original.explicacionesRotacion);
+    expect(clon?.plantilla).toEqual(original.plantilla);
   });
 
   it('026-E2: el clon copia la descripción general', () => {
@@ -205,7 +242,9 @@ describe('clonarSistema', () => {
       descripcion: 'Recepción a 3 en 5-1.',
     };
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.descripcion).toBe('Recepción a 3 en 5-1.');
   });
@@ -220,7 +259,9 @@ describe('clonarSistema', () => {
       explicacionesRotacion: { 1: 'Explicación de la rotación' },
     };
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.explicacionesRotacion[1]).toBe('Explicación de la rotación');
     expect(resultado?.formaciones[1]?.[0]?.explicacion).toBe('Explicación del jugador');
@@ -229,7 +270,9 @@ describe('clonarSistema', () => {
   it('026-E4: el clon copia a quién sustituye el líbero en cada rotación', () => {
     const original = sistemaConLibero('s1', 'Original');
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.plantilla.libero?.sustitutosPorRotacion).toEqual(
       original.plantilla.libero?.sustitutosPorRotacion,
@@ -243,7 +286,7 @@ describe('clonarSistema', () => {
       formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
     };
 
-    const clon = clonarSistema(original, 's2', 'Original (copia)', [original])!;
+    const clon = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [original])!;
     const clonEditado = {
       ...clon,
       formaciones: { ...clon.formaciones, 1: [{ jugador: colocador, punto: { x: 1, y: 1 } }] },
@@ -256,7 +299,9 @@ describe('clonarSistema', () => {
   it('032-E4: el clon mantiene el mismo equipo que el original', () => {
     const original = sistema('s1', 'Original', 'femenino');
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.equipoId).toBe('femenino');
   });
@@ -264,7 +309,9 @@ describe('clonarSistema', () => {
   it('026-E6: el clon nace con un id distinto', () => {
     const original = sistema('s1', 'Original');
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.id).not.toBe(original.id);
   });
@@ -273,7 +320,10 @@ describe('clonarSistema', () => {
     const original = sistema('s1', 'Original');
     const otro: Sistema = { ...sistema('s2', 'Original (copia)') };
 
-    const resultado = clonarSistema(original, 's3', 'Original (copia)', [original, otro]);
+    const resultado = clonarSistema(original, 's3', 'Original (copia)', original.equipoId, [
+      original,
+      otro,
+    ]);
 
     expect(resultado).toBeNull();
   });
@@ -281,7 +331,9 @@ describe('clonarSistema', () => {
   it('026-E9: el clon es del mismo tipo que el original', () => {
     const original: Sistema = { ...sistema('s1', 'Original'), tipo: 'defensa' };
 
-    const resultado = clonarSistema(original, 's2', 'Original (copia)', [original]);
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
 
     expect(resultado?.tipo).toBe('defensa');
   });

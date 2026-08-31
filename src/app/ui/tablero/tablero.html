@@ -473,6 +473,7 @@
             : ''
       "
       [mostrarTipo]="modo === 'crear'"
+      [mostrarEquipo]="modo === 'crear' || modo === 'clonar'"
       [equipoInicial]="store.equipoActivo()"
       (confirmar)="confirmarDialogoSistema($event)"
       (cancelar)="cancelarDialogoSistema()"
