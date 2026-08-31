@@ -1,8 +1,19 @@
-graphify-out/graph.json merge=graphify
-
-# Los scripts de shell corren en Linux (servidor, contenedores): siempre LF,
-# aunque se editen desde Windows con core.autocrlf=true.
-*.sh text eol=lf
+# Normalización de fin de línea. Todo el código y la configuración van a LF en el repo y en
+# disco, sin depender de `core.autocrlf` de cada máquina (era `true` en Windows y hacía que
+# Prettier viera CRLF donde el repo tiene LF). `text=auto` deja que Git detecte binarios.
+* text=auto eol=lf
 
 # Los .bat solo corren en Windows: CRLF.
 *.bat text eol=crlf
+
+# Binarios: nunca tocar.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+graphify-out/graph.json merge=graphify
