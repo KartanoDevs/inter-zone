@@ -79,6 +79,10 @@ entrar. Filtrar la lectura por rol (qué ve un `usuario` frente a un `entrenador
 asignada todavía; hasta entonces, sigue sin ser buena idea exponer el servidor a una red que no
 sea de confianza.
 
+> **Prioridad: baja por ahora.** En producción el servidor solo se alcanza desde la red
+> interna de Docker (`docker-compose.prod.yml` no publica su puerto), con nginx delante. El
+> agujero es real pero está contenido; no bloquea nada y no urge.
+
 **Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
 
 **Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 014–016 en la numeración de
@@ -89,7 +93,9 @@ specs siguen guardados para esto, y hasta que no se escriban no existe ni la spe
 - Exportar e importar JSON y PNG (spec 016).
 - Definir varias plantillas de equipo desde la aplicación. Las reglas ya están en `domain/`
   (`plantillas-equipo.ts`), pero hoy todos los sistemas usan la misma plantilla fija:
-  `PLANTILLA_GLOBAL`, una constante de la aplicación (ADR 0013).
+  `PLANTILLA_GLOBAL`, una constante de la aplicación (ADR 0013). **Prioridad: baja por ahora.**
+  Con dos equipos y una plantilla la app funciona; es una funcionalidad grande, sin spec
+  asignada, y nada la reclama.
 
 **Fuera a propósito, también en la v2:** PWA **offline** y sincronización sin conexión.
 `localStorage` no se queda como modo desconectado para los sistemas; se sustituyó por el
