@@ -1,6 +1,7 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
-import { authRutas } from './auth.rutas';
+import { crearAuthRutas } from './auth.rutas';
 import { examenRutas } from './examen.rutas';
+import { crearLimitadorDeIntentos, type LimitadorDeIntentos } from './limitador';
 import { listaBlancaRutas } from './lista-blanca.rutas';
 import { sistemasRutas } from './sistemas.rutas';
 
@@ -22,16 +23,38 @@ function cors(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
+/** Cabeceras de seguridad en toda respuesta de la API (endurecimiento OWASP A05). El nginx del
+ * frontend las pone en la SPA, pero sus `add_header` no se heredan a la `location /api/`, así
+ * que las respuestas de la API viajaban sin ellas. `no-store` porque nada de la API debe
+ * quedarse en una caché intermedia. */
+function cabecerasDeSeguridad(_req: Request, res: Response, next: NextFunction): void {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}
+
 /** Fábrica del servidor Express, sin escuchar puerto (`main.ts` lo hace, los tests de
  * integración levantan su propia instancia efímera). `/api/auth` (spec 035) da cuenta,
  * contraseña y sesión; `/api/lista-blanca` (spec 054) es solo para el admin;
- * `/api/sistemas` exige sesión y rol al escribir desde la spec 037, no al leer; `/api/examen`
- * (spec 056) solo exige sesión, para guardar y consultar las insignias de la propia cuenta. */
-export function crearServidor(): Express {
+ * `/api/sistemas` exige sesión para leer (endurecimiento OWASP A01) y rol al escribir (spec
+ * 037); `/api/examen` (spec 056) solo exige sesión, para las insignias de la propia cuenta.
+ *
+ * `limitador` se puede inyectar para que un test reinicie su estado sin recrear el servidor;
+ * por defecto nace uno nuevo, con el contador a cero. */
+export function crearServidor(
+  limitador: LimitadorDeIntentos = crearLimitadorDeIntentos(),
+): Express {
   const app = express();
+  app.disable('x-powered-by');
+  // Cuántos proxies de confianza hay delante (nginx del front, y NPM en el host). Por defecto
+  // 0: se usa la IP del socket, nunca una cabecera falsificable. Contar saltos desde la derecha
+  // es lo que impide que un cliente se invente su `X-Forwarded-For`.
+  app.set('trust proxy', Number(process.env['SALTOS_PROXY'] ?? 0));
   app.use(cors);
-  app.use(express.json());
-  app.use('/api', authRutas);
+  app.use(cabecerasDeSeguridad);
+  app.use(express.json({ limit: '1mb' }));
+  app.use('/api', crearAuthRutas(limitador));
   app.use('/api', listaBlancaRutas);
   app.use('/api', sistemasRutas);
   app.use('/api', examenRutas);

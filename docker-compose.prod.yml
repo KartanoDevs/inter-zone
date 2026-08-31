@@ -53,6 +53,10 @@ services:
       # termina TLS delante de este despliegue. Con COOKIE_SEGURA=true y acceso por http, el
       # navegador descarta la cookie en silencio y el login "no hace nada".
       COOKIE_SEGURA: ${COOKIE_SEGURA:-true}
+      # Proxies de confianza delante del servidor: el nginx de `web` y Nginx Proxy Manager en el
+      # host. El limitador de intentos cuenta la IP real contando dos saltos desde la derecha de
+      # X-Forwarded-For; con menos, un cliente podría falsificar su IP y saltarse el límite.
+      SALTOS_PROXY: ${SALTOS_PROXY:-2}
       ADMIN_EMAIL_INICIAL: ${ADMIN_EMAIL_INICIAL}
     depends_on:
       postgres:

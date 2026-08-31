@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '../infraestructura/prisma';
 import { sembrarCatalogoBase, sembrarPrimerAdmin } from '../infraestructura/semilla';
+import { crearLimitadorDeIntentos } from './limitador';
 import { crearServidor } from './servidor';
 
 /**
@@ -12,10 +13,14 @@ import { crearServidor } from './servidor';
 
 let servidor: Server;
 let base: string;
+// Limitador propio, para poder reiniciar su contador entre tests sin recrear el servidor
+// (endurecimiento OWASP A04/A07): si un test agota el cupo de fallos, no debe arrastrarlo al
+// siguiente.
+const limitador = crearLimitadorDeIntentos();
 
 beforeAll(async () => {
   await sembrarCatalogoBase();
-  servidor = crearServidor().listen(0);
+  servidor = crearServidor(limitador).listen(0);
   await new Promise<void>((resolve) => servidor.once('listening', resolve));
   const direccion = servidor.address();
   if (!direccion || typeof direccion === 'string') {
@@ -34,6 +39,7 @@ beforeEach(async () => {
   // usuario (invitado_por es SET NULL), así que se borra aparte. equipo y jugador se quedan.
   await prisma.usuario.deleteMany({});
   await prisma.lista_blanca.deleteMany({});
+  limitador.reiniciar();
 });
 
 async function invitar(
@@ -190,6 +196,39 @@ describe('API de acceso (spec 035)', () => {
         where: { usuario: { email: 'entra@club.com' } },
       });
       expect(sesion.expira_en.getTime()).toBeGreaterThan(Date.now() + 29 * 24 * 60 * 60 * 1000);
+    });
+
+    it('sec-A04: tras muchos intentos fallidos, entrar responde 429', async () => {
+      await invitar('fuerza@club.com', 'usuario');
+      await post('/api/auth/registro', { email: 'fuerza@club.com', contrasena: 'contrasena123' });
+
+      let ultima = 0;
+      for (let i = 0; i < 21; i++) {
+        ultima = (await post('/api/auth/entrar', { email: 'fuerza@club.com', contrasena: 'mala' }))
+          .status;
+      }
+      expect(ultima).toBe(429);
+
+      // Un intento con la contraseña correcta tampoco pasa mientras el cupo está agotado.
+      const buena = await post('/api/auth/entrar', {
+        email: 'fuerza@club.com',
+        contrasena: 'contrasena123',
+      });
+      expect(buena.status).toBe(429);
+      expect(buena.cuerpo).toHaveProperty('error');
+    });
+
+    it('sec-A04: los intentos que aciertan no cuentan para el límite', async () => {
+      await invitar('acierta@club.com', 'usuario');
+      await post('/api/auth/registro', { email: 'acierta@club.com', contrasena: 'contrasena123' });
+
+      for (let i = 0; i < 30; i++) {
+        const { status } = await post('/api/auth/entrar', {
+          email: 'acierta@club.com',
+          contrasena: 'contrasena123',
+        });
+        expect(status).toBe(200);
+      }
     });
 
     it('035-E11: entrar con la contraseña equivocada, y entrar con un correo inexistente, responden igual', async () => {
