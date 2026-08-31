@@ -55,3 +55,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0039](0039-teoria-store-propio.md) | Teoría tiene su propia navegación, no comparte la del editor | Aceptada |
 | [0040](0040-el-libero-sustituye-siempre-al-central-de-zaga.md) | El líbero sustituye siempre al central de zaga; se retira el selector de la interfaz | Aceptada |
 | [0041](0041-despliegue-en-un-solo-origen-y-pwa-instalable.md) | Despliegue Docker en un solo origen (nginx + proxy a la API) y PWA instalable, no offline | Aceptada |
+| [0042](0042-copia-semanal-por-pg_dump-en-el-host.md) | Copia semanal de la base por `pg_dump -Fc` en el host, con `cron` y retención por número | Aceptada |

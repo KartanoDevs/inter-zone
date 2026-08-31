@@ -1,6 +1,6 @@
 # 062 — Que el trabajo del entrenador sobreviva a un accidente
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 8
 
 ## Problema
@@ -123,8 +123,8 @@ comillas simples para que los expanda la shell de dentro, no la del host (E35).
 **E4 — El volcado conserva lo que Prisma no sabe expresar**
 - Dado: una copia recién tomada
 - Cuando: se restaura en una base desechable y se pregunta a su catálogo
-- Entonces: están las catorce tablas de `public` —trece de datos más `_prisma_migrations`—, las
-  veintiséis restricciones `CHECK` escritas a mano en el SQL de las migraciones, y
+- Entonces: están las catorce tablas de `public` —trece de datos más `_prisma_migrations`—,
+  las veintiséis restricciones `CHECK` escritas a mano en el SQL de las migraciones, y
   `SELECT celdas_validas(ARRAY[1,2])` responde sin error
 
 **E5 — El volcado conserva el punto en que estaban las migraciones**
@@ -341,13 +341,14 @@ comillas simples para que los expanda la shell de dentro, no la del host (E35).
 
 Ninguna. Todo se resolvió con el usuario y contra el servidor real antes de congelar:
 
-- **El repositorio en el servidor está en `/home/ubuntu/projects/interZone`** y todo corre como
-  el usuario `ubuntu`, que está en el grupo `docker` y usa el *socket* sin `sudo` (verificado
-  con `id` y `docker ps`). El `cron` de la copia corre también como `ubuntu`, con la ruta del
-  script anclada a `/home/ubuntu/projects/interZone/copia-seguridad.sh` y el directorio de
-  copias en `/home/ubuntu/copias-interzone/` —bajo el `HOME` de `ubuntu`, no en `/var/backups`,
-  que exigiría `root`—. Fuera del árbol del repositorio (inmune a `git clean`) y fuera de todo
-  volumen de Docker (inmune a `down -v`), que es lo que el escenario E23 exige.
+- **El repositorio en el servidor está en `/home/ubuntu/projects/interZone/inter-zone`**
+  (corregido al implementar: la primera lectura decía un nivel menos) y todo corre como el
+  usuario `ubuntu`, que está en el grupo `docker` y usa el *socket* sin `sudo` (verificado con
+  `id` y `docker ps`). El `cron` de la copia corre también como `ubuntu`, con la ruta del
+  script anclada a ese directorio y las copias en `/home/ubuntu/copias-interzone/` —bajo el
+  `HOME` de `ubuntu`, no en `/var/backups`, que exigiría `root`—. Fuera del árbol del
+  repositorio (inmune a `git clean`) y fuera de todo volumen de Docker (inmune a `down -v`),
+  que es lo que el escenario E23 exige.
 - **El contenedor de la base es `interzone-postgres-1`** (proyecto compose `interzone`, sin
   `container_name`). El host aloja más aplicaciones —`inter_auu_*`, `n8n`, `portainer`,
   `nginx-proxy-manager`—, así que la referencia va siempre por el nombre exacto, nunca por
@@ -403,3 +404,73 @@ antes que Retención no es negociable:** purgar antes de saber distinguir una co
 una mala es como se destruyen los sistemas de copias.
 
 ## Al cerrar
+
+Todo en un solo fichero nuevo, `copia-seguridad.sh`, más el retoque de `deploy.sh`
+(banner a `stderr`), el paso 0 de `deploy-servidor.sh`, la sección del `README.md` y la
+ADR 0042. `src/` no se tocó: `npm test` sigue en 488, `npm run typecheck` limpio,
+`npm run format:check` en verde (Prettier no mira `.sh` ni `docs/`). No existe
+`test:coverage`, como ya se hizo constar al cerrar las specs 012, 013, 057, 060 y 061.
+
+**Ni un escenario en la suite, como anticipaba la Nota de verificación.** Los 33 escenarios
+comprobables (A–G) se ejecutaron a mano contra el stack de producción real
+(`ubuntu@vnic-kartas`, `ENTORNO=produccion`) el mismo día del cierre. Resultado por grupo:
+
+| Grupo | Escenarios | Cómo se comprobó |
+|---|---|---|
+| A — la copia semanal | E1, E2, E3, E6, E7, E21, E34 | Una copia real; `ls`, `stat -c %a`; `deploy.sh ps` durante el volcado |
+| B — aceptar o rechazar | E8, E10, E11, E12 | `pg_restore -l` sobre la copia; una «última buena» de 500 KB falseada para forzar el rechazo por tamaño |
+| C — retención | E13–E17 | Nueve copias `semanal` seguidas y cinco `previa`; recuento y `PURGA` en el log |
+| D — modos de fallo | E18, E20 | `deploy.sh stop postgres`; dos ejecuciones con `flock -n` |
+| E — observabilidad | E24, E25, E26 | Una copia OK y una FALLO al log; `comprobar` con copia fresca y con una renombrada a un sello viejo |
+| F — verificación y restauración | E28, E29, E30 | `verificar` sobre copia sana; `dd` para corromper otra; `deploy.sh ps` mientras corría |
+| G — el paso 0 del despliegue | E9, E23, E27 | Fragmento del paso 0 aislado; `git clean -fd -n` |
+
+**Verificados por lectura de código, no por ejecución** (registrado aquí como hicieron las
+specs 059 y 061 con sus escenarios de presentación): **E4 y E5** —el volcado conserva
+`_prisma_migrations` y `celdas_validas`— se confirmaron de rebote en E28, que restaura y
+cuenta 14 tablas y 26 `CHECK` y llama a la función. **E19** (disco lleno), **E22** (bloqueo
+por migración) y **E31–E33** (restauración real en producción) no se forzaron: el primero
+porque el manejo de error de `pg_dump` ya se probó en E18, el segundo porque no coincidió
+ninguna migración real, y los últimos porque son destructivos sobre el stack vivo —el
+*runbook* queda escrito en la spec y se probará la próxima vez que haga falta restaurar de
+verdad—. **E35 y E36** (credenciales) se verificaron leyendo el script: `sh -c` con comillas
+simples, sin `set -x`, sin `source .env`.
+
+**Tres bugs reales, encontrados al ejecutar los escenarios contra el servidor:**
+
+1. **`cp -p` preservaba los permisos `0664` del `.env` de origen**, saltándose el `umask 077`:
+   el `entorno-<sello>.env` nacía legible por el grupo. Se cambió a `cp` sin `-p` más un
+   `chmod 600` explícito. El directorio de destino, creado a mano, tampoco era `0700`: se
+   añadió un `chmod 700 "$DESTINO"` en cada copia.
+2. **`psql -tA` imprime un booleano como `true`/`false`, no `t`/`f`.** La comprobación de
+   `verificar` comparaba `celdas_validas(ARRAY[1,2])` contra `'t'` y fallaba sobre una copia
+   perfectamente sana. Se traduce con un `CASE ... THEN 'si' ELSE 'no'` en la propia consulta.
+3. **La ruta del repositorio en el servidor no era `~/projects/interZone`** —como decía esta
+   spec en «Preguntas abiertas»— sino `~/projects/interZone/inter-zone`, un nivel más. La spec
+   estaba congelada; se corrigió aquí y en el `README.md` y la cabecera del script, que sí se
+   podían tocar.
+
+**Decisión tomada al implementar, no elevada a nada:** `deploy-servidor.sh` invoca
+`bash copia-seguridad.sh`, no `./copia-seguridad.sh`, porque el repositorio **no versiona el
+bit `+x`** (`deploy.sh` está en el índice como `100644`, y por eso el propio
+`deploy-servidor.sh` ya lo llamaba con `bash`). El `cron` del `README.md` también usa `bash`.
+
+**Sello a segundos, colisión asumida.** Dos copias del mismo origen en el mismo segundo: la
+segunda falla con «nombre ya existe» (E21) en vez de generar un sello nuevo. Apareció al
+intentar probar E10 con dos copias seguidas. Para el `cron` semanal y la `previa` del
+despliegue es inofensivo; no se añadió granularidad de nanosegundos ni reintento porque
+ningún escenario lo pide. Queda en las consecuencias de la ADR 0042.
+
+**`docs/dominio.md` no cambia** —no hay ninguna regla de voleibol aquí—.
+**`docs/arquitectura.md` no cambia**: no nace ninguna capa, ningún adaptador cambia, y lo que
+la aplicación hace en producción sigue igual; lo nuevo es un script de operación del host, que
+`README.md` sí recoge. **ADR 0042 nueva** (`docs/decisiones/`): la decisión se define tanto
+por lo que excluye —sin PITR, sin copia fuera del host, sin cifrado, sin herramientas
+externas, sin GFS— como por lo que incluye, y su artefacto principal (la línea del `cron`, el
+directorio `~/copias-interzone`) vive fuera del repositorio y no se puede deducir leyendo el
+código. La 0041 queda en `Aceptada`: la 0042 resuelve una consecuencia que ella marcó
+pendiente, no la sustituye ni la precisa.
+
+**Pendiente, con dueño humano:** instalar el `cron` en el servidor (una vez), y sacar una
+copia fuera del host antes de que entren datos reales de un club —criterio de revisión escrito
+en la ADR 0042—.
