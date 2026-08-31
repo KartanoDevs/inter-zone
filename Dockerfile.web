@@ -5,8 +5,10 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 # Capa de dependencias aparte: solo se reconstruye cuando cambia el lockfile.
+# `--ignore-scripts`: en un build de imagen no se ejecutan scripts de ciclo de vida (ni de las
+# dependencias ni el `prepare` del proyecto, que instala el hook de git y aquí no hay `.git`).
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Solo lo que el builder de Angular mira. Enumerado en vez de `COPY . .` para que un cambio
 # en server/ o en docs/ no invalide esta capa.
