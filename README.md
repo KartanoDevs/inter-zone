@@ -197,25 +197,21 @@ Detalle completo, alternativas descartadas y riesgos aceptados (en particular, q
 
 `copia-seguridad.sh` toma un volcado lógico de Postgres (`pg_dump -Fc` dentro del contenedor,
 sin leer credenciales) en `~/copias-interzone/`, fuera del árbol del repositorio y de todo
-volumen de Docker. `deploy-servidor.sh` ya toma una copia `previa` antes de cada despliegue y
-avisa —sin bloquear— si la última semanal no está fresca. Detalle, retención y el porqué de
-cada decisión en `docs/decisiones/0042-copia-semanal-por-pg_dump-en-el-host.md` y la spec 062.
+volumen de Docker. Rota 8 copias semanales y 3 previas a despliegue. `deploy-servidor.sh` ya
+toma una copia `previa` antes de cada despliegue y avisa —sin bloquear— si la última semanal
+no está fresca.
 
 ```bash
-bash copia-seguridad.sh copia semanal      # toma y rota una copia semanal (8 en rotación)
+bash copia-seguridad.sh copia semanal      # toma y rota una copia semanal
 bash copia-seguridad.sh comprobar          # ¿hay una copia reciente y legible? (código de salida)
 bash copia-seguridad.sh verificar <dump>   # la restaura de verdad en un Postgres desechable
 ```
 
 La copia semanal la dispara `cron`, **instalado a mano una sola vez** por el usuario del
-despliegue (en un servidor nuevo hay que volver a hacerlo — no está en el repositorio):
+despliegue (en un servidor nuevo hay que volver a hacerlo — no está en el repositorio).
 
-```cron
-17 4 * * 0  flock -n /tmp/interzone-copia.lock bash ~/projects/interZone/inter-zone/copia-seguridad.sh copia semanal >> ~/copias-interzone/copia.log 2>&1
-```
-
-Para restaurar una copia en producción, el procedimiento paso a paso está en la spec 062,
-sección "Verificación y restauración".
+**Cómo comprobar que funciona, cómo restaurar y la línea exacta del `cron`:
+`docs/05_Copias_de_Seguridad.md`.** El porqué de cada decisión, en la ADR 0042.
 
 ## Documentación
 
@@ -225,6 +221,7 @@ sección "Verificación y restauración".
 | `docs/arquitectura.md` | Capas, dependencias permitidas, estructura de carpetas — incluye `server/`. |
 | `docs/modelo-de-datos.md` | El esquema de PostgreSQL: qué tablas existen y cuáles quedan por construir. |
 | `docs/flujo-de-trabajo.md` | Cómo se trabaja aquí: ciclo SDD + TDD. |
+| `docs/05_Copias_de_Seguridad.md` | El sistema de copias: qué guarda, cómo comprobarlo, cómo restaurar. |
 | `docs/decisiones/` | Registro de decisiones tomadas y su motivo, una por fichero. Solo se añade. |
 | `docs/especificaciones/` | Una spec por porción de trabajo. Se cierran al terminarse. |
 | `server/README.md` | Arranque del backend, rutas de la API, estructura de `server/`. |
