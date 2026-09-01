@@ -722,6 +722,20 @@ describe('SistemaStore', () => {
       expect(store.sistemaActivo()?.equipoId).toBe('femenino');
       expect(store.sistemaActivo()?.nombre).toBe('Uno (copia)');
     });
+
+    it('fix: clonar un sistema validado deja el clon en borrador', async () => {
+      const original: Sistema = {
+        ...sistemaBase('r1', 'Validado', 'masculino'),
+        estado: 'validado',
+      };
+      const store = new SistemaStore(new RepositorioFake([original]));
+      await store.cargar();
+
+      await store.clonar('Validado (copia)', ['masculino']);
+
+      const clon = store.sistemas().find((s) => s.nombre === 'Validado (copia)');
+      expect(clon?.estado).toBeUndefined();
+    });
   });
 
   it('010-E6: renombrar el sistema activo actualiza su nombre', async () => {

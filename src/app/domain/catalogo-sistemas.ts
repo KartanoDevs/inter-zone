@@ -77,6 +77,11 @@ export function describirSistema(sistema: Sistema, texto: string): Sistema {
  * `equipoId` es el equipo de destino (spec 063): puede ser el del original o el otro. La
  * unicidad del nombre se comprueba en el equipo de destino, no en el del original. El store
  * llama una vez por equipo marcado, igual que `crear` desde la spec 048.
+ *
+ * El clon nace en borrador, nunca hereda el `estado` del original: un sistema nuevo se valida
+ * aparte (spec 051), igual que `crearSistema` no pone `estado`. Sin esto, un clon de un sistema
+ * validado se veía validado en el cliente hasta la siguiente carga, mientras el servidor lo
+ * guardaba como borrador — `crear()` del servidor no persiste `estado`.
  */
 export function clonarSistema(
   sistema: Sistema,
@@ -91,7 +96,8 @@ export function clonarSistema(
   ) {
     return null;
   }
-  return { ...sistema, id, nombre: nuevoNombre, equipoId };
+  const { estado: _estado, ...resto } = sistema;
+  return { ...resto, id, nombre: nuevoNombre, equipoId };
 }
 
 /** Ausente equivale a "borrador" (spec 051) — ver el comentario de `Sistema.estado`. */

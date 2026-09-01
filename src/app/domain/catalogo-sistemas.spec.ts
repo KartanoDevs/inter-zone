@@ -337,6 +337,17 @@ describe('clonarSistema', () => {
 
     expect(resultado?.tipo).toBe('defensa');
   });
+
+  it('fix: el clon de un sistema validado nace en borrador', () => {
+    const original: Sistema = { ...sistema('s1', 'Original'), estado: 'validado' };
+
+    const resultado = clonarSistema(original, 's2', 'Original (copia)', original.equipoId, [
+      original,
+    ]);
+
+    expect(estadoDe(resultado!)).toBe('borrador');
+    expect(resultado?.estado).toBeUndefined();
+  });
 });
 
 describe('ordenarCatalogo', () => {
