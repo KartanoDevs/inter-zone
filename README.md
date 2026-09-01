@@ -13,7 +13,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-estricto-3178C6">
   <img alt="Node" src="https://img.shields.io/badge/Node-%E2%89%A5%2022-339933">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-518%20passing-brightgreen">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-520%20passing-brightgreen">
   <img alt="Metodología" src="https://img.shields.io/badge/m%C3%A9todo-SDD%20%2B%20TDD-8957e5">
 </p>
 
@@ -113,7 +113,7 @@ está descrito en [`docs/`](docs/) y resumido en las secciones 7 y 8.
 
 | Tecnología | Uso |
 |---|---|
-| **Vitest 4** | 518 tests de dominio, aplicación e infraestructura (suite completa < 2 s); suite de integración del servidor aparte, contra un PostgreSQL real. |
+| **Vitest 4** | 520 tests de dominio, aplicación e infraestructura (suite completa < 2 s); suite de integración del servidor aparte, contra un PostgreSQL real. |
 | **Prettier 3** | Formato normalizado en todo `src/` y `server/src/`, con un *hook* `pre-commit` que rechaza el commit si algo no está formateado. |
 | **graphify** | Grafo de conocimiento del repositorio (`graphify-out/`) para navegación y revisión de arquitectura. |
 
@@ -154,7 +154,7 @@ Arquitectura hexagonal. **Las flechas de dependencia apuntan siempre hacia dentr
 > desde que hay backend.
 
 Detalle completo en [`docs/arquitectura.md`](docs/arquitectura.md); el porqué de cada decisión,
-en [`docs/decisiones/`](docs/decisiones/) (43 ADR, *append-only*).
+en [`docs/decisiones/`](docs/decisiones/) (44 ADR, *append-only*).
 
 ---
 
@@ -186,6 +186,15 @@ La semilla crea el equipo masculino con la recepción a 3 en 5-1 (6 rotaciones) 
 defensivo (24 formaciones con sus zonas). El equipo femenino arranca vacío a propósito. El correo
 de `ADMIN_EMAIL_INICIAL` (en `.env`) se invita como `admin`; esa persona completa su alta por el
 registro normal.
+
+Para un catálogo de prueba más completo — seis sistemas validados (recepción, defensa, en ambos
+equipos) y la cuenta demo de la sección 4.5 — hay una segunda semilla, deliberadamente destructiva
+(sustituye lo que ya exista con ese nombre), pensada para desarrollo, nunca para producción
+([ADR 0045](docs/decisiones/0045-datos-de-prueba-en-desarrollo.md)):
+
+```bash
+npm run seed:pruebas
+```
 
 Rutas de la API y arranque detallado: [`server/README.md`](server/README.md).
 
@@ -233,9 +242,15 @@ clon del repositorio, con su propia base de datos y su propio dominio:
 
 | | Producción | Desarrollo |
 |---|---|---|
-| URL | `cvinterzone.duckdns.org` | `devcvinterzone.duckdns.org` |
+| URL | `cvinterzone.duckdns.org` | `dev.cvinterzone.duckdns.org` |
 | Rama | `main` | `develop` |
 | Copias de seguridad | sí | no |
+| Acceso de prueba | — | `admin@cvinter.com` / `12345678` |
+
+> [!NOTE]
+> El acceso de prueba solo existe en el entorno de desarrollo — se siembra con
+> `npm run seed:pruebas:prod` (ADR 0045) y sus credenciales son públicas a propósito, para que
+> el tribunal del TFM pueda entrar sin pedir nada aparte. Nunca valen en producción.
 
 ```bash
 cp .env.produccion.example .env    # o .env.desarrollo.example en el clon de desarrollo
@@ -300,7 +315,7 @@ inter-zone/
 ├── docs/                       # SDD: dominio, arquitectura, modelo de datos, ADR, specs.
 │   ├── dominio.md              #   la fuente de verdad: reglas del voleibol
 │   ├── arquitectura.md
-│   ├── decisiones/             #   43 ADR, append-only
+│   ├── decisiones/             #   44 ADR, append-only
 │   └── especificaciones/       #   63 specs (numeradas hasta la 067), una por entrega
 │
 ├── docker-compose.prod.yml  ·  Dockerfile.web  ·  nginx.conf  ·  deploy.sh
@@ -441,7 +456,7 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 | [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md) | El esquema de PostgreSQL: las 11 tablas y las ampliaciones previstas. |
 | [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md) | Cómo se trabaja aquí: el ciclo SDD + TDD. |
 | [`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md) | Qué se guarda, cómo comprobarlo, cómo restaurar. |
-| [`docs/decisiones/`](docs/decisiones/) | 43 ADR: cada decisión estructural y su motivo. Solo se añade. |
+| [`docs/decisiones/`](docs/decisiones/) | 44 ADR: cada decisión estructural y su motivo. Solo se añade. |
 | [`docs/especificaciones/`](docs/especificaciones/) | 63 specs (numeradas hasta la 067), una por porción de trabajo. Se cierran al terminarse. |
 | [`server/README.md`](server/README.md) | Arranque del backend, rutas de la API, estructura de `server/`. |
 | [`CLAUDE.md`](CLAUDE.md) | Contexto e invariantes para asistentes de IA. |
@@ -453,8 +468,8 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 | | |
 |---|---|
 | Specs escritas | 63 (numeradas hasta la 067; huecos reservados 014–016) |
-| ADR registradas | 43 |
-| Tests | 518 (dominio · aplicación · infraestructura) + integración de servidor |
+| ADR registradas | 44 |
+| Tests | 520 (dominio · aplicación · infraestructura) + integración de servidor |
 | Tablas construidas | 11 |
 | Adaptador de persistencia en uso | `HttpSistemaRepository` |
 | Autenticación | lista blanca + contraseña + sesión |

@@ -18,7 +18,11 @@
 #   4. Siembra el catálogo base (`npm run seed:prod`). Es idempotente: solo crea
 #      equipo + jugador + sistemas de ejemplo si la base está vacía, así que
 #      ejecutarlo en cada despliegue es seguro y cubre el primer arranque.
-#   5. Muestra el estado de los contenedores.
+#   5. Si DATOS_DE_PRUEBA=si (el clon de desarrollo, ADR 0045), siembra además el juego
+#      de sistemas de prueba y la cuenta demo del README (`npm run seed:pruebas:prod`).
+#      A diferencia del paso 4, este SÍ sustituye lo que ya hubiera con ese nombre — es
+#      deliberado, para tener siempre el mismo juego de datos conocido en desarrollo.
+#   6. Muestra el estado de los contenedores.
 #
 # Uso, desde cualquier sitio:
 #   ./deploy-servidor.sh
@@ -43,8 +47,10 @@ RAMA="$(leer_env RAMA_DESPLIEGUE)"
 RAMA="${RAMA:-main}"
 COPIAS_DE_SEGURIDAD="$(leer_env COPIAS_DE_SEGURIDAD)"
 COPIAS_DE_SEGURIDAD="${COPIAS_DE_SEGURIDAD:-si}"
+DATOS_DE_PRUEBA="$(leer_env DATOS_DE_PRUEBA)"
+DATOS_DE_PRUEBA="${DATOS_DE_PRUEBA:-no}"
 
-echo "==> 0/5  Copias de seguridad"
+echo "==> 0/6  Copias de seguridad"
 if [ "$COPIAS_DE_SEGURIDAD" != "si" ]; then
   echo "    COPIAS_DE_SEGURIDAD=$COPIAS_DE_SEGURIDAD: me lo salto a propósito (entorno de desarrollo)"
 elif [ -f copia-seguridad.sh ]; then
@@ -58,17 +64,17 @@ else
   echo "    copia-seguridad.sh no está; me lo salto"
 fi
 
-echo "==> 1/5  Trayendo origin/$RAMA y descartando cambios locales"
+echo "==> 1/6  Trayendo origin/$RAMA y descartando cambios locales"
 git fetch origin "$RAMA"
 git checkout "$RAMA"
 git reset --hard "origin/$RAMA"
 git clean -fd
 echo "    HEAD: $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
 
-echo "==> 2/5  Reconstruyendo y recreando el stack"
+echo "==> 2/6  Reconstruyendo y recreando el stack"
 bash deploy.sh up -d --build --remove-orphans
 
-echo "==> 3/5  Esperando a que 'servidor' quede healthy"
+echo "==> 3/6  Esperando a que 'servidor' quede healthy"
 for i in $(seq 1 60); do
   estado="$(bash deploy.sh ps --format '{{.Name}} {{.Health}}' 2>/dev/null | awk '/servidor/ {print $2}')"
   case "$estado" in
@@ -90,10 +96,17 @@ for i in $(seq 1 60); do
   sleep 5
 done
 
-echo "==> 4/5  Sembrando el catálogo base (idempotente)"
+echo "==> 4/6  Sembrando el catálogo base (idempotente)"
 bash deploy.sh exec -T servidor npm run seed:prod
 
-echo "==> 5/5  Estado del stack"
+echo "==> 5/6  Datos de prueba"
+if [ "$DATOS_DE_PRUEBA" = "si" ]; then
+  bash deploy.sh exec -T servidor npm run seed:pruebas:prod
+else
+  echo "    DATOS_DE_PRUEBA=$DATOS_DE_PRUEBA: me lo salto a propósito (entorno de producción)"
+fi
+
+echo "==> 6/6  Estado del stack"
 bash deploy.sh ps
 
 echo

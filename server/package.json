@@ -17,6 +17,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "seed": "tsx --env-file=.env src/infraestructura/semilla.ts",
     "seed:prod": "tsx src/infraestructura/semilla.ts",
+    "seed:pruebas": "tsx --env-file=.env src/infraestructura/semilla-desarrollo.ts",
+    "seed:pruebas:prod": "tsx src/infraestructura/semilla-desarrollo.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
   },
