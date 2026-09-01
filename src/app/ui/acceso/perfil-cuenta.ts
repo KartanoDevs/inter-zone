@@ -48,11 +48,13 @@ export class PerfilCuenta {
   protected readonly cambiandoContrasena = signal(false);
   protected readonly errorContrasena = signal<string | null>(null);
 
-  /** Cambia de vista y, la primera vez que se abre "Logros", pide las medallas al servidor —
-   * nunca al abrir la ventana Cuenta, que casi siempre se abre para "Datos usuario". */
+  /** Cambia de vista y, al abrir "Logros", pide las medallas al servidor — nunca al abrir la
+   * ventana Cuenta, que casi siempre se abre para "Datos usuario". Se refresca cada vez que se
+   * entra (spec 065), no solo la primera: una insignia recién ganada en un examen debe aparecer
+   * sin recargar la página. La guarda es solo contra pedirlo dos veces a la vez. */
   protected verVista(vista: VistaCuenta): void {
     this.vista.set(vista);
-    if (vista === 'logros' && !this.insignias.cargadas() && !this.insignias.cargando()) {
+    if (vista === 'logros' && !this.insignias.cargando()) {
       void this.insignias.cargar();
     }
   }

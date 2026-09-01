@@ -313,6 +313,10 @@ export class SistemaStore {
    * defensa de siempre, o la zona de finta, paralela. */
   readonly modoPintado = signal<'defensa' | 'finta'>('defensa');
 
+  /** Qué equipos pidió el último `cargar()` (spec 064), para que `refrescarCatalogo` (spec 065)
+   * vuelva a pedir exactamente esos. */
+  private equiposCargados: readonly EquipoId[] | undefined;
+
   constructor(
     private readonly repositorio: SistemaRepository,
     private readonly ajustesRepositorio?: AjustesRepository,
@@ -354,6 +358,7 @@ export class SistemaStore {
     // primero — una cuenta con acceso solo a femenino nunca descarga el masculino ni arranca
     // en él. Sin el argumento (los tests que no lo pasan), comportamiento de antes de la 064:
     // los dos equipos, masculino activo.
+    this.equiposCargados = equipos;
     if (equipos && equipos.length > 0 && !equipos.includes(this.equipoActivo())) {
       this.equipoActivo.set(equipos[0]);
     }
@@ -368,6 +373,26 @@ export class SistemaStore {
     this.mostrarNumerosMetros.set(ajustes?.mostrarNumerosMetros ?? false);
     this.escalaSombra.set(ajustes?.escalaSombra ?? 5);
     this.cambiarContexto();
+  }
+
+  /** Vuelve a pedir el catálogo al servidor sin tocar los ajustes ni el arranque (spec 065): lo
+   * llama `Tablero` al abrir el Editor, y `TeoriaStore`/`ExamenStore` heredan el refresco porque
+   * derivan de `sistemas()`. A diferencia de `cargar()`:
+   * - conserva el sistema activo si sigue en el catálogo; si otro entrenador lo borró, cae al
+   *   primero, igual que al borrar uno desde esta misma sesión (E4, E6);
+   * - si hay una edición sin guardar, NO recarga el borrador — el catálogo se refresca por
+   *   debajo pero la formación en curso se queda intacta (E5). */
+  async refrescarCatalogo(): Promise<void> {
+    const equipos = this.equiposCargados;
+    const activoAntes = this.sistemaActivoId();
+    this.sistemas.set(ordenarCatalogo(await this.repositorio.listar(equipos)));
+    const sigueExistiendo = this.catalogo().some((s) => s.id === activoAntes);
+    if (!sigueExistiendo) {
+      this.sistemaActivoId.set(this.catalogo()[0]?.id ?? null);
+    }
+    if (!this.hayCambiosSinGuardar()) {
+      this.cambiarContexto();
+    }
   }
 
   /** Ver/ocultar faltas y avisos: desactivarla permite guardar cualquier formación completa (spec 017). */

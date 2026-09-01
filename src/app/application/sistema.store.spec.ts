@@ -219,6 +219,66 @@ describe('SistemaStore', () => {
     expect(store.borrador()).toEqual([]);
   });
 
+  it('065-E1: refrescarCatalogo vuelve a pedir el catálogo', async () => {
+    const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno')]);
+    const store = new SistemaStore(repositorio);
+    await store.cargar();
+    repositorio.equiposPedidos = ['masculino']; // marca para ver que se vuelve a pedir
+
+    await store.refrescarCatalogo();
+
+    // Un sistema añadido "por otro entrenador" ya aparece.
+    repositorio['mapa'].set('r2', sistemaBase('r2', 'Dos'));
+    await store.refrescarCatalogo();
+    expect(
+      store
+        .sistemas()
+        .map((s) => s.id)
+        .sort(),
+    ).toEqual(['r1', 'r2']);
+  });
+
+  it('065-E4: refrescarCatalogo mantiene el sistema activo si sigue existiendo', async () => {
+    const store = new SistemaStore(
+      new RepositorioFake([sistemaBase('r1', 'Uno'), sistemaBase('r2', 'Dos')]),
+    );
+    await store.cargar();
+    store.activarSistema('r2');
+
+    await store.refrescarCatalogo();
+
+    expect(store.sistemaActivoId()).toBe('r2');
+  });
+
+  it('065-E6: si el sistema activo lo borró otro, queda activo el primero del catálogo', async () => {
+    const repositorio = new RepositorioFake([sistemaBase('r1', 'Uno'), sistemaBase('r2', 'Dos')]);
+    const store = new SistemaStore(repositorio);
+    await store.cargar();
+    store.activarSistema('r2');
+    repositorio['mapa'].delete('r2');
+
+    await store.refrescarCatalogo();
+
+    expect(store.sistemaActivoId()).toBe('r1');
+  });
+
+  it('065-E5: refrescarCatalogo no pisa una edición sin guardar', async () => {
+    const [colocador] = plantilla().ordenSaque;
+    const conFormacion: Sistema = {
+      ...sistemaBase('r1', 'Uno'),
+      formaciones: { 1: [{ jugador: colocador, punto: { x: 8, y: 1 } }] },
+    };
+    const store = new SistemaStore(new RepositorioFake([conFormacion]));
+    await store.cargar();
+    store.colocarOMover(colocador.id, { x: 2, y: 2 });
+    const borradorAntes = store.borrador();
+
+    await store.refrescarCatalogo();
+
+    expect(store.borrador()).toEqual(borradorAntes);
+    expect(store.hayCambiosSinGuardar()).toBe(true);
+  });
+
   it('064-E5: cargar con acceso solo a femenino arranca en femenino', async () => {
     const store = new SistemaStore(
       new RepositorioFake([

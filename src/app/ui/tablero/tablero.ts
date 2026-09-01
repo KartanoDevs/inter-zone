@@ -290,7 +290,17 @@ export class Tablero {
       return;
     }
     this.ventanaAnterior.set(this.ventana());
+    this.entrarEnVentana(destino);
+  }
+
+  /** Único punto que fija `ventana()`. Al abrir Editor, Teoría o Examen se refresca el catálogo
+   * (spec 065): así el segundo entrenador ve antes el trabajo del primero sin recargar la
+   * página. `refrescarCatalogo` conserva el sistema activo y no pisa una edición sin guardar. */
+  private entrarEnVentana(destino: Ventana): void {
     this.ventana.set(destino);
+    if (destino === 'editor' || destino === 'teoria' || destino === 'examen') {
+      void this.store.refrescarCatalogo();
+    }
   }
 
   protected confirmarSalidaExamen(): void {
@@ -299,7 +309,7 @@ export class Tablero {
     if (destino) {
       this.examen.cancelarExamen();
       this.ventanaAnterior.set('examen');
-      this.ventana.set(destino);
+      this.entrarEnVentana(destino);
     }
   }
 
@@ -309,7 +319,7 @@ export class Tablero {
 
   /** Vuelve de Examen a la ventana desde la que se entró (cerrar la hoja de inscripción). */
   protected volverDeExamen(): void {
-    this.ventana.set(this.ventanaAnterior());
+    this.entrarEnVentana(this.ventanaAnterior());
   }
 
   protected irAVentanaDesdeDial(destino: Ventana): void {

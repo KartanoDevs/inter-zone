@@ -226,7 +226,11 @@ Angular, las tres testeables sin `TestBed`.
   (`sistema.store.spec.ts`). El constructor no hace ninguna E/S (spec 031): `cargar()` es un
   método aparte, asíncrono. Desde la spec 050, ya no lo dispara `app.config.ts`: `App` lo llama
   en cuanto `AccesoStore.usuario()` deja de ser `null` — al arrancar con una sesión ya viva, o
-  justo después de entrar o crear cuenta. `estadoActivo` (computed, spec 051) y
+  justo después de entrar o crear cuenta — pasándole `acceso.equiposVisibles()` (spec 064: acota
+  qué catálogos se piden y fija el equipo activo inicial). `refrescarCatalogo()` (spec 065) es la
+  reentrada: `Tablero.entrarEnVentana` lo llama al abrir Editor/Teoría/Examen para que el segundo
+  entrenador vea antes el trabajo del primero; conserva el sistema activo si sigue existiendo y
+  no pisa una edición sin guardar. `estadoActivo` (computed, spec 051) y
   `cambiarEstadoActivo(estado)` (acción) validan o quitan la validación del sistema activo; el
   servidor decide si quien lo pide tiene permiso (ADR 0038), y un rechazo llega por
   `errorGuardado`, igual que cualquier otra escritura.
@@ -246,8 +250,9 @@ Angular, las tres testeables sin `TestBed`.
   `insignias`, `cargando`, `cargadas`, `error`. Solo lee (`InsigniasRepository.registrar` lo
   sigue llamando `ExamenStore` al terminar un examen). `cargadas` distingue "aún no se ha
   pedido / se está pidiendo" de "se pidió y vino vacío", para que una cuenta sin ninguna medalla
-  y una carga en curso no se vean igual. `PerfilCuenta` dispara `cargar()` la primera vez que se
-  abre la vista "Logros", nunca al abrir la ventana Cuenta.
+  y una carga en curso no se vean igual. `PerfilCuenta` dispara `cargar()` cada vez que se abre
+  la vista "Logros" (spec 065: una insignia recién ganada en un examen debe aparecer sin recargar
+  la página), nunca al abrir la ventana Cuenta.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/

@@ -56,4 +56,16 @@ describe('InsigniasStore', () => {
     expect(store.cargadas()).toBe(false);
     expect(store.cargando()).toBe(false);
   });
+
+  it('065-E7: cargar de nuevo trae las insignias frescas (una recién ganada aparece)', async () => {
+    let insignias: readonly InsigniaGanada[] = [];
+    const store = new InsigniasStore(repoFalso(async () => insignias));
+    await store.cargar();
+    expect(store.insignias()).toEqual([]);
+
+    insignias = [INSIGNIA]; // "se gana una insignia en un examen"
+    await store.cargar();
+
+    expect(store.insignias()).toEqual([INSIGNIA]);
+  });
 });
