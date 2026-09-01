@@ -1,301 +1,458 @@
-# InterZone
+<p align="center">
+  <img src="public/icons/icon-192.png" width="112" alt="Logo de InterZone">
+</p>
 
-Pizarra táctica para diseñar, validar y estudiar sistemas de recepción de voleibol.
+<h1 align="center">InterZone</h1>
 
-El nombre viene de lo que la herramienta hace de verdad: mirar **entre** las zonas. Lo
-interesante de una recepción no está donde se coloca cada jugador, sino en las costuras
-que quedan entre ellos.
+<p align="center">
+  Pizarra táctica para diseñar, validar y estudiar sistemas de recepción y defensa de voleibol.
+</p>
 
-El objetivo no es dibujar bonito: es que un jugador entienda **por qué** se coloca donde se
-coloca, y que el entrenador vea al instante si una formación es **legal** y si deja **huecos**
-sin cubrir.
+<p align="center">
+  <img alt="Angular" src="https://img.shields.io/badge/Angular-22-DD0031">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-estricto-3178C6">
+  <img alt="Node" src="https://img.shields.io/badge/Node-%E2%89%A5%2022-339933">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-518%20passing-brightgreen">
+  <img alt="Metodología" src="https://img.shields.io/badge/m%C3%A9todo-SDD%20%2B%20TDD-8957e5">
+</p>
 
-## Qué hace hoy
+---
 
-- Arrancar con dos sistemas de ejemplo ya construidos: la recepción a 3 en 5-1 (seis rotaciones
-  colocadas y explicadas) y la defensa especializada por zonas (una formación por cada caso del
-  colocador rival y situación de ataque con material de referencia, con su zona de
-  responsabilidad pintada). Los siembra el servidor (`npm run seed` en `server/`) si la base de
-  datos está vacía.
-- Crear, renombrar, clonar y borrar varios sistemas con nombre —de recepción o de defensa—, cada
-  uno de un equipo (masculino o femenino), y elegir con cuál se trabaja.
-- Colocar los 6 jugadores en media pista, en metros reales, rotación a rotación (R1–R6,
-  numeradas por dónde está el colocador).
-- El líbero sustituye a cualquier jugador de zaga (no solo al central) y entra y sale de la
-  formación según le toque, como en un partido real.
-- Bloquear el guardado de una rotación que cometa falta de posición — o permitirlo a propósito,
-  desactivando la validación para enseñar una excepción (spec 017).
-- Crear sistemas de defensa: colocar seis puestos genéricos según el caso del colocador rival
-  (delantero o trasero) y la situación de ataque que le corresponde a ese caso, sin validación
-  de posición — en defensa la rotación no manda nada.
-- Escribir por qué se coloca así una rotación, un jugador dentro de ella, o el sistema entero
-  — enseñanza, no solo geometría.
-- Pintar sobre una rejilla la zona de responsabilidad de cada uno de los seis defensores, y
-  verlas todas a la vez con su leyenda de colores. Solo en los sistemas de defensa (spec 024).
-- Guardar en un servidor propio (PostgreSQL). Los ajustes de pantalla (validación desactivada,
-  ayuda de posición…) siguen en el navegador, por dispositivo.
-- Darse de alta con correo y contraseña si el admin invitó ese correo de antemano (lista
-  blanca), que fija el rol con el que nace la cuenta —`admin`, `entrenador` o `usuario`— y, para
-  `entrenador`/`usuario`, en qué equipo o equipos. Entrar abre una sesión de 30 días que se
-  renueva sola con el uso; salir la invalida al instante (spec 035, ADR 0036).
-- La pizarra misma pide entrar (spec 050): sin sesión, solo se ve la pantalla de entrar o crear
-  cuenta, y no se pide el catálogo.
-- Validar un sistema (spec 051): el entrenador del equipo dueño, o el admin, lo marca como listo
-  para que un jugador lo estudie — y puede quitarle la marca si hace falta corregirlo.
-- Teoría (spec 052): cualquier cuenta puede abrir esta pestaña y recorrer los sistemas
-  validados del equipo activo — rotación a rotación en recepción, por caso/situación/
-  bloqueadores en defensa — viendo fichas, zonas, sombra y explicaciones exactamente como en el
-  editor, sin poder tocar nada. Un equipo sin nada validado todavía lo dice, en vez de una pista
-  vacía.
-- Solo `admin` y `entrenador` crean, editan, clonan o borran sistemas (spec 037): un
-  entrenador, en los suyos; el admin, en cualquiera. Un `usuario` no ve la pestaña Editor y
-  entra directo en Teoría. Leer el catálogo exige sesión (ADR 0043) pero no filtra por rol qué
-  sistemas ve cada cuenta — ver "Qué NO hace".
-- La ventana "Cuenta" es real (spec 053): correo y rol de solo lectura, más nombre o apodo,
-  posición favorita y dorsal —los tres opcionales, y en blanco es un estado válido— y cambiar
-  la contraseña, exigiendo acertar la actual. Tiene dos vistas (spec 061): "Datos usuario" y
-  "Logros", una vitrina con una pieza por sistema de recepción que muestra qué medallas tiene
-  ganadas la cuenta —bronce por puesto, plata por línea, oro por el sistema completo— y de qué
-  puestos, con un recuento de sistemas dominados.
-- El admin gestiona la lista blanca desde la propia aplicación (spec 054): invitar un correo con
-  un rol y, si no es `admin`, un equipo; reinvitar un correo ya invitado y sin usar cambia su rol
-  en vez de duplicar la fila; invitar un correo que ya tiene cuenta se rechaza; retirar una
-  invitación pendiente la borra sin tocar cuentas ya creadas a partir de ella. Solo `admin` ve
-  esta pestaña.
+## Índice
 
-## Qué NO hace
+- [1. Descripción general del proyecto](#1-descripción-general-del-proyecto)
+- [2. Stack tecnológico](#2-stack-tecnológico)
+- [3. Arquitectura](#3-arquitectura)
+- [4. Instalación y ejecución](#4-instalación-y-ejecución)
+- [5. Estructura del proyecto](#5-estructura-del-proyecto)
+- [6. Funcionalidades principales](#6-funcionalidades-principales)
+- [7. Metodología de desarrollo](#7-metodología-de-desarrollo)
+- [8. Documentación del proyecto](#8-documentación-del-proyecto)
+- [9. Estado y hoja de ruta](#9-estado-y-hoja-de-ruta)
 
-**Ya hecho, de la v2:** backend propio (Express + PostgreSQL vía Prisma, en `server/`), sistemas
-separados por equipo masculino y femenino, la pizarra hablando con el servidor en vez de con
-`localStorage`, y cuentas con lista blanca, contraseña y sesión (spec 035, ADR 0036 — sustituye
-a la 0028). La condición que la v1 puso para el backend —que el equipo pidiera editar desde
-varios dispositivos— se cumplió; la decisión está en
-`docs/decisiones/0023-cierra-la-v1-entra-el-backend.md`.
+---
 
-**Toda `/api/sistemas` exige sesión.** Crear, editar, clonar, borrar y validar exigen además el
-rol (`admin`/`entrenador` sí, `usuario` no) — spec 037, ADR 0038. `GET /sistemas` exige sesión
-de cualquier rol desde la pasada de seguridad de la ADR 0043; no filtra por rol qué sistemas ve
-cada cuenta (eso no tiene spec). Lo que sigue pendiente: no hay registro de auditoría (A09) y la
-sesión no se revoca al cambiar la contraseña.
+## 1. Descripción general del proyecto
 
-> **La API no está pensada para una red que no sea de confianza.** En producción el servidor
-> solo se alcanza desde la red interna de Docker (`docker-compose.prod.yml` no publica su
-> puerto), con nginx delante. Los huecos que quedan (A09, revocación de sesión) están
-> contenidos por eso; no bloquean nada y no urgen.
+**InterZone es una pizarra táctica de voleibol que valida y explica, no solo dibuja.**
 
-**Aplazado, sin construir:** login con Google. Sigue reservado, sin spec asignada.
+El nombre describe lo que la herramienta hace de verdad: mirar **entre** las zonas. Lo
+interesante de una recepción no está donde se coloca cada jugador, sino en las costuras que
+quedan entre ellos. El objetivo no es un dibujo bonito, sino que un jugador entienda **por qué**
+se coloca donde se coloca, y que un entrenador vea al instante si una formación es **legal** y si
+deja **huecos** sin cubrir.
 
-**Reservado en la hoja de ruta, sin escribir todavía.** Los huecos 014–016 en la numeración de
-specs siguen guardados para esto, y hasta que no se escriban no existe ni la spec ni el código:
+### El problema que resuelve
 
-- Detectar huecos (nadie cubre) y conflictos (dos o más se pisan) sobre la rejilla ya pintada
-  (specs 014–015) — **el siguiente paso**, ver el paso 5 de la hoja de ruta.
-- Exportar e importar JSON y PNG (spec 016).
-- Definir varias plantillas de equipo desde la aplicación. Las reglas ya están en `domain/`
-  (`plantillas-equipo.ts`), pero hoy todos los sistemas usan la misma plantilla fija:
-  `PLANTILLA_GLOBAL`, una constante de la aplicación (ADR 0013). **Prioridad: baja por ahora.**
-  Con dos equipos y una plantilla la app funciona; es una funcionalidad grande, sin spec
-  asignada, y nada la reclama.
+Un entrenador de 5-1 se enfrenta a tres problemas que las herramientas genéricas (pizarra de
+vestuario, PowerPoint, apps de dibujo libre) no resuelven:
 
-**Fuera a propósito, también en la v2:** PWA **offline** y sincronización sin conexión.
-`localStorage` no se queda como modo desconectado para los sistemas; se sustituyó por el
-servidor. Sí se queda, a propósito, como almacén de los ajustes de pantalla: son preferencias
-por dispositivo, no trabajo de un entrenador que perder.
+| Problema | Cómo lo aborda InterZone |
+|---|---|
+| **La falta de posición es contraintuitiva.** Depende de la posición rotacional (P1–P6), que cambia en cada rotación, no de dónde *parece* que está el jugador. | Valida en vivo las reglas de orden relativo y **bloquea el guardado** de una rotación ilegal (con opción de desactivar la validación para enseñar una excepción). |
+| **El jugador memoriza posiciones, no entiende el porqué.** Seis dibujos sueltos no enseñan la lógica que los une. | Cada sistema, cada rotación y cada jugador pueden llevar su **texto de enseñanza**: la geometría viene acompañada del motivo. |
+| **Los huecos de cobertura son invisibles en un dibujo.** Seis puntos sobre una pista no dicen qué trozo de campo no cubre nadie. | **Zonas de responsabilidad** pintadas sobre una rejilla de celdas de 0,5 m, con color por jugador y patrón de franjas donde dos se solapan. |
 
-**Sí instalable, desde el despliegue en Docker (ADR 0041):** la pizarra se añade a la
-pantalla de inicio del móvil y se abre en su propia ventana, sin barra del navegador — pero
-sigue necesitando conexión. Sin red muestra una página de cortesía, no los sistemas
-guardados: instalable no es lo mismo que offline con sincronización, que sigue siendo lo que
-está fuera de alcance.
+### La regla que gobierna el diseño
 
-## Stack
+**Todo lo que se puede derivar, se deriva; nunca se almacena.** La posición rotacional, la
+etiqueta de una ficha, quién está en pista, la situación de ataque rival, las infracciones, los
+huecos y los conflictos. No es una preferencia estética: es lo que impide que la herramienta
+enseñe algo falso porque un dato guardado se quedó viejo.
 
-- Angular 22, standalone, signals, zoneless.
-- SVG nativo para el render (no Canvas, no Fabric.js).
-- TypeScript estricto.
-- Vitest para los tests.
-- Prettier para el formato, con un hook `pre-commit` que lo comprueba (ver "Formato" abajo).
-- Persistencia de los sistemas en PostgreSQL con Prisma, tras un backend de Node y Express en
-  `server/`, hablado por HTTP desde un puerto asíncrono y granular (`domain/` declara el
-  contrato; ni Angular ni Express se enteran de cómo lo cumple el otro lado). Los ajustes de
-  pantalla siguen en `localStorage`, detrás del mismo tipo de puerto.
+### Usuarios y roles
 
-## Formato
+El acceso es por **lista blanca** (no hay registro abierto): el administrador invita un correo,
+y esa invitación fija el rol con el que nace la cuenta y a qué equipo o equipos pertenece.
 
-Todo el código va formateado con Prettier (`.prettierrc`), fin de línea LF (`.gitattributes`).
-`npm install` instala un hook `pre-commit` (`scripts/instalar-hooks.mjs`) que rechaza el commit
-si algún fichero staged no está formateado; se salta con `git commit --no-verify`. A mano:
+| | Admin | Entrenador | Usuario (jugador) |
+|---|:---:|:---:|:---:|
+| Consultar sistemas validados (**Teoría**) | todos | de sus equipos | de sus equipos |
+| Crear, editar, clonar, borrar y validar sistemas (**Editor**) | cualquiera | de sus equipos | — |
+| Examinarse y coleccionar medallas | sí | sí | sí |
+| Gestionar la lista blanca | sí | — | — |
 
-```bash
-npm run format         # formatea src/, server/src/ y la config raíz
-npm run format:check   # solo comprueba, no escribe
-npm run hooks:install  # reinstala el hook si hiciera falta
+### Contexto académico
+
+Este repositorio es un Trabajo de Fin de Máster. Más allá del producto, el proyecto es un caso
+de estudio de **desarrollo dirigido por especificación (SDD) combinado con TDD**, de
+**arquitectura hexagonal** con un dominio puro compartido entre navegador y servidor, y de un
+**registro de decisiones (ADR)** que documenta el porqué de cada elección estructural. Todo ello
+está descrito en [`docs/`](docs/) y resumido en las secciones 7 y 8.
+
+---
+
+## 2. Stack tecnológico
+
+### Frontend
+
+| Tecnología | Uso |
+|---|---|
+| **Angular 22** | Aplicación SPA, componentes *standalone*, **signals**, **zoneless** (sin `zone.js`), `ChangeDetectionStrategy.OnPush`. |
+| **TypeScript** (modo estricto) | Único lenguaje del dominio; sin dependencias de terceros en `domain/`. |
+| **SVG nativo** | Todo el render de la pista se deriva de *signals*. Sin Canvas, sin Fabric.js, sin librerías de gráficos ([ADR 0003](docs/decisiones/0003-svg-en-lugar-de-canvas.md)). |
+| **RxJS** | Solo lo que arrastra Angular; la orquestación de estado es con *signals*. |
+
+### Backend
+
+| Tecnología | Uso |
+|---|---|
+| **Node ≥ 22** + **Express 5** | API REST bajo `/api`. CORS, lectura de cookies y limitador de intentos escritos a mano, sin dependencias. |
+| **Prisma 6** | ORM y migraciones. Los `CHECK` y la función `celdas_validas()` van a mano en el SQL de la migración. |
+| **`tsx`** | Ejecución directa de TypeScript, también en producción (evita migrar la resolución de módulos del cliente generado por Prisma). |
+| Dominio compartido | `server/` **importa `src/app/domain/` directamente**: las reglas de voleibol corren idénticas en Node y en el navegador ([ADR 0025](docs/decisiones/0025-el-servidor-importa-el-dominio.md)). |
+
+### Datos
+
+| Tecnología | Uso |
+|---|---|
+| **PostgreSQL 18** | Persistencia de equipos, jugadores, sistemas, formaciones, cuentas, sesiones y medallas. 11 tablas. |
+| Hash de contraseña | `scrypt` versionado (`node:crypto`), endurecido en la pasada de seguridad OWASP ([ADR 0043](docs/decisiones/0043-pasada-de-seguridad-owasp.md)). |
+| Sesión | Testigo opaco aleatorio + huella SHA-256 en base de datos, cookie `HttpOnly` de 30 días que se renueva con el uso. |
+
+### Calidad y tooling
+
+| Tecnología | Uso |
+|---|---|
+| **Vitest 4** | 518 tests de dominio, aplicación e infraestructura (suite completa < 2 s); suite de integración del servidor aparte, contra un PostgreSQL real. |
+| **Prettier 3** | Formato normalizado en todo `src/` y `server/src/`, con un *hook* `pre-commit` que rechaza el commit si algo no está formateado. |
+| **graphify** | Grafo de conocimiento del repositorio (`graphify-out/`) para navegación y revisión de arquitectura. |
+
+### Despliegue
+
+| Tecnología | Uso |
+|---|---|
+| **Docker Compose** | Tres contenedores bajo un solo origen: `web` (nginx sirve el build y hace `proxy_pass` de `/api`), `servidor` y `postgres`. |
+| **nginx** | Estáticos con caché por tipo de recurso (inmutable para *bundles* con hash, `no-cache` para `index.html`), cabeceras CSP. |
+| **PWA instalable** | *Service worker* de ~20 líneas escrito a mano: solo una página de cortesía sin conexión. Instalable ≠ *offline* — es deliberado. |
+
+---
+
+## 3. Arquitectura
+
+Arquitectura hexagonal. **Las flechas de dependencia apuntan siempre hacia dentro.**
+
+```
+    ui/  ──────────►  application/  ──────────►  domain/
+                            │                        ▲
+                            ▼                        │
+                    infrastructure/  ────────────────┘
+
+    server/  ──────────────────────────────────────►  domain/
 ```
 
-El hook se copia a `.git/hooks/` sin usar `core.hooksPath`, para no desactivar los hooks de
-graphify. `src/app/maqueta/` queda fuera del formateo (boceto congelado).
+| Capa | Responsabilidad | Regla dura |
+|---|---|---|
+| `domain/` | Modelos y reglas del voleibol. Funciones puras y tipos. | **No importa nada externo**: ni Angular, ni el DOM, ni RxJS, ni librerías. Solo TypeScript. Cobertura de tests del 100 %. |
+| `application/` | Orquestación y estado con *signals* (`SistemaStore`, `AccesoStore`, `TeoriaStore`, `ExamenStore`…). | Sin lógica de voleibol. Sin decoradores de Angular: testeable sin `TestBed`. |
+| `infrastructure/` | Adaptadores hacia el exterior que implementan puertos declarados en `domain/`. | `HttpSistemaRepository` es el adaptador en uso; `localStorage` queda solo para ajustes de pantalla por dispositivo. |
+| `ui/` | Componentes *standalone* de Angular. Leen *signals*, emiten intenciones. | No calculan nada del dominio, ni la etiqueta de una ficha. |
+| `server/` | API REST Node/Express + PostgreSQL. Segundo consumidor de `domain/`. | Solo importa de `domain/`. Nunca de `application/`, `infrastructure/` ni `ui/`, y jamás al revés. |
 
-## Arranque
+> [!NOTE]
+> El invariante *«`domain/` no importa nada»* es lo que permite que el mismo código de reglas
+> corra en el navegador y en el servidor sin adaptador intermedio. Romperlo cuesta el doble
+> desde que hay backend.
 
-Requiere Node 22.22.3 o superior. La pizarra pide el catálogo al arrancar (`provideAppInitializer`
-en `app.config.ts`), así que **hace falta el backend levantado** para ver algo más que una
-pantalla vacía — no basta con `npm install && npm start` en la raíz.
+Detalle completo en [`docs/arquitectura.md`](docs/arquitectura.md); el porqué de cada decisión,
+en [`docs/decisiones/`](docs/decisiones/) (43 ADR, *append-only*).
 
-```bash
-npm install
-npm test          # dominio, infraestructura y aplicación; deben pasar siempre
-```
+---
 
-Backend, en otra terminal — requiere además Docker (instrucciones completas y la lista de rutas
-en `server/README.md`, no se duplican aquí):
+## 4. Instalación y ejecución
+
+### Requisitos
+
+- **Node ≥ 22.22.3** (frontend) y **Node ≥ 22** (backend).
+- **Docker** para el PostgreSQL local.
+
+> [!IMPORTANT]
+> La pizarra pide el catálogo al arrancar y exige haber iniciado sesión, así que **hace falta
+> el backend levantado y sembrado** para ver algo más que la pantalla de acceso. No basta con
+> `npm install && npm start` en la raíz.
+
+### 4.1 Backend (primera terminal)
 
 ```bash
 cd server
 npm install
 cp .env.example .env
-npm run db:up               # PostgreSQL en Docker
-npx prisma migrate deploy
-npm run seed                 # equipo + jugador + los dos sistemas de ejemplo
+npm run db:up                # PostgreSQL en Docker (puerto 5432)
+npx prisma migrate deploy    # aplica la migración, con sus CHECK a mano
+npm run seed                 # equipos + catálogo de jugadores + 2 sistemas de ejemplo
 npm run dev                  # http://localhost:3000
 ```
 
-Con el backend arriba, `npm start` en la raíz sirve la pizarra en `http://localhost:4200`
-(usa `proxy.conf.json` para reenviar `/api` a `:3000`, igual que hace nginx en producción).
+La semilla crea el equipo masculino con la recepción a 3 en 5-1 (6 rotaciones) y el sistema
+defensivo (24 formaciones con sus zonas). El equipo femenino arranca vacío a propósito. El correo
+de `ADMIN_EMAIL_INICIAL` (en `.env`) se invita como `admin`; esa persona completa su alta por el
+registro normal.
 
-## Desplegar en producción
+Rutas de la API y arranque detallado: [`server/README.md`](server/README.md).
 
-Tres contenedores Docker bajo un solo origen — `web` (nginx, sirve el build y reenvía `/api`),
-`servidor` y `postgres` — detrás de un proxy inverso ya existente en el servidor (ADR 0041).
+### 4.2 Frontend (segunda terminal)
+
+```bash
+npm install
+npm start                    # http://localhost:4200
+```
+
+`npm start` usa `proxy.conf.json` para reenviar `/api` al `:3000`, igual que hace nginx en
+producción.
+
+### 4.3 Tests
+
+```bash
+# Raíz — dominio, aplicación e infraestructura. Deben pasar siempre.
+npm test
+npm run typecheck
+
+# Servidor — integración contra el PostgreSQL real de db:up (no dobles en memoria).
+cd server
+npm run db:up && npx prisma migrate deploy
+npm test
+```
+
+### 4.4 Formato
+
+```bash
+npm run format         # formatea src/, server/src/ y la config raíz
+npm run format:check   # solo comprueba
+```
+
+`npm install` instala un *hook* `pre-commit` que rechaza el commit si algún fichero *staged* no
+está formateado (se salta con `git commit --no-verify`).
+
+### 4.5 Despliegue en producción
+
+Tres contenedores Docker bajo un solo origen, detrás de un proxy inverso ya existente en el
+servidor ([ADR 0041](docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md)).
 
 ```bash
 cp .env.produccion.example .env    # rellenar credenciales; .env nunca se commitea
 ./deploy.sh up -d --build
-```
 
-`./deploy.sh` es un envoltorio de `docker compose` que lee `ENTORNO` de `.env` y añade
-`docker-compose.local.yml` cuando vale `local` — ese override publica el puerto de `web` y
-sustituye la red del proxy real (que en tu máquina no existe) por una de pruebas, para poder
-abrir `http://localhost:8080` sin nada más montado. Con `ENTORNO=produccion` (o sin la
-variable) usa solo `docker-compose.prod.yml`, tal cual se despliega en el servidor real. Sin
-`./deploy.sh`, es `docker compose -f docker-compose.prod.yml [-f docker-compose.local.yml] ...`
-a mano.
-
-Sembrar el catálogo base, **una sola vez**, tras el primer arranque (sin esto, guardar
-cualquier sistema falla: las filas de `equipo` y `jugador` no existen todavía):
-
-```bash
+# Sembrar el catálogo base una sola vez, tras el primer arranque:
 ./deploy.sh exec servidor npm run seed:prod
 ```
 
-Por último, dar de alta el dominio en el proxy inverso del servidor apuntando al contenedor
-`web` (alias de red `interzone-web`, puerto 80) y activar TLS ahí — no lo hace este compose.
-Detalle completo, alternativas descartadas y riesgos aceptados en
-`docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`. La pasada de seguridad
-posterior está en `docs/decisiones/0043-pasada-de-seguridad-owasp.md` (limitador de intentos,
-hash de contraseña endurecido, `SALTOS_PROXY`).
+`./deploy.sh` envuelve `docker compose` y añade `docker-compose.local.yml` cuando `ENTORNO=local`
+(publica el puerto de `web` para abrir `http://localhost:8080` sin proxy real). Con
+`ENTORNO=produccion` usa solo `docker-compose.prod.yml`.
 
-### Copias de seguridad
+Copias de seguridad (`copia-seguridad.sh`, `pg_dump -Fc`, rotación semanal por `cron`):
+[`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md).
 
-`copia-seguridad.sh` toma un volcado lógico de Postgres (`pg_dump -Fc` dentro del contenedor,
-sin leer credenciales) en `~/copias-interzone/`, fuera del árbol del repositorio y de todo
-volumen de Docker. Rota 8 copias semanales y 3 previas a despliegue. `deploy-servidor.sh` ya
-toma una copia `previa` antes de cada despliegue y avisa —sin bloquear— si la última semanal
-no está fresca.
+---
 
-```bash
-bash copia-seguridad.sh copia semanal      # toma y rota una copia semanal
-bash copia-seguridad.sh comprobar          # ¿hay una copia reciente y legible? (código de salida)
-bash copia-seguridad.sh verificar <dump>   # la restaura de verdad en un Postgres desechable
+## 5. Estructura del proyecto
+
+```
+inter-zone/
+├── src/app/
+│   ├── domain/                 # Reglas del voleibol. Sin imports externos. 100 % cubierto.
+│   │   ├── modelos.ts          #   tipos: Punto, Jugador, Sistema, Formacion, Colocacion…
+│   │   ├── roles.ts            #   configuración de roles, etiquetaDe()
+│   │   ├── rotacion.ts         #   deriva P1–P6 ancladas al colocador; líbero en pista
+│   │   ├── validacion.ts       #   validarFormacion(): falta / al_límite / válida
+│   │   ├── defensa.ts          #   caso del colocador rival y situación de ataque
+│   │   ├── rejilla.ts          #   celdas de 0,5 m, pintado por contorno (flood fill puro)
+│   │   ├── sombra-bloqueo.ts   #   sombra del bloqueo (polígonos, Sutherland–Hodgman)
+│   │   ├── examen.ts           #   examen por puesto / línea / sistema, nota e insignias
+│   │   ├── acceso.ts           #   roles de acceso, lista blanca, perfil (sin crypto)
+│   │   ├── insignias.ts        #   vitrina de medallas: bronce / plata / oro
+│   │   ├── puertos.ts          #   interfaces de repositorio (sin implementación)
+│   │   └── *.spec.ts           #   los tests, junto al fichero que prueban
+│   ├── application/            # Stores con signals. Sin Angular, sin TestBed.
+│   ├── infrastructure/         # Adaptadores HTTP (en uso) + localStorage para ajustes.
+│   ├── ui/                     # Componentes standalone (app-*), OnPush, zoneless.
+│   │   ├── tablero/  pista/  rotaciones/  panel/  sistemas/
+│   │   ├── teoria/             #   pestaña de solo consulta
+│   │   └── acceso/             #   entrar, perfil, vitrina de medallas, lista blanca
+│   └── maqueta/                # Boceto congelado. No se renderiza ni se borra.
+│
+├── server/                     # Proyecto Node aparte (package.json y node_modules propios).
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/         #   CHECK y celdas_validas() a mano en el SQL
+│   └── src/
+│       ├── http/               #   Express: rutas (sistemas, auth, lista-blanca, examen)
+│       ├── infraestructura/    #   Prisma, repositorios, contraseña (scrypt), sesión, semilla
+│       └── main.ts
+│
+├── docs/                       # SDD: dominio, arquitectura, modelo de datos, ADR, specs.
+│   ├── dominio.md              #   la fuente de verdad: reglas del voleibol
+│   ├── arquitectura.md
+│   ├── decisiones/             #   43 ADR, append-only
+│   └── especificaciones/       #   63 specs (numeradas hasta la 067), una por entrega
+│
+├── docker-compose.prod.yml  ·  Dockerfile.web  ·  nginx.conf  ·  deploy.sh
+└── public/                     # manifest PWA, iconos, service worker, medallas
 ```
 
-La copia semanal la dispara `cron`, **instalado a mano una sola vez** por el usuario del
-despliegue (en un servidor nuevo hay que volver a hacerlo — no está en el repositorio).
+Los tests viven **junto al fichero que prueban**, nunca en una carpeta paralela.
 
-**Cómo comprobar que funciona, cómo restaurar y la línea exacta del `cron`:
-`docs/05_Copias_de_Seguridad.md`.** El porqué de cada decisión, en la ADR 0042.
+---
 
-## Documentación
+## 6. Funcionalidades principales
 
-| Fichero | Para qué |
+### Catálogo de sistemas
+
+- Dos **equipos** fijos (masculino y femenino) y dos **tipos** de sistema (`recepción` y
+  `defensa`). El nombre es único dentro de `(equipo, tipo)`.
+- **Crear, renombrar, clonar y borrar** sistemas. Clonar puede llevar la copia a uno o a los dos
+  equipos. Aviso de cambios sin guardar al cambiar de rotación, de sistema o de equipo.
+
+### La pizarra (SVG)
+
+- Media pista en SVG con `viewBox` **en metros reales** — nunca píxeles en el modelo.
+- **Seis fichas arrastrables** con captura de puntero sobre el `<svg>`; banquillo con los
+  jugadores sin colocar; selección de jugador por toque.
+- Navegación **R1–R6**, donde `Rn` significa *«el colocador ocupa Pn»*.
+
+### Validación de la falta de posición (recepción)
+
+- Las tres reglas de orden relativo, evaluadas sobre las posiciones **derivadas** de la rotación.
+- **Tres estados, no dos**, con margen `ε = 0,05 m`: `válida`, `al_límite`, `falta`. «Legal por
+  tres centímetros» es información pedagógica, no un aprobado silencioso.
+- **Guardar queda bloqueado** si hay infracción — o se permite a propósito desactivando la
+  validación, para enseñar una excepción.
+
+### Líbero
+
+- Vive **fuera del orden de saque**: es un séptimo jugador, no el sexto.
+- Sustituye a **cualquier titular de zaga** (regla FIVB 19.3.1.1), no solo al central. Como el
+  sustituido cambia de línea al rotar, el líbero **entra y sale** de la formación solo.
+
+### Sistemas de defensa
+
+- Organizados por **caso del colocador rival** (delantero / trasero) y **situación de ataque**
+  (inicial, por 4, por 3, por 2, por 1, pipe) — en defensa la rotación no manda nada.
+- La situación se **deriva** de soltar la ficha del atacante en el campo rival, con el espejo de
+  zonas ya resuelto. Seis puestos genéricos, sin validación de posición.
+- **Variantes por número de bloqueadores** (0–3): quién bloquea se deriva de la distancia a la
+  red, nunca se declara jugador a jugador.
+- **Sombra del bloqueo**: la superficie que la pared de bloqueadores esconde al atacante, en
+  polígonos, recalculada al mover al atacante o a un bloqueador y retocable a mano.
+
+### Zonas de responsabilidad
+
+- Rejilla de **celdas cuadradas de 0,5 m** sobre el campo propio de 9×9 m. Solo en defensa.
+- **Pintado por arrastre** con relleno por contorno (flood fill puro, sin librerías).
+- Todas las zonas visibles a la vez con paleta fija de 7 colores; la del jugador seleccionado a
+  plena intensidad, las demás atenuadas; celdas compartidas con patrón de franjas.
+- Segunda rejilla paralela para la **zona de finta**.
+
+### Enseñanza
+
+Tres niveles de texto, todos voluntarios: **descripción del sistema**, **explicación de
+rotación** y **explicación de jugador** (por qué *ese* jugador se coloca ahí *en esa* rotación).
+
+### Teoría (solo consulta)
+
+Cualquier cuenta recorre los sistemas **validados** del equipo activo — rotación a rotación en
+recepción, por caso/situación/bloqueadores en defensa — viendo fichas, zonas, sombra y
+explicaciones exactamente como en el editor, sin poder tocar nada.
+
+### Examen y medallas
+
+- Tres tipos de examen: **por puesto**, **por línea** o **por sistema completo**. El líbero
+  también puede ser sujeto de examen.
+- Examen guiado: arrastre con faltas visibles solo al validar cada rotación, boletín con desglose
+  por rotación y comparación con el modelo del entrenador.
+- Nota de 0 a 10 que decae con la distancia al modelo; **insignia** (bronce / plata / oro) si la
+  nota llega a 7 sin faltas.
+- La ventana **Cuenta** tiene una vitrina de medallas: una pieza por sistema de recepción, con el
+  desglose por puesto y el recuento de sistemas dominados.
+
+### Cuentas, roles y lista blanca
+
+- Alta con **correo y contraseña** solo si el admin invitó ese correo (lista blanca), que fija el
+  rol y el equipo. Sesión de 30 días que se renueva con el uso; salir la invalida al instante.
+- Toda `/api/sistemas` **exige sesión**; escribir exige además el rol adecuado.
+- El admin gestiona la lista blanca **desde la propia aplicación**: invitar, reinvitar con otro
+  rol, retirar.
+- La ventana **Cuenta**: correo y rol de solo lectura, nombre/apodo, posición favorita y dorsal
+  (opcionales), y cambio de contraseña exigiendo acertar la actual.
+
+### Persistencia y errores
+
+- Los sistemas viven en **PostgreSQL**. **La escritura va siempre antes que el cambio local**
+  ([ADR 0026](docs/decisiones/0026-escritura-antes-de-mutar-estado-local.md)): el store espera la
+  respuesta del repositorio y solo entonces muta sus *signals*. Nada de UI optimista.
+- Tres motivos de fallo distinguidos, cada uno con su aviso y su botón de reintentar: **sin
+  conexión**, **error del servidor** y **conflicto de edición** (detectado con `If-Match`).
+- Los **ajustes de pantalla** (validación desactivada, ayuda de posición…) siguen en
+  `localStorage`, por dispositivo: son preferencias, no trabajo que perder.
+
+---
+
+## 7. Metodología de desarrollo
+
+El proyecto se construye con **SDD + TDD**, un escenario cada vez:
+
+```
+1. Escribir la spec        docs/especificaciones/NNN-nombre.md
+2. Escenarios verificables  Dado / Cuando / Entonces, con id E1, E2…
+3. Congelar la spec         antes de ver una línea de implementación
+4. Test en rojo             uno por escenario; el fallo debe ser una aserción
+5. Código mínimo            hasta que pase. Nada más.
+6. Refactor                 con la suite en verde; los tests no se tocan
+7. Cerrar la spec           marcar Completada y anotar las desviaciones reales
+```
+
+- **SDD decide el qué y el porqué**: la spec enumera los casos límite pensándolos desde el
+  reglamento, no descubriéndolos con el código delante.
+- **TDD decide el cómo**: ningún código de producción antes de un test que falle, y el fallo debe
+  ser una aserción, nunca un `ReferenceError`.
+- **La especificación dice qué y por qué; los tests dicen cómo se verifica.** El vínculo se
+  mantiene con el id del escenario (`it('E4: falta si P1 está por delante de P2')`), no copiando
+  frases.
+- Cada decisión estructural que sobrevive a una spec se registra en un **ADR** en
+  `docs/decisiones/` (nunca se edita ni se borra uno existente).
+
+Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
+
+---
+
+## 8. Documentación del proyecto
+
+| Documento | Para qué |
 |---|---|
-| `docs/dominio.md` | Las reglas del voleibol y el vocabulario del proyecto. La fuente de verdad. |
-| `docs/arquitectura.md` | Capas, dependencias permitidas, estructura de carpetas — incluye `server/`. |
-| `docs/modelo-de-datos.md` | El esquema de PostgreSQL: qué tablas existen y cuáles quedan por construir. |
-| `docs/flujo-de-trabajo.md` | Cómo se trabaja aquí: ciclo SDD + TDD. |
-| `docs/05_Copias_de_Seguridad.md` | El sistema de copias: qué guarda, cómo comprobarlo, cómo restaurar. |
-| `docs/decisiones/` | Registro de decisiones tomadas y su motivo, una por fichero. Solo se añade. |
-| `docs/especificaciones/` | Una spec por porción de trabajo. Se cierran al terminarse. |
-| `server/README.md` | Arranque del backend, rutas de la API, estructura de `server/`. |
-| `CLAUDE.md` | Contexto e invariantes para asistentes de IA. |
+| [`docs/dominio.md`](docs/dominio.md) | Las reglas del voleibol y el vocabulario del proyecto. **La fuente de verdad.** |
+| [`docs/arquitectura.md`](docs/arquitectura.md) | Capas, dependencias permitidas, estructura de carpetas — incluye `server/`. |
+| [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md) | El esquema de PostgreSQL: las 11 tablas y las ampliaciones previstas. |
+| [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md) | Cómo se trabaja aquí: el ciclo SDD + TDD. |
+| [`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md) | Qué se guarda, cómo comprobarlo, cómo restaurar. |
+| [`docs/decisiones/`](docs/decisiones/) | 43 ADR: cada decisión estructural y su motivo. Solo se añade. |
+| [`docs/especificaciones/`](docs/especificaciones/) | 63 specs (numeradas hasta la 067), una por porción de trabajo. Se cierran al terminarse. |
+| [`server/README.md`](server/README.md) | Arranque del backend, rutas de la API, estructura de `server/`. |
+| [`CLAUDE.md`](CLAUDE.md) | Contexto e invariantes para asistentes de IA. |
 
-## Hoja de ruta
+---
 
-Cada paso es usable en un entrenamiento por sí solo. Ese es el criterio de corte.
+## 9. Estado y hoja de ruta
 
-1. **Dominio puro con tests.** Roles y etiquetas, rotación anclada al colocador (R1–R6),
-   validación posicional, plantillas de equipo. Sin UI. Specs 001–004.
-2. **Sistema de recepción.** Crear un sistema con nombre, ligado a una plantilla, y guardar
-   una formación legal por rotación — bloqueando el guardado si comete falta. Spec 005.
-3. **Catálogo de sistemas, enseñanza, persistencia, pizarra interactiva y líbero por
-   rotación.** Crear, renombrar y borrar varios sistemas; explicaciones de enseñanza por
-   rotación y por jugador; guardado en el navegador con un esquema pensado para migrar a
-   PostgreSQL + Prisma (migración ya hecha, ver el paso 8); la pista SVG con arrastre,
-   validación en vivo, navegación R1–R6 y selección de jugador; y el líbero sustituyendo a
-   cualquier jugador de zaga, entrando y saliendo según la rotación (FIVB 19.3.1.1). Primer
-   punto en que la herramienta enseña algo tocándola. Specs 006–011.
-4. **Consulta y examen.** Ver un sistema guardado en solo lectura, y examinarse: colocar los
-   jugadores y recibir una nota de perfección más el veredicto de legalidad. La consulta en solo
-   lectura se hizo como "Teoría" (spec 052, ligada a cuentas y roles — ver paso 8): cualquier
-   cuenta recorre los sistemas validados del equipo, sin poder tocarlos. Las reglas de
-   examinarse con nota ya están en `domain/` — los tres tipos de examen (por puesto, por línea o
-   por sistema completo), el veredicto de legalidad y la nota de 0 a 10 (specs 012–013). La
-   ventana de examen (spec 057, sustituye a la 055) ya existe: hoja de configuración antes de
-   empezar, arrastre con faltas visibles solo al validar cada rotación, boletín de resultado con
-   desglose por rotación y comparación con el modelo del entrenador, e insignia guardada en
-   Cuenta (spec 056). El líbero también se puede elegir como sujeto de examen, por posición y por
-   línea, con su propia insignia (spec 058). Esas insignias ya se ven: la ventana Cuenta tiene
-   una vitrina de medallas, sistema a sistema, con el desglose por puesto (spec 061).
-5. **Rejilla pintable, huecos y conflictos.** La rejilla ya se pinta y se guarda (specs 022, 024 y
-   028), y desde la spec 024 las zonas son de los seis defensores, no solo de los receptores.
-   Falta el análisis derivado: qué superficie no cubre nadie y cuál cubren dos o más. Specs
-   014–015 — **el siguiente paso** (ADR 0028).
-6. **Exportar e importar JSON y PNG.** Compartir un sistema sin depender del servidor. Spec 016.
-7. **Sistemas de defensa.** Un sistema de tipo defensa, organizado por el caso del colocador
-   rival (delantero o trasero) y por la situación de ataque que le corresponde a ese caso — la
-   rotación no manda nada en defensa, solo cambia quién ocupa cada puesto, nunca la tarea. Se
-   marca la situación soltando la ficha "A" del atacante en el campo rival, junto a la ficha "C"
-   del colocador; se colocan seis puestos genéricos (no jugadores concretos) y se guarda sin
-   validación de posición — en defensa esa regla no existe. Cada situación admite variantes según
-   cuántos jugadores llegan al bloqueo (0 a 3), con quién bloquea derivado de la posición de los
-   puestos delanteros; y se ve, calculada y retocable a mano, la sombra que ese bloqueo le
-   proyecta al atacante sobre el campo propio. Specs 021, 038, 039 y 040 (038 sustituye la
-   rotación y la vía de ataque de la 021 por caso y situación). La rejilla pintable del paso 5 se
-   generaliza para activarse también aquí: pintar la zona de cada puesto y verlas todas a la vez
-   son las specs 022–023.
-8. **Backend, cuentas y equipos (v2).** Los sistemas dejan de vivir en un navegador y pasan a una
-   base de datos, para poder editarlos desde varios dispositivos y para que los jugadores puedan
-   estudiarlos. **Hecho:** el puerto de persistencia se volvió asíncrono y granular (spec 031);
-   cada sistema pasa a ser del equipo masculino o del femenino (spec 032); nació `server/` con
-   PostgreSQL y su API (spec 033); la pizarra habla con él (spec 034); la autenticación,
-   aplazada por la ADR 0028, se retoma con la ADR 0036 — lista blanca, alta con contraseña y
-   sesión (spec 035); la propia pizarra pide entrar antes de mostrar nada (spec 050); un
-   entrenador o el admin pueden validar un sistema (spec 051, ADR 0038); "Teoría" deja
-   consultar en solo lectura los sistemas validados (spec 052, ADR 0039); los tres roles
-   deciden quién edita — crear, editar, clonar y borrar exigen sesión y rol; un `usuario` no ve
-   el editor (spec 037); la ventana "Cuenta" guarda el perfil y cambia la contraseña
-   (spec 053); y el admin gestiona la lista blanca —invitar, reinvitar con otro rol, retirar—
-   desde la propia aplicación (spec 054). **Sin hacer todavía:** login con Google, sin spec
-   asignada; y que el rol también decida qué se **lee** (hoy `GET /sistemas` sigue abierto a
-   cualquiera, borradores incluidos), sin spec asignada.
+| | |
+|---|---|
+| Specs escritas | 63 (numeradas hasta la 067; huecos reservados 014–016) |
+| ADR registradas | 43 |
+| Tests | 518 (dominio · aplicación · infraestructura) + integración de servidor |
+| Tablas construidas | 11 |
+| Adaptador de persistencia en uso | `HttpSistemaRepository` |
+| Autenticación | lista blanca + contraseña + sesión |
 
-Cada paso tiene su spec en `docs/especificaciones/`; el orden exacto de implementación y los
-escenarios de cada una viven ahí, no aquí.
+Cada paso de la hoja de ruta es **usable en un entrenamiento por sí solo**; ese es el criterio de
+corte. Lo hecho: dominio con tests, catálogo de sistemas, pizarra interactiva, líbero por
+rotación, sistemas de defensa con zonas y sombra, backend con PostgreSQL, cuentas y roles,
+Teoría, y examen con medallas.
 
-**Spec 017** no encaja en ningún paso de arriba: corrige y amplía el líbero por rotación y la
-validación del paso 3 tras usar la pizarra en la práctica (el líbero pasa de sustituir siempre al
-mismo titular a declararse rotación a rotación, y se puede desactivar la validación al enseñar
-una excepción). Se numera después de las specs ya reservadas (012–016) para no reordenarlas.
+**El siguiente paso** son las specs 014–015: cálculo de **huecos y conflictos** derivados de la
+rejilla ya pintada. Pendientes también: exportar/importar JSON y PNG (spec 016), y varias
+plantillas de equipo desde la aplicación.
 
-**Specs 018–020** tampoco encajan en ningún paso: corrigen, en dos vaivenes, la numeración de
-las rotaciones tras usar la pizarra con un equipo real — ver `docs/decisiones/0018-…md` y
-`0019-…md`. No añaden funcionalidad nueva, solo corrigen una regla mal aplicada.
+> [!NOTE]
+> Fuera de alcance a propósito: PWA *offline* y sincronización sin conexión, un modelo de jugador
+> más fino que un punto, y cualquier librería de gráficos. El razonamiento está en
+> [`docs/01_Finalidad_y_Alcance.md`](docs/01_Finalidad_y_Alcance.md).
