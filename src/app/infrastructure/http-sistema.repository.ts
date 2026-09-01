@@ -39,8 +39,8 @@ export class HttpSistemaRepository implements SistemaRepository {
     private readonly fetchFn: typeof fetch = fetch.bind(globalThis),
   ) {}
 
-  async listar(): Promise<readonly Sistema[]> {
-    const porEquipo = await Promise.all(EQUIPOS.map((equipoId) => this.listarEquipo(equipoId)));
+  async listar(equipos: readonly EquipoId[] = EQUIPOS): Promise<readonly Sistema[]> {
+    const porEquipo = await Promise.all(equipos.map((equipoId) => this.listarEquipo(equipoId)));
     return porEquipo.flat();
   }
 

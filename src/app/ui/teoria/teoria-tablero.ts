@@ -10,6 +10,7 @@ import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-ro
 import { SelectorCaso } from '../rotaciones/selector-caso';
 import { SelectorSituacion } from '../rotaciones/selector-situacion';
 import { SelectorBloqueadores } from '../rotaciones/selector-bloqueadores';
+import { AccesoStore } from '../../application/acceso.store';
 import { SelectorEquipo } from '../sistemas/selector-equipo';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
@@ -58,6 +59,7 @@ const ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
 })
 export class TeoriaTablero {
   protected readonly teoria = inject(TeoriaStore);
+  protected readonly acceso = inject(AccesoStore);
   protected readonly paletaColores = PALETA_COLORES;
 
   constructor() {

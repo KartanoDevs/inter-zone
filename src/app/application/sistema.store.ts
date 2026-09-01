@@ -349,10 +349,17 @@ export class SistemaStore {
   /** Carga el catálogo y los ajustes (spec 031). Se llama una vez, antes de que se muestre la
    * pizarra — `app.config.ts` la dispara con `provideAppInitializer` — para que ningún consumidor
    * vea nunca el estado a medio poblar. */
-  async cargar(): Promise<void> {
-    this.sistemas.set(ordenarCatalogo(await this.repositorio.listar()));
-    // El equipo activo ya vale su valor por defecto (masculino): `this.catalogo()` sale ya
-    // filtrado por él, así que el primero que active es el primero de ESE equipo (spec 032).
+  async cargar(equipos?: readonly EquipoId[]): Promise<void> {
+    // `equipos` (spec 064) acota qué catálogos se piden y fija el equipo activo inicial en el
+    // primero — una cuenta con acceso solo a femenino nunca descarga el masculino ni arranca
+    // en él. Sin el argumento (los tests que no lo pasan), comportamiento de antes de la 064:
+    // los dos equipos, masculino activo.
+    if (equipos && equipos.length > 0 && !equipos.includes(this.equipoActivo())) {
+      this.equipoActivo.set(equipos[0]);
+    }
+    this.sistemas.set(ordenarCatalogo(await this.repositorio.listar(equipos)));
+    // `this.catalogo()` sale ya filtrado por `equipoActivo`, así que el primero que active es el
+    // primero de ESE equipo (spec 032).
     this.sistemaActivoId.set(this.catalogo()[0]?.id ?? null);
     const ajustes = await this.ajustesRepositorio?.leer();
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);

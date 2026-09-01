@@ -2,6 +2,7 @@
   <div class="app-teoria__cabecera">
     <app-selector-equipo
       [equipoActivo]="teoria.equipoActivo()"
+      [equipos]="acceso.equiposVisibles()"
       (seleccionar)="seleccionarEquipo($event)"
     ></app-selector-equipo>
     <app-barra-sistemas

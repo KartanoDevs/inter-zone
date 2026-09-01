@@ -161,6 +161,15 @@ describe('ExamenStore', () => {
     expect(examen.catalogo().map((s) => s.id)).toEqual(['ok']);
   });
 
+  it('064-E10: el examen solo lista sistemas de los equipos cargados', () => {
+    // El catálogo del examen deriva de SistemaStore.sistemas(), que la spec 064 ya deja
+    // acotado a los equipos visibles: aquí solo hay masculino.
+    const examen = crearExamenStore([sistemaExaminable('m1', 'masculino')]);
+
+    expect(examen.catalogo().every((s) => s.equipoId === 'masculino')).toBe(true);
+    expect(examen.equipoActivo()).toBe('masculino');
+  });
+
   it('012: el examen por posición y por línea necesitan un titular; por sistema no', () => {
     const examen = crearExamenStore([sistemaExaminable('s1')]);
     examen.activarSistema('s1');

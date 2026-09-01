@@ -86,6 +86,27 @@ export function puedeEditarAlgo(usuario: Pick<SesionUsuario, 'esAdmin' | 'membre
   return usuario.esAdmin || usuario.membresias.some((m) => m.rol === 'entrenador');
 }
 
+/** Si una cuenta puede *ver* los sistemas de un equipo (spec 064): el admin siempre, el resto
+ * solo si tiene membresía en ese equipo — cualquier rol, no solo entrenador. Distinto de
+ * `puedeGestionarEquipo`, que exige rol `entrenador` para *escribir*. */
+export function tieneAccesoAEquipo(
+  usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>,
+  equipoId: EquipoId,
+): boolean {
+  return usuario.esAdmin || usuario.membresias.some((m) => m.equipoId === equipoId);
+}
+
+/** A qué equipos tiene acceso una cuenta (spec 064): el admin, a los dos; el resto, a los de
+ * sus membresías. Siempre en el orden de `equipos` (masculino antes que femenino), no en el
+ * orden en que se guardaron las membresías — así el "primer equipo visible" es estable. Si solo
+ * devuelve uno, la interfaz esconde el selector de equipo. */
+export function equiposVisibles(
+  usuario: Pick<SesionUsuario, 'esAdmin' | 'membresias'>,
+  equipos: readonly EquipoId[],
+): readonly EquipoId[] {
+  return equipos.filter((equipo) => tieneAccesoAEquipo(usuario, equipo));
+}
+
 /** Mínimo exigido al darse de alta (spec 035, E9). No hay una regla de voleibol detrás: es un
  * mínimo de seguridad razonable, igual de arbitrario en cualquier aplicación con contraseña. */
 export const LONGITUD_MINIMA_CONTRASENA = 8;

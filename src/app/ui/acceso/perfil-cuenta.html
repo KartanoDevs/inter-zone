@@ -37,7 +37,12 @@
       <div id="app-perfil-panel-datos" role="tabpanel" aria-labelledby="app-perfil-tab-datos">
         <div class="app-perfil__cabecera">
           <span class="app-perfil__correo">{{ usuario.email }}</span>
-          <span class="app-perfil__rol">{{ etiquetaRol() }}</span>
+          <div class="app-perfil__etiquetas">
+            <span class="app-perfil__rol">{{ etiquetaRol() }}</span>
+            @for (equipo of etiquetasEquipo(); track equipo) {
+              <span class="app-perfil__equipo">{{ equipo }}</span>
+            }
+          </div>
         </div>
 
         <form

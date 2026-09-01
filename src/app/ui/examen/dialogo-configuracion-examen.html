@@ -1,18 +1,21 @@
 <app-modal titulo="Hoja de inscripción" [rol]="'dialog'" (cerrar)="cerrar.emit()">
   <div class="app-examen-config__kicker">Nuevo examen</div>
 
-  <div class="app-examen-config__fila">
-    <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="true"
-      >1</span
-    >
-    <div class="app-examen-config__cuerpo">
-      <span class="app-examen-config__etiqueta">Equipo</span>
-      <app-selector-equipo
-        [equipoActivo]="equipoActivo()"
-        (seleccionar)="seleccionarEquipo.emit($event)"
-      ></app-selector-equipo>
+  @if (equiposVisibles().length > 1) {
+    <div class="app-examen-config__fila">
+      <span class="app-examen-config__casilla" [class.app-examen-config__casilla--hecha]="true"
+        >1</span
+      >
+      <div class="app-examen-config__cuerpo">
+        <span class="app-examen-config__etiqueta">Equipo</span>
+        <app-selector-equipo
+          [equipoActivo]="equipoActivo()"
+          [equipos]="equiposVisibles()"
+          (seleccionar)="seleccionarEquipo.emit($event)"
+        ></app-selector-equipo>
+      </div>
     </div>
-  </div>
+  }
 
   <div class="app-examen-config__fila">
     <span

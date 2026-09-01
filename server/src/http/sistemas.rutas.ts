@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import type { EquipoId, EstadoSistema, Sistema } from '../../../src/app/domain/modelos';
-import { puedeGestionarEquipo } from '../../../src/app/domain/acceso';
+import { puedeGestionarEquipo, tieneAccesoAEquipo } from '../../../src/app/domain/acceso';
 import * as sistemaRepositorio from '../infraestructura/sistema.repositorio';
 import {
   ConflictoDeConcurrencia,
@@ -46,12 +46,16 @@ sistemasRutas.get('/sistemas', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'equipoId debe ser "masculino" o "femenino"' });
     return;
   }
-  // Leer el catálogo exige sesión, cualquier rol (spec 037 lo dejó abierto, pero Teoría y la
-  // pizarra ya piden entrar antes — spec 050 — así que cerrarlo no cambia nada para la app).
-  // No se exige membresía del equipo: Teoría la consultan cuentas sin membresía.
+  // Leer el catálogo exige sesión y membresía en el equipo (spec 064): el admin siempre, un
+  // entrenador o usuario solo el suyo. Un usuario del femenino no debe poder ver el masculino
+  // ni con curl.
   const sesion = await resolverSesion(req);
   if (!sesion) {
     res.status(401).json({ error: 'Hace falta iniciar sesión' });
+    return;
+  }
+  if (!tieneAccesoAEquipo(sesion.usuario, equipoId)) {
+    res.status(403).json({ error: 'No tienes acceso a los sistemas de este equipo' });
     return;
   }
   const sistemas = await sistemaRepositorio.listar(equipoId);

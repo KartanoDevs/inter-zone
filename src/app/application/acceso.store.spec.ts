@@ -188,4 +188,25 @@ describe('AccesoStore', () => {
     expect(exito).toBe(true);
     expect(store.error()).toBeNull();
   });
+
+  it('064-E2: equiposVisibles sale de las membresías cuando no es admin', async () => {
+    const store = new AccesoStore(repoFalso({ quienSoy: async () => USUARIO }));
+    await store.comprobarSesion();
+
+    expect(store.equiposVisibles()).toEqual(['femenino']);
+  });
+
+  it('064-E1: equiposVisibles de un admin son los dos', async () => {
+    const admin: SesionUsuario = { ...USUARIO, esAdmin: true, membresias: [] };
+    const store = new AccesoStore(repoFalso({ quienSoy: async () => admin }));
+    await store.comprobarSesion();
+
+    expect(store.equiposVisibles()).toEqual(['masculino', 'femenino']);
+  });
+
+  it('064: sin sesión, equiposVisibles está vacío', () => {
+    const store = new AccesoStore(repoFalso());
+
+    expect(store.equiposVisibles()).toEqual([]);
+  });
 });

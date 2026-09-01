@@ -22,7 +22,7 @@ export class App {
     // efecto no llega a dispararse.
     effect(() => {
       if (this.acceso.usuario()) {
-        void this.sistemaStore.cargar();
+        void this.sistemaStore.cargar(this.acceso.equiposVisibles());
       }
     });
   }

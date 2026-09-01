@@ -1,6 +1,7 @@
 @if (examen.fase() === 'configurando') {
   <app-dialogo-configuracion-examen
     [equipoActivo]="examen.equipoActivo()"
+    [equiposVisibles]="acceso.equiposVisibles()"
     [sistemas]="opcionesSistema()"
     [sistemaActivoId]="examen.sistemaActivoId()"
     [tipo]="examen.tipo()"

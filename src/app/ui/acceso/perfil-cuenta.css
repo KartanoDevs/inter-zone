@@ -81,13 +81,29 @@
   color: var(--text-main);
 }
 
-.app-perfil__rol {
-  align-self: center;
+.app-perfil__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.app-perfil__rol,
+.app-perfil__equipo {
   padding: 2px 10px;
   border-radius: 999px;
+  font-size: 12px;
+}
+
+.app-perfil__rol {
   background: rgba(0, 229, 255, 0.14);
   color: var(--neon-cyan);
-  font-size: 12px;
+}
+
+/* Equipo: magenta, para distinguirlo del cian del rol cuando van juntos (spec 064). */
+.app-perfil__equipo {
+  background: rgba(255, 0, 255, 0.14);
+  color: var(--neon-magenta);
 }
 
 .app-perfil__form {

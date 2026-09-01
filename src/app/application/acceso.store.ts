@@ -1,5 +1,8 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import type { DatosPerfil, SesionUsuario } from '../domain/acceso';
+import { equiposVisibles } from '../domain/acceso';
+import type { EquipoId } from '../domain/modelos';
+import { EQUIPOS } from '../domain/equipos';
 import type { AccesoRepository } from '../domain/puertos';
 
 /**
@@ -14,6 +17,14 @@ export class AccesoStore {
   readonly usuario = signal<SesionUsuario | null>(null);
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
+
+  /** A qué equipos tiene acceso quien ha entrado (spec 064): los dos si es admin, los de sus
+   * membresías si no, y `[]` sin sesión. La interfaz esconde el selector de equipo cuando solo
+   * hay uno, y los tres `equipoActivo` arrancan en `equiposVisibles()[0]`. */
+  readonly equiposVisibles = computed<readonly EquipoId[]>(() => {
+    const usuario = this.usuario();
+    return usuario ? equiposVisibles(usuario, EQUIPOS) : [];
+  });
 
   constructor(private readonly repositorio: AccesoRepository) {}
 

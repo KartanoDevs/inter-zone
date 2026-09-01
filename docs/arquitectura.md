@@ -167,9 +167,12 @@ Modelos y reglas. Aquí vive el voleibol.
   minúsculas y sin espacios), `resolverAltaDesdeInvitacion` (traduce una invitación de la lista
   blanca en si la cuenta nace admin o en qué equipos nace con membresía),
   `LONGITUD_MINIMA_CONTRASENA`, `puedeGestionarEquipo` (specs 037/051: admin, o entrenador con
-  membresía en el equipo — crear, editar, borrar y validar comparten esta misma regla) y
+  membresía en el equipo — crear, editar, borrar y validar comparten esta misma regla),
   `puedeEditarAlgo` (spec 037: si a la cuenta le toca ver la pestaña Editor, sea cual sea el
-  equipo), `dorsalValido` y `normalizarNombre` (spec 053: mismo criterio que `describirSistema`
+  equipo), `tieneAccesoAEquipo`/`equiposVisibles` (spec 064: quién puede *ver* los sistemas de un
+  equipo — cualquier rol con membresía, no solo entrenador — y la lista de equipos que le
+  corresponden, para esconder el selector de equipo cuando solo hay uno), `dorsalValido` y
+  `normalizarNombre` (spec 053: mismo criterio que `describirSistema`
   con la descripción de un sistema — un texto en blanco borra lo que hubiera). `DatosPerfil` es
   el tipo de los tres campos de perfil, siempre los tres juntos, nunca un parche parcial. Nada
   de contraseñas ni de sesión aquí: eso necesita `node:crypto` y vive en `server/`, que es quien
@@ -487,10 +490,10 @@ navegador, ejecutándose en Node.
   eso lo hace `src/main.ts`, y los tests de integración levantan su propia instancia efímera).
   CORS escrito a mano (tres cabeceras y una respuesta corta a `OPTIONS`, sin la dependencia
   `cors`), origen permitido configurable por `ORIGEN_PERMITIDO` (`.env`).
-- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`. `GET` exige sesión (cualquier
-  rol) desde la pasada de seguridad de la ADR 0043; no exige membresía del equipo, para que
-  Teoría siga funcionando con cuentas sin membresía. Las cuatro de escritura (`POST`, `PUT`,
-  `PUT /:id/estado`, `DELETE`) exigen además el rol (spec 037/051, ADR 0038):
+- `src/http/sistemas.rutas.ts` — las rutas de `/api/sistemas`. `GET` exige sesión (ADR 0043) y
+  membresía en el equipo (spec 064: `tieneAccesoAEquipo` — admin siempre, el resto solo el suyo;
+  un usuario del femenino recibe 403 al pedir el masculino). Las cuatro de escritura (`POST`,
+  `PUT`, `PUT /:id/estado`, `DELETE`) exigen además el rol (spec 037/051, ADR 0038):
   `exigirPermisoDeEquipo`, un helper local, resuelve la sesión con
   `acceso.repositorio.quienSoy` y comprueba `domain/acceso.puedeGestionarEquipo` contra el
   equipo real del sistema — nunca el que traiga el cuerpo de la petición, para que no valga

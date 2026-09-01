@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { computed, linkedSignal, signal } from '@angular/core';
 import type { EquipoId, Formacion, Jugador, Punto, Sistema } from '../domain/modelos';
 import { estadoDe, ordenarCatalogo } from '../domain/catalogo-sistemas';
 import {
@@ -35,7 +35,10 @@ export type FaseExamen = 'configurando' | 'en-curso' | 'terminado';
  * través del puerto.
  */
 export class ExamenStore {
-  readonly equipoActivo = signal<EquipoId>('masculino');
+  /** Arranca en el equipo activo de `SistemaStore` — la spec 064 lo fija en el primer equipo
+   * visible de la cuenta — y se resetea a él en cada recarga. La hoja de inscripción puede
+   * cambiarlo aparte (navegación independiente, spec 057). */
+  readonly equipoActivo: ReturnType<typeof linkedSignal<EquipoId>>;
   readonly sistemaActivoId = signal<string | null>(null);
   readonly tipo = signal<TipoExamen>('puesto');
   readonly titularId = signal<string | null>(null);
@@ -62,7 +65,9 @@ export class ExamenStore {
   constructor(
     private readonly sistemaStore: SistemaStore,
     private readonly insigniasRepositorio: InsigniasRepository,
-  ) {}
+  ) {
+    this.equipoActivo = linkedSignal(() => this.sistemaStore.equipoActivo());
+  }
 
   /** Solo sistemas de recepción, validados, y examinables de verdad — con sus seis rotaciones
    * completas y legales (spec 012, E6-E7): no tiene sentido medir al alumno contra un modelo que

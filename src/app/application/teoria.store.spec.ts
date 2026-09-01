@@ -147,6 +147,17 @@ describe('TeoriaStore', () => {
     expect(soloFemenino.sistemaActivoId()).toBeNull();
   });
 
+  it('064-E9: Teoría solo ofrece sistemas de los equipos cargados', () => {
+    // SistemaStore.cargar(['masculino']) ya deja solo el masculino en sistemas(); Teoría lo
+    // hereda: nunca puede mostrar el femenino aunque exista en la base.
+    const teoria = crearTeoriaStore([
+      sistema('v1', 'De masculino', 'masculino', { estado: 'validado' }),
+    ]);
+
+    expect(teoria.catalogo().every((s) => s.equipoId === 'masculino')).toBe(true);
+    expect(teoria.equipoActivo()).toBe('masculino');
+  });
+
   it('052-E9: la navegación de Teoría no toca el borrador del editor', () => {
     const sistemaStore = new SistemaStore(REPOSITORIO_SIN_USAR);
     const validado = sistema('v1', 'Recepción', 'masculino', { estado: 'validado' });

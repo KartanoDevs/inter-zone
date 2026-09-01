@@ -112,6 +112,7 @@
       <div class="app-tablero__cabecera">
         <app-selector-equipo
           [equipoActivo]="store.equipoActivo()"
+          [equipos]="acceso.equiposVisibles()"
           (seleccionar)="elegirEquipo($event)"
         ></app-selector-equipo>
         <app-barra-sistemas

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   dorsalValido,
+  equiposVisibles,
   esRolAccesoValido,
   normalizarEmail,
   normalizarNombre,
@@ -89,6 +90,32 @@ describe('acceso', () => {
       ],
     } as const;
     expect(puedeEditarAlgo(usuario)).toBe(false);
+  });
+
+  it('064-E1: los equipos visibles de un admin son los dos, en orden', () => {
+    expect(equiposVisibles({ esAdmin: true, membresias: [] }, EQUIPOS)).toEqual([
+      'masculino',
+      'femenino',
+    ]);
+  });
+
+  it('064-E2: los equipos visibles de un usuario son los de sus membresías', () => {
+    const usuario = {
+      esAdmin: false,
+      membresias: [{ equipoId: 'femenino', rol: 'usuario' }],
+    } as const;
+    expect(equiposVisibles(usuario, EQUIPOS)).toEqual(['femenino']);
+  });
+
+  it('064-E2: con membresía en los dos, los ve en el orden de EQUIPOS', () => {
+    const usuario = {
+      esAdmin: false,
+      membresias: [
+        { equipoId: 'femenino', rol: 'entrenador' },
+        { equipoId: 'masculino', rol: 'usuario' },
+      ],
+    } as const;
+    expect(equiposVisibles(usuario, EQUIPOS)).toEqual(['masculino', 'femenino']);
   });
 
   it('053-E4: un dorsal entre 1 y 99 es válido', () => {

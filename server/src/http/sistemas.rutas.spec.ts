@@ -217,13 +217,31 @@ describe('API de sistemas (spec 033)', () => {
       expect(respuesta.status).toBe(401);
     });
 
-    it('sec-A01: cualquier cuenta con sesión lee el catálogo', async () => {
-      const cookieUsuario = await entrarComo('lectora@club.com', 'usuario');
+    it('064-E7: leer el catálogo de un equipo sin membresía devuelve 403', async () => {
+      const cookieFemenino = await entrarComo('solo-femenino@club.com', 'usuario', 'femenino');
       const respuesta = await fetch(`${base}/api/sistemas?equipoId=masculino`, {
-        headers: { cookie: cookieUsuario },
+        headers: { cookie: cookieFemenino },
+      });
+
+      expect(respuesta.status).toBe(403);
+    });
+
+    it('064-E7: leer el catálogo del equipo propio va bien', async () => {
+      const cookieFemenino = await entrarComo('solo-femenino@club.com', 'usuario', 'femenino');
+      const respuesta = await fetch(`${base}/api/sistemas?equipoId=femenino`, {
+        headers: { cookie: cookieFemenino },
       });
 
       expect(respuesta.status).toBe(200);
+    });
+
+    it('064-E8: el admin lee el catálogo de cualquier equipo', async () => {
+      for (const equipo of ['masculino', 'femenino']) {
+        const respuesta = await fetch(`${base}/api/sistemas?equipoId=${equipo}`, {
+          headers: { cookie: cookieAdmin },
+        });
+        expect(respuesta.status).toBe(200);
+      }
     });
 
     it('033-E9: el catálogo se filtra por equipo', async () => {

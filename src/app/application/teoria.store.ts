@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { computed, linkedSignal, signal } from '@angular/core';
 import type {
   Celda,
   CasoColocador,
@@ -39,7 +39,11 @@ const ESCALA_SOMBRA_FIJA = (5 / 10) * 1.25;
  * guardar que el entrenador tuviera a medias en `SistemaStore`.
  */
 export class TeoriaStore {
-  readonly equipoActivo = signal<EquipoId>('masculino');
+  /** Arranca en el equipo activo de `SistemaStore` — que la spec 064 ya fija en el primer
+   * equipo visible de la cuenta — y se resetea a él en cada recarga. El entrenador puede
+   * cambiarlo aparte con `seleccionarEquipo`; su elección manda hasta la siguiente recarga
+   * (navegación independiente, spec 052 E9). */
+  readonly equipoActivo: ReturnType<typeof linkedSignal<EquipoId>>;
   readonly sistemaActivoId = signal<string | null>(null);
   readonly rotacionActiva = signal<RotacionValida>(1);
   readonly casoActivo = signal<CasoColocador>('delantero');
@@ -47,7 +51,9 @@ export class TeoriaStore {
   readonly bloqueadoresActivos = signal<NumeroBloqueadores>(0);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
 
-  constructor(private readonly sistemaStore: SistemaStore) {}
+  constructor(private readonly sistemaStore: SistemaStore) {
+    this.equipoActivo = linkedSignal(() => this.sistemaStore.equipoActivo());
+  }
 
   /** Solo los sistemas validados (spec 051): en borrador no hay nada que un jugador deba
    * estudiar todavía. */

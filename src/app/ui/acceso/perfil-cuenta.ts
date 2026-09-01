@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { RolId } from '../../domain/modelos';
+import { NOMBRE_EQUIPO } from '../../domain/equipos';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { AccesoStore } from '../../application/acceso.store';
 import { InsigniasStore } from '../../application/insignias.store';
@@ -69,6 +70,13 @@ export class PerfilCuenta {
     }
     return usuario.membresias.some((m) => m.rol === 'entrenador') ? 'Entrenador' : 'Usuario';
   });
+
+  /** A qué equipo(s) pertenece la cuenta (spec 064): junto a la etiqueta de rol. Un admin
+   * enseña los dos; una cuenta con una sola membresía, ese equipo. Se apoya en
+   * `AccesoStore.equiposVisibles`, que ya resuelve "admin = los dos". */
+  protected readonly etiquetasEquipo = computed(() =>
+    this.acceso.equiposVisibles().map((equipo) => NOMBRE_EQUIPO[equipo]),
+  );
 
   protected async guardarPerfil(
     nombre: string,

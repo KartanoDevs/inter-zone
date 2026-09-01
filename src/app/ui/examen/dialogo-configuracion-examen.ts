@@ -38,6 +38,7 @@ interface FilaTitular {
 })
 export class DialogoConfiguracionExamen {
   readonly equipoActivo = input.required<EquipoId>();
+  readonly equiposVisibles = input.required<readonly EquipoId[]>();
   readonly sistemas = input.required<readonly OpcionSistema[]>();
   readonly sistemaActivoId = input.required<string | null>();
   readonly tipo = input.required<TipoExamen>();

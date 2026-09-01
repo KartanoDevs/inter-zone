@@ -134,8 +134,12 @@ class RepositorioFake implements SistemaRepository {
     }
   }
 
-  async listar(): Promise<readonly Sistema[]> {
-    return [...this.mapa.values()];
+  equiposPedidos: readonly EquipoId[] | undefined;
+
+  async listar(equipos?: readonly EquipoId[]): Promise<readonly Sistema[]> {
+    this.equiposPedidos = equipos;
+    const todos = [...this.mapa.values()];
+    return equipos ? todos.filter((s) => equipos.includes(s.equipoId)) : todos;
   }
 
   async crear(sistema: Sistema): Promise<void> {
@@ -213,6 +217,32 @@ describe('SistemaStore', () => {
 
     expect(store.sistemaActivoId()).toBeNull();
     expect(store.borrador()).toEqual([]);
+  });
+
+  it('064-E5: cargar con acceso solo a femenino arranca en femenino', async () => {
+    const store = new SistemaStore(
+      new RepositorioFake([
+        sistemaBase('m1', 'De masculino', 'masculino'),
+        sistemaBase('f1', 'De femenino', 'femenino'),
+      ]),
+    );
+
+    await store.cargar(['femenino']);
+
+    expect(store.equipoActivo()).toBe('femenino');
+  });
+
+  it('064-E6: cargar con acceso solo a femenino no trae sistemas del masculino', async () => {
+    const repositorio = new RepositorioFake([
+      sistemaBase('m1', 'De masculino', 'masculino'),
+      sistemaBase('f1', 'De femenino', 'femenino'),
+    ]);
+    const store = new SistemaStore(repositorio);
+
+    await store.cargar(['femenino']);
+
+    expect(store.sistemas().every((s) => s.equipoId === 'femenino')).toBe(true);
+    expect(repositorio.equiposPedidos).toEqual(['femenino']);
   });
 
   it('009-E3: activar un sistema carga la formación guardada de su rotación activa', async () => {

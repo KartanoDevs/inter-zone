@@ -8,7 +8,9 @@ import type { InsigniaGanada } from './insignias';
  * su propia acción, no un `actualizar` más: valida o quita la validación, y solo eso — exige
  * sesión y rol, a diferencia del resto de este puerto (spec 037, todavía sin cerrar esa puerta). */
 export interface SistemaRepository {
-  listar(): Promise<readonly Sistema[]>;
+  /** `equipos` acota qué catálogos se piden (spec 064): sin él, los dos, como hasta la 064.
+   * Una cuenta con acceso a un solo equipo nunca descarga el del otro. */
+  listar(equipos?: readonly EquipoId[]): Promise<readonly Sistema[]>;
   crear(sistema: Sistema): Promise<void>;
   actualizar(sistema: Sistema): Promise<void>;
   cambiarEstado(id: string, estado: EstadoSistema): Promise<void>;

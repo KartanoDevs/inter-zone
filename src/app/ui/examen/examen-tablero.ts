@@ -21,6 +21,7 @@ import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion'
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { DialogoConfiguracionExamen } from './dialogo-configuracion-examen';
 import { ExamenStore } from '../../application/examen.store';
+import { AccesoStore } from '../../application/acceso.store';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import type { Infraccion, Jugador } from '../../domain/modelos';
 import type { RotacionValida } from '../../application/sistema.store';
@@ -78,6 +79,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 })
 export class ExamenTablero {
   protected readonly examen = inject(ExamenStore);
+  protected readonly acceso = inject(AccesoStore);
 
   /** Salir de la ventana Examen: lo pide la "×"/backdrop/Escape del modal de configuración
    * (no queda nada bajo él). Quien decide a qué ventana volver es `Tablero`. */
