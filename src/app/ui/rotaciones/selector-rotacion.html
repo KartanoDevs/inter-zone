@@ -5,12 +5,15 @@
       role="tab"
       class="app-selector__boton"
       [class.app-selector__boton--activa]="estado.rotacion === rotacionActiva()"
+      [class.app-selector__boton--validada]="estado.validada && !estado.tieneFalta"
       [attr.aria-selected]="estado.rotacion === rotacionActiva()"
       (click)="seleccionar.emit(estado.rotacion)"
     >
       <span class="app-selector__etiqueta">R{{ estado.rotacion }}</span>
       @if (estado.tieneFalta) {
         <span class="app-selector__punto" aria-hidden="true"></span>
+      } @else if (estado.validada) {
+        <span class="app-selector__check" aria-hidden="true">&#10003;</span>
       }
     </button>
   }

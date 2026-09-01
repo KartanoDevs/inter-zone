@@ -317,7 +317,9 @@ export class ExamenStore {
 
   /** Validar (spec 057, E6-E7): solo aquí se calcula el veredicto de esa rotación — mientras se
    * arrastra no hay ninguna función que lo devuelva antes de tiempo. Queda guardado en el mapa,
-   * no se pierde al cambiar de pestaña. */
+   * no se pierde al cambiar de pestaña. Tras registrarla, salta a la siguiente rotación
+   * examinable sin validar (spec 066, E2); si no queda ninguna, deja la activa donde está y la
+   * interfaz abre el diálogo de entregar (E3/E6). */
   confirmarRotacion(): void {
     const sistema = this.sistemaActivo();
     const examen = this.examen();
@@ -329,7 +331,12 @@ export class ExamenStore {
     const colocados = this.colocadosDeLaRotacion();
     const formacionCompleta = [...dados, ...colocados];
     const correccion = corregirRotacion(examen, sistema, rotacion, formacionCompleta);
-    this.correccionesPorRotacion.update((mapa) => ({ ...mapa, [rotacion]: correccion }));
+    const mapa = { ...this.correccionesPorRotacion(), [rotacion]: correccion };
+    this.correccionesPorRotacion.set(mapa);
+    const siguiente = this.rotacionesExaminablesActuales().find((r) => !(r in mapa));
+    if (siguiente !== undefined) {
+      this.rotacionActiva.set(siguiente);
+    }
   }
 
   /** Termina el examen (spec 057, E11): agrega la nota final y, si concede insignia, la guarda.

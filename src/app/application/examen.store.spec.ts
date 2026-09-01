@@ -245,6 +245,45 @@ describe('ExamenStore', () => {
     expect(examen.correccionRotacionActiva()?.faltas).toHaveLength(0);
   });
 
+  /** Coloca al alumno en su sitio ideal en la rotación activa y valida. */
+  function validarRotacionBien(examen: ExamenStore, sistema: Sistema): void {
+    const rotacion = examen.rotacionActiva();
+    for (const jugador of examen.jugadoresDelAlumno()) {
+      const punto = sistema.formaciones[rotacion]!.find((c) => c.jugador.id === jugador.id)!.punto;
+      examen.colocar(jugador.id, punto);
+    }
+    examen.confirmarRotacion();
+  }
+
+  it('066-E2: validar una rotación salta a la siguiente sin validar', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('sistema'); // examen por sistema: las seis rotaciones examinables
+    examen.empezarExamen();
+    const rotaciones = examen.rotacionesExaminablesActuales();
+    expect(examen.rotacionActiva()).toBe(rotaciones[0]);
+
+    validarRotacionBien(examen, sistema);
+
+    expect(examen.rotacionActiva()).toBe(rotaciones[1]);
+  });
+
+  it('066-E3/E6: validar la última rotación sin validar deja el examen listo para entregar', () => {
+    const sistema = sistemaExaminable('s1');
+    const examen = crearExamenStore([sistema]);
+    examen.activarSistema('s1');
+    examen.seleccionarTipo('sistema');
+    examen.empezarExamen();
+
+    for (const _ of examen.rotacionesExaminablesActuales()) {
+      validarRotacionBien(examen, sistema);
+    }
+
+    expect(examen.todasLasExaminablesValidadas()).toBe(true);
+    // La rotación activa no cambió al validar la última: no hay ninguna sin validar a la que ir.
+  });
+
   it('057-E11: la corrección de una rotación validada no se pierde al cambiar de pestaña', () => {
     const sistema = sistemaExaminable('s1');
     const examen = crearExamenStore([sistema]);

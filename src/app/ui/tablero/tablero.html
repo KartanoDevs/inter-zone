@@ -415,13 +415,23 @@
   }
 
   @if (confirmandoSalidaExamen()) {
-    <app-dialogo-confirmacion
-      titulo="Examen en curso"
-      mensaje="Si sales ahora se cancelará el examen y perderás lo que llevas hecho."
-      textoConfirmar="Salir y cancelar el examen"
-      (confirmar)="confirmarSalidaExamen()"
-      (cancelar)="cancelarSalidaExamen()"
-    ></app-dialogo-confirmacion>
+    @if (examen.fase() === 'terminado') {
+      <app-dialogo-confirmacion
+        titulo="Salir del examen"
+        mensaje="Este boletín no se guarda: si sales, no podrás volver a verlo."
+        textoConfirmar="Salir"
+        (confirmar)="confirmarSalidaExamen()"
+        (cancelar)="cancelarSalidaExamen()"
+      ></app-dialogo-confirmacion>
+    } @else {
+      <app-dialogo-confirmacion
+        titulo="Examen en curso"
+        mensaje="Si sales ahora se cancelará el examen y perderás lo que llevas hecho."
+        textoConfirmar="Salir y cancelar el examen"
+        (confirmar)="confirmarSalidaExamen()"
+        (cancelar)="cancelarSalidaExamen()"
+      ></app-dialogo-confirmacion>
+    }
   }
 
   @if (store.cambioPendiente(); as pendiente) {

@@ -91,6 +91,7 @@ export class ExamenTablero {
   protected readonly rutaInsignia = RUTA_INSIGNIA;
 
   protected readonly pidiendoInicio = signal(false);
+  protected readonly pidiendoEntrega = signal(false);
   protected readonly reiniciando = signal(false);
   protected readonly comparando = signal(false);
 
@@ -126,13 +127,15 @@ export class ExamenTablero {
 
   /** Estado de cada pestaña de rotación (spec 057, E3): solo se ofrecen las que de verdad se
    * examinan — un titular al que el líbero sustituye esa rotación no la ofrece. La marca de
-   * falta no aparece hasta que el examen termina (spec 060): durante el examen, `false`
-   * siempre, aunque la rotación ya esté validada. */
+   * falta no aparece hasta que el examen termina (spec 060). `validada` (spec 066) sí se marca
+   * durante el examen: es neutra, solo dice "el alumno ya la dio por hecha". */
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
     const conFalta = this.examen.rotacionesConFaltaVisible();
+    const validadas = this.examen.correccionesPorRotacion();
     return this.examen.rotacionesExaminablesActuales().map((rotacion) => ({
       rotacion,
       tieneFalta: conFalta.has(rotacion),
+      validada: rotacion in validadas,
     }));
   });
 
@@ -306,9 +309,19 @@ export class ExamenTablero {
 
   protected validarRotacion(): void {
     this.examen.confirmarRotacion();
+    // Si no quedaba ninguna sin validar, `confirmarRotacion` no ha saltado a otra pestaña:
+    // se pide entregar el examen (spec 066, E3/E6).
+    if (this.examen.todasLasExaminablesValidadas()) {
+      this.pidiendoEntrega.set(true);
+    }
+  }
+
+  protected cancelarEntrega(): void {
+    this.pidiendoEntrega.set(false);
   }
 
   protected async terminarExamen(): Promise<void> {
+    this.pidiendoEntrega.set(false);
     await this.examen.terminarExamen();
   }
 

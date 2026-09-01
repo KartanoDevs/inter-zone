@@ -420,7 +420,9 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   retocarla, con el mismo `stopPropagation` que la ficha "A" y `FichaJugador`. La sombra se
   dibuja con relleno oscuro traslúcido, sin ningún color de la paleta de jugadores (E14): es
   geometría de otra naturaleza, no responsabilidad de ningún puesto.
-- `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6, solo en recepción desde la spec 038),
+- `ui/rotaciones/` — `SelectorRotacion` (pestañas R1–R6, solo en recepción desde la spec 038; en
+  el examen guiado marca con un check neutro las rotaciones ya validadas — spec 066,
+  `EstadoRotacion.validada`, sin filtrar el veredicto de la spec 060),
   `SelectorCaso` (pestañas colocador delantero/trasero) y `SelectorSituacion` (pestañas de
   situación de ataque, dependientes del caso activo) — ambos solo en defensa, spec 038, sustituyen
   a `SelectorVia` de la spec 021. `SelectorBloqueadores` (spec 039): pestañas 0-3, con una marca

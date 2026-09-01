@@ -52,6 +52,18 @@
   background: var(--neon-pink);
 }
 
+/* Marca neutra de "validada" en el examen (spec 066): gris, sin color de acierto ni de falta,
+   para no filtrar el veredicto (spec 060). */
+.app-selector__check {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-secondary);
+}
+
+.app-selector__boton--validada {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-selector__boton {
     transition: none;

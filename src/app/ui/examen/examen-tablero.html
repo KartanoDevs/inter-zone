@@ -108,6 +108,17 @@
       </button>
     }
   </div>
+
+  @if (pidiendoEntrega()) {
+    <app-dialogo-confirmacion
+      titulo="¿Entregar examen?"
+      mensaje="Se corregirá el examen y verás tu boletín. No podrás seguir cambiando las rotaciones."
+      textoConfirmar="Entregar"
+      [peligro]="false"
+      (confirmar)="terminarExamen()"
+      (cancelar)="cancelarEntrega()"
+    ></app-dialogo-confirmacion>
+  }
 }
 
 @if (examen.fase() === 'terminado') {
