@@ -29,7 +29,7 @@
 - [6. Funcionalidades principales](#6-funcionalidades-principales)
 - [7. Metodología de desarrollo](#7-metodología-de-desarrollo)
 - [8. Documentación del proyecto](#8-documentación-del-proyecto)
-- [9. Estado y hoja de ruta](#9-estado-y-hoja-de-ruta)
+- [9. Estado del proyecto](#9-estado-del-proyecto)
 
 ---
 
@@ -108,8 +108,6 @@ está descrito en [`docs/`](docs/) y resumido en las secciones 7 y 8.
 | Tecnología | Uso |
 |---|---|
 | **PostgreSQL 18** | Persistencia de equipos, jugadores, sistemas, formaciones, cuentas, sesiones y medallas. 11 tablas. |
-| Hash de contraseña | `scrypt` versionado (`node:crypto`), endurecido en la pasada de seguridad OWASP ([ADR 0043](docs/decisiones/0043-pasada-de-seguridad-owasp.md)). |
-| Sesión | Testigo opaco aleatorio + huella SHA-256 en base de datos, cookie `HttpOnly` de 30 días que se renueva con el uso. |
 
 ### Calidad y tooling
 
@@ -432,7 +430,7 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 
 ---
 
-## 9. Estado y hoja de ruta
+## 9. Estado del proyecto
 
 | | |
 |---|---|
@@ -443,16 +441,7 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 | Adaptador de persistencia en uso | `HttpSistemaRepository` |
 | Autenticación | lista blanca + contraseña + sesión |
 
-Cada paso de la hoja de ruta es **usable en un entrenamiento por sí solo**; ese es el criterio de
-corte. Lo hecho: dominio con tests, catálogo de sistemas, pizarra interactiva, líbero por
+Cada entrega es **usable en un entrenamiento por sí sola**; ese es el criterio de corte. Lo
+construido hasta hoy: dominio con tests, catálogo de sistemas, pizarra interactiva, líbero por
 rotación, sistemas de defensa con zonas y sombra, backend con PostgreSQL, cuentas y roles,
 Teoría, y examen con medallas.
-
-**El siguiente paso** son las specs 014–015: cálculo de **huecos y conflictos** derivados de la
-rejilla ya pintada. Pendientes también: exportar/importar JSON y PNG (spec 016), y varias
-plantillas de equipo desde la aplicación.
-
-> [!NOTE]
-> Fuera de alcance a propósito: PWA *offline* y sincronización sin conexión, un modelo de jugador
-> más fino que un punto, y cualquier librería de gráficos. El razonamiento está en
-> [`docs/01_Finalidad_y_Alcance.md`](docs/01_Finalidad_y_Alcance.md).
