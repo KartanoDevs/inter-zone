@@ -144,7 +144,6 @@ export class SistemaStore {
   readonly validacionDesactivada = signal(false);
   readonly ayudaPosicionDesactivada = signal(false);
   readonly ordenRotacionCronologico = signal(false);
-  readonly mostrarNumerosMetros = signal(false);
   /** Escala del ancho de la sombra del bloqueo, 0-10 en enteros (spec 044, rango corregido por
    * la 045): puramente de pantalla, ajuste global de la app, nunca viaja al servidor. Escala
    * solo el eje lateral (ancho) del polígono, nunca su profundidad. 5 hasta que se cargan los
@@ -370,7 +369,6 @@ export class SistemaStore {
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
     this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
-    this.mostrarNumerosMetros.set(ajustes?.mostrarNumerosMetros ?? false);
     this.escalaSombra.set(ajustes?.escalaSombra ?? 5);
     this.cambiarContexto();
   }
@@ -416,13 +414,6 @@ export class SistemaStore {
     await this.guardarAjustes();
   }
 
-  /** Ver/ocultar los números de metros a la izquierda de la rejilla. */
-  async alternarMostrarNumerosMetros(): Promise<void> {
-    const valor = !this.mostrarNumerosMetros();
-    this.mostrarNumerosMetros.set(valor);
-    await this.guardarAjustes();
-  }
-
   /** Cambia a qué escala se dibuja el ancho de la sombra del bloqueo (spec 044, E6-E9; rango
    * corregido por la 045, E8-E10): un entero entre 0 y 10, recortado a ese rango. Puramente de
    * pantalla — nunca toca ninguna variante guardada. */
@@ -437,7 +428,6 @@ export class SistemaStore {
       validacionDesactivada: this.validacionDesactivada(),
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
       ordenRotacionCronologico: this.ordenRotacionCronologico(),
-      mostrarNumerosMetros: this.mostrarNumerosMetros(),
       escalaSombra: this.escalaSombra(),
     });
   }

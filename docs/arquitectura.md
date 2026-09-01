@@ -358,9 +358,10 @@ Adaptadores hacia el mundo exterior.
   spec asignada, así que este adaptador sigue siendo el definitivo por tiempo indefinido. Mismo
   patrón (versión + data) que tenía `LocalStorageSistemaRepository`, pero bajo su propia clave:
   los ajustes son globales a la app, no de un sistema concreto (ADR 0015). Sigue siendo un único
-  documento — de cuatro banderas más `escalaSombra` (spec 044, versión 5 del payload) — que se
-  reescribe entero en cada `guardar()` (spec 031): no hay nada que la granularidad de
-  `SistemaRepository` pudiera arriesgar aquí, solo se volvió asíncrono.
+  documento — tres banderas más `escalaSombra` (spec 067, versión 7 del payload: la 067 retiró
+  `mostrarNumerosMetros`, que ahora se ve siempre) — que se reescribe entero en cada `guardar()`
+  (spec 031): no hay nada que la granularidad de `SistemaRepository` pudiera arriesgar aquí, solo
+  se volvió asíncrono.
 - `HttpAccesoRepository implements AccesoRepository` (spec 050) — **el adaptador en uso**.
   Mismo criterio que `HttpSistemaRepository`: `fetch` nativo, y toda petición manda
   `credentials: 'include'` — sin eso el navegador no envía la cookie de sesión a un origen

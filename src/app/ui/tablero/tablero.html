@@ -178,7 +178,6 @@
             [fichas]="fichas()"
             [idArrastrada]="idArrastrada()"
             [mostrarPosicion]="!store.ayudaPosicionDesactivada()"
-            [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
             [mostrarRival]="esDefensa()"
             [casoActivo]="store.casoActivo()"
             [situacionActiva]="store.situacionActiva()"
@@ -302,11 +301,9 @@
               [validacionDesactivada]="store.validacionDesactivada()"
               [ayudaPosicionDesactivada]="store.ayudaPosicionDesactivada()"
               [ordenRotacionCronologico]="store.ordenRotacionCronologico()"
-              [mostrarNumerosMetros]="store.mostrarNumerosMetros()"
               (alternarValidacion)="alternarValidacion()"
               (alternarAyudaPosicion)="alternarAyudaPosicion()"
               (alternarOrdenRotacion)="alternarOrdenRotacion()"
-              (alternarMostrarNumerosMetros)="alternarMostrarNumerosMetros()"
             ></app-panel-ajustes>
           }
         }

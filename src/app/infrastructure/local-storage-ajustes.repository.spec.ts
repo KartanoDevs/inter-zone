@@ -20,7 +20,6 @@ const AJUSTES_POR_DEFECTO = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
-  mostrarNumerosMetros: false,
   escalaSombra: 5,
 };
 
@@ -37,13 +36,32 @@ describe('LocalStorageAjustesRepository', () => {
       validacionDesactivada: true,
       ayudaPosicionDesactivada: true,
       ordenRotacionCronologico: true,
-      mostrarNumerosMetros: true,
       escalaSombra: 8,
     };
 
     await repositorio.guardar(ajustes);
 
     expect(await repositorio.leer()).toEqual(ajustes);
+  });
+
+  it('067-E5: una versión 6 (con mostrarNumerosMetros) se descarta, no se lee a ciegas', async () => {
+    const almacen = new AlmacenEnMemoria();
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({
+        version: 6,
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
+          mostrarNumerosMetros: false,
+          escalaSombra: 8,
+        },
+      }),
+    );
+    const repositorio = new LocalStorageAjustesRepository(almacen);
+
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
   });
 
   it('datos corruptos no interrumpen la lectura y devuelven el valor por defecto', async () => {

@@ -140,8 +140,6 @@ export class Pista {
   readonly idArrastrada = input<string | null>(null);
   /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo cada ficha. */
   readonly mostrarPosicion = input(true);
-  /** Ajuste global: si se pintan los números de metros a la izquierda de la rejilla. */
-  readonly mostrarNumerosMetros = input(false);
   /** Si el sistema activo es de defensa: pinta la ficha "A" del atacante y la "C" del colocador
    * rival (spec 038). */
   readonly mostrarRival = input(false);

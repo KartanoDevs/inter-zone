@@ -807,10 +807,6 @@ export class Tablero {
     this.store.alternarOrdenRotacion();
   }
 
-  protected alternarMostrarNumerosMetros(): void {
-    this.store.alternarMostrarNumerosMetros();
-  }
-
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
     const borrador = this.store.borrador();
     const punto = this.pistaCmp().puntoDesde(agarrada.evento);

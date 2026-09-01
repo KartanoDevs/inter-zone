@@ -8,12 +8,12 @@ export interface AlmacenClaveValor {
 }
 
 const CLAVE = 'interzone.ajustes';
-/** 6: `escalaSombra` cambió de rango y de significado (spec 045: antes 0-100 escalando todo el
- * polígono, ahora 0-10 entero escalando solo el ancho) — un valor de la versión 5 ya no
- * significa lo mismo, así que se descarta igual que si el campo no existiera. Sin `migrar()`
- * real, un payload de una versión anterior se trata como no legible, mismo patrón que
- * `LocalStorageSistemaRepository`. */
-const VERSION_ACTUAL = 6;
+/** 7: se retira `mostrarNumerosMetros` (spec 067: los números de metros se ven siempre, sin
+ * ajuste). Un payload de la versión 6 lleva ese campo de más y se descarta — así un `false`
+ * guardado no impide ver los números. 6: `escalaSombra` cambió de rango y de significado (spec
+ * 045). Sin `migrar()` real, un payload de una versión anterior se trata como no legible, mismo
+ * patrón que `LocalStorageSistemaRepository`. */
+const VERSION_ACTUAL = 7;
 
 interface Payload {
   readonly version: number;
@@ -24,7 +24,6 @@ const AJUSTES_POR_DEFECTO: Ajustes = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
-  mostrarNumerosMetros: false,
   escalaSombra: 5,
 };
 
@@ -38,7 +37,6 @@ function esPayloadValido(valor: unknown): valor is Payload {
       validacionDesactivada?: unknown;
       ayudaPosicionDesactivada?: unknown;
       ordenRotacionCronologico?: unknown;
-      mostrarNumerosMetros?: unknown;
       escalaSombra?: unknown;
     };
   };
@@ -47,7 +45,6 @@ function esPayloadValido(valor: unknown): valor is Payload {
     typeof conVersion.data?.validacionDesactivada === 'boolean' &&
     typeof conVersion.data?.ayudaPosicionDesactivada === 'boolean' &&
     typeof conVersion.data?.ordenRotacionCronologico === 'boolean' &&
-    typeof conVersion.data?.mostrarNumerosMetros === 'boolean' &&
     typeof conVersion.data?.escalaSombra === 'number'
   );
 }

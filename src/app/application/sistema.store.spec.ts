@@ -174,7 +174,6 @@ const AJUSTES_POR_DEFECTO: Ajustes = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
   ordenRotacionCronologico: false,
-  mostrarNumerosMetros: false,
   escalaSombra: 5,
 };
 
