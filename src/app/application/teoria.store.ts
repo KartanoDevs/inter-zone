@@ -44,26 +44,43 @@ export class TeoriaStore {
    * cambiarlo aparte con `seleccionarEquipo`; su elección manda hasta la siguiente recarga
    * (navegación independiente, spec 052 E9). */
   readonly equipoActivo: ReturnType<typeof linkedSignal<EquipoId>>;
-  readonly sistemaActivoId = signal<string | null>(null);
+  /** `linkedSignal`, no `signal` (bug de la spec 052 arreglado tras confirmarse en producción):
+   * `TeoriaStore` se construye antes de que `SistemaStore.cargar()` resuelva su promesa (el
+   * `provideAppInitializer` de `app.config.ts` es asíncrono), así que el primer
+   * `activarSistema(catalogo()[0]?.id ?? null)` de `TeoriaTablero` se ejecutaba siempre con el
+   * catálogo todavía vacío y dejaba `sistemaActivoId` en `null` para siempre — ni la llegada
+   * tardía del catálogo lo recalculaba. Con `linkedSignal`, cada vez que `catalogo()` cambia se
+   * conserva la elección si sigue existiendo en él, o cae al primero si no (mismo criterio que
+   * ya usa `refrescarCatalogo` en `SistemaStore`) — sin que `activarSistema` deje de ser una
+   * escritura explícita normal para el resto de casos (spec 052, E1/E2/E8). */
+  readonly sistemaActivoId: ReturnType<typeof linkedSignal<readonly Sistema[], string | null>>;
   readonly rotacionActiva = signal<RotacionValida>(1);
   readonly casoActivo = signal<CasoColocador>('delantero');
   readonly situacionActiva = signal<SituacionDefensa>('z4');
   readonly bloqueadoresActivos = signal<NumeroBloqueadores>(0);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
 
-  constructor(private readonly sistemaStore: SistemaStore) {
-    this.equipoActivo = linkedSignal(() => this.sistemaStore.equipoActivo());
-  }
-
   /** Solo los sistemas validados (spec 051): en borrador no hay nada que un jugador deba
    * estudiar todavía. */
-  readonly catalogo = computed<readonly Sistema[]>(() =>
-    ordenarCatalogo(
-      this.sistemaStore
-        .sistemas()
-        .filter((s) => s.equipoId === this.equipoActivo() && estadoDe(s) === 'validado'),
-    ),
-  );
+  readonly catalogo: ReturnType<typeof computed<readonly Sistema[]>>;
+
+  constructor(private readonly sistemaStore: SistemaStore) {
+    this.equipoActivo = linkedSignal(() => this.sistemaStore.equipoActivo());
+    this.catalogo = computed(() =>
+      ordenarCatalogo(
+        this.sistemaStore
+          .sistemas()
+          .filter((s) => s.equipoId === this.equipoActivo() && estadoDe(s) === 'validado'),
+      ),
+    );
+    this.sistemaActivoId = linkedSignal<readonly Sistema[], string | null>({
+      source: () => this.catalogo(),
+      computation: (catalogo, previo) =>
+        previo && catalogo.some((s) => s.id === previo.value)
+          ? previo.value
+          : (catalogo[0]?.id ?? null),
+    });
+  }
 
   readonly sistemaActivo = computed(
     () => this.catalogo().find((s) => s.id === this.sistemaActivoId()) ?? null,

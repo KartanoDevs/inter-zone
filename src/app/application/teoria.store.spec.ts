@@ -158,6 +158,30 @@ describe('TeoriaStore', () => {
     expect(teoria.equipoActivo()).toBe('masculino');
   });
 
+  it('052-E1 (regresión): el catálogo llega tarde y activa el primer sistema sin que nadie llame a activarSistema', () => {
+    const sistemaStore = new SistemaStore(REPOSITORIO_SIN_USAR);
+    const teoria = new TeoriaStore(sistemaStore);
+
+    expect(teoria.sistemaActivo()).toBeNull();
+
+    sistemaStore.sistemas.set([sistema('v1', 'Recepción', 'masculino', { estado: 'validado' })]);
+
+    expect(teoria.sistemaActivoId()).toBe('v1');
+  });
+
+  it('052-E1 (regresión): una elección explícita sobrevive a un refresco del catálogo que la sigue conteniendo', () => {
+    const sistemaStore = new SistemaStore(REPOSITORIO_SIN_USAR);
+    const v1 = sistema('v1', 'Recepción', 'masculino', { estado: 'validado' });
+    const v2 = sistema('v2', 'Defensa', 'masculino', { tipo: 'defensa', estado: 'validado' });
+    sistemaStore.sistemas.set([v1, v2]);
+    const teoria = new TeoriaStore(sistemaStore);
+    teoria.activarSistema('v2');
+
+    sistemaStore.sistemas.set([v1, v2]); // refresco: mismo catálogo, otra referencia
+
+    expect(teoria.sistemaActivoId()).toBe('v2');
+  });
+
   it('052-E9: la navegación de Teoría no toca el borrador del editor', () => {
     const sistemaStore = new SistemaStore(REPOSITORIO_SIN_USAR);
     const validado = sistema('v1', 'Recepción', 'masculino', { estado: 'validado' });
