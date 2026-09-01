@@ -57,13 +57,7 @@
       [attr.transform]="'translate(' + puntoC.x + ',' + puntoC.y + ')'"
     >
       <circle class="app-pista__colocador-rival-circulo" r="0.3"></circle>
-      <text
-        class="app-pista__colocador-rival-etiqueta"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >
-        CR
-      </text>
+      <text class="app-pista__colocador-rival-etiqueta" text-anchor="middle" dy="0.35em">CR</text>
     </g>
   }
 
@@ -74,9 +68,7 @@
       (pointerdown)="onRivalPointerDown($event)"
     >
       <circle class="app-pista__rival-circulo" r="0.35"></circle>
-      <text class="app-pista__rival-etiqueta" text-anchor="middle" dominant-baseline="central">
-        A
-      </text>
+      <text class="app-pista__rival-etiqueta" text-anchor="middle" dy="0.35em">A</text>
     </g>
   }
 
@@ -104,7 +96,9 @@
   @if (mostrarNumerosMetros()) {
     <g class="app-pista__numeros-metros">
       @for (numero of numerosMetros; track numero) {
-        <text class="app-pista__numero-metro" x="-0.15" [attr.y]="numero">{{ numero }}</text>
+        <text class="app-pista__numero-metro" x="-0.15" [attr.y]="numero" dy="0.35em">
+          {{ numero }}
+        </text>
       }
     </g>
   }

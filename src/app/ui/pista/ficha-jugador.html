@@ -1,15 +1,14 @@
 <svg:circle class="app-ficha__circulo" [attr.r]="radio"></svg:circle>
-<svg:text class="app-ficha__etiqueta" text-anchor="middle" dominant-baseline="central">
+<svg:text class="app-ficha__etiqueta" text-anchor="middle" dy="0.35em">
   {{ etiqueta() }}
 </svg:text>
 @if (mostrarPosicion()) {
-  <svg:text
-    class="app-ficha__posicion"
-    x="0"
-    y="0.55"
-    text-anchor="middle"
-    dominant-baseline="hanging"
-  >
+  <!-- `dy` en em, no `dominant-baseline`: WebKit/Safari iOS lo soporta mal y el texto salía
+       descentrado solo en iPhone. `dy="0.9em"` cuelga la etiqueta bajo el círculo (radio 0.45).
+       Un solo `font-size` para la "P" y el número: dos tamaños distintos dentro de un
+       `text-anchor="middle"` obligan a medir el ancho combinado y WebKit/Blink no coinciden,
+       que era la causa del descentrado horizontal de "P1". -->
+  <svg:text class="app-ficha__posicion" x="0" y="0.45" text-anchor="middle" dy="0.9em">
     <svg:tspan class="app-ficha__posicion-letra">{{ prefijoPosicion() }}</svg:tspan>
     <svg:tspan class="app-ficha__posicion-numero">{{ cuerpoPosicion() }}</svg:tspan>
   </svg:text>

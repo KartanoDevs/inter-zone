@@ -146,7 +146,8 @@
   font-size: 0.3px;
   fill: var(--text-muted);
   text-anchor: end;
-  dominant-baseline: middle;
+  /* El centrado vertical va por `dy="0.35em"` en el markup: Safari iOS soporta mal
+     `dominant-baseline`. */
 }
 
 .app-pista__leyenda-boton {

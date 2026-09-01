@@ -36,14 +36,10 @@
   font-family: var(--font-display);
   font-weight: 700;
   fill: var(--text-muted);
-}
-
-.app-ficha__posicion-letra {
-  font-size: 0.18px;
-}
-
-.app-ficha__posicion-numero {
-  font-size: 0.28px;
+  /* Un único tamaño para la "P" y el número (spec 059 no lo llegó a mirar en móvil): antes eran
+     0.18/0.28 px, ~3-4 px reales en un iPhone de 320 px, ilegibles. Y dos tamaños dentro de un
+     `text-anchor="middle"` descentraban el conjunto en WebKit. */
+  font-size: 0.26px;
 }
 
 :host(.app-ficha--aviso) .app-ficha__circulo {
