@@ -641,13 +641,13 @@ Los tests viven junto al fichero que prueban, no en una carpeta `test/` paralela
 
 ## Despliegue
 
-Producción es tres contenedores Docker bajo un solo origen (ADR 0041): `web` (nginx) sirve el
-build de Angular y hace `proxy_pass` de `/api` al contenedor `servidor`; `servidor` y
-`postgres` no publican ningún puerto al host, solo se alcanzan desde la red interna del
-compose. Mismo origen quiere decir que `URL_API` en `app.config.ts` es `'/api'` (ruta
-relativa) y no una URL absoluta: elimina CORS entre front y API, y hace que la cookie de
-sesión `iz_sesion` sea de primera parte — importante en Safari/iOS, que descarta cookies de
-terceros.
+Cada entorno (producción o desarrollo) es tres contenedores Docker bajo un solo origen (ADR
+0041): `web` (nginx) sirve el build de Angular y hace `proxy_pass` de `/api` al contenedor
+`servidor`; `servidor` y `postgres` no publican ningún puerto al host, solo se alcanzan desde
+la red interna del compose. Mismo origen quiere decir que `URL_API` en `app.config.ts` es
+`'/api'` (ruta relativa) y no una URL absoluta: elimina CORS entre front y API, y hace que la
+cookie de sesión `iz_sesion` sea de primera parte — importante en Safari/iOS, que descarta
+cookies de terceros.
 
 - `Dockerfile.web`, `nginx.conf` (raíz) — build multi-stage del frontend; nginx aplica
   cabeceras de caché distintas por tipo de recurso (inmutable para los bundles con hash,
@@ -659,7 +659,7 @@ terceros.
   ejecuta dentro de la imagen (el motor de consultas es un binario por plataforma) y
   `prisma migrate deploy` corre al arrancar el contenedor, antes de escuchar el puerto.
 - `docker-compose.prod.yml` (raíz) — no sustituye a `server/docker-compose.yml`, que sigue
-  siendo solo el Postgres desechable de desarrollo.
+  siendo solo el Postgres desechable de desarrollo local.
 - El servidor de estáticos no necesita fallback de rutas por SPA con router (la aplicación no
   tiene uno, todo vive en `/`), pero lo lleva de todas formas por si algún día lo tiene.
 - PWA instalable, no offline: un service worker de ~20 líneas escrito a mano (`public/sw.js`)
@@ -669,6 +669,26 @@ terceros.
 
 Detalle del razonamiento completo, alternativas descartadas y riesgos aceptados:
 `docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md`.
+
+### Dos entornos en el mismo servidor
+
+Desde ADR 0044, producción y desarrollo son **dos despliegues independientes** en la misma
+máquina: dos clones del repositorio (`inter-zone` en `main`, `inter-zone-dev` en `develop`),
+dos proyectos Compose (`interzone` e `interzone-dev`), dos bases de datos, dos dominios
+delante del mismo Nginx Proxy Manager. `docker-compose.prod.yml` es el mismo fichero para los
+dos; lo que los distingue vive por completo en el `.env` de cada clon:
+
+| Variable | Para qué |
+|---|---|
+| `PROYECTO_COMPOSE` | prefijo de contenedores y del volumen de datos |
+| `ALIAS_WEB` | nombre del servicio `web` en la red del proxy — destino del *Proxy Host* de NPM |
+| `ENTORNO_APP` | build-arg de `Dockerfile.web`: manifiesto PWA, `<title>`, `robots.txt` y el `define` `ENTORNO_APP` que lee `src/app/entorno.ts` (banda "Entorno de desarrollo" en `app.html`) |
+| `RAMA_DESPLIEGUE` | qué rama trae `deploy-servidor.sh` en ese clon |
+| `COPIAS_DE_SEGURIDAD` | si `copia-seguridad.sh` actúa sobre ese clon — solo `si` en producción |
+
+`PROYECTO_COMPOSE=interzone` en producción no es arbitrario: es el nombre del que Compose
+deriva el volumen `interzone_interzone-datos` ya existente. Detalle completo, alternativas
+descartadas y consecuencias: `docs/decisiones/0044-produccion-y-desarrollo-en-la-misma-maquina.md`.
 
 ## Por qué SVG y no Canvas
 

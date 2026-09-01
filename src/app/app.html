@@ -1,3 +1,6 @@
+@if (esDesarrollo) {
+  <div class="aviso-entorno">Entorno de desarrollo</div>
+}
 @if (acceso.cargando()) {
   <div class="app-cargando" aria-busy="true">Cargando…</div>
 } @else if (acceso.usuario()) {

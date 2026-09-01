@@ -7,6 +7,15 @@
 
 ---
 
+## 0. Solo cubre producción
+
+Desde ADR 0044, InterZone tiene dos despliegues en el servidor: producción y desarrollo. Este
+documento y `copia-seguridad.sh` **solo cubren el clon de producción**. El de desarrollo lleva
+`COPIAS_DE_SEGURIDAD=no` en su `.env`, y `copia-seguridad.sh` se niega a tomar ni comprobar
+copias ahí (`verificar` sigue funcionando en cualquier clon: no toca el stack en marcha). No
+guarda datos que importe perder — es un entorno abierto a pruebas, sembrado con
+`npm run seed:prod`, y se reconstruye desde cero con `deploy-servidor.sh`.
+
 ## 1. Qué protege esto, y qué no
 
 Toda la persistencia de InterZone vive en una sola base de datos PostgreSQL dentro de un
@@ -36,8 +45,9 @@ ADR 0041 lo dejó escrito como deuda pendiente).
 ## 2. Qué se guarda y cómo
 
 Un **volcado lógico** con `pg_dump -Fc` (formato *custom*), ejecutado **dentro del contenedor
-`interzone-postgres-1`**. No es una copia del directorio de datos. Esa elección tiene
-consecuencias que importan:
+de Postgres del clon de producción** (`interzone-postgres-1`; el nombre sale de
+`PROYECTO_COMPOSE=interzone` en su `.env`, ver ADR 0044). No es una copia del directorio de
+datos. Esa elección tiene consecuencias que importan:
 
 - **El binario que vuelca es siempre el mismo que el servidor**, hoy y cuando se suba de
   versión mayor. Un volcado de Postgres 18 se restaura en Postgres 19; una copia física del

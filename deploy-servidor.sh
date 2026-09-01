@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# InterZone — actualiza y relanza el despliegue en el servidor, de una pasada:
+# InterZone — actualiza y relanza el despliegue en el servidor, de una pasada. Este mismo
+# script sirve para el clon de producción y el de desarrollo (ADR 0044): la rama que trae y si
+# toma copias de seguridad los decide el `.env` de CADA clon, nunca un argumento.
 #
-#   0. Avisa si las copias de seguridad no están frescas, y toma una copia `previa`
-#      antes de tocar nada. Solo avisa: nunca aborta el despliegue por esto (spec 062).
-#   1. Trae la rama `develop` de origin y deja el working tree EXACTAMENTE igual
-#      que origin/develop (git reset --hard + git clean). Cualquier cambio local del
+#   0. Si COPIAS_DE_SEGURIDAD=si, avisa si las copias no están frescas y toma una copia
+#      `previa` antes de tocar nada. Solo avisa: nunca aborta el despliegue por esto (spec
+#      062). Si vale "no" (el clon de desarrollo), este paso se salta explícitamente: ahí no
+#      hay copias porque no hay nada que no se pueda recrear con `seed:prod`.
+#   1. Trae RAMA_DESPLIEGUE de origin y deja el working tree EXACTAMENTE igual que
+#      origin/<rama> (git reset --hard + git clean). Cualquier cambio local del
 #      servidor se descarta a propósito: esta máquina no se edita a mano.
 #   2. Reconstruye las imágenes y recrea los contenedores con bash deploy.sh, que
 #      lee ENTORNO de .env y elige los -f de compose (producción por defecto).
@@ -22,7 +26,6 @@
 # Requisitos: git, docker (con el plugin compose) y un .env relleno en la raíz.
 set -euo pipefail
 
-RAMA="develop"
 RAIZ="$(cd "$(dirname "$0")" && pwd)"
 cd "$RAIZ"
 
@@ -31,8 +34,20 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
+# Mismo idiom que deploy.sh para leer una variable del .env sin cargarlo entero en el shell.
+leer_env() {
+  grep -E "^$1=" .env | tail -n1 | cut -d '=' -f2- || true
+}
+
+RAMA="$(leer_env RAMA_DESPLIEGUE)"
+RAMA="${RAMA:-main}"
+COPIAS_DE_SEGURIDAD="$(leer_env COPIAS_DE_SEGURIDAD)"
+COPIAS_DE_SEGURIDAD="${COPIAS_DE_SEGURIDAD:-si}"
+
 echo "==> 0/5  Copias de seguridad"
-if [ -f copia-seguridad.sh ]; then
+if [ "$COPIAS_DE_SEGURIDAD" != "si" ]; then
+  echo "    COPIAS_DE_SEGURIDAD=$COPIAS_DE_SEGURIDAD: me lo salto a propósito (entorno de desarrollo)"
+elif [ -f copia-seguridad.sh ]; then
   if ! bash copia-seguridad.sh comprobar; then
     echo "    (el despliegue sigue: el aviso no lo bloquea)"
   fi

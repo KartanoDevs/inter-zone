@@ -121,7 +121,7 @@ está descrito en [`docs/`](docs/) y resumido en las secciones 7 y 8.
 
 | Tecnología | Uso |
 |---|---|
-| **Docker Compose** | Tres contenedores bajo un solo origen: `web` (nginx sirve el build y hace `proxy_pass` de `/api`), `servidor` y `postgres`. |
+| **Docker Compose** | Tres contenedores bajo un solo origen: `web` (nginx sirve el build y hace `proxy_pass` de `/api`), `servidor` y `postgres`. El mismo fichero despliega producción y desarrollo como dos *stacks* independientes en el mismo servidor (ADR 0044). |
 | **nginx** | Estáticos con caché por tipo de recurso (inmutable para *bundles* con hash, `no-cache` para `index.html`), cabeceras CSP. |
 | **PWA instalable** | *Service worker* de ~20 líneas escrito a mano: solo una página de cortesía sin conexión. Instalable ≠ *offline* — es deliberado. |
 
@@ -222,13 +222,24 @@ npm run format:check   # solo comprueba
 `npm install` instala un *hook* `pre-commit` que rechaza el commit si algún fichero *staged* no
 está formateado (se salta con `git commit --no-verify`).
 
-### 4.5 Despliegue en producción
+### 4.5 Despliegue en producción y en desarrollo
 
 Tres contenedores Docker bajo un solo origen, detrás de un proxy inverso ya existente en el
 servidor ([ADR 0041](docs/decisiones/0041-despliegue-en-un-solo-origen-y-pwa-instalable.md)).
 
+Desde [ADR 0044](docs/decisiones/0044-produccion-y-desarrollo-en-la-misma-maquina.md) hay
+**dos despliegues completos e independientes en el mismo servidor**, cada uno en su propio
+clon del repositorio, con su propia base de datos y su propio dominio:
+
+| | Producción | Desarrollo |
+|---|---|---|
+| URL | `cvinterzone.duckdns.org` | `devcvinterzone.duckdns.org` |
+| Rama | `main` | `develop` |
+| Copias de seguridad | sí | no |
+
 ```bash
-cp .env.produccion.example .env    # rellenar credenciales; .env nunca se commitea
+cp .env.produccion.example .env    # o .env.desarrollo.example en el clon de desarrollo
+# rellenar credenciales; .env nunca se commitea
 ./deploy.sh up -d --build
 
 # Sembrar el catálogo base una sola vez, tras el primer arranque:
@@ -237,10 +248,17 @@ cp .env.produccion.example .env    # rellenar credenciales; .env nunca se commit
 
 `./deploy.sh` envuelve `docker compose` y añade `docker-compose.local.yml` cuando `ENTORNO=local`
 (publica el puerto de `web` para abrir `http://localhost:8080` sin proxy real). Con
-`ENTORNO=produccion` usa solo `docker-compose.prod.yml`.
+`ENTORNO=produccion` usa solo `docker-compose.prod.yml`. Es el mismo fichero de Compose para
+los dos entornos: lo que los distingue (identidad de contenedores, rama a desplegar, aspecto
+de la app) vive por completo en el `.env` de cada clon — ver el ADR 0044 y los comentarios de
+`.env.produccion.example` / `.env.desarrollo.example`.
 
-Copias de seguridad (`copia-seguridad.sh`, `pg_dump -Fc`, rotación semanal por `cron`):
-[`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md).
+`deploy-servidor.sh` automatiza el ciclo completo (actualizar, reconstruir, migrar, sembrar) y
+se ejecuta igual en los dos clones: lee de su propio `.env` qué rama traer y si le toca tomar
+copias de seguridad.
+
+Copias de seguridad (`copia-seguridad.sh`, `pg_dump -Fc`, rotación semanal por `cron`) — **solo
+en el clon de producción**: [`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md).
 
 ---
 

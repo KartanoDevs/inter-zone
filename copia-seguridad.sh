@@ -15,6 +15,10 @@
 # El cron semanal (instalar a mano una vez, como el usuario del despliegue):
 #   17 4 * * 0  flock -n /tmp/interzone-copia.lock bash /home/ubuntu/projects/interZone/inter-zone/copia-seguridad.sh copia semanal >> /home/ubuntu/copias-interzone/copia.log 2>&1
 #
+# Solo corre sobre el clon cuyo .env tenga COPIAS_DE_SEGURIDAD=si (por defecto, "si": lo único
+# que existía antes de esto). El clon de desarrollo (ADR 0044) lleva COPIAS_DE_SEGURIDAD=no:
+# no guarda datos que importe perder, y así una copia lanzada por error ahí nunca escribe nada.
+#
 # `spec 062`. Ni pg_dump ni pg_restore hacen falta en el host: todo corre en el contenedor.
 set -euo pipefail
 umask 077
@@ -22,7 +26,15 @@ cd "$(dirname "$0")"
 
 # --- Configuración -------------------------------------------------------------------------
 
-CONTENEDOR="${INTERZONE_POSTGRES:-interzone-postgres-1}"
+COPIAS_DE_SEGURIDAD="$(grep -E '^COPIAS_DE_SEGURIDAD=' .env 2>/dev/null | tail -n1 | cut -d '=' -f2- || true)"
+COPIAS_DE_SEGURIDAD="${COPIAS_DE_SEGURIDAD:-si}"
+
+# El proyecto compose de este clon (interzone en producción, interzone-dev en desarrollo):
+# de ahí sale por defecto el nombre del contenedor de Postgres, igual que lo deriva Compose.
+PROYECTO_COMPOSE="$(grep -E '^PROYECTO_COMPOSE=' .env 2>/dev/null | tail -n1 | cut -d '=' -f2- || true)"
+PROYECTO_COMPOSE="${PROYECTO_COMPOSE:-interzone}"
+
+CONTENEDOR="${INTERZONE_POSTGRES:-${PROYECTO_COMPOSE}-postgres-1}"
 DESTINO="${INTERZONE_COPIAS:-$HOME/copias-interzone}"
 IMAGEN_PG="postgres:18-alpine"   # la misma que docker-compose.prod.yml — para `verificar`
 
@@ -258,8 +270,16 @@ verificar_copia() {
 # --- Despacho ---------------------------------------------------------------------------
 
 case "${1:-}" in
-  copia) tomar_copia "${2:-semanal}" ;;
-  comprobar) comprobar_frescura ;;
+  copia)
+    [ "$COPIAS_DE_SEGURIDAD" = "si" ] \
+      || morir "paso=configuracion COPIAS_DE_SEGURIDAD=$COPIAS_DE_SEGURIDAD en este .env; este clon no toma copias (ADR 0044)"
+    tomar_copia "${2:-semanal}"
+    ;;
+  comprobar)
+    [ "$COPIAS_DE_SEGURIDAD" = "si" ] \
+      || morir "paso=configuracion COPIAS_DE_SEGURIDAD=$COPIAS_DE_SEGURIDAD en este .env; este clon no toma copias (ADR 0044)"
+    comprobar_frescura
+    ;;
   verificar) verificar_copia "${2:-}" ;;
   *)
     echo "uso: $0 {copia [semanal|previa] | comprobar | verificar <fichero>}" >&2

@@ -74,15 +74,22 @@ que es la parte más valiosa de tener esto versionado. Antes de cualquier commit
 skill `caveman-commit`.
 
 **Ramas y merge.** El flujo es local, sin Pull Requests (no hay `gh` instalado y el
-historial se mantiene lineal):
+historial se mantiene lineal). Desde
+[ADR 0044](docs/decisiones/0044-produccion-y-desarrollo-en-la-misma-maquina.md), `develop` es
+la integración y lo que despliega el entorno de desarrollo; `main` es lo que hay en
+producción:
 
-- Las ramas de trabajo salen de `main` actualizada y vuelven a `main` por **merge
-  fast-forward** (`git checkout main && git merge --ff-only <rama> && git push origin main`).
-  Si la rama se ha quedado atrás, se rebasa sobre `main` antes.
+- Las ramas de trabajo salen de `develop` actualizada y vuelven a `develop` por **merge
+  fast-forward** (`git checkout develop && git merge --ff-only <rama> && git push origin develop`).
+  Si la rama se ha quedado atrás, se rebasa sobre `develop` antes.
+- **Publicar en producción es un `--ff-only` de `develop` a `main`**
+  (`git checkout main && git merge --ff-only develop && git push origin main`), cuando el
+  usuario decida que lo que hay en desarrollo está listo. No se hace solo porque un escenario
+  o una spec queden en verde: es una decisión aparte que pide el usuario.
 - **Nunca borres una rama, local ni remota, sin que el usuario te lo pida explícitamente.**
   Tampoco tras un merge: propón el borrado, no lo ejecutes.
-- Antes de pushear `main`: `npm test` y `npm run typecheck` en verde, y si se tocó UI,
-  relanzar la app (skill `relanzar-app`).
+- Antes de pushear `develop` o `main`: `npm test` y `npm run typecheck` en verde, y si se tocó
+  UI, relanzar la app (skill `relanzar-app`).
 - No hagas `push --force`, `reset --hard` sobre trabajo no versionado, ni reescribas
   historia ya pusheada sin pedirlo.
 

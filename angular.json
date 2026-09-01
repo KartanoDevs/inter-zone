@@ -24,7 +24,10 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css"],
+            "define": {
+              "ENTORNO_APP": "\"produccion\""
+            }
           },
           "configurations": {
             "production": {
@@ -51,6 +54,11 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "entorno-desarrollo": {
+              "define": {
+                "ENTORNO_APP": "\"desarrollo\""
+              }
             }
           },
           "defaultConfiguration": "production"

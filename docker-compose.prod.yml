@@ -1,16 +1,24 @@
-# Despliegue de producción de InterZone. Un solo origen: `web` (nginx) sirve la SPA y
-# reenvía /api a `servidor`. `servidor` y `postgres` no publican ningún puerto al host.
+# Despliegue de InterZone. Un solo origen: `web` (nginx) sirve la SPA y reenvía /api a
+# `servidor`. `servidor` y `postgres` no publican ningún puerto al host.
+#
+# Este MISMO fichero sirve para producción y para desarrollo (ADR 0044): lo que cambia entre
+# ambos vive en el `.env` de cada clon, nunca aquí. Las cinco variables que distinguen un
+# entorno de otro son PROYECTO_COMPOSE, ALIAS_WEB, ENTORNO_APP, RAMA_DESPLIEGUE y
+# COPIAS_DE_SEGURIDAD — ver .env.produccion.example y .env.desarrollo.example.
 #
 # Proxy del host: Nginx Proxy Manager (contenedor `nginx-proxy-manager`, red Docker
 # `nginx-proxy-network`, ya existente en el servidor — no se crea aquí). Su TLS y su dominio
-# se configuran en su propia UI (puerto 81), no con labels ni con ficheros: se añade un
-# "Proxy Host" nuevo con destino `interzone-web:80` (el alias declarado más abajo).
+# se configuran en su propia UI (puerto 81), no con labels ni con ficheros: cada entorno tiene
+# su propio "Proxy Host", con destino `${ALIAS_WEB}:80` (el alias declarado más abajo).
 #
 # Uso:  docker compose -f docker-compose.prod.yml up -d --build
 #
-# NO sustituye a server/docker-compose.yml, que es el Postgres desechable de desarrollo.
+# NO sustituye a server/docker-compose.yml, que es el Postgres desechable de desarrollo local.
 
-name: interzone
+# IMPORTANTE: en el clon de producción PROYECTO_COMPOSE debe seguir valiendo "interzone" — es
+# el prefijo del que Compose deriva el nombre del volumen (interzone_interzone-datos). Cambiarlo
+# ahí crea un volumen nuevo y vacío: la base "desaparece".
+name: ${PROYECTO_COMPOSE:-interzone}
 
 services:
   postgres:
@@ -83,6 +91,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        # 'produccion' o 'desarrollo': decide el manifiesto PWA, el <title>, el aviso en la
+        # interfaz y si se sirve un robots.txt que bloquea la indexación (ADR 0044).
+        ENTORNO_APP: ${ENTORNO_APP:-produccion}
     restart: unless-stopped
     depends_on:
       servidor:
@@ -97,8 +109,10 @@ services:
       interna: {}
       # Red de Nginx Proxy Manager, ya existente en el servidor (no se crea aquí). El alias
       # es el nombre que se escribe en el campo "Forward Hostname" del Proxy Host de NPM.
+      # Cada entorno necesita el suyo: dos servicios con el mismo alias reparten tráfico al
+      # azar entre producción y desarrollo, sin ningún error visible.
       proxy:
-        aliases: [interzone-web]
+        aliases: ['${ALIAS_WEB:-interzone-web}']
 
 networks:
   interna:
