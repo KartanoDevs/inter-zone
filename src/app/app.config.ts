@@ -11,11 +11,13 @@ import { InsigniasStore } from './application/insignias.store';
 import { ListaBlancaStore } from './application/lista-blanca.store';
 import { SistemaStore } from './application/sistema.store';
 import { TeoriaStore } from './application/teoria.store';
+import { UsuariosStore } from './application/usuarios.store';
 import type { InsigniasRepository } from './domain/puertos';
 import { HttpAccesoRepository } from './infrastructure/http-acceso.repository';
 import { HttpInsigniasRepository } from './infrastructure/http-insignias.repository';
 import { HttpListaBlancaRepository } from './infrastructure/http-lista-blanca.repository';
 import { HttpSistemaRepository } from './infrastructure/http-sistema.repository';
+import { HttpUsuariosRepository } from './infrastructure/http-usuarios.repository';
 import { LocalStorageAjustesRepository } from './infrastructure/local-storage-ajustes.repository';
 
 // Constante fija, igual que `PLANTILLA_GLOBAL` (spec 034): no existe `environments/` en este
@@ -56,6 +58,10 @@ export const appConfig: ApplicationConfig = {
     {
       provide: ListaBlancaStore,
       useFactory: () => new ListaBlancaStore(new HttpListaBlancaRepository(URL_API)),
+    },
+    {
+      provide: UsuariosStore,
+      useFactory: () => new UsuariosStore(new HttpUsuariosRepository(URL_API)),
     },
     // Examen (spec 057, sustituye a la 055) lee el mismo catálogo que el editor, con su propia
     // navegación — mismo criterio que Teoría (ADR 0039: store propio, sin decorador, cableado

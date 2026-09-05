@@ -72,6 +72,7 @@ y esa invitación fija el rol con el que nace la cuenta y a qué equipo o equipo
 | Crear, editar, clonar, borrar y validar sistemas (**Editor**) | cualquiera | de sus equipos | — |
 | Examinarse y coleccionar medallas | sí | sí | sí |
 | Gestionar la lista blanca | sí | — | — |
+| Borrar una cuenta | sí | — | — |
 
 ### Contexto académico
 
@@ -404,6 +405,8 @@ explicaciones exactamente como en el editor, sin poder tocar nada.
 - Toda `/api/sistemas` **exige sesión**; escribir exige además el rol adecuado.
 - El admin gestiona la lista blanca **desde la propia aplicación**: invitar, reinvitar con otro
   rol, retirar.
+- El admin también puede **borrar una cuenta de verdad** (sus membresías y su sesión desaparecen
+  con ella), salvo que sea la última cuenta admin del sistema.
 - La ventana **Cuenta**: correo y rol de solo lectura, nombre/apodo, posición favorita y dorsal
   (opcionales), y cambio de contraseña exigiendo acertar la actual.
 

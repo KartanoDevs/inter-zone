@@ -22,6 +22,13 @@ export class CredencialesInvalidas extends Error {}
 export class PosicionFavoritaInvalida extends Error {}
 export class DorsalInvalido extends Error {}
 export class RolAccesoInvalido extends Error {}
+export class UltimoAdminNoSePuedeBorrar extends Error {}
+
+export interface UsuarioListado {
+  readonly id: string;
+  readonly email: string;
+  readonly esAdmin: boolean;
+}
 
 export interface InvitacionListada {
   readonly email: string;
@@ -273,9 +280,12 @@ export async function listarInvitaciones(): Promise<readonly InvitacionListada[]
   }));
 }
 
-/** Invita un correo, o actualiza su rol y equipo si ya estaba invitado y sin usar (spec 054,
- * E1-E2). Rechaza si el rol no es válido (E1) o si el correo ya tiene cuenta (E3) — el rol de
- * una cuenta ya creada no se toca desde aquí, solo desde el registro que ya la creó. */
+/** Invita un correo, o actualiza su rol y equipo si ya estaba invitado (spec 054, E1-E2).
+ * Rechaza si el rol no es válido (E1) o si el correo ya tiene cuenta (E3) — el rol de una
+ * cuenta ya creada no se toca desde aquí, solo desde el registro que ya la creó. Vuelve a poner
+ * `usada_en` a `null` en el `update` (spec 068, E4): sin esto, invitar de nuevo un correo cuya
+ * cuenta se borró dejaba la invitación marcada como "ya usada" para siempre, y el registro la
+ * rechazaba aunque ya no hubiera ninguna cuenta detrás. */
 export async function invitar(
   emailBruto: string,
   rol: string,
@@ -295,7 +305,7 @@ export async function invitar(
   await prisma.lista_blanca.upsert({
     where: { email },
     create: { email, rol, equipo_id: equipoId, invitado_por: invitadoPor },
-    update: { rol, equipo_id: equipoId },
+    update: { rol, equipo_id: equipoId, usada_en: null },
   });
 }
 
@@ -304,4 +314,28 @@ export async function invitar(
  * cuenta. No falla si el correo no estaba invitado; simplemente no hace nada. */
 export async function retirarInvitacion(emailBruto: string): Promise<void> {
   await prisma.lista_blanca.deleteMany({ where: { email: normalizarEmail(emailBruto) } });
+}
+
+/** Todas las cuentas existentes, para que el admin elija a cuál borrar (spec 068, E5). */
+export async function listarUsuarios(): Promise<readonly UsuarioListado[]> {
+  const usuarios = await prisma.usuario.findMany({ orderBy: { creado_en: 'desc' } });
+  return usuarios.map((fila) => ({ id: fila.id, email: fila.email, esAdmin: fila.es_admin }));
+}
+
+/** Borra una cuenta de verdad (spec 068, E1): sus membresías y su sesión desaparecen solas por
+ * el cascade ya declarado en el schema, no hace falta borrarlas aquí. Rechaza si es la única
+ * cuenta admin (E3) — nunca se llega a un sistema sin ningún admin. No falla si el id no
+ * corresponde a ninguna cuenta; simplemente no hace nada. */
+export async function borrarUsuario(usuarioId: string): Promise<void> {
+  const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+  if (!usuario) {
+    return;
+  }
+  if (usuario.es_admin) {
+    const totalAdmins = await prisma.usuario.count({ where: { es_admin: true } });
+    if (totalAdmins <= 1) {
+      throw new UltimoAdminNoSePuedeBorrar();
+    }
+  }
+  await prisma.usuario.delete({ where: { id: usuarioId } });
 }

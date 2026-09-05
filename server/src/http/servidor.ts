@@ -4,6 +4,7 @@ import { examenRutas } from './examen.rutas';
 import { crearLimitadorDeIntentos, type LimitadorDeIntentos } from './limitador';
 import { listaBlancaRutas } from './lista-blanca.rutas';
 import { sistemasRutas } from './sistemas.rutas';
+import { usuariosRutas } from './usuarios.rutas';
 
 /** CORS mínimo (spec 034, cookies desde la spec 035): un origen permitido y configurable, sin
  * la dependencia `cors` — no hace falta más que estas cabeceras para que el navegador deje
@@ -40,6 +41,9 @@ function cabecerasDeSeguridad(_req: Request, res: Response, next: NextFunction):
  * `/api/sistemas` exige sesión para leer (endurecimiento OWASP A01) y rol al escribir (spec
  * 037); `/api/examen` (spec 056) solo exige sesión, para las insignias de la propia cuenta.
  *
+ * `/api/usuarios` (spec 068) también es solo para el admin: listar cuentas y borrar una de
+ * verdad.
+ *
  * `limitador` se puede inyectar para que un test reinicie su estado sin recrear el servidor;
  * por defecto nace uno nuevo, con el contador a cero. */
 export function crearServidor(
@@ -56,6 +60,7 @@ export function crearServidor(
   app.use(express.json({ limit: '1mb' }));
   app.use('/api', crearAuthRutas(limitador));
   app.use('/api', listaBlancaRutas);
+  app.use('/api', usuariosRutas);
   app.use('/api', sistemasRutas);
   app.use('/api', examenRutas);
 

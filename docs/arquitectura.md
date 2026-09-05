@@ -246,6 +246,10 @@ Angular, las tres testeables sin `TestBed`.
   rol, equipoClave)` y `retirar(email)` recargan la lista entera tras cada escritura en vez de
   parchear en local — la lista es corta (una fila por correo invitado) y así el estado nunca
   puede divergir del servidor tras un reintento o un fallo a medias.
+- `UsuariosStore` (spec 068) — `new UsuariosStore(repositorio)` (`usuarios.store.spec.ts`):
+  `usuarios`, `cargando`, `error`. `cargar()` y `borrar(id)` recargan la lista entera, mismo
+  criterio que `ListaBlancaStore`, y comparten la misma pantalla de administración
+  (`ListaBlancaAdmin`) sin compartir store.
 - `InsigniasStore` (spec 061) — `new InsigniasStore(repositorio)` (`insignias.store.spec.ts`):
   `insignias`, `cargando`, `cargadas`, `error`. Solo lee (`InsigniasRepository.registrar` lo
   sigue llamando `ExamenStore` al terminar un examen). `cargadas` distingue "aún no se ha
@@ -373,6 +377,9 @@ Adaptadores hacia el mundo exterior.
   uso**. Mismo criterio que los otros dos: `fetch` nativo con `credentials: 'include'` contra
   `/api/lista-blanca` (`GET`/`POST`/`DELETE /lista-blanca/:email`). Traduce el 409 del servidor a
   `CorreoYaRegistrado` (E3).
+- `HttpUsuariosRepository implements UsuariosRepository` (spec 068) — **el adaptador en uso**.
+  Mismo criterio: `fetch` nativo con `credentials: 'include'` contra `/api/usuarios`
+  (`GET`/`DELETE /usuarios/:id`). Traduce el 409 del servidor a `UltimoAdminNoSePuedeBorrar`.
 - `HttpInsigniasRepository implements InsigniasRepository` (spec 056) — **el adaptador en uso**.
   Mismo criterio: `fetch` nativo, `credentials: 'include'`, contra `GET`/`POST
   /api/examen/insignias`. No traduce ningún motivo de fallo propio — cualquier rechazo del
@@ -529,6 +536,11 @@ navegador, ejecutándose en Node.
   propia cuenta) y `POST` (registrar una ganada). Exigen sesión, sin ningún rol — a diferencia de
   `sistemas.rutas.ts` y `lista-blanca.rutas.ts`, no hay equipo ni admin que comprobar, porque el
   id de usuario sale siempre de la sesión.
+- `src/http/usuarios.rutas.ts` — las rutas de `/api/usuarios` (spec 068): `GET` (listar cuentas)
+  y `DELETE /:id` (borrado definitivo). Mismo `exigirAdmin` que `lista-blanca.rutas.ts` — no es
+  el mismo helper, es una copia local idéntica, mismo criterio que el resto de este fichero de
+  no compartir código HTTP entre rutas. `409` si el id borrado es la última cuenta admin
+  (`UltimoAdminNoSePuedeBorrar`).
 - `src/infraestructura/prisma.ts`, `sistema.repositorio.ts` — el cliente de Prisma y el
   repositorio que traduce entre las filas de PostgreSQL y el `Sistema` de dominio.
   `cambiarEstadoSistema` y `equipoDelSistema` (spec 051) son para la ruta de validar: la segunda
@@ -542,9 +554,14 @@ navegador, ejecutándose en Node.
   `retirarInvitacion` (spec 054): `invitar` hace un `upsert` por correo normalizado — reinvitar
   uno pendiente actualiza su rol en la misma fila (E2) — y rechaza con `CorreoYaRegistrado` si el
   correo ya tiene cuenta (E3); `retirarInvitacion` borra la fila de `lista_blanca` sin tocar la
-  `usuario`/`membresia` que haya podido salir de ella (E5). `contrasena.ts` (hash y verificación
-  con
-  `scrypt`, ADR 0037) y `sesion.ts` (testigo aleatorio y su huella SHA-256, duración de 30 días)
+  `usuario`/`membresia` que haya podido salir de ella (E5). Su `update` también pone `usada_en` a
+  `null` (spec 068): sin esto, reinvitar un correo cuya cuenta se había borrado dejaba la
+  invitación marcada como "ya usada" para siempre y el registro la rechazaba. `listarUsuarios` y
+  `borrarUsuario` (spec 068): la segunda es un `delete` de verdad sobre `usuario` — `membresia` y
+  `sesion` desaparecen solas por el `onDelete: Cascade` ya declarado en el esquema — y rechaza
+  con `UltimoAdminNoSePuedeBorrar` si la cuenta es la única con `es_admin: true`.
+  `contrasena.ts` (hash y verificación con `scrypt`, ADR 0037) y `sesion.ts` (testigo aleatorio y
+  su huella SHA-256, duración de 30 días)
   son los dos únicos ficheros que tocan `node:crypto` — nada de eso vive en `domain/`
   (invariante 2).
 - `src/infraestructura/insignias.repositorio.ts` — `registrarInsignia` y `insigniasDe` (spec
@@ -607,16 +624,19 @@ src/app/
 │   ├── examen.store.ts
 │   ├── examen.store.spec.ts
 │   ├── insignias.store.ts
-│   └── insignias.store.spec.ts
+│   ├── insignias.store.spec.ts
+│   ├── usuarios.store.ts
+│   └── usuarios.store.spec.ts
 ├── infrastructure/
 │   ├── http-acceso.repository.ts             # en uso (spec 050)
 │   ├── http-sistema.repository.ts            # en uso (spec 034)
 │   ├── http-lista-blanca.repository.ts       # en uso (spec 054)
 │   ├── http-insignias.repository.ts          # en uso (spec 056)
+│   ├── http-usuarios.repository.ts           # en uso (spec 068)
 │   ├── local-storage-ajustes.repository.ts   # en uso, excepción deliberada
 │   └── *.spec.ts
 ├── ui/
-│   ├── acceso/         # PantallaAcceso, PerfilCuenta, VitrinaMedallas, ListaBlancaAdmin
+│   ├── acceso/         # PantallaAcceso, PerfilCuenta, VitrinaMedallas, ListaBlancaAdmin (+ borrado de cuentas, spec 068)
 │   ├── teoria/
 │   ├── tablero/
 │   ├── pista/
@@ -633,7 +653,7 @@ server/
 │   └── migrations/       # los CHECK y celdas_validas() están a mano en el SQL
 └── src/
     ├── infraestructura/   # Prisma, repositorios (sistemas, acceso), contraseña, sesión, semilla
-    ├── http/               # Express: rutas (sistemas, auth, lista-blanca) y la fábrica del servidor
+    ├── http/               # Express: rutas (sistemas, auth, lista-blanca, usuarios) y la fábrica del servidor
     └── main.ts
 ```
 

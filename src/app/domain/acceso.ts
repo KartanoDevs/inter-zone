@@ -65,6 +65,13 @@ export interface InvitacionListada {
   readonly usadaEn: string | null;
 }
 
+/** Una cuenta existente, tal como la ve el admin para elegir a cuál borrar (spec 068, E5). */
+export interface UsuarioListado {
+  readonly id: string;
+  readonly email: string;
+  readonly esAdmin: boolean;
+}
+
 /** Quién puede gestionar los sistemas de un equipo — crearlos, editarlos, borrarlos o validarlos
  * (specs 037 y 051, docs/modelo-de-datos.md §4): el admin, o un entrenador con membresía en ese
  * equipo — nunca un `usuario`, y nunca un entrenador de otro equipo. Es la misma regla para las

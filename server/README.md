@@ -77,6 +77,14 @@ cualquier otro rol, `401` sin sesión:
 | `POST` | `/lista-blanca` | `{ email, rol, equipoClave? }`; invita, o si el correo ya estaba invitado y sin usar, cambia su rol en la misma fila; `409` si el correo ya tiene cuenta, `400` si el rol o el equipo no son válidos |
 | `DELETE` | `/lista-blanca/:email` | retira la invitación; no toca la cuenta si el correo ya se dio de alta desde ella |
 
+Las dos rutas de `/usuarios` (spec 068) exigen sesión con rol `admin`, mismo criterio que
+`/lista-blanca`:
+
+| Método | Ruta | |
+|---|---|---|
+| `GET` | `/usuarios` | lista las cuentas existentes (id, email, si es admin) |
+| `DELETE` | `/usuarios/:id` | borra la cuenta de verdad — su membresía y su sesión desaparecen por el `onDelete: Cascade` del esquema; `409` si es la última cuenta admin |
+
 Las dos rutas de `/examen/insignias` (spec 056) exigen sesión; resuelven siempre la cuenta de la
 sesión, nunca aceptan un id de usuario en la petición:
 
@@ -94,7 +102,7 @@ server/
 │   └── migrations/       # los CHECK y la función celdas_validas() están a mano en el SQL
 └── src/
     ├── infraestructura/   # Prisma, los repositorios (sistemas, acceso, insignias), la semilla
-    ├── http/               # Express: rutas (sistemas, auth, lista-blanca, examen) y la fábrica del servidor
+    ├── http/               # Express: rutas (sistemas, auth, lista-blanca, usuarios, examen) y la fábrica del servidor
     └── main.ts
 ```
 

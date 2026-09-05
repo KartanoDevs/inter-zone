@@ -1,5 +1,11 @@
 import type { EquipoId, EstadoSistema, Sistema } from './modelos';
-import type { DatosPerfil, InvitacionListada, RolAcceso, SesionUsuario } from './acceso';
+import type {
+  DatosPerfil,
+  InvitacionListada,
+  RolAcceso,
+  SesionUsuario,
+  UsuarioListado,
+} from './acceso';
 import type { TipoExamen } from './examen';
 import type { InsigniaGanada } from './insignias';
 
@@ -82,6 +88,17 @@ export interface ListaBlancaRepository {
 /** El correo ya tiene cuenta (spec 054, E3): su rol se cambia desde la cuenta, no desde la
  * lista blanca. Un rechazo que no sea este se señala con `ErrorDelServidor`. */
 export class CorreoYaRegistrado extends Error {}
+
+/** Listar cuentas y borrar una de verdad (spec 068) — solo para el admin; el servidor rechaza a
+ * cualquier otro rol. */
+export interface UsuariosRepository {
+  listar(): Promise<readonly UsuarioListado[]>;
+  borrar(id: string): Promise<void>;
+}
+
+/** La cuenta que se intenta borrar es la única con rol admin (spec 068, E3): no se puede dejar
+ * el sistema sin ningún admin. Un rechazo que no sea este se señala con `ErrorDelServidor`. */
+export class UltimoAdminNoSePuedeBorrar extends Error {}
 
 /** Insignias de la propia cuenta (spec 056): `registrar` guarda que se ha ganado la insignia de
  * un tipo de examen sobre un sistema (y un titular, si el tipo lo exige); repetir el mismo
