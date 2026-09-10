@@ -345,6 +345,14 @@ obtenida_en asc`, spec 056). `resumenDeMedallas` lo reordena explícitamente de 
 no depender de que la lista llegue ya ordenada. No se ordenó por el orden de saque, que habría
 sido igual de defendible, para no reabrir un escenario congelado.
 
+**Nota posterior (spec 069):** el escenario **E21** de esta spec queda sustituido por la
+[spec 069](069-vitrina-solo-sistemas-validados.md). Aquí decía que un sistema al que se le
+retira la validación sigue visible en el mosaico con sus medallas intactas; la 069 invierte esa
+decisión a propósito: desde entonces, un sistema sin validar (nunca lo estuvo, o se le retiró
+la validación después) deja de aparecer en el mosaico y en el recuento mientras no esté
+validado, aunque las medallas siguen guardadas y reaparecen si se vuelve a validar. El resto de
+esta spec (E1-E20, E22-E25) no cambia.
+
 **El foco de vuelta (E17) se resuelve con `queueMicrotask` + `getElementById`, no con una
 `@ViewChild`.** La pieza del mosaico y el overlay de `Modal` no coexisten en el DOM (el detalle
 está en un `@if`), así que al cerrar hay que esperar un tick a que la pieza vuelva a montarse

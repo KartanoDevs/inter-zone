@@ -1,6 +1,6 @@
 # 069 — La vitrina solo cuenta sistemas validados
 
-**Estado:** Congelada
+**Estado:** Completada
 **Paso de la hoja de ruta:** 8
 
 ## Problema
@@ -115,14 +115,12 @@ de alcance"), solo se le añadió un comentario aclarando que el filtrado por va
 vive en `VitrinaMedallas`, no en el dominio.
 
 `ui/` no tiene runner de test (`vitest.config.ts` solo cubre `domain/`, `infrastructure/`,
-`application/`), así que los ocho escenarios no tienen test automático — se verifican a mano
-relanzando la app. **La verificación manual queda pendiente**: Docker Desktop no estaba
-arrancado en el momento de implementar, así que no se pudo relanzar el stack de desarrollo
-para comprobar los escenarios en el navegador. `npm test` (533/533) y `npm run typecheck` sí
-están en verde. Falta que el usuario confirme en el navegador: crear un sistema, examinarlo
-validado, ganar una medalla, quitarle la validación (desaparece de la vitrina), volver a
-validarlo (reaparece con la medalla intacta), y comprobar el recuento con una mezcla de
-sistemas validados y sin validar.
+`application/`), así que los ocho escenarios no tienen test automático — se verificaron a mano
+relanzando la app en modo desarrollo (Docker + `npm start` en `server/` y en la raíz), con la
+cuenta demo del README: crear un sistema, examinarlo validado, ganar una medalla, quitarle la
+validación (desaparece de la vitrina), volver a validarlo (reaparece con la medalla intacta), y
+el recuento con una mezcla de sistemas validados y sin validar. El usuario confirmó que el
+comportamiento es el esperado. `npm test` (533/533) y `npm run typecheck` en verde.
 
 Esta spec sustituye el escenario **E21** de la spec 061 ("Quitar la validación de un sistema
 no borra las medallas ya ganadas" — la versión donde el sistema seguía visible).
