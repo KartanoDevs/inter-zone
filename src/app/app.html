@@ -5,6 +5,9 @@
   <div class="app-cargando" aria-busy="true">Cargando…</div>
 } @else if (acceso.usuario()) {
   <app-tablero></app-tablero>
+  @if (instalacion.visible()) {
+    <app-dialogo-instalar></app-dialogo-instalar>
+  }
 } @else {
   <app-pantalla-acceso></app-pantalla-acceso>
 }

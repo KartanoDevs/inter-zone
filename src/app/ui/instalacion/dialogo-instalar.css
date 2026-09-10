@@ -1,0 +1,12 @@
+.app-dialogo-instalar__texto {
+  margin: 0 0 0.75rem;
+}
+
+.app-dialogo-instalar__pasos {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.app-dialogo-instalar__pasos li {
+  margin-bottom: 0.4rem;
+}

@@ -1,19 +1,22 @@
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { AccesoStore } from './application/acceso.store';
+import { InstalacionStore } from './application/instalacion.store';
 import { SistemaStore } from './application/sistema.store';
 import { ES_DESARROLLO } from './entorno';
 import { PantallaAcceso } from './ui/acceso/pantalla-acceso';
 import { Tablero } from './ui/tablero/tablero';
+import { DialogoInstalar } from './ui/instalacion/dialogo-instalar';
 
 @Component({
   selector: 'app-root',
-  imports: [Tablero, PantallaAcceso],
+  imports: [Tablero, PantallaAcceso, DialogoInstalar],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   protected readonly acceso = inject(AccesoStore);
+  protected readonly instalacion = inject(InstalacionStore);
   private readonly sistemaStore = inject(SistemaStore);
   // Distingue visualmente el despliegue de desarrollo del de producción (ADR 0044): ambos
   // sirven el mismo código, solo cambia esta constante en tiempo de compilación.

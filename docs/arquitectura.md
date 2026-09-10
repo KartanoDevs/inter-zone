@@ -257,6 +257,15 @@ Angular, las tres testeables sin `TestBed`.
   y una carga en curso no se vean igual. `PerfilCuenta` dispara `cargar()` cada vez que se abre
   la vista "Logros" (spec 065: una insignia recién ganada en un examen debe aparecer sin recargar
   la página), nunca al abrir la ventana Cuenta.
+- `InstalacionStore` (spec posterior a la 067) — `new InstalacionStore(sistemaStore)`
+  (`instalacion.store.spec.ts`): sin repositorio propio, lee y escribe
+  `SistemaStore.ultimoAvisoInstalacion` (comparte el mismo blob de `Ajustes`/localStorage, mismo
+  criterio que `TeoriaStore` reutilizando `SistemaStore`). `visible` decide si `App` monta
+  `DialogoInstalar`: nunca si la app ya corre en modo standalone, y si no, la primera vez o
+  cuando han pasado 7 días desde el último aviso (`debeAvisar`, función pura y es la única parte
+  de este store con test — el resto depende de `window`/`navigator`, sin `TestBed` que lo
+  simule). `esIOS` distingue si hay que ofrecer el prompt nativo (`beforeinstallprompt`) o las
+  instrucciones manuales de "Compartir → Añadir a pantalla de inicio", que Safari nunca dispara.
 
 - Escribibles: `sistemas` (catálogo completo, de los dos equipos), `equipoActivo` (spec 032,
   masculino por defecto), `sistemaActivoId`, `rotacionActiva`, `casoActivo`/`situacionActiva`/
@@ -457,6 +466,9 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   `ETIQUETA_PUESTO`... Fontanería de presentación sin estado, compartida entre `Tablero` y
   `TeoriaTablero`; vivía dentro de `tablero.ts` hasta que `TeoriaTablero` la necesitó también —
   importarla directamente de ahí habría creado un import circular entre los dos componentes.
+  `desplazar-con-dedo.ts` (spec posterior a la 067): reproduce a mano el scroll vertical de un
+  contenedor cuando el gesto empieza sobre un elemento con `touch-action: none` (el `<svg>` de
+  `Pista` en Edición y Examen), que si no nunca lo recibiría del navegador.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
   ficha). `puedeEditar` (spec 037) decide si se ve la pestaña Editor y si `ventana` arranca ahí
@@ -483,6 +495,10 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   vacíos. Construye `FichaVista`/`CeldaConjunto`/leyenda sobre `TeoriaStore` con el mismo cálculo
   que `Tablero` hace sobre `SistemaStore.borrador()`, pero repetido (ADR 0039) en vez de
   compartido: los dos consumidores necesitan la misma fontanería, pero nunca el mismo estado.
+- `ui/instalacion/` — `DialogoInstalar` (spec posterior a la 067): sobre `Modal`, montado por
+  `App` cuando `InstalacionStore.visible()` lo pide. Dos cuerpos según `store.esIOS`: un botón
+  que dispara el `prompt()` nativo guardado de `beforeinstallprompt`, o los pasos manuales de
+  "Compartir → Añadir a pantalla de inicio" en iOS/Safari.
 
 Los componentes leen signals y emiten intenciones. No calculan nada del dominio, ni siquiera
 la etiqueta de una ficha — con dos excepciones deliberadas: `Tablero` distingue un toque de un

@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { AccesoStore } from './application/acceso.store';
 import { ExamenStore } from './application/examen.store';
+import { InstalacionStore } from './application/instalacion.store';
 import { InsigniasStore } from './application/insignias.store';
 import { ListaBlancaStore } from './application/lista-blanca.store';
 import { SistemaStore } from './application/sistema.store';
@@ -58,6 +59,12 @@ export const appConfig: ApplicationConfig = {
     {
       provide: ListaBlancaStore,
       useFactory: () => new ListaBlancaStore(new HttpListaBlancaRepository(URL_API)),
+    },
+    // Comparte el blob de Ajustes/localStorage con SistemaStore (mismo criterio que Teoría):
+    // no hace falta un repositorio propio para un solo campo (ultimoAvisoInstalacion).
+    {
+      provide: InstalacionStore,
+      useFactory: () => new InstalacionStore(inject(SistemaStore)),
     },
     {
       provide: UsuariosStore,

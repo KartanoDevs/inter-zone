@@ -1,0 +1,28 @@
+<app-modal titulo="Instala InterZone" (cerrar)="cerrar()">
+  <p class="app-dialogo-instalar__texto">
+    InterZone funciona mejor instalada que desde el navegador: arranca más rápido y ocupa toda la
+    pantalla, sin la barra de direcciones.
+  </p>
+
+  @if (store.esIOS) {
+    <ol class="app-dialogo-instalar__pasos">
+      <li>Toca <strong>Compartir</strong> en la barra del navegador.</li>
+      <li>Elige <strong>Añadir a pantalla de inicio</strong>.</li>
+      <li>Confirma con <strong>Añadir</strong>.</li>
+    </ol>
+    <ng-container acciones>
+      <button type="button" class="app-boton app-boton--primario" (click)="cerrar()">
+        Entendido
+      </button>
+    </ng-container>
+  } @else {
+    <ng-container acciones>
+      <button type="button" class="app-boton app-boton--secundario" (click)="cerrar()">
+        Ahora no
+      </button>
+      <button type="button" class="app-boton app-boton--primario" (click)="instalar()">
+        Instalar
+      </button>
+    </ng-container>
+  }
+</app-modal>
