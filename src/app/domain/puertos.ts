@@ -37,17 +37,18 @@ export class ConflictoDeEdicion extends Error {}
 
 /** Ajustes globales de la app (no de un sistema concreto): si la validación de posiciones
  * está desactivada (spec 017), si se oculta la ayuda de posición rotacional (P1..P6) bajo
- * cada ficha, si las pestañas de rotación se muestran en orden cronológico de juego
- * (R1, R6, R5, R4, R3, R2) en vez de en orden numérico simple, y a qué escala se dibuja el
- * ancho de la sombra del bloqueo (spec 044, rango corregido por la 045: entero 0-10, puramente
- * de pantalla — nunca cambia dónde cae la sombra ni su profundidad, solo su ancho lateral en
- * pantalla; `domain/sombra-bloqueo.ts` no sabe que existe). Los números de metros junto a la
- * rejilla ya no son un ajuste: se ven siempre (spec 067). */
+ * cada ficha, a qué escala se dibuja el ancho de la sombra del bloqueo (spec 044, rango
+ * corregido por la 045: entero 0-10, puramente de pantalla — nunca cambia dónde cae la sombra
+ * ni su profundidad, solo su ancho lateral en pantalla; `domain/sombra-bloqueo.ts` no sabe que
+ * existe), y cuándo se avisó por última vez para instalar la app (ISO 8601, o `null` si nunca).
+ * El orden de las pestañas de rotación ya no es un ajuste: siempre es el de juego
+ * (`domain/rotacion.ts`, `ORDEN_ROTACIONES`). Los números de metros junto a la rejilla tampoco:
+ * se ven siempre (spec 067). */
 export interface Ajustes {
   readonly validacionDesactivada: boolean;
   readonly ayudaPosicionDesactivada: boolean;
-  readonly ordenRotacionCronologico: boolean;
   readonly escalaSombra: number;
+  readonly ultimoAvisoInstalacion: string | null;
 }
 
 export interface AjustesRepository {

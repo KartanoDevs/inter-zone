@@ -1,5 +1,5 @@
 import type { Formacion, Infraccion, Jugador, OrdenSaque, Sistema } from './modelos';
-import { formacionEnRotacion, jugadoresEnPista } from './rotacion';
+import { formacionEnRotacion, jugadoresEnPista, ORDEN_ROTACIONES } from './rotacion';
 import { distancia as distanciaEntre } from './separacion';
 import { sistemaCompleto } from './sistema-recepcion';
 import { validarFormacion } from './validacion';
@@ -80,18 +80,17 @@ export function liberoExaminable(sistema: Sistema): Jugador | null {
   return entraEnAlguna ? libero.jugador : null;
 }
 
-const TODAS_LAS_ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
-
-// Spec 057-E3/E4: qué rotaciones se examinan de verdad. Por sistema son siempre las seis; por
-// puesto o línea, solo aquellas en las que el titular examinado está físicamente en pista.
+// Spec 057-E3/E4: qué rotaciones se examinan de verdad. Por sistema son siempre las seis, en
+// el orden de juego (spec posterior a la 067, sustituye al numérico 1..6). Por puesto o línea,
+// solo aquellas en las que el titular examinado está físicamente en pista, en ese mismo orden.
 export function rotacionesExaminables(
   examen: Examen,
   sistema: Sistema,
 ): readonly (1 | 2 | 3 | 4 | 5 | 6)[] {
   if (examen.tipo === 'sistema') {
-    return TODAS_LAS_ROTACIONES;
+    return ORDEN_ROTACIONES;
   }
-  return TODAS_LAS_ROTACIONES.filter(
+  return ORDEN_ROTACIONES.filter(
     (rotacion) => jugadoresAColocar(examen, sistema, rotacion).length > 0,
   );
 }

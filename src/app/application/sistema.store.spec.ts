@@ -173,8 +173,8 @@ class RepositorioFake implements SistemaRepository {
 const AJUSTES_POR_DEFECTO: Ajustes = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
-  ordenRotacionCronologico: false,
   escalaSombra: 5,
+  ultimoAvisoInstalacion: null,
 };
 
 /** `reintentar` (spec 034) es `() => void`: dispara la escritura de nuevo pero no da al llamador

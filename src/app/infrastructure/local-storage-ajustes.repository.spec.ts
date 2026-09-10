@@ -19,8 +19,8 @@ class AlmacenEnMemoria implements AlmacenClaveValor {
 const AJUSTES_POR_DEFECTO = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
-  ordenRotacionCronologico: false,
   escalaSombra: 5,
+  ultimoAvisoInstalacion: null,
 };
 
 describe('LocalStorageAjustesRepository', () => {
@@ -35,8 +35,8 @@ describe('LocalStorageAjustesRepository', () => {
     const ajustes = {
       validacionDesactivada: true,
       ayudaPosicionDesactivada: true,
-      ordenRotacionCronologico: true,
       escalaSombra: 8,
+      ultimoAvisoInstalacion: '2026-09-10T00:00:00.000Z',
     };
 
     await repositorio.guardar(ajustes);
@@ -55,6 +55,25 @@ describe('LocalStorageAjustesRepository', () => {
           ayudaPosicionDesactivada: true,
           ordenRotacionCronologico: true,
           mostrarNumerosMetros: false,
+          escalaSombra: 8,
+        },
+      }),
+    );
+    const repositorio = new LocalStorageAjustesRepository(almacen);
+
+    expect(await repositorio.leer()).toEqual(AJUSTES_POR_DEFECTO);
+  });
+
+  it('una versión 7 (con ordenRotacionCronologico, sin ultimoAvisoInstalacion) se descarta, no se lee a ciegas', async () => {
+    const almacen = new AlmacenEnMemoria();
+    almacen.setItem(
+      'interzone.ajustes',
+      JSON.stringify({
+        version: 7,
+        data: {
+          validacionDesactivada: true,
+          ayudaPosicionDesactivada: true,
+          ordenRotacionCronologico: true,
           escalaSombra: 8,
         },
       }),

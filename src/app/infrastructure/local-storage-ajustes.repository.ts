@@ -8,12 +8,14 @@ export interface AlmacenClaveValor {
 }
 
 const CLAVE = 'interzone.ajustes';
-/** 7: se retira `mostrarNumerosMetros` (spec 067: los números de metros se ven siempre, sin
- * ajuste). Un payload de la versión 6 lleva ese campo de más y se descarta — así un `false`
- * guardado no impide ver los números. 6: `escalaSombra` cambió de rango y de significado (spec
- * 045). Sin `migrar()` real, un payload de una versión anterior se trata como no legible, mismo
- * patrón que `LocalStorageSistemaRepository`. */
-const VERSION_ACTUAL = 7;
+/** 8: se retira `ordenRotacionCronologico` (el orden de juego pasa a ser el único, sin ajuste
+ * que lo cambie) y se añade `ultimoAvisoInstalacion`. Un payload de la versión 7 se descarta:
+ * así el dispositivo que tenía el ajuste desactivado (el valor por defecto) pasa también él al
+ * nuevo comportamiento único, en vez de quedarse con un campo fantasma. 7: se retira
+ * `mostrarNumerosMetros` (spec 067: los números de metros se ven siempre, sin ajuste). Sin
+ * `migrar()` real, un payload de una versión anterior se trata como no legible, mismo patrón
+ * que `LocalStorageSistemaRepository`. */
+const VERSION_ACTUAL = 8;
 
 interface Payload {
   readonly version: number;
@@ -23,8 +25,8 @@ interface Payload {
 const AJUSTES_POR_DEFECTO: Ajustes = {
   validacionDesactivada: false,
   ayudaPosicionDesactivada: false,
-  ordenRotacionCronologico: false,
   escalaSombra: 5,
+  ultimoAvisoInstalacion: null,
 };
 
 function esPayloadValido(valor: unknown): valor is Payload {
@@ -36,16 +38,17 @@ function esPayloadValido(valor: unknown): valor is Payload {
     data?: {
       validacionDesactivada?: unknown;
       ayudaPosicionDesactivada?: unknown;
-      ordenRotacionCronologico?: unknown;
       escalaSombra?: unknown;
+      ultimoAvisoInstalacion?: unknown;
     };
   };
   return (
     typeof conVersion.version === 'number' &&
     typeof conVersion.data?.validacionDesactivada === 'boolean' &&
     typeof conVersion.data?.ayudaPosicionDesactivada === 'boolean' &&
-    typeof conVersion.data?.ordenRotacionCronologico === 'boolean' &&
-    typeof conVersion.data?.escalaSombra === 'number'
+    typeof conVersion.data?.escalaSombra === 'number' &&
+    (conVersion.data?.ultimoAvisoInstalacion === null ||
+      typeof conVersion.data?.ultimoAvisoInstalacion === 'string')
   );
 }
 

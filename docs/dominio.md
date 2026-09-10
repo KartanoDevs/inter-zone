@@ -240,6 +240,14 @@ Esto es distinto de "rotar el orden de saque tal cual se definió", que depende 
 empezó el entrenador a escribir la lista. Si el orden de saque no arranca con el colocador en
 P1, ambas numeraciones divergen. Ver `docs/decisiones/0010-rn-anclada-al-colocador.md`.
 
+### Orden de presentación de las rotaciones
+
+En recepción, la app siempre lista y examina las seis rotaciones en el orden real de juego
+—R1, R6, R5, R4, R3, R2, el mismo sentido en que gira la rotación— y no en el orden numérico
+1..6. No es un ajuste: es el único comportamiento, en Edición, Teoría y Examen (ADR 0046,
+`domain/rotacion.ts`, `ORDEN_ROTACIONES`). En defensa no hay pestañas de rotación —va por caso
+del colocador rival y situación de ataque desde la spec 038—, así que esto no le afecta.
+
 ---
 
 ## 5. Reglas de falta posicional

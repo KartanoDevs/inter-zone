@@ -111,8 +111,8 @@ de abajo — documentadas en la propia spec, no rehacen este documento entero:
    la extensión sin perder la garantía.
 2. Sin `google_sub` ni el `CHECK usuario_tiene_forma_de_entrar`: no hay login de Google en esta
    fase (sigue reservado, sin spec), así que `contrasena_hash` es `NOT NULL` a secas.
-3. Sin los cuatro booleanos de `Ajustes`: siguen en `localStorage` por dispositivo (ADR 0028),
-   sin fecha de migración.
+3. Sin los campos de `Ajustes`: siguen en `localStorage` por dispositivo (ADR 0028), sin fecha
+   de migración.
 
 El resto —`nombre` (aquí opcional, no `NOT NULL`: el encargo que trajo la spec 035 lo dejó
 voluntario), `es_admin`, `posicion_favorita` (`rol_jugador`, nuevo respecto a este diseño),
@@ -143,8 +143,8 @@ CREATE TABLE usuario (
   tabla: los trajo el encargo de la spec 035 como campos de perfil opcionales, sin dueño en
   ninguna otra tabla. La columna nace con la 035; `GET/PUT /api/auth/perfil` (spec 053) es quien
   de verdad los lee y los escribe.
-- Los cuatro booleanos de `Ajustes` (`src/app/domain/puertos.ts`) siguen **sin** columna aquí:
-  la spec 035 los dejó fuera de alcance a propósito, y siguen en la
+- Los campos de `Ajustes` (`src/app/domain/puertos.ts`) siguen **sin** columna aquí: la spec
+  035 los dejó fuera de alcance a propósito, y siguen en `localStorage`, por dispositivo, no por
   persona, que es donde encajan de verdad.
 
 ### `equipo`

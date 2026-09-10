@@ -59,3 +59,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0043](0043-pasada-de-seguridad-owasp.md) | Pasada de seguridad OWASP: limitador de intentos propio, hash de contraseña versionado con rehash al entrar, e IP real por número de saltos de proxy | Aceptada |
 | [0044](0044-produccion-y-desarrollo-en-la-misma-maquina.md) | Producción y desarrollo son dos despliegues completos e independientes en el mismo servidor | Aceptada |
 | [0045](0045-datos-de-prueba-en-desarrollo.md) | Una segunda semilla, destructiva y solo de desarrollo, siembra un catálogo de prueba variado y la cuenta demo | Aceptada |
+| [0046](0046-orden-de-rotacion-de-juego-sin-ajuste.md) | El orden de rotación de juego (R1, R6, R5, R4, R3, R2) es fijo en toda la app; se retira el ajuste | Aceptada |

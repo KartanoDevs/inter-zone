@@ -143,12 +143,15 @@ export class SistemaStore {
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
   readonly ayudaPosicionDesactivada = signal(false);
-  readonly ordenRotacionCronologico = signal(false);
   /** Escala del ancho de la sombra del bloqueo, 0-10 en enteros (spec 044, rango corregido por
    * la 045): puramente de pantalla, ajuste global de la app, nunca viaja al servidor. Escala
    * solo el eje lateral (ancho) del polígono, nunca su profundidad. 5 hasta que se cargan los
    * ajustes guardados. */
   readonly escalaSombra = signal(5);
+  /** Cuándo se avisó por última vez para instalar la app (ISO 8601), o `null` si nunca. Vive
+   * aquí solo porque comparte el mismo blob de `Ajustes`/localStorage que el resto de esta
+   * clase; quien lee y decide si avisar de nuevo es `InstalacionStore`. */
+  readonly ultimoAvisoInstalacion = signal<string | null>(null);
   /** Último fallo al escribir, con un reintento explícito (spec 034). `null` cuando no hay
    * ningún aviso pendiente — ni al arrancar, ni tras un reintento que tuvo éxito, ni tras
    * cerrarlo a mano. */
@@ -368,8 +371,8 @@ export class SistemaStore {
     const ajustes = await this.ajustesRepositorio?.leer();
     this.validacionDesactivada.set(ajustes?.validacionDesactivada ?? false);
     this.ayudaPosicionDesactivada.set(ajustes?.ayudaPosicionDesactivada ?? false);
-    this.ordenRotacionCronologico.set(ajustes?.ordenRotacionCronologico ?? false);
     this.escalaSombra.set(ajustes?.escalaSombra ?? 5);
+    this.ultimoAvisoInstalacion.set(ajustes?.ultimoAvisoInstalacion ?? null);
     this.cambiarContexto();
   }
 
@@ -407,13 +410,6 @@ export class SistemaStore {
     await this.guardarAjustes();
   }
 
-  /** Pestañas en orden cronológico de juego (R1, R6, R5, R4, R3, R2) en vez de orden numérico. */
-  async alternarOrdenRotacion(): Promise<void> {
-    const valor = !this.ordenRotacionCronologico();
-    this.ordenRotacionCronologico.set(valor);
-    await this.guardarAjustes();
-  }
-
   /** Cambia a qué escala se dibuja el ancho de la sombra del bloqueo (spec 044, E6-E9; rango
    * corregido por la 045, E8-E10): un entero entre 0 y 10, recortado a ese rango. Puramente de
    * pantalla — nunca toca ninguna variante guardada. */
@@ -422,13 +418,20 @@ export class SistemaStore {
     await this.guardarAjustes();
   }
 
+  /** Registra el aviso de instalación de hoy, para que `InstalacionStore` no vuelva a
+   * disparar hasta pasados 7 días (spec posterior a la 067). */
+  async registrarAvisoInstalacion(fecha: string): Promise<void> {
+    this.ultimoAvisoInstalacion.set(fecha);
+    await this.guardarAjustes();
+  }
+
   /** Solo toca el ajuste global (spec 031): nunca reescribe el catálogo de sistemas. */
   private async guardarAjustes(): Promise<void> {
     await this.ajustesRepositorio?.guardar({
       validacionDesactivada: this.validacionDesactivada(),
       ayudaPosicionDesactivada: this.ayudaPosicionDesactivada(),
-      ordenRotacionCronologico: this.ordenRotacionCronologico(),
       escalaSombra: this.escalaSombra(),
+      ultimoAvisoInstalacion: this.ultimoAvisoInstalacion(),
     });
   }
 

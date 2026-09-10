@@ -29,8 +29,7 @@ import type { ColocacionBorrador } from '../../application/sistema.store';
 import { CONFIGURACION_ROLES_POR_DEFECTO } from '../../domain/roles';
 import { etiquetaDe } from '../../domain/roles';
 import type { Colocacion, ColocacionDefensa, EquipoId } from '../../domain/modelos';
-
-const ROTACIONES = [1, 2, 3, 4, 5, 6] as const;
+import { ORDEN_ROTACIONES } from '../../domain/rotacion';
 
 /**
  * "Teoría" (spec 052): consulta de solo lectura de los sistemas validados. Reutiliza `Pista` y
@@ -87,7 +86,7 @@ export class TeoriaTablero {
   );
 
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() =>
-    ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false })),
+    ORDEN_ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false })),
   );
 
   private indiceColorDeColocacion(colocacion: ColocacionBorrador): number {

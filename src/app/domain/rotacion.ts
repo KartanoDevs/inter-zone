@@ -2,6 +2,12 @@ import type { Jugador, OrdenSaque, PlantillaEquipo } from './modelos';
 
 const INDICES_ZAGA = new Set([0, 4, 5]); // P1, P5, P6
 
+/** El orden en que las rotaciones ocurren realmente al jugar: P2→P1→P6→P5→P4→P3→P2, igual que
+ * gira `rotar()`. Es el orden en que se presentan en toda la UI (recepción; en defensa no hay
+ * pestañas de rotación, va por caso y situación desde la spec 038) — no el numérico 1..6, que
+ * no corresponde a ninguna secuencia de juego real. */
+export const ORDEN_ROTACIONES: readonly (1 | 2 | 3 | 4 | 5 | 6)[] = [1, 6, 5, 4, 3, 2];
+
 /**
  * Deriva quién ocupa cada posición P1..P6 tras `rotacion` avances desde el
  * orden de saque inicial (0 = R1). La rotación gira P2→P1→P6→P5→P4→P3→P2.

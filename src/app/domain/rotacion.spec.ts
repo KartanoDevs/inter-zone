@@ -4,6 +4,7 @@ import { PLANTILLA_GLOBAL } from './plantilla-global';
 import {
   formacionEnRotacion,
   jugadoresEnPista,
+  ORDEN_ROTACIONES,
   rotacionDe,
   rotar,
   sustitutosLiberoPorDefecto,
@@ -43,6 +44,12 @@ function plantillaConLibero(sustituidoId: string): PlantillaEquipo {
     libero: { jugador: jugador('libero', 'libero'), sustitutosPorRotacion },
   };
 }
+
+describe('ORDEN_ROTACIONES', () => {
+  it('sigue el orden real de juego, no el numérico', () => {
+    expect(ORDEN_ROTACIONES).toEqual([1, 6, 5, 4, 3, 2]);
+  });
+});
 
 describe('rotar', () => {
   it('E16: seis rotaciones vuelven al orden de partida', () => {

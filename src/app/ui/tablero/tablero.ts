@@ -41,7 +41,7 @@ import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { ExamenTablero } from '../examen/examen-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
 import { ListaBlancaAdmin } from '../acceso/lista-blanca-admin';
-import { jugadoresEnPista } from '../../domain/rotacion';
+import { jugadoresEnPista, ORDEN_ROTACIONES } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
 import { puestosQueBloquean } from '../../domain/sistema-defensa';
@@ -83,11 +83,6 @@ function puestoDeId(ocupanteId: string): PuestoDefensa | null {
   const coincidencia = /^p([1-6])$/.exec(ocupanteId);
   return coincidencia ? (Number(coincidencia[1]) as PuestoDefensa) : null;
 }
-
-const ROTACIONES: readonly RotacionValida[] = [1, 2, 3, 4, 5, 6];
-// Orden en que las rotaciones ocurren realmente al jugar (P2→P1→P6→P5→P4→P3→P2), alternativa
-// al orden numérico simple — ajuste del usuario, ver PanelAjustes.
-const ROTACIONES_ORDEN_JUEGO: readonly RotacionValida[] = [1, 6, 5, 4, 3, 2];
 
 // Límites de arrastre: el campo propio va de 0 a 9 m en los dos ejes (pista.html,
 // `.app-pista__campo`), y nadie del propio equipo puede salirse por ningún lado — ni cruzar la
@@ -507,12 +502,11 @@ export class Tablero {
   });
 
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
-    const orden = this.store.ordenRotacionCronologico() ? ROTACIONES_ORDEN_JUEGO : ROTACIONES;
     const sistema = this.store.sistemaActivo();
     if (!sistema) {
-      return orden.map((rotacion) => ({ rotacion, tieneFalta: false }));
+      return ORDEN_ROTACIONES.map((rotacion) => ({ rotacion, tieneFalta: false }));
     }
-    return orden.map((rotacion) => {
+    return ORDEN_ROTACIONES.map((rotacion) => {
       const formacion = sistema.formaciones[rotacion] ?? [];
       const posiciones = jugadoresEnPista(sistema.plantilla, rotacion);
       const tieneFalta =
@@ -804,10 +798,6 @@ export class Tablero {
 
   protected alternarAyudaPosicion(): void {
     this.store.alternarAyudaPosicion();
-  }
-
-  protected alternarOrdenRotacion(): void {
-    this.store.alternarOrdenRotacion();
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
