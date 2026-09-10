@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
   signal,
   viewChild,
@@ -23,6 +24,7 @@ import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/p
 import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { PanelPintado } from '../panel/panel-pintado';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
+import { desplazarConElDedo } from '../comun/desplazar-con-dedo';
 import { Speeddial, type AccionSpeeddial } from '../comun/speeddial';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
@@ -337,6 +339,7 @@ export class Tablero {
   protected readonly paletaColores = PALETA_COLORES;
 
   private readonly pistaCmp = viewChild.required(Pista);
+  private readonly central = viewChild.required<ElementRef<HTMLElement>>('central');
 
   protected readonly completo = computed(() => this.store.borrador().length === 6);
 
@@ -923,13 +926,17 @@ export class Tablero {
    * primer punto tocado decide el modo del trazo entero — pintar si esa celda no era suya,
    * borrar si ya lo era — para que un arrastre no alterne entre pintar y borrar celda a celda.
    * Si el trazo se cierra (vuelve cerca de donde empezó), al soltar se rellena lo que encierra
-   * (spec 024, E9-E11). Sin jugador seleccionado, el fondo se queda inerte. En recepción, donde
-   * el fondo no pinta, pinchar fuera con alguien seleccionado lo deselecciona en su lugar (spec
-   * 027) — en defensa el fondo sigue pintando exactamente igual que hoy, sin ese atajo.
+   * (spec 024, E9-E11). Sin jugador seleccionado, el fondo no tiene nada que pintar: el SVG
+   * lleva `touch-action: none` para no perder el arrastre de fichas a mitad de gesto, así que
+   * ese mismo gesto sobre el fondo desplaza `.app-tablero__central` a mano en su lugar. En
+   * recepción, donde el fondo no pinta, pinchar fuera con alguien seleccionado lo deselecciona
+   * en su lugar (spec 027) — en defensa el fondo sigue pintando exactamente igual que hoy, sin
+   * ese atajo.
    */
   protected iniciarPintado(evento: PointerEvent): void {
     const jugadorId = this.store.jugadorSeleccionadoId();
     if (!jugadorId) {
+      desplazarConElDedo(evento, this.central().nativeElement);
       return;
     }
     if (!this.esDefensa()) {
@@ -1008,11 +1015,6 @@ export class Tablero {
     window.addEventListener('pointermove', mover);
     window.addEventListener('pointerup', soltar);
     window.addEventListener('pointercancel', soltar);
-  }
-
-  private irAEnsenanza(): void {
-    this.tab.set('ensenanza');
-    this.panelPlegado.set(false);
   }
 
   protected pedirVaciado(): void {
@@ -1105,15 +1107,10 @@ export class Tablero {
         if (pista.contiene(e)) {
           this.store.colocarOMover(jugadorId, acotarPunto(pista.puntoDesde(e)));
           // Terminar un arrastre que reposiciona una ficha ya en pista la deja seleccionada
-          // (spec 027, E1). Desde el banquillo no: así se pueden colocar varios jugadores
-          // seguidos sin que el panel salte a Enseñanza en cada uno. En defensa, además, soltar
-          // nunca fuerza esa pestaña (spec posterior a la 046): el caso normal es reposicionar
-          // para pintar su zona a continuación, no para escribir una explicación.
+          // (spec 027, E1). Nunca fuerza la pestaña Enseñanza: colocar varias fichas seguidas
+          // no debe interrumpirse saltando de panel en cada una.
           if (origen === 'pista') {
             this.store.enfocarJugador(jugadorId);
-            if (!this.esDefensa()) {
-              this.irAEnsenanza();
-            }
           }
         } else if (origen === 'pista') {
           this.store.quitar(jugadorId);

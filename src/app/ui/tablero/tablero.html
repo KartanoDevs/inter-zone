@@ -108,7 +108,7 @@
          con su propio scroll ya existente en `.app-tablero__tabpanel`) quedan fijos; solo esto
          de en medio cede a scroll cuando el contenido no cabe, sin que la barra de pestañas se
          salga de pantalla — que era justo el bug que `overflow: hidden` evitaba antes. -->
-    <div class="app-tablero__central">
+    <div class="app-tablero__central" #central>
       <div class="app-tablero__cabecera">
         <app-selector-equipo
           [equipoActivo]="store.equipoActivo()"

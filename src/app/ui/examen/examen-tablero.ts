@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   output,
   signal,
@@ -19,6 +20,7 @@ import { PaletaJugadores, type ChipAgarrado, type ChipJugador } from '../panel/p
 import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-rotacion';
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
+import { desplazarConElDedo } from '../comun/desplazar-con-dedo';
 import { DialogoConfiguracionExamen } from './dialogo-configuracion-examen';
 import { ExamenStore } from '../../application/examen.store';
 import { AccesoStore } from '../../application/acceso.store';
@@ -80,6 +82,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 export class ExamenTablero {
   protected readonly examen = inject(ExamenStore);
   protected readonly acceso = inject(AccesoStore);
+  private readonly elemento = inject(ElementRef<HTMLElement>);
 
   /** Salir de la ventana Examen: lo pide la "×"/backdrop/Escape del modal de configuración
    * (no queda nada bajo él). Quien decide a qué ventana volver es `Tablero`. */
@@ -269,6 +272,14 @@ export class ExamenTablero {
       return;
     }
     this.iniciarArrastre(agarrada.id, agarrada.evento);
+  }
+
+  /** El SVG de la pista lleva `touch-action: none` para no perder el arrastre de fichas a
+   * mitad de gesto; como efecto colateral, un gesto que empiece sobre el fondo (no una ficha)
+   * tampoco desplaza la pantalla por su cuenta. Se reproduce a mano sobre el `:host`, que es
+   * quien tiene el scroll (spec 059). */
+  protected onAgarrarFondo(evento: PointerEvent): void {
+    desplazarConElDedo(evento, this.elemento.nativeElement);
   }
 
   private iniciarArrastre(jugadorId: string, evento: PointerEvent): void {

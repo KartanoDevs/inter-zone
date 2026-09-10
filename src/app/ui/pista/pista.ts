@@ -138,6 +138,9 @@ const ENTRADAS_LEYENDA_DEFENSA: readonly EntradaLeyenda[] = [
 export class Pista {
   readonly fichas = input.required<readonly FichaVista[]>();
   readonly idArrastrada = input<string | null>(null);
+  /** Si esta pista solo se consulta (Teoría, spec 052): no arrastra nada, así que un gesto
+   * vertical puede desplazar la pantalla en vez de quedar capturado por el SVG. */
+  readonly desplazable = input(false);
   /** Ajuste global: si se pinta la ayuda de posición (P1..P6) bajo cada ficha. */
   readonly mostrarPosicion = input(true);
   /** Si el sistema activo es de defensa: pinta la ficha "A" del atacante y la "C" del colocador

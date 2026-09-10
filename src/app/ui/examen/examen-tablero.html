@@ -48,6 +48,7 @@
       [fichas]="fichas()"
       [mostrarPosicion]="false"
       (fichaAgarrada)="onAgarrarFicha($event)"
+      (fondoAgarrado)="onAgarrarFondo($event)"
     ></app-pista>
     <app-panel-validacion
       [completo]="rotacionValidada()"
@@ -209,6 +210,7 @@
   <div class="app-examen__campo">
     <app-pista
       [fichas]="fichas()"
+      [desplazable]="true"
       [mostrarPosicion]="false"
       [fichasComparadas]="fichasComparadas()"
     ></app-pista>

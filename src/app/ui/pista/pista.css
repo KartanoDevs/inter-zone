@@ -20,6 +20,12 @@
   user-select: none;
 }
 
+.app-pista--desplazable {
+  /* En Teoría no hay nada que arrastrar (solo se selecciona un jugador con un toque), así
+     que un gesto vertical puede desplazar la pantalla igual que fuera de la pista. */
+  touch-action: pan-y;
+}
+
 .app-pista__zona-libre {
   fill: var(--bg-card-alt);
 }
