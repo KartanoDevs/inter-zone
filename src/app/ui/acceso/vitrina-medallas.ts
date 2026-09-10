@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { AccesoStore } from '../../application/acceso.store';
 import { InsigniasStore } from '../../application/insignias.store';
 import { SistemaStore } from '../../application/sistema.store';
+import { estadoDe } from '../../domain/catalogo-sistemas';
 import type { InsigniaGanada, ResumenDeMedallas } from '../../domain/insignias';
 import { recuentoDeSistemas, resumenDeMedallas } from '../../domain/insignias';
 import type { Sistema } from '../../domain/modelos';
@@ -67,13 +68,19 @@ export class VitrinaMedallas {
 
   /** Los sistemas de recepción que le tocan al usuario (spec 061, P3): todos si es admin —igual
    * que en el resto de la app, `puedeGestionarEquipo`—, o los de los equipos donde tiene
-   * membresía si no. Una medalla cuyo sistema ya no está aquí (borrado) no tiene pieza (E20). */
+   * membresía si no. Una medalla cuyo sistema ya no está aquí (borrado, o sin validar desde la
+   * spec 069) no tiene pieza (E20, 069-E2/E4). Solo sistemas **validados**: uno sin validar
+   * —nunca lo estuvo, o se le retiró la validación después— no aparece aunque tenga medallas
+   * ya ganadas; siguen guardadas (spec 056) y reaparecen intactas si se vuelve a validar
+   * (069-E3). El filtro de equipo se aplica igual que siempre, sin cambios (069-E7). */
   private readonly sistemasDelUsuario = computed<readonly Sistema[]>(() => {
     const usuario = this.acceso.usuario();
     if (!usuario) {
       return [];
     }
-    const recepcion = this.sistemaStore.sistemas().filter((s) => s.tipo === 'recepcion');
+    const recepcion = this.sistemaStore
+      .sistemas()
+      .filter((s) => s.tipo === 'recepcion' && estadoDe(s) === 'validado');
     if (usuario.esAdmin) {
       return recepcion;
     }

@@ -193,7 +193,12 @@ describe('recuentoDeSistemas', () => {
     expect(recuento).toEqual({ dominados: 1, total: 2 });
   });
 
-  it('E21: un sistema sin validar resume sus medallas igual que uno validado', () => {
+  it('E21: estas funciones no miran `estado` — sigue igual tras la spec 069', () => {
+    // La spec 069 cambia qué sistemas llegan a `VitrinaMedallas` (solo validados), no lo que
+    // hacen `recuentoDeSistemas`/`resumenDeMedallas` con lo que reciben: filtrar por validado
+    // es una decisión de la pantalla, no una regla de dominio. Si a estas funciones les llega
+    // un sistema sin validar, lo tratan igual que a uno validado — ya nunca debería llegarles
+    // uno así desde `VitrinaMedallas`, pero la función en sí sigue siendo agnóstica al estado.
     const sistemas = [{ ...sistema('s1'), estado: 'borrador' as const }];
     const insignias = [insignia({ sistemaId: 's1', tipo: 'sistema', titularId: null })];
 
