@@ -5,8 +5,14 @@
     <title>InterZone</title>
     <base href="/" />
     <!-- `viewport-fit=cover`: sin esto, `env(safe-area-inset-*)` siempre vale 0 en iOS y la app
-       instalada no puede evitar el notch ni la barra de gestos (spec 059, E10-E11). -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+       instalada no puede evitar el notch ni la barra de gestos (spec 059, E10-E11).
+       `maximum-scale=1, user-scalable=no`: el zoom de pellizco deja la UI (barras fijas, panel
+       inferior) fuera de pantalla; la app está pensada para el ancho del viewport, no para
+       hacer zoom sobre ella. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <meta
       name="description"
       content="Sistemas de recepción y defensa de voleibol: editor, teoría y examen."

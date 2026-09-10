@@ -11,4 +11,10 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 
+// Safari en iOS ignora `user-scalable=no` del viewport desde iOS 10: el pellizco para hacer
+// zoom sigue funcionando salvo que se cancelen sus propios eventos de gesto. En el resto de
+// navegadores estos eventos no existen y el listener no hace nada.
+document.addEventListener('gesturestart', (evento) => evento.preventDefault());
+document.addEventListener('gesturechange', (evento) => evento.preventDefault());
+
 bootstrapApplication(App, appConfig).catch((err) => console.error(err));

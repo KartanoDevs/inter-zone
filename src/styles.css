@@ -57,6 +57,9 @@ html {
      scroll interno de cada ventana lo permite igualmente porque no toca `overscroll-behavior`
      de sus propios contenedores, solo el del documento. */
   overscroll-behavior-y: none;
+  /* Sin esto, iOS infla el tamaño de letra al girar a horizontal, dando por hecho que la
+     página es texto largo y no una app a ancho fijo. */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -69,6 +72,10 @@ body {
   /* Halo azul al tocar botones/fichas (spec 059, E12): Android lo pinta por defecto en todo
      elemento pulsable y no hay ninguna razón de diseño para conservarlo aquí. */
   -webkit-tap-highlight-color: transparent;
+  /* Complementa `user-scalable=no` del viewport: sin esto, el doble toque sigue haciendo zoom
+     en varios navegadores porque tratan el zoom como un gesto táctil, no solo como una regla
+     de viewport. */
+  touch-action: manipulation;
 }
 
 h1,
