@@ -82,6 +82,12 @@ Modelos y reglas. Aquí vive el voleibol.
   el mismo punto exacto. `SistemaStore.colocarOMover` lo aplica en las dos ramas antes de
   guardar el punto de destino. No es una falta posicional — es un límite de arrastre, así que
   nunca se guarda un estado inválido que `validarFormacion` tuviera que rechazar.
+- `ajuste-fino.ts` — `aplicarPaso(punto, direccion): Punto` (spec 070): suma 0,1 m en una
+  dirección cardinal y acota el resultado al campo propio (mismos límites que `LIMITE_X`/
+  `LIMITE_Y` de `ui/tablero/tablero.ts`, redeclarados aquí a propósito — moverlos habría sido
+  un cambio de alcance mayor del que pedía esa spec). Redondea a milímetros para que acumular
+  pasos no arrastre error de coma flotante. Lo usa la cruz de ajuste fino de `ui/comun/` desde
+  el Editor y desde Examen.
 - `sistema-defensa.ts` — `guardarVarianteDefensa(sistema, caso, situacion, bloqueadores,
   formacion)`: análogo a `guardarFormacion` pero keyed por (caso, situación, bloqueadores), y
   **nunca** valida posición (spec 021, en defensa la validación no existe). No reutiliza
@@ -418,8 +424,9 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   (`ui/comun/`) — solo visible en la pestaña "Lista blanca", que `Tablero` solo muestra si
   `esAdmin()`. Ninguno lleva test de componente, como el resto de `ui/` — la lógica que importa
   ya está probada en `AccesoStore`/`ListaBlancaStore`/`domain/insignias`.
-- `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
-  puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
+- `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`puntoAPantalla`
+  —spec 070, la inversa: de un punto de la pista a coordenadas de pantalla, para anclar un
+  overlay HTML como `CruzAjusteFino`— /`contiene`/captura de puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa
   (ADR 0020, sigue vigente bajo el nombre nuevo — spec 038) y la ficha "C" del colocador rival,
   fija según el caso. La leyenda gana las entradas propias de defensa cuando `mostrarRival` está
@@ -469,6 +476,11 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   `desplazar-con-dedo.ts` (spec posterior a la 067): reproduce a mano el scroll vertical de un
   contenedor cuando el gesto empieza sobre un elemento con `touch-action: none` (el `<svg>` de
   `Pista` en Edición y Examen), que si no nunca lo recibiría del navegador.
+  `gesto-tactil.ts` (spec 070): `UMBRAL_ARRASTRE_PX`, `PULSACION_LARGA_MS` y
+  `distanciaPantalla` — antes vivían solo en `tablero.ts`; `ExamenTablero` los necesitó también
+  al ganar su propia distinción toque/arrastre. `CruzAjusteFino` (spec 070): las cuatro flechas
+  del ajuste fino de una ficha ya seleccionada, presentacional como `Barra` — solo emite qué
+  flecha se pulsó, ancladas en pantalla vía `Pista.puntoAPantalla`.
 - `ui/tablero/` — `Tablero`, el shell: consume `SistemaStore` con `inject()`, traduce signals
   a vista y gestiona el arrastre por `PointerEvent` (capturado sobre el `<svg>`, nunca sobre la
   ficha). `puedeEditar` (spec 037) decide si se ve la pestaña Editor y si `ventana` arranca ahí

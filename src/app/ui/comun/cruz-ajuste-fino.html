@@ -1,0 +1,41 @@
+<div class="app-cruz-ajuste-fino__fondo"></div>
+<button
+  type="button"
+  class="app-cruz-ajuste-fino__flecha app-cruz-ajuste-fino__flecha--arriba"
+  aria-label="Mover hacia la red"
+  (click)="mover.emit('arriba')"
+>
+  &uarr;
+</button>
+<button
+  type="button"
+  class="app-cruz-ajuste-fino__flecha app-cruz-ajuste-fino__flecha--abajo"
+  aria-label="Mover hacia el fondo"
+  (click)="mover.emit('abajo')"
+>
+  &darr;
+</button>
+<button
+  type="button"
+  class="app-cruz-ajuste-fino__flecha app-cruz-ajuste-fino__flecha--izquierda"
+  aria-label="Mover a la izquierda"
+  (click)="mover.emit('izquierda')"
+>
+  &larr;
+</button>
+<button
+  type="button"
+  class="app-cruz-ajuste-fino__flecha app-cruz-ajuste-fino__flecha--derecha"
+  aria-label="Mover a la derecha"
+  (click)="mover.emit('derecha')"
+>
+  &rarr;
+</button>
+<button
+  type="button"
+  class="app-cruz-ajuste-fino__cerrar"
+  aria-label="Cerrar ajuste fino"
+  (click)="cerrar.emit()"
+>
+  &times;
+</button>

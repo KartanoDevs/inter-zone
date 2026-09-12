@@ -192,6 +192,14 @@
             (sombraAgarrada)="onAgarrarSombra($event)"
             (fondoAgarrado)="iniciarPintado($event)"
           ></app-pista>
+          @if (posicionAjusteFino(); as posicion) {
+            <app-cruz-ajuste-fino
+              [x]="posicion.x"
+              [y]="posicion.y"
+              (mover)="moverAjusteFino($event)"
+              (cerrar)="cerrarAjusteFino()"
+            ></app-cruz-ajuste-fino>
+          }
           @if (esDefensa() && store.desplazamientoSombraEdicion()) {
             <button
               type="button"

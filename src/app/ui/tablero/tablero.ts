@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   signal,
@@ -25,6 +26,8 @@ import { PanelEnsenanza } from '../panel/panel-ensenanza';
 import { PanelPintado } from '../panel/panel-pintado';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { desplazarConElDedo } from '../comun/desplazar-con-dedo';
+import { distanciaPantalla, PULSACION_LARGA_MS, UMBRAL_ARRASTRE_PX } from '../comun/gesto-tactil';
+import { CruzAjusteFino } from '../comun/cruz-ajuste-fino';
 import { Speeddial, type AccionSpeeddial } from '../comun/speeddial';
 import { BarraSistemas, type OpcionSistema } from '../sistemas/barra-sistemas';
 import { DialogoSistema, type DatosSistema } from '../sistemas/dialogo-sistema';
@@ -49,6 +52,7 @@ import { sombraDeBloqueo } from '../../domain/sombra-bloqueo';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
 import { puedeEditarAlgo } from '../../domain/acceso';
+import { aplicarPaso, type DireccionAjuste } from '../../domain/ajuste-fino';
 import { claveOrdenRol } from '../comun/orden-roles';
 import {
   ETIQUETA_PUESTO,
@@ -97,12 +101,13 @@ const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
 const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
 
 // El arrastre no se arma al primer píxel: hace falta superar este desplazamiento en pantalla
-// o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está armado, un
-// pointerdown+pointerup sobre una ficha ya en pista cuenta como un toque y selecciona en vez
-// de arrastrar (spec 010, E9-E10 vs E12) — el retardo es lo que hace ese toque marcable sin
-// que arrastrar la ficha por error.
+// (`UMBRAL_ARRASTRE_PX`, en `ui/comun/gesto-tactil.ts` desde la spec 070, compartido con
+// `ExamenTablero`) o mantener pulsado este tiempo, lo que ocurra antes. Mientras no está
+// armado, un pointerdown+pointerup sobre una ficha ya en pista cuenta como un toque y
+// selecciona en vez de arrastrar (spec 010, E9-E10 vs E12) — el retardo es lo que hace ese
+// toque marcable sin que arrastrar la ficha por error. Ninguno de los dos cambia con la
+// pulsación larga de la spec 070 (E4): esa se comprueba aparte, sobre el desplazamiento real.
 const RETARDO_ARRASTRE_MS = 150;
-const UMBRAL_ARRASTRE_PX = 8;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
@@ -140,13 +145,6 @@ function acotarPuntoRival(punto: Punto): Punto {
 
 function distancia(a: Punto, b: Punto): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function distanciaPantalla(
-  a: { clientX: number; clientY: number },
-  b: { clientX: number; clientY: number },
-): number {
-  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
 
 /** Ver docs/arquitectura.md: con fichas solapadas, se busca la más cercana al punto real del toque. */
@@ -206,6 +204,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     PanelEnsenanza,
     PanelPintado,
     DialogoConfirmacion,
+    CruzAjusteFino,
     Speeddial,
     BarraSistemas,
     DialogoSistema,
@@ -227,6 +226,47 @@ export class Tablero {
 
   protected readonly arrastre = signal<Arrastre | null>(null);
   protected readonly idArrastrada = computed(() => this.arrastre()?.jugadorId ?? null);
+
+  /** Ajuste fino por pulsación larga (spec 070): solo se abre sobre `jugadorSeleccionadoId()`,
+   * nunca sobre una ficha distinta, así que basta con un booleano — cambiar de selección lo
+   * cierra solo (E10), sin tener que comparar ids en cada sitio. */
+  protected readonly ajusteFinoAbierto = signal(false);
+
+  constructor() {
+    // Cambiar de ficha seleccionada cierra el ajuste fino de la anterior (spec 070, E10): no
+    // hay ajuste fino para dos fichas a la vez, ni para ninguna que deje de estar seleccionada.
+    effect(() => {
+      this.store.jugadorSeleccionadoId();
+      this.ajusteFinoAbierto.set(false);
+    });
+  }
+
+  /** Punto de pantalla donde anclar `CruzAjusteFino` (coordenadas de `Pista.puntoAPantalla`), o
+   * `null` si no hay ajuste fino abierto o la ficha seleccionada ya no está en el borrador. */
+  protected readonly posicionAjusteFino = computed(() => {
+    if (!this.ajusteFinoAbierto()) {
+      return null;
+    }
+    const seleccionadoId = this.store.jugadorSeleccionadoId();
+    const colocacion = this.store.borrador().find((c) => idOcupanteDe(c) === seleccionadoId);
+    if (!colocacion) {
+      return null;
+    }
+    return this.pistaCmp().puntoAPantalla(colocacion.punto);
+  });
+
+  protected moverAjusteFino(direccion: DireccionAjuste): void {
+    const seleccionadoId = this.store.jugadorSeleccionadoId();
+    const colocacion = this.store.borrador().find((c) => idOcupanteDe(c) === seleccionadoId);
+    if (!seleccionadoId || !colocacion) {
+      return;
+    }
+    this.store.colocarOMover(seleccionadoId, aplicarPaso(colocacion.punto, direccion));
+  }
+
+  protected cerrarAjusteFino(): void {
+    this.ajusteFinoAbierto.set(false);
+  }
 
   protected readonly dialogoSistema = signal<DialogoSistemaAbierto>(null);
   protected readonly confirmandoBorrado = signal(false);
@@ -1044,6 +1084,23 @@ export class Tablero {
     this.pistaCmp().capturarPuntero(evento);
 
     let armado = false;
+    // Independiente de `armado` (spec 070, E4): `armado` se dispara también solo por tiempo
+    // (RETARDO_ARRASTRE_MS), sin haberse movido, y eso no debe contar como pulsación larga.
+    let seDesplazo = false;
+
+    // Si la ficha ya estaba seleccionada antes de este toque, una pulsación larga sin
+    // desplazamiento abre su ajuste fino en vez de continuar como un arrastre corriente (spec
+    // 070, E1). No compite con `armar`: se comprueba aparte, sobre `seDesplazo`.
+    const temporizadorAjusteFino =
+      origen === 'pista' && this.store.jugadorSeleccionadoId() === jugadorId
+        ? window.setTimeout(() => {
+            if (!seDesplazo) {
+              limpiar(evento);
+              this.arrastre.set(null);
+              this.ajusteFinoAbierto.set(true);
+            }
+          }, PULSACION_LARGA_MS)
+        : undefined;
 
     // Engancha la ficha al puntero: a partir de aquí se ve el fantasma y, si viene de pista,
     // la ficha se trae al frente del DOM sin moverla (colocarOMover reordena al final).
@@ -1068,6 +1125,9 @@ export class Tablero {
     );
 
     const mover = (e: PointerEvent): void => {
+      if (!seDesplazo && distanciaPantalla(inicio, e) > UMBRAL_ARRASTRE_PX) {
+        seDesplazo = true;
+      }
       if (!armado && distanciaPantalla(inicio, e) > UMBRAL_ARRASTRE_PX) {
         armar(e.clientX, e.clientY);
       }
@@ -1084,6 +1144,7 @@ export class Tablero {
 
     const limpiar = (e: PointerEvent): void => {
       window.clearTimeout(temporizador);
+      window.clearTimeout(temporizadorAjusteFino);
       window.removeEventListener('pointermove', mover);
       window.removeEventListener('pointerup', soltar);
       window.removeEventListener('pointercancel', cancelar);

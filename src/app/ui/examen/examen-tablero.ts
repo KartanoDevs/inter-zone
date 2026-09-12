@@ -21,10 +21,13 @@ import { SelectorRotacion, type EstadoRotacion } from '../rotaciones/selector-ro
 import { PanelValidacion, type ItemValidacion } from '../panel/panel-validacion';
 import { DialogoConfirmacion } from '../comun/dialogo-confirmacion';
 import { desplazarConElDedo } from '../comun/desplazar-con-dedo';
+import { distanciaPantalla, PULSACION_LARGA_MS, UMBRAL_ARRASTRE_PX } from '../comun/gesto-tactil';
+import { CruzAjusteFino } from '../comun/cruz-ajuste-fino';
 import { DialogoConfiguracionExamen } from './dialogo-configuracion-examen';
 import { ExamenStore } from '../../application/examen.store';
 import { AccesoStore } from '../../application/acceso.store';
 import { CONFIGURACION_ROLES_POR_DEFECTO, etiquetaDe } from '../../domain/roles';
+import { aplicarPaso, type DireccionAjuste } from '../../domain/ajuste-fino';
 import type { Infraccion, Jugador } from '../../domain/modelos';
 import type { RotacionValida } from '../../application/sistema.store';
 import type { TipoExamen } from '../../domain/examen';
@@ -61,9 +64,12 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
 /**
  * Ventana "Examen" (spec 057, sustituye a la 055): hoja de inscripción antes de empezar, examen
  * guiado por rotación con faltas visibles solo al validar (igual que Edición), y un boletín de
- * resultado con desglose por rotación y comparación con el modelo. Sigue el mismo patrón
- * simplificado de arrastre de `TeoriaStore`/`Tablero`, pero sin tap-vs-drag ni selección de
- * jugador: el examen no tiene panel de enseñanza que enfocar.
+ * resultado con desglose por rotación y comparación con el modelo. Desde la spec 070 sí
+ * distingue toque de arrastre y tiene su propia selección (local, sin panel de enseñanza que
+ * enfocar): un toque corto selecciona una ficha ya colocada, y una pulsación larga sobre una ya
+ * seleccionada abre su ajuste fino — mismo umbral de desplazamiento que `Tablero`
+ * (`ui/comun/gesto-tactil.ts`), sin replicar su armado por tiempo (`RETARDO_ARRASTRE_MS`): aquí
+ * no hace falta, nada depende de él.
  */
 @Component({
   selector: 'app-examen-tablero',
@@ -74,6 +80,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     PanelValidacion,
     DialogoConfirmacion,
     DialogoConfiguracionExamen,
+    CruzAjusteFino,
   ],
   templateUrl: './examen-tablero.html',
   styleUrl: './examen-tablero.css',
@@ -98,6 +105,15 @@ export class ExamenTablero {
   protected readonly reiniciando = signal(false);
   protected readonly comparando = signal(false);
 
+  /** Ficha ya colocada que un toque corto seleccionó (spec 070): local a este componente, sin
+   * persistir en `ExamenStore` ni en el dominio — el examen no necesita recordarlo entre
+   * sesiones, solo mientras se ajusta. */
+  protected readonly seleccionadaId = signal<string | null>(null);
+
+  /** Ajuste fino por pulsación larga (spec 070): solo se abre sobre `seleccionadaId()`, igual
+   * que en `Tablero`. */
+  protected readonly ajusteFinoAbierto = signal(false);
+
   constructor() {
     // Activa el primer sistema examinable en cuanto haya catálogo, sin pisar una elección ya
     // hecha: mismo patrón que `TeoriaTablero`. Sin esto la hoja de inscripción no muestra las
@@ -110,9 +126,42 @@ export class ExamenTablero {
         }
       }
     });
+
+    // Cambiar de ficha seleccionada cierra el ajuste fino de la anterior (spec 070, E10).
+    effect(() => {
+      this.seleccionadaId();
+      this.ajusteFinoAbierto.set(false);
+    });
   }
 
   private readonly pistaCmp = viewChild.required(Pista);
+
+  /** Punto de pantalla donde anclar `CruzAjusteFino`, o `null` si no hay ajuste fino abierto o
+   * la ficha seleccionada ya no está colocada en la rotación activa. */
+  protected readonly posicionAjusteFino = computed(() => {
+    if (!this.ajusteFinoAbierto()) {
+      return null;
+    }
+    const id = this.seleccionadaId();
+    const colocado = this.examen.colocadosDeLaRotacion().find((c) => c.jugador.id === id);
+    if (!colocado) {
+      return null;
+    }
+    return this.pistaCmp().puntoAPantalla(colocado.punto);
+  });
+
+  protected moverAjusteFino(direccion: DireccionAjuste): void {
+    const id = this.seleccionadaId();
+    const colocado = this.examen.colocadosDeLaRotacion().find((c) => c.jugador.id === id);
+    if (!id || !colocado) {
+      return;
+    }
+    this.examen.colocar(id, aplicarPaso(colocado.punto, direccion));
+  }
+
+  protected cerrarAjusteFino(): void {
+    this.ajusteFinoAbierto.set(false);
+  }
 
   protected readonly opcionesSistema = computed(() =>
     this.examen.catalogo().map((s) => ({ id: s.id, nombre: s.nombre, tipo: s.tipo })),
@@ -161,6 +210,7 @@ export class ExamenTablero {
       esLibero: c.jugador.rol === 'libero',
       seleccionada: false,
     }));
+    const seleccionadaId = this.seleccionadaId();
     const colocadas = this.examen.colocadosDeLaRotacion().map((c): FichaVista => ({
       id: c.jugador.id,
       punto: c.punto,
@@ -169,7 +219,7 @@ export class ExamenTablero {
       estado: idsEnFalta.has(c.jugador.id) ? 'falta' : 'normal',
       linea: 'delantera',
       esLibero: c.jugador.rol === 'libero',
-      seleccionada: false,
+      seleccionada: c.jugador.id === seleccionadaId,
     }));
     return [...dadas, ...colocadas];
   });
@@ -263,7 +313,7 @@ export class ExamenTablero {
     if (!jugador) {
       return;
     }
-    this.iniciarArrastre(chip.id, chip.evento);
+    this.iniciarArrastre(chip.id, chip.evento, 'paleta');
   }
 
   protected onAgarrarFicha(agarrada: FichaAgarrada): void {
@@ -271,7 +321,7 @@ export class ExamenTablero {
     if (!colocado) {
       return;
     }
-    this.iniciarArrastre(agarrada.id, agarrada.evento);
+    this.iniciarArrastre(agarrada.id, agarrada.evento, 'pista');
   }
 
   /** El SVG de la pista lleva `touch-action: none` para no perder el arrastre de fichas a
@@ -279,21 +329,55 @@ export class ExamenTablero {
    * tampoco desplaza la pantalla por su cuenta. Se reproduce a mano sobre el `:host`, que es
    * quien tiene el scroll (spec 059). */
   protected onAgarrarFondo(evento: PointerEvent): void {
+    // Tocar el fondo deselecciona (spec 070, E8, mismo criterio que Tablero/spec 027): cierra
+    // el ajuste fino si estaba abierto, vía el efecto que escucha `seleccionadaId`.
+    this.seleccionadaId.set(null);
     desplazarConElDedo(evento, this.elemento.nativeElement);
   }
 
-  private iniciarArrastre(jugadorId: string, evento: PointerEvent): void {
+  /**
+   * Distingue toque de arrastre (spec 070, mismo umbral que `Tablero`,
+   * `ui/comun/gesto-tactil.ts`): sin desplazarse más de `UMBRAL_ARRASTRE_PX`, soltar alterna la
+   * selección (E2) en vez de mover la ficha. Si la ficha ya estaba seleccionada, una pulsación
+   * larga sin desplazamiento abre su ajuste fino (E1) en vez de esperar a que se suelte.
+   */
+  private iniciarArrastre(
+    jugadorId: string,
+    evento: PointerEvent,
+    origen: 'paleta' | 'pista',
+  ): void {
     evento.preventDefault();
     const pista = this.pistaCmp();
     pista.capturarPuntero(evento);
+    const inicio = { clientX: evento.clientX, clientY: evento.clientY };
+    let seDesplazo = false;
+
+    // Solo desde la pista: un chip del banquillo nunca estaba "ya seleccionado" en el sentido
+    // de esta spec, ni tiene sentido que un toque corto sobre él alterne selección.
+    const temporizadorAjusteFino =
+      origen === 'pista' && this.seleccionadaId() === jugadorId
+        ? window.setTimeout(() => {
+            if (!seDesplazo) {
+              limpiar(evento);
+              this.ajusteFinoAbierto.set(true);
+            }
+          }, PULSACION_LARGA_MS)
+        : undefined;
 
     const mover = (e: PointerEvent): void => {
+      if (!seDesplazo && distanciaPantalla(inicio, e) > UMBRAL_ARRASTRE_PX) {
+        seDesplazo = true;
+      }
+      if (origen === 'pista' && !seDesplazo) {
+        return;
+      }
       if (pista.contiene(e)) {
         this.examen.colocar(jugadorId, pista.puntoDesde(e));
       }
     };
 
     const limpiar = (e: PointerEvent): void => {
+      window.clearTimeout(temporizadorAjusteFino);
       window.removeEventListener('pointermove', mover);
       window.removeEventListener('pointerup', soltar);
       window.removeEventListener('pointercancel', soltar);
@@ -302,6 +386,12 @@ export class ExamenTablero {
 
     const soltar = (e: PointerEvent): void => {
       limpiar(e);
+      if (origen === 'pista' && !seDesplazo) {
+        // Toque sin desplazamiento sobre una ficha ya en pista: alterna la selección, la ficha
+        // no se mueve (spec 070, E2).
+        this.seleccionadaId.update((actual) => (actual === jugadorId ? null : jugadorId));
+        return;
+      }
       if (pista.contiene(e)) {
         this.examen.colocar(jugadorId, pista.puntoDesde(e));
       } else {
