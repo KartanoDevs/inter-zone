@@ -24,7 +24,14 @@ export class PantallaAcceso {
     this.store.error.set(null);
   }
 
-  protected async enviar(email: string, contrasena: string): Promise<void> {
+  protected async enviar(
+    email: string,
+    contrasena: string,
+    repetirContrasena?: string,
+  ): Promise<void> {
+    if (this.modo() === 'crear-cuenta' && contrasena !== repetirContrasena) {
+      return;
+    }
     this.enviando.set(true);
     try {
       if (this.modo() === 'entrar') {

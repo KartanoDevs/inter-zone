@@ -1,7 +1,10 @@
 <div class="app-acceso">
   <form
     class="app-acceso__tarjeta"
-    (submit)="$event.preventDefault(); enviar(emailCampo.value, contrasenaCampo.value)"
+    (submit)="
+      $event.preventDefault();
+      enviar(emailCampo.value, contrasenaCampo.value, repetirContrasenaCampo?.value)
+    "
   >
     <h1 class="app-acceso__titulo">InterZone</h1>
 
@@ -35,12 +38,27 @@
         #contrasenaCampo
         type="password"
         required
-        autocomplete="current-password"
+        [attr.autocomplete]="modo() === 'entrar' ? 'current-password' : 'new-password'"
         minlength="8"
       />
     </label>
 
     @if (modo() === 'crear-cuenta') {
+      <label class="app-acceso__campo">
+        Repite la contraseña
+        <input
+          #repetirContrasenaCampo
+          type="password"
+          required
+          autocomplete="new-password"
+          minlength="8"
+        />
+      </label>
+
+      @if (repetirContrasenaCampo.value && contrasenaCampo.value !== repetirContrasenaCampo.value) {
+        <p class="app-acceso__error" role="alert">Las contraseñas no coinciden.</p>
+      }
+
       <p class="app-acceso__ayuda">
         Hace falta que tu entrenador te haya invitado antes con este correo.
       </p>
@@ -50,7 +68,14 @@
       <p class="app-acceso__error" role="alert">{{ error }}</p>
     }
 
-    <button type="submit" class="app-boton app-boton--primario" [disabled]="enviando()">
+    <button
+      type="submit"
+      class="app-boton app-boton--primario"
+      [disabled]="
+        enviando() ||
+        (modo() === 'crear-cuenta' && contrasenaCampo.value !== repetirContrasenaCampo?.value)
+      "
+    >
       {{ modo() === 'entrar' ? 'Entrar' : 'Crear cuenta' }}
     </button>
   </form>
