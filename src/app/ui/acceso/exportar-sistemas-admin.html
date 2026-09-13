@@ -1,5 +1,5 @@
 <div class="app-exportar-sistemas">
-  <div class="app-lista-blanca app-exportar-sistemas__panel">
+  <div class="app-exportar-sistemas__panel">
     <h2>Exportar sistema</h2>
 
     <select
@@ -15,7 +15,7 @@
     </select>
 
     @if (sistemasDelEquipoExportar().length === 0) {
-      <p class="app-lista-blanca__vacio">Este equipo no tiene ningún sistema.</p>
+      <p class="app-exportar-sistemas__vacio">Este equipo no tiene ningún sistema.</p>
     } @else {
       <div class="app-exportar-sistemas__lista" role="radiogroup" aria-label="Sistema a exportar">
         @for (sistema of sistemasDelEquipoExportar(); track sistema.id) {
@@ -50,7 +50,7 @@
     </button>
   </div>
 
-  <div class="app-lista-blanca app-exportar-sistemas__panel">
+  <div class="app-exportar-sistemas__panel">
     <h2>Importar sistema</h2>
 
     <label class="app-exportar-sistemas__campo-fichero">
@@ -89,7 +89,7 @@
     </select>
 
     @if (errorImportar(); as error) {
-      <p class="app-lista-blanca__error" role="alert">{{ error }}</p>
+      <p class="app-exportar-sistemas__error" role="alert">{{ error }}</p>
     }
 
     @if (conflictoImportar(); as conflicto) {
