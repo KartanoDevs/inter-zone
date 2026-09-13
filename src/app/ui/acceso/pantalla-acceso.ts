@@ -18,6 +18,7 @@ export class PantallaAcceso {
   protected readonly store = inject(AccesoStore);
   protected readonly modo = signal<Modo>('entrar');
   protected readonly enviando = signal(false);
+  protected readonly repetirContrasena = signal('');
 
   protected cambiarModo(modo: Modo): void {
     this.modo.set(modo);

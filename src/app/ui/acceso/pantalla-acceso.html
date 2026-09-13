@@ -2,8 +2,7 @@
   <form
     class="app-acceso__tarjeta"
     (submit)="
-      $event.preventDefault();
-      enviar(emailCampo.value, contrasenaCampo.value, repetirContrasenaCampo?.value)
+      $event.preventDefault(); enviar(emailCampo.value, contrasenaCampo.value, repetirContrasena())
     "
   >
     <h1 class="app-acceso__titulo">InterZone</h1>
@@ -47,15 +46,16 @@
       <label class="app-acceso__campo">
         Repite la contraseña
         <input
-          #repetirContrasenaCampo
           type="password"
           required
           autocomplete="new-password"
           minlength="8"
+          [value]="repetirContrasena()"
+          (input)="repetirContrasena.set($any($event.target).value)"
         />
       </label>
 
-      @if (repetirContrasenaCampo.value && contrasenaCampo.value !== repetirContrasenaCampo.value) {
+      @if (repetirContrasena() && contrasenaCampo.value !== repetirContrasena()) {
         <p class="app-acceso__error" role="alert">Las contraseñas no coinciden.</p>
       }
 
@@ -72,8 +72,7 @@
       type="submit"
       class="app-boton app-boton--primario"
       [disabled]="
-        enviando() ||
-        (modo() === 'crear-cuenta' && contrasenaCampo.value !== repetirContrasenaCampo?.value)
+        enviando() || (modo() === 'crear-cuenta' && contrasenaCampo.value !== repetirContrasena())
       "
     >
       {{ modo() === 'entrar' ? 'Entrar' : 'Crear cuenta' }}
