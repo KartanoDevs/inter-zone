@@ -169,3 +169,77 @@ export function cambiarSustitutoLibero(
   };
   return { ...sistema, plantilla: nuevaPlantilla, formaciones };
 }
+
+/**
+ * Construye el sistema a guardar al importar un JSON externo (spec 071): mismo contenido que
+ * `sistemaImportado`, pero con un `id` propio (nunca el que traía el fichero, aunque coincida
+ * con uno ya existente — E4), en el equipo elegido por quien importa (nunca el `equipoId` del
+ * JSON — E7) y siempre en `'borrador'` (nunca hereda `estado`, igual que `clonarSistema`). Si
+ * `nombreNuevo` no se indica, se usa el nombre del sistema importado. `null` si el nombre
+ * resultante choca en `(equipoId, tipo)` — la unicidad se comprueba en el destino, nunca en el
+ * origen del JSON.
+ */
+export function importarSistema(
+  sistemaImportado: Sistema,
+  id: string,
+  equipoId: EquipoId,
+  existentes: readonly Sistema[],
+  nombreNuevo?: string,
+): Sistema | null {
+  const nombre = nombreNuevo ?? sistemaImportado.nombre;
+  if (
+    !nombreValido(nombre) ||
+    colisiona(existentes, null, equipoId, sistemaImportado.tipo, nombre)
+  ) {
+    return null;
+  }
+  const { estado: _estado, id: _idOriginal, ...resto } = sistemaImportado;
+  return { ...resto, id, nombre, equipoId };
+}
+
+/**
+ * Serializa un sistema para exportarlo como fichero (spec 071): el mismo `Sistema` de dominio
+ * tal cual, sin metadatos — nunca lleva fecha (ADR 0012), y `id`/`estado` los reinterpreta quien
+ * importa, no quien exporta. Con indentación para que un JSON abierto o pegado a mano se lea.
+ */
+export function serializarSistema(sistema: Sistema): string {
+  return JSON.stringify(sistema, null, 2);
+}
+
+/**
+ * Parsea un sistema importado (spec 071). Solo comprueba que están los campos obligatorios de
+ * `Sistema` con el tipo esperado — no las reglas de voleibol del roster, que ya comprueba
+ * `crear`/`validarFormacion` cuando corresponda. `null` si el texto no es JSON o le faltan
+ * campos; nunca lanza.
+ */
+export function parsearSistemaImportado(json: string): Sistema | null {
+  let datos: unknown;
+  try {
+    datos = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!esSistemaValido(datos)) {
+    return null;
+  }
+  return datos;
+}
+
+function esSistemaValido(datos: unknown): datos is Sistema {
+  if (typeof datos !== 'object' || datos === null) {
+    return false;
+  }
+  const d = datos as Record<string, unknown>;
+  return (
+    typeof d['id'] === 'string' &&
+    typeof d['nombre'] === 'string' &&
+    (d['tipo'] === 'recepcion' || d['tipo'] === 'defensa') &&
+    (d['equipoId'] === 'masculino' || d['equipoId'] === 'femenino') &&
+    typeof d['plantilla'] === 'object' &&
+    d['plantilla'] !== null &&
+    typeof d['formaciones'] === 'object' &&
+    d['formaciones'] !== null &&
+    typeof d['explicacionesRotacion'] === 'object' &&
+    d['explicacionesRotacion'] !== null
+  );
+}

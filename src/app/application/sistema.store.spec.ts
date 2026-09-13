@@ -2249,4 +2249,83 @@ describe('SistemaStore', () => {
       expect(store.catalogo().some((s) => s.id === idNuevo)).toBe(true);
     });
   });
+
+  describe('exportar / importar (spec 071)', () => {
+    it('071-E11: exportar no depende del equipo o sistema activo en el editor', async () => {
+      const activo = sistemaBase('r1', 'Activo', 'masculino');
+      const otro = sistemaBase('r2', 'Otro', 'femenino');
+      const store = new SistemaStore(new RepositorioFake([activo, otro]));
+      await store.cargar();
+
+      const json = store.exportar('r2');
+
+      expect(json).not.toBeNull();
+      expect(JSON.parse(json!).nombre).toBe('Otro');
+      expect(store.sistemaActivoId()).toBe('r1');
+      expect(store.equipoActivo()).toBe('masculino');
+    });
+
+    it('071-E3/E4: importar un JSON válido crea un sistema nuevo, con id propio y en borrador', async () => {
+      const repositorio = new RepositorioFake([]);
+      const store = new SistemaStore(repositorio);
+      await store.cargar();
+      const original = { ...sistemaBase('externo-1', 'Importado'), estado: 'validado' as const };
+      const json = JSON.stringify(original);
+
+      const resultado = await store.importar(json, 'femenino');
+
+      expect(resultado).toBe('ok');
+      const creado = store.sistemas().find((s) => s.nombre === 'Importado');
+      expect(creado).toBeDefined();
+      expect(creado!.id).not.toBe('externo-1');
+      expect(creado!.estado).toBeUndefined();
+      expect(creado!.equipoId).toBe('femenino');
+    });
+
+    it('071-E7: el equipo destino lo elige quien importa, no el que trae el JSON', async () => {
+      const store = new SistemaStore(new RepositorioFake([]));
+      await store.cargar();
+      const json = JSON.stringify(sistemaBase('externo-1', 'De masculino', 'masculino'));
+
+      await store.importar(json, 'femenino');
+
+      const creado = store.sistemas().find((s) => s.nombre === 'De masculino');
+      expect(creado!.equipoId).toBe('femenino');
+    });
+
+    it('071-E5: nombre duplicado en el equipo y tipo de destino da conflicto y no crea nada', async () => {
+      const existente = sistemaBase('r1', 'Recepción', 'femenino');
+      const store = new SistemaStore(new RepositorioFake([existente]));
+      await store.cargar();
+      const json = JSON.stringify(sistemaBase('externo-1', 'Recepción', 'masculino'));
+
+      const resultado = await store.importar(json, 'femenino');
+
+      expect(resultado).toBe('conflicto');
+      expect(store.sistemas().length).toBe(1);
+    });
+
+    it('071-E6: tras el conflicto, importar con un nombre nuevo crea el sistema', async () => {
+      const existente = sistemaBase('r1', 'Recepción', 'femenino');
+      const store = new SistemaStore(new RepositorioFake([existente]));
+      await store.cargar();
+      const json = JSON.stringify(sistemaBase('externo-1', 'Recepción', 'masculino'));
+      await store.importar(json, 'femenino');
+
+      const resultado = await store.importar(json, 'femenino', 'Recepción (importado)');
+
+      expect(resultado).toBe('ok');
+      expect(store.sistemas().some((s) => s.nombre === 'Recepción (importado)')).toBe(true);
+    });
+
+    it('071-E8: un JSON inválido no crea nada', async () => {
+      const store = new SistemaStore(new RepositorioFake([]));
+      await store.cargar();
+
+      const resultado = await store.importar('esto no es JSON', 'masculino');
+
+      expect(resultado).toBe('invalido');
+      expect(store.sistemas().length).toBe(0);
+    });
+  });
 });

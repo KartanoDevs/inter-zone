@@ -30,8 +30,11 @@ import {
   crearSistema,
   describirSistema,
   estadoDe,
+  importarSistema,
   ordenarCatalogo,
+  parsearSistemaImportado,
   renombrarSistema,
+  serializarSistema,
 } from '../domain/catalogo-sistemas';
 import { jugadoresEnPista } from '../domain/rotacion';
 import { situacionTrasCambioDeCaso, situacionesDe } from '../domain/defensa';
@@ -656,6 +659,50 @@ export class SistemaStore {
       },
       () => void this.clonar(nombre, equiposId),
     );
+  }
+
+  /** Exporta un sistema del catálogo (spec 071), por id — nunca depende del sistema o el equipo
+   * activo en el editor (E11): el admin puede exportar cualquiera sin cambiar lo que tiene
+   * abierto. `null` si `id` no existe. La UI decide qué hacer con el JSON (descargarlo). */
+  exportar(id: string): string | null {
+    const sistema = this.sistemas().find((s) => s.id === id);
+    return sistema ? serializarSistema(sistema) : null;
+  }
+
+  /**
+   * Importa un sistema desde un JSON exportado (spec 071): siempre crea un sistema nuevo, nunca
+   * sobrescribe uno existente. `equipoId` lo elige quien importa, nunca el que trae el JSON
+   * (E7). Si el nombre resultante choca en `(equipoId, tipo)`, no crea nada y devuelve
+   * `'conflicto'` — la UI puede reintentar con `nombreNuevo` (E5/E6). `'invalido'` si el texto
+   * no es un sistema serializado válido (E8); nunca lanza.
+   */
+  async importar(
+    json: string,
+    equipoId: EquipoId,
+    nombreNuevo?: string,
+  ): Promise<'ok' | 'conflicto' | 'invalido'> {
+    const sistemaImportado = parsearSistemaImportado(json);
+    if (!sistemaImportado) {
+      return 'invalido';
+    }
+    const nuevo = importarSistema(
+      sistemaImportado,
+      crypto.randomUUID(),
+      equipoId,
+      this.sistemas(),
+      nombreNuevo,
+    );
+    if (!nuevo) {
+      return 'conflicto';
+    }
+    await this.ejecutarEscritura(
+      async () => {
+        await this.repositorio.crear(nuevo);
+        this.sistemas.update((lista) => [...lista, nuevo]);
+      },
+      () => void this.importar(json, equipoId, nombreNuevo),
+    );
+    return 'ok';
   }
 
   async renombrarActivo(nombre: string): Promise<boolean> {

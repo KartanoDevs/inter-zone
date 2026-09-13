@@ -1,0 +1,186 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.app-exportar-sistemas {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (min-width: 1024px) {
+  .app-exportar-sistemas {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .app-exportar-sistemas__panel {
+    flex: 1 1 0;
+    height: auto;
+    overflow-y: visible;
+  }
+}
+
+.app-exportar-sistemas select {
+  min-height: 44px;
+  padding: 0 10px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 16px;
+}
+
+.app-exportar-sistemas__lista {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.app-exportar-sistemas__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.app-exportar-sistemas__item:last-child {
+  border-bottom: none;
+}
+
+.app-exportar-sistemas__item:hover {
+  background: var(--bg-card-alt);
+}
+
+.app-exportar-sistemas__item-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.app-exportar-sistemas__badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--neon-cyan);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-exportar-sistemas__badge--validado {
+  background: rgba(57, 255, 20, 0.14);
+  color: var(--neon-green);
+}
+
+.app-exportar-sistemas__campo-fichero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.app-exportar-sistemas__campo-fichero input[type='file'] {
+  min-height: 44px;
+  padding: 8px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-main);
+  font: inherit;
+}
+
+.app-exportar-sistemas__separador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted-alt);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.app-exportar-sistemas__separador::before,
+.app-exportar-sistemas__separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-exportar-sistemas__textarea {
+  min-height: 100px;
+  padding: 10px 12px;
+  resize: vertical;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+}
+
+.app-exportar-sistemas__detectado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.app-exportar-sistemas__conflicto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(255, 170, 0, 0.1);
+  border: 1px solid rgba(255, 170, 0, 0.35);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.app-exportar-sistemas__conflicto p {
+  margin: 0;
+}
+
+.app-exportar-sistemas__campo-nombre {
+  min-height: 44px;
+  padding: 0 10px;
+  background: var(--bg-card-alt);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 16px;
+}
+
+.app-exportar-sistemas__conflicto-acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

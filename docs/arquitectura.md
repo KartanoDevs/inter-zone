@@ -122,7 +122,12 @@ Modelos y reglas. Aquí vive el voleibol.
   `crearSistema`/`renombrarSistema`), `estadoDe`
   (spec 051: `Sistema.estado` es opcional, ausente equivale a `'borrador'`),
   `validarSistema`/`invalidarSistema` (cambian ese estado; quién puede hacerlo es
-  `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero).
+  `puedeGestionarEquipo` en `acceso.ts`, no algo que decida este fichero),
+  `serializarSistema`/`parsearSistemaImportado` (spec 071: exportar un sistema a JSON y validar
+  la forma mínima de uno importado — sin fecha, ADR 0012; sin reglas de roster, eso sigue siendo
+  cosa de `crear`/`validarFormacion`), `importarSistema` (construye el sistema final a guardar al
+  importar: id propio, equipo elegido por quien importa, siempre en `'borrador'`, mismo patrón
+  que `clonarSistema` pero partiendo de un `Sistema` ya parseado en vez de uno del catálogo).
 - `sistema-recepcion.ts` — `guardarFormacion`, `sistemaCompleto`, `borrarRotacion`,
   `explicarRotacion`, `explicarJugador`.
 - `examen.ts` — reglas del examen sobre un sistema de recepción (specs 012–013, ajustadas por la
@@ -324,7 +329,12 @@ Angular, las tres testeables sin `TestBed`.
   activo, para que el sistema recién creado se vea de inmediato), `clonar`
   (spec 026, mismo patrón que `crear` pero a partir del sistema activo; spec 063: recibe
   `equiposId` como `crear` y clona a uno o a los dos equipos, todo o nada; queda activa la copia
-  del equipo del original si estaba marcado, si no la del primero marcado), `renombrarActivo`,
+  del equipo del original si estaba marcado, si no la del primero marcado), `exportar` (spec
+  071: serializa un sistema del catálogo por id, nunca el activo — no toca ni depende de
+  `sistemaActivoId`/`equipoActivo`), `importar` (spec 071: crea un sistema nuevo a partir de un
+  JSON externo, en el equipo que elige quien importa, `'ok' | 'conflicto' | 'invalido'` según si
+  el JSON es válido y si el nombre resultante choca en `(equipoId, tipo)` — nunca sobrescribe),
+  `renombrarActivo`,
   `borrar`, `seleccionarJugador` (toggle: toca a la misma ficha deselecciona, a otra cambia el
   foco — spec 010), `enfocarJugador` (selecciona sin toggle, spec 027: se usa al terminar un
   arrastre que coloca una ficha), `deseleccionarJugador` (spec 027: pinchar el fondo cuando no
@@ -398,7 +408,12 @@ Adaptadores hacia el mundo exterior.
   —que registra la insignia al terminar un examen— e `InsigniasStore` —que las lista en la
   vitrina—; antes se instanciaba inline dentro de la factoría de `ExamenStore`, sin forma de que
   nadie más lo tomara.
-- Exportadores (PNG, JSON): todavía no existen, llegan con la spec 016.
+- Exportador de JSON: no es un adaptador de `infrastructure/`, sino la combinación de
+  `domain/catalogo-sistemas.serializarSistema`/`parsearSistemaImportado` con
+  `SistemaStore.exportar`/`importar` (spec 071) — no hay E/S propia que adaptar, exportar es
+  descargar un `Blob` en el navegador e importar reutiliza `SistemaRepository.crear`.
+  Exportador de PNG: todavía no existe, sigue siendo el resto pendiente del "Paso 6" de la hoja
+  de ruta.
 
 ### `ui/`
 
@@ -416,8 +431,13 @@ Componentes standalone de Angular, prefijo `app-` (el que fija `angular.json`).
   (spec 054): formulario de invitar (correo, rol, equipo si no es `admin`) más tabla de
   invitaciones pendientes con botón de retirar tras confirmar en `DialogoConfirmacion`
   (`ui/comun/`) — solo visible en la pestaña "Lista blanca", que `Tablero` solo muestra si
-  `esAdmin()`. Ninguno lleva test de componente, como el resto de `ui/` — la lógica que importa
-  ya está probada en `AccesoStore`/`ListaBlancaStore`/`domain/insignias`.
+  `esAdmin()`. `ExportarSistemasAdmin` (spec 071): tercer bloque de la misma ventana de admin,
+  bajo lista blanca y cuentas — exportar un sistema del catálogo a JSON (descarga con `Blob` +
+  `URL.createObjectURL`, patrón nuevo en el proyecto) e importar uno desde fichero o texto
+  pegado, con equipo destino explícito y aviso de conflicto de nombre (renombrar o cancelar,
+  nunca sobrescribir). Ninguno lleva test de componente, como el resto de `ui/` — la lógica que
+  importa ya está probada en
+  `AccesoStore`/`ListaBlancaStore`/`domain/insignias`/`SistemaStore`/`domain/catalogo-sistemas`.
 - `ui/pista/` — `Pista` (el SVG, `viewBox` en metros, `puntoDesde`/`contiene`/captura de
   puntero) y `FichaJugador` (`g[appFicha]`, pinta la etiqueta y el punto ya derivados). En
   defensa, también pinta la ficha "A" del atacante en el punto fijo de la situación activa

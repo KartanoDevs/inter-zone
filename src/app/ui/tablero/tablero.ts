@@ -42,6 +42,7 @@ import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { ExamenTablero } from '../examen/examen-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
 import { ListaBlancaAdmin } from '../acceso/lista-blanca-admin';
+import { ExportarSistemasAdmin } from '../acceso/exportar-sistemas-admin';
 import { jugadoresEnPista, ORDEN_ROTACIONES } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
 import { situacionMasCercana } from '../../domain/defensa';
@@ -209,6 +210,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     ExamenTablero,
     PerfilCuenta,
     ListaBlancaAdmin,
+    ExportarSistemasAdmin,
   ],
   templateUrl: './tablero.html',
   styleUrl: './tablero.css',

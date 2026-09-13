@@ -1,0 +1,133 @@
+<div class="app-exportar-sistemas">
+  <div class="app-lista-blanca app-exportar-sistemas__panel">
+    <h2>Exportar sistema</h2>
+
+    <select
+      #equipoExportarCampo
+      aria-label="Equipo a exportar"
+      (change)="seleccionarEquipoExportar(equipoExportarCampo.value)"
+    >
+      @for (equipo of equipos; track equipo) {
+        <option [value]="equipo" [selected]="equipo === equipoExportar()">
+          {{ nombreEquipo[equipo] }}
+        </option>
+      }
+    </select>
+
+    @if (sistemasDelEquipoExportar().length === 0) {
+      <p class="app-lista-blanca__vacio">Este equipo no tiene ningún sistema.</p>
+    } @else {
+      <div class="app-exportar-sistemas__lista" role="radiogroup" aria-label="Sistema a exportar">
+        @for (sistema of sistemasDelEquipoExportar(); track sistema.id) {
+          <label class="app-exportar-sistemas__item">
+            <input
+              type="radio"
+              name="sistema-exportar"
+              [value]="sistema.id"
+              [checked]="sistema.id === sistemaExportarId()"
+              (change)="seleccionarSistemaExportar(sistema.id)"
+            />
+            <span class="app-exportar-sistemas__item-nombre">{{ sistema.nombre }}</span>
+            <span class="app-exportar-sistemas__badge">{{ nombreTipo[sistema.tipo] }}</span>
+            <span
+              class="app-exportar-sistemas__badge"
+              [class.app-exportar-sistemas__badge--validado]="sistema.estado === 'validado'"
+            >
+              {{ sistema.estado === 'validado' ? 'Validado' : 'Borrador' }}
+            </span>
+          </label>
+        }
+      </div>
+    }
+
+    <button
+      type="button"
+      class="app-boton app-boton--primario"
+      [disabled]="!sistemaExportarId()"
+      (click)="exportar()"
+    >
+      Descargar JSON
+    </button>
+  </div>
+
+  <div class="app-lista-blanca app-exportar-sistemas__panel">
+    <h2>Importar sistema</h2>
+
+    <label class="app-exportar-sistemas__campo-fichero">
+      Elegir fichero .json
+      <input type="file" accept=".json,application/json" (change)="cargarFichero($event.target)" />
+    </label>
+
+    <div class="app-exportar-sistemas__separador">o pega el JSON</div>
+
+    <textarea
+      #textoImportarCampo
+      class="app-exportar-sistemas__textarea"
+      rows="4"
+      placeholder="Pega aquí el contenido del sistema exportado…"
+      aria-label="JSON del sistema a importar"
+      (input)="actualizarTexto(textoImportarCampo.value)"
+      >{{ textoImportar() }}</textarea>
+
+    @if (sistemaDetectado(); as detectado) {
+      <div class="app-exportar-sistemas__detectado">
+        <span class="app-exportar-sistemas__badge">{{ nombreTipo[detectado.tipo] }}</span>
+        <strong>{{ detectado.nombre }}</strong>
+      </div>
+    }
+
+    <select
+      #equipoImportarCampo
+      aria-label="Equipo destino"
+      (change)="seleccionarEquipoImportar(equipoImportarCampo.value)"
+    >
+      @for (equipo of equipos; track equipo) {
+        <option [value]="equipo" [selected]="equipo === equipoImportar()">
+          {{ nombreEquipo[equipo] }}
+        </option>
+      }
+    </select>
+
+    @if (errorImportar(); as error) {
+      <p class="app-lista-blanca__error" role="alert">{{ error }}</p>
+    }
+
+    @if (conflictoImportar(); as conflicto) {
+      <div class="app-exportar-sistemas__conflicto" role="alert">
+        <p>Ya existe un sistema con ese nombre en ese equipo.</p>
+        <input
+          #nombreNuevoCampo
+          type="text"
+          class="app-exportar-sistemas__campo-nombre"
+          [value]="conflicto.nombreSugerido"
+          aria-label="Nuevo nombre para el sistema importado"
+        />
+        <div class="app-exportar-sistemas__conflicto-acciones">
+          <button
+            type="button"
+            class="app-boton app-boton--secundario"
+            (click)="cancelarConflicto()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="app-boton app-boton--primario"
+            (click)="importar(nombreNuevoCampo.value)"
+          >
+            Usar este nombre
+          </button>
+        </div>
+      </div>
+    } @else {
+      <button
+        type="button"
+        class="app-boton app-boton--primario"
+        [disabled]="!textoImportar().trim() || importando()"
+        (click)="importar()"
+      >
+        Importar
+      </button>
+    }
+  </div>
+</div>

@@ -9,7 +9,9 @@ import {
   estadoDe,
   invalidarSistema,
   ordenarCatalogo,
+  parsearSistemaImportado,
   renombrarSistema,
+  serializarSistema,
   validarSistema,
 } from './catalogo-sistemas';
 
@@ -602,5 +604,68 @@ describe('validarSistema / invalidarSistema (spec 051)', () => {
     const resultado = invalidarSistema(validado);
 
     expect(estadoDe(resultado)).toBe('borrador');
+  });
+});
+
+describe('serializarSistema / parsearSistemaImportado', () => {
+  it('071-E1: exportar e importar un sistema con líbero conserva su contenido exacto', () => {
+    const original: Sistema = {
+      ...sistemaConLibero('s1', '5-1 con líbero'),
+      descripcion: 'Sistema de referencia',
+      explicacionesRotacion: { 1: 'Explicación de R1' },
+    };
+
+    const json = serializarSistema(original);
+    const importado = parsearSistemaImportado(json);
+
+    expect(importado).toEqual(original);
+  });
+
+  it('071-E2: exportar e importar un sistema de defensa conserva variantes, desplazamiento de sombra y celdas de finta en sus tres estados', () => {
+    const original: Sistema = {
+      id: 's-defensa',
+      nombre: 'Defensa base',
+      tipo: 'defensa',
+      equipoId: 'masculino',
+      plantilla: plantilla(),
+      formaciones: {},
+      explicacionesRotacion: {},
+      defensas: [
+        {
+          caso: 'delantero',
+          situacion: 'z4',
+          bloqueadores: 1,
+          explicacion: 'Variante de referencia',
+          desplazamientoSombra: { x: 0.3, y: -0.2 },
+          formacion: [
+            { puesto: 1, punto: { x: 1, y: 1 } }, // celdas nunca tocadas: undefined
+            { puesto: 2, punto: { x: 2, y: 1 }, celdas: [], celdasFinta: [] }, // vaciadas a propósito
+            {
+              puesto: 3,
+              punto: { x: 3, y: 1 },
+              celdas: [{ fila: 0, columna: 0 }],
+              celdasFinta: [{ fila: 1, columna: 1 }],
+            },
+            { puesto: 4, punto: { x: 4, y: 1 } },
+            { puesto: 5, punto: { x: 5, y: 1 } },
+            { puesto: 6, punto: { x: 6, y: 1 } },
+          ],
+        },
+      ],
+    };
+
+    const json = serializarSistema(original);
+    const importado = parsearSistemaImportado(json);
+
+    expect(importado).toEqual(original);
+  });
+
+  it('071-E8: un JSON que no es un sistema válido no se importa', () => {
+    expect(parsearSistemaImportado('esto no es JSON')).toBeNull();
+    expect(parsearSistemaImportado('{}')).toBeNull();
+    expect(parsearSistemaImportado('{"nombre": "sin nada más"}')).toBeNull();
+    expect(
+      parsearSistemaImportado(JSON.stringify({ ...sistema('s1', 'x'), plantilla: undefined })),
+    ).toBeNull();
   });
 });
