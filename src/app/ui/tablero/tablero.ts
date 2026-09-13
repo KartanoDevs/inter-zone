@@ -42,6 +42,7 @@ import { TeoriaTablero } from '../teoria/teoria-tablero';
 import { ExamenTablero } from '../examen/examen-tablero';
 import { PerfilCuenta } from '../acceso/perfil-cuenta';
 import { ListaBlancaAdmin } from '../acceso/lista-blanca-admin';
+import { CuentasAdmin } from '../acceso/cuentas-admin';
 import { ExportarSistemasAdmin } from '../acceso/exportar-sistemas-admin';
 import { jugadoresEnPista, ORDEN_ROTACIONES } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
@@ -108,7 +109,8 @@ const RETARDO_ARRASTRE_MS = 150;
 
 type DialogoSistemaAbierto = 'crear' | 'editar' | 'clonar' | null;
 
-type Ventana = 'editor' | 'teoria' | 'examen' | 'cuenta' | 'admin';
+type Ventana =
+  'editor' | 'teoria' | 'examen' | 'cuenta' | 'lista-blanca' | 'cuentas' | 'exportar-sistemas';
 
 type PestanaTablero = 'banquillo' | 'ensenanza' | 'pintado' | 'ajustes';
 
@@ -210,6 +212,7 @@ function itemsDe(items: readonly Infraccion[]): ItemValidacion[] {
     ExamenTablero,
     PerfilCuenta,
     ListaBlancaAdmin,
+    CuentasAdmin,
     ExportarSistemasAdmin,
   ],
   templateUrl: './tablero.html',

@@ -1,0 +1,50 @@
+<div class="app-lista-blanca">
+  <h2>Cuentas</h2>
+
+  @if (usuarios.error(); as error) {
+    <p class="app-lista-blanca__error" role="alert">{{ error }}</p>
+  }
+
+  @if (usuarios.usuarios().length === 0) {
+    <p class="app-lista-blanca__vacio">Todavía no hay ninguna cuenta.</p>
+  } @else {
+    <table class="app-lista-blanca__tabla">
+      <thead>
+        <tr>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (usuario of usuarios.usuarios(); track usuario.id) {
+          <tr>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.esAdmin ? 'Admin' : 'Cuenta' }}</td>
+            <td>
+              <button
+                type="button"
+                class="app-boton app-boton--secundario"
+                (click)="pedirBorrado(usuario)"
+              >
+                Borrar
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (borrando(); as usuario) {
+  <app-dialogo-confirmacion
+    titulo="Borrar cuenta"
+    [mensaje]="
+      'Esto borra la cuenta de «' + usuario.email + '» de forma permanente. No se puede deshacer.'
+    "
+    textoConfirmar="Borrar"
+    (confirmar)="confirmarBorrado()"
+    (cancelar)="cancelarBorrado()"
+  ></app-dialogo-confirmacion>
+}

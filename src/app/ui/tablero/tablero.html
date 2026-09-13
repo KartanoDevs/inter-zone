@@ -60,7 +60,14 @@
       <div class="app-tablero__dial-admin">
         <button
           type="button"
-          [attr.aria-current]="ventana() === 'editor' || ventana() === 'admin' ? 'page' : null"
+          [attr.aria-current]="
+            ventana() === 'editor' ||
+            ventana() === 'lista-blanca' ||
+            ventana() === 'cuentas' ||
+            ventana() === 'exportar-sistemas'
+              ? 'page'
+              : null
+          "
           [attr.aria-expanded]="dialAdminAbierto()"
           (click)="alternarDialAdmin()"
         >
@@ -90,12 +97,31 @@
                 Edición
               </button>
             }
-            <button type="button" role="menuitem" (click)="irAVentanaDesdeDial('admin')">
+            <button type="button" role="menuitem" (click)="irAVentanaDesdeDial('lista-blanca')">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 3.5 19.5 7v6c0 4.2-3.2 7-7.5 8.5C8.2 20 5 17.2 5 13V7z" />
                 <path d="m9 12 2 2 4-4" />
               </svg>
               Lista blanca
+            </button>
+            <button type="button" role="menuitem" (click)="irAVentanaDesdeDial('cuentas')">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8.5" r="3.2" />
+                <path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+              </svg>
+              Cuentas
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              (click)="irAVentanaDesdeDial('exportar-sistemas')"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3.5v11" />
+                <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+                <path d="M5 17.5v2a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-2" />
+              </svg>
+              Exportar sistemas
             </button>
           </div>
         }
@@ -399,8 +425,15 @@
     </div>
   }
 
-  @if (ventana() === 'admin' && esAdmin()) {
+  @if (ventana() === 'lista-blanca' && esAdmin()) {
     <app-lista-blanca-admin></app-lista-blanca-admin>
+  }
+
+  @if (ventana() === 'cuentas' && esAdmin()) {
+    <app-cuentas-admin></app-cuentas-admin>
+  }
+
+  @if (ventana() === 'exportar-sistemas' && esAdmin()) {
     <app-exportar-sistemas-admin></app-exportar-sistemas-admin>
   }
 
