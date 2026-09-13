@@ -277,7 +277,7 @@
 }
 
 .app-examen__chip--falta::before {
-  background: rgba(255, 0, 85, 0.12);
+  background: var(--bg-card);
 }
 
 .app-examen__chip--falta .app-examen__chip-r {
