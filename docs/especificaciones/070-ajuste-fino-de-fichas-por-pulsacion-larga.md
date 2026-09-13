@@ -265,3 +265,42 @@ entrada nueva para `domain/ajuste-fino.ts` y una mención de `gesto-tactil.ts`,
 `CruzAjusteFino` y `Pista.puntoAPantalla` en sus listados de `ui/comun/` y `ui/pista/`—, no una
 reescritura: esta spec no cambia qué hace la app en producción a ese nivel, solo añade
 ficheros a capas que ya existían. `README.md` no necesita tocarse.
+
+## Retirada del ajuste fino por pulsación larga (2026-09-13)
+
+Esta spec se fusionó a `develop` y se probó en uso real. El veredicto: **el popup de ajuste
+fino no convenció** — decisión del usuario, no un defecto de lo implementado. Se retira en la
+rama `fix/quita-popup-ajuste-fino`. La tabla de verificación de arriba deja de aplicar a todo
+lo que se lista como retirado abajo — nunca se va a rellenar, porque el código ya no existe.
+
+**Se retira por completo** (E1, E4 en su parte de pulsación larga, E5, E6, E7, E8, E9, E10, y
+la parte de E11 sobre el ajuste fino en sí):
+
+- La cruz de flechas y su apertura por pulsación larga, en Editor y en Examen.
+- Ficheros borrados enteros: `domain/ajuste-fino.ts` (+ `.spec.ts`),
+  `ui/comun/cruz-ajuste-fino.ts`/`.html`/`.css`.
+- `Pista.puntoAPantalla()`: solo existía para anclar la cruz sobre la ficha: sin la cruz, nada
+  más la necesita.
+- La selección de fichas en Examen (`seleccionadaId`) y su reflejo visual
+  (`FichaVista.seleccionada` vuelve a ser siempre `false` ahí, como antes de esta spec).
+
+**Se conserva, porque mejoraba el arrastre por sí sola, sin depender del popup** (la parte de
+E2/E3/E11 sobre distinguir toque de arrastre, no sobre seleccionar ni abrir nada):
+
+- En Examen, la distinción toque/arrastre por umbral de 8 px
+  (`UMBRAL_ARRASTRE_PX`/`distanciaPantalla`, `ui/comun/gesto-tactil.ts`, compartido con el
+  Editor desde esta spec): un tembleque del dedo al agarrar una ficha ya no la desplaza sin
+  querer. Antes de esta spec, Examen arrastraba al primer píxel de movimiento; ahora hace
+  falta superar ese umbral, igual que el Editor desde la spec 010 — sin selección, sin toggle,
+  sin nada que recordar entre toques: un toque corto sin desplazamiento simplemente no mueve
+  la ficha.
+- El Editor (`Tablero`) vuelve exactamente al comportamiento que tenía antes de esta spec: no
+  tenía ningún cambio de arrastre propio que conservar, solo la cruz añadida encima, que
+  desaparece entera.
+
+**Verificación de la retirada:** `npm test` (533 tests, 32 ficheros — ya sin los tres de
+E5-E7), `npm run typecheck` y `ng build --configuration production` en verde. Sigue sin
+probarse en un dispositivo real, mismo motivo que al cerrar esta spec la primera vez (sin
+Docker en el entorno de implementación). Lo que queda por comprobar a mano ahora es lo
+contrario que antes: que el popup ya no aparece en ningún caso, y que en Examen un toque
+corto y tembloroso ya no desplaza la ficha por accidente.

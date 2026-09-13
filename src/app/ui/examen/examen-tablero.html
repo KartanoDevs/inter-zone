@@ -50,14 +50,6 @@
       (fichaAgarrada)="onAgarrarFicha($event)"
       (fondoAgarrado)="onAgarrarFondo($event)"
     ></app-pista>
-    @if (posicionAjusteFino(); as posicion) {
-      <app-cruz-ajuste-fino
-        [x]="posicion.x"
-        [y]="posicion.y"
-        (mover)="moverAjusteFino($event)"
-        (cerrar)="cerrarAjusteFino()"
-      ></app-cruz-ajuste-fino>
-    }
     <app-panel-validacion
       [completo]="rotacionValidada()"
       [infracciones]="infraccionesRotacion()"

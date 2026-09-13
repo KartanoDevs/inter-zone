@@ -257,22 +257,6 @@ export class Pista {
     return { x: transformado.x, y: transformado.y };
   }
 
-  /** Inversa de `puntoDesde` (spec 070): dónde cae en pantalla un punto de la pista, en las
-   * mismas coordenadas que `PointerEvent.clientX/clientY` — para anclar un overlay HTML
-   * (`position: fixed`) sobre una ficha sin que nadie fuera de `Pista` calcule el `viewBox`. */
-  puntoAPantalla(punto: Punto): { x: number; y: number } {
-    const svg = this.svgRef().nativeElement;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) {
-      return { x: 0, y: 0 };
-    }
-    const puntoSvg = svg.createSVGPoint();
-    puntoSvg.x = punto.x;
-    puntoSvg.y = punto.y;
-    const transformado = puntoSvg.matrixTransform(ctm);
-    return { x: transformado.x, y: transformado.y };
-  }
-
   /**
    * Captura sobre el propio `<svg>`, nunca sobre la ficha: `Tablero` reordena las fichas
    * en el DOM al agarrarlas, y capturar sobre un nodo que se mueve es frágil.
