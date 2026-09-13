@@ -186,6 +186,12 @@
   cursor: pointer;
 }
 
+.app-tablero__dial-admin-menu button svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
 .app-tablero__dial-admin-menu button:hover,
 .app-tablero__dial-admin-menu button:focus-visible {
   background: rgba(170, 136, 255, 0.14);

@@ -195,9 +195,12 @@
   color: var(--text-muted);
 }
 
+/* Grid fijo de 3 columnas (spec al margen: mejora visual tras feedback): con `flex-wrap` un
+   número impar de chips por fila dejaba el último de la fila siguiente estirado a todo el
+   ancho. 6 rotaciones caben siempre en 3×2, en cualquier móvil, sin ese hueco huérfano. */
 .app-examen__desglose-tira {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-1);
 }
 
@@ -207,7 +210,6 @@
   --facet: 8px;
   position: relative;
   z-index: 0;
-  flex: 1 1 62px;
   min-height: 44px;
   display: flex;
   flex-direction: column;
