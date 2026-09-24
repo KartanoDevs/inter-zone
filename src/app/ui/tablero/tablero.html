@@ -207,6 +207,8 @@
             [mostrarRival]="esDefensa()"
             [casoActivo]="store.casoActivo()"
             [situacionActiva]="store.situacionActiva()"
+            [marcadorAtacante]="arrastreAtacante() ?? store.marcadorAtacanteEdicion()"
+            [marcadorCentral]="arrastreCentral() ?? store.marcadorCentralEdicion()"
             [mostrarZonas]="esDefensa()"
             [celdasVistaConjunto]="celdasVistaConjunto()"
             [celdasFintaVistaConjunto]="celdasFintaVistaConjunto()"
@@ -215,6 +217,7 @@
             [accionArrastre]="store.accionArrastre()"
             (fichaAgarrada)="onAgarrarFicha($event)"
             (rivalAgarrado)="onAgarrarRival($event)"
+            (centralAgarrado)="onAgarrarCentral($event)"
             (sombraAgarrada)="onAgarrarSombra($event)"
             (fondoAgarrado)="iniciarPintado($event)"
           ></app-pista>
@@ -293,6 +296,14 @@
               [pendientes]="pendientesChips()"
               (agarrar)="onAgarrarPaleta($event)"
             ></app-paleta-jugadores>
+            @if (esDefensa() && pendientesChipsRivales().length > 0) {
+              <!-- spec 074, E7: sección propia, sin mezclarse con el banquillo de puestos. -->
+              <h3 class="app-tablero__banquillo-rival-titulo">Rival</h3>
+              <app-paleta-jugadores
+                [pendientes]="pendientesChipsRivales()"
+                (agarrar)="onAgarrarPaleta($event)"
+              ></app-paleta-jugadores>
+            }
           }
           @case ('ensenanza') {
             <app-panel-ensenanza

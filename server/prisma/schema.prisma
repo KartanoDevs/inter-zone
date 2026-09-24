@@ -216,6 +216,14 @@ model formacion_defensa {
   /// nulos o ambos presentes — CHECK a mano, Prisma no expresa esa condición conjunta.
   sombra_dx    Float?
   sombra_dy    Float?
+  /// Punto exacto donde se soltó la ficha "A" del atacante (spec 072). Ambos nulos o ambos
+  /// presentes, mismo CHECK a mano que sombra_dx/sombra_dy.
+  atacante_x   Float?
+  atacante_y   Float?
+  /// Punto de la ficha del central rival (spec 073): referencia visual, sin efecto en el
+  /// cálculo de la defensa. Ambos nulos o ambos presentes, mismo CHECK a mano.
+  central_x    Float?
+  central_y    Float?
 
   sistema      sistema                @relation(fields: [sistema_id], references: [id], onDelete: Cascade)
   colocaciones colocacion_defensa[]

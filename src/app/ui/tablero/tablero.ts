@@ -500,6 +500,25 @@ export class Tablero {
       }));
   });
 
+  /** El banquillo de marcadores rivales (spec 074): el atacante y el central rival, cuando no
+   * tienen punto en la variante activa. Solo en defensa (E5) — mismo criterio que las fichas
+   * rivales del campo, que tampoco existen en recepción. Depende de la variante activa, no del
+   * sistema entero (E6): se recalcula solo con las signals de edición, igual que ya recarga
+   * `cambiarContexto()` al cambiar de situación o de bloqueadores. */
+  protected readonly pendientesChipsRivales = computed<readonly ChipJugador[]>(() => {
+    if (!this.esDefensa()) {
+      return [];
+    }
+    const chips: ChipJugador[] = [];
+    if (this.store.marcadorAtacanteEdicion() === null) {
+      chips.push({ id: '__rival__', etiqueta: 'Atacante' });
+    }
+    if (this.store.marcadorCentralEdicion() === null) {
+      chips.push({ id: '__central-rival__', etiqueta: 'Central rival' });
+    }
+    return chips;
+  });
+
   protected readonly estadosRotacion = computed<readonly EstadoRotacion[]>(() => {
     const sistema = this.store.sistemaActivo();
     if (!sistema) {
@@ -545,7 +564,9 @@ export class Tablero {
       return [];
     }
     const puntoAtacante =
-      this.arrastreAtacante() ?? PUNTO_POR_SITUACION[this.store.situacionActiva()];
+      this.arrastreAtacante() ??
+      this.store.marcadorAtacanteEdicion() ??
+      PUNTO_POR_SITUACION[this.store.situacionActiva()];
     if (!puntoAtacante) {
       return [];
     }
@@ -576,6 +597,10 @@ export class Tablero {
    * recalcula en vivo desde aquí, aunque la ficha en sí solo se mueve visualmente como fantasma
    * y encaja en su punto canónico al soltar — nunca se persiste una posición libre (ADR 0020). */
   protected readonly arrastreAtacante = signal<Punto | null>(null);
+
+  /** Punto bajo el puntero mientras se arrastra el central rival (spec 073): mismo criterio que
+   * `arrastreAtacante`, pero sin efecto sobre la sombra ni sobre la situación activa. */
+  protected readonly arrastreCentral = signal<Punto | null>(null);
 
   protected readonly opcionesSistema = computed<readonly OpcionSistema[]>(() =>
     this.store
@@ -740,6 +765,16 @@ export class Tablero {
   }
 
   protected onAgarrarPaleta(chip: ChipAgarrado): void {
+    // spec 074, E3: los chips rivales no pasan por `iniciarArrastre`/`colocarOMover` — usan el
+    // mismo arrastre que ya tienen sus fichas en el campo, solo que arrancado desde el chip.
+    if (chip.id === '__rival__') {
+      this.onAgarrarRival(chip.evento);
+      return;
+    }
+    if (chip.id === '__central-rival__') {
+      this.onAgarrarCentral(chip.evento);
+      return;
+    }
     const puesto = puestoDeId(chip.id);
     if (puesto !== null) {
       this.iniciarArrastre(chip.id, ETIQUETA_PUESTO[puesto], chip.evento, 'paleta');
@@ -851,16 +886,80 @@ export class Tablero {
 
     const soltar = (e: PointerEvent): void => {
       limpiar(e);
-      const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
       this.arrastre.set(null);
       this.arrastreAtacante.set(null);
+      if (!this.pistaCmp().contiene(e)) {
+        // spec 074, E4: soltar fuera del SVG lo manda al banquillo rival, mismo gesto que ya
+        // vacía un puesto propio en `iniciarArrastre`.
+        this.store.moverAtacante(null);
+        return;
+      }
+      const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
+      // spec 072, E1/E7: la situación deriva de dónde se suelta (sin cambios, docs/decisiones/
+      // 0020); el punto exacto se guarda aparte, dentro de la variante que resulte.
       this.store.seleccionarSituacion(situacionMasCercana(punto, this.store.casoActivo()));
+      this.store.moverAtacante(punto);
     };
 
     const cancelar = (e: PointerEvent): void => {
       limpiar(e);
       this.arrastre.set(null);
       this.arrastreAtacante.set(null);
+    };
+
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', cancelar);
+  }
+
+  /**
+   * Arrastre de la ficha del central rival (spec 073): mismo patrón que `onAgarrarRival`, pero
+   * es puramente una referencia visual — no deriva ninguna situación al soltar (E4: disponible
+   * también en la postura inicial, que no tiene ficha "A"), ni afecta a la sombra (E8/E9: el
+   * `computed sombra` no lee `arrastreCentral` en ningún punto).
+   */
+  protected onAgarrarCentral(evento: PointerEvent): void {
+    evento.preventDefault();
+    this.pistaCmp().capturarPuntero(evento);
+    this.arrastre.set({
+      jugadorId: '__central-rival__',
+      etiqueta: 'Central rival',
+      clientX: evento.clientX,
+      clientY: evento.clientY,
+    });
+    this.arrastreCentral.set(acotarPuntoRival(this.pistaCmp().puntoDesde(evento)));
+
+    const mover = (e: PointerEvent): void => {
+      this.arrastre.update((actual) =>
+        actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual,
+      );
+      this.arrastreCentral.set(acotarPuntoRival(this.pistaCmp().puntoDesde(e)));
+    };
+
+    const limpiar = (e: PointerEvent): void => {
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', cancelar);
+      this.pistaCmp().liberarPuntero(e);
+    };
+
+    const soltar = (e: PointerEvent): void => {
+      limpiar(e);
+      this.arrastre.set(null);
+      this.arrastreCentral.set(null);
+      if (!this.pistaCmp().contiene(e)) {
+        // spec 074, E4: soltar fuera del SVG lo manda al banquillo rival.
+        this.store.moverCentral(null);
+        return;
+      }
+      const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
+      this.store.moverCentral(punto);
+    };
+
+    const cancelar = (e: PointerEvent): void => {
+      limpiar(e);
+      this.arrastre.set(null);
+      this.arrastreCentral.set(null);
     };
 
     window.addEventListener('pointermove', mover);

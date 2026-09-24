@@ -143,6 +143,19 @@ export interface VarianteDefensa {
   /** Retoque manual de la sombra de bloqueo respecto a su posición calculada (spec 040).
    * Ausente si nunca se ha arrastrado la sombra de esta variante. */
   readonly desplazamientoSombra?: Punto;
+  /** Punto exacto donde se soltó la ficha "A" del atacante dentro de esta variante (spec 072):
+   * sustituye a `PUNTO_POR_SITUACION` como origen del dibujo y del cálculo de la sombra en
+   * cuanto existe. Ausente si nunca se ha movido de su punto canónico. La situación (`situacion`)
+   * sigue siendo la identidad de la variante — este punto solo afina dentro de su propio tercio,
+   * nunca decide a qué variante pertenece (ver `docs/decisiones/`, sustituye parcialmente a la
+   * 0020/0033). */
+  readonly marcadorAtacante?: Punto;
+  /** Punto donde se coloca la ficha del central rival dentro de esta variante (spec 073): una
+   * referencia visual para armar la defensa, nunca un bloqueador ni un dato que afecte al
+   * cálculo de la sombra (`sombraDeBloqueo` no lo recibe). Sin punto por defecto — no hay
+   * ninguna regla de voleibol de la que derivarlo (spec 073, "Fuera de alcance"); ausente hasta
+   * que el entrenador lo arrastra por primera vez. */
+  readonly marcadorCentral?: Punto;
 }
 
 /** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */

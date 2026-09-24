@@ -73,6 +73,17 @@
     </g>
   }
 
+  @if (mostrarRival() && puntoCentralRival(); as puntoCe) {
+    <g
+      class="app-pista__rival-ficha"
+      [attr.transform]="'translate(' + puntoCe.x + ',' + puntoCe.y + ')'"
+      (pointerdown)="onCentralPointerDown($event)"
+    >
+      <circle class="app-pista__rival-circulo" r="0.35"></circle>
+      <text class="app-pista__rival-etiqueta" text-anchor="middle" dy="0.35em">CeR</text>
+    </g>
+  }
+
   <rect class="app-pista__campo" x="0" y="0" width="9" height="9"></rect>
 
   <g class="app-pista__rejilla">

@@ -111,6 +111,7 @@ const ENTRADAS_LEYENDA = entradasLeyendaDe(CONFIGURACION_ROLES_POR_DEFECTO);
 const ENTRADAS_LEYENDA_DEFENSA: readonly EntradaLeyenda[] = [
   { etiqueta: 'A', nombre: 'Atacante' },
   { etiqueta: 'CR', nombre: 'Colocador rival' },
+  { etiqueta: 'CeR', nombre: 'Central rival' },
   { etiqueta: 'CO', nombre: 'Colocador u opuesto' },
   { etiqueta: 'R', nombre: 'Receptor' },
   { etiqueta: 'Ce', nombre: 'Central' },
@@ -148,6 +149,13 @@ export class Pista {
   readonly mostrarRival = input(false);
   readonly casoActivo = input<CasoColocador | null>(null);
   readonly situacionActiva = input<SituacionDefensa | null>(null);
+  /** Punto guardado de la ficha "A" (spec 072): sustituye a `PUNTO_POR_SITUACION` cuando la
+   * variante activa ya lo tiene. `null`/ausente (Teoría no lo pasa, spec 052) deja el punto
+   * canónico de la situación, igual que antes de esta spec. */
+  readonly marcadorAtacante = input<Punto | null>(null);
+  /** Punto guardado de la ficha del central rival (spec 073): referencia visual, sin punto
+   * canónico — `null` mientras el entrenador no lo haya colocado nunca en esta variante. */
+  readonly marcadorCentral = input<Punto | null>(null);
   /** Si se pintan las zonas de responsabilidad: solo en defensa (spec 024, E1). */
   readonly mostrarZonas = input(false);
   /** Todas las celdas pintadas de la formación activa, con su color por jugador (spec 023). */
@@ -173,6 +181,8 @@ export class Pista {
 
   readonly fichaAgarrada = output<FichaAgarrada>();
   readonly rivalAgarrado = output<PointerEvent>();
+  /** Se agarra la ficha del central rival (spec 073). */
+  readonly centralAgarrado = output<PointerEvent>();
   /** Se agarra la sombra de bloqueo para retocarla a mano (spec 040, E10). */
   readonly sombraAgarrada = output<PointerEvent>();
   /** Se agarra el fondo de la pista (no una ficha): arranca el modo pintar (spec 022). */
@@ -195,7 +205,10 @@ export class Pista {
    * (E11, no hay atacante) o si la situación todavía no tiene punto asignado. */
   protected readonly puntoAtacante = computed<Punto | null>(() => {
     const situacion = this.situacionActiva();
-    return situacion ? (PUNTO_POR_SITUACION[situacion] ?? null) : null;
+    if (!situacion) {
+      return null;
+    }
+    return this.marcadorAtacante() ?? PUNTO_POR_SITUACION[situacion] ?? null;
   });
 
   /** El punto de la ficha "C" del colocador rival: siempre presente mientras el sistema sea de
@@ -203,6 +216,13 @@ export class Pista {
    * delantero o trasero). */
   protected readonly puntoColocadorRival = computed<Punto | null>(() =>
     this.casoActivo() ? PUNTO_COLOCADOR_RIVAL : null,
+  );
+
+  /** El punto del central rival (spec 073): sin canónico, solo se dibuja cuando el entrenador ya
+   * lo ha colocado en esta variante. Disponible en cualquier situación, incluida `inicial`
+   * (E4) — a diferencia de `puntoAtacante`, no depende de `situacionActiva`. */
+  protected readonly puntoCentralRival = computed<Punto | null>(() =>
+    this.mostrarRival() ? this.marcadorCentral() : null,
   );
 
   /** Un patrón de franjas diagonales por cada combinación de colores que comparte alguna
@@ -287,6 +307,12 @@ export class Pista {
   protected onRivalPointerDown(evento: PointerEvent): void {
     evento.stopPropagation();
     this.rivalAgarrado.emit(evento);
+  }
+
+  /** No propaga: mismo motivo que `onRivalPointerDown` (spec 073). */
+  protected onCentralPointerDown(evento: PointerEvent): void {
+    evento.stopPropagation();
+    this.centralAgarrado.emit(evento);
   }
 
   /** No propaga: por el mismo motivo que `onRivalPointerDown` — si llegara al fondo, dispararía
