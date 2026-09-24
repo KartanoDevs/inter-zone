@@ -159,7 +159,7 @@ El rival mira la red desde el lado contrario, así que sus zonas salen **en espe
 las propias: su zona 4 (su ala izquierda) cae, vista desde nuestro fondo, a nuestra
 **derecha** — `x` alto — y su zona 2 a nuestra izquierda.
 
-| Situación | Condición (para soltar al atacante) | Lectura |
+| Situación | Zona del campo rival | Lectura |
 |---|---|---|
 | `z2` | `y > -3` y `x < 3` | delantera rival, nuestro tercio izquierdo |
 | `z3` | `y > -3` y `3 ≤ x < 6` | delantera rival, tercio central |
@@ -167,10 +167,14 @@ las propias: su zona 4 (su ala izquierda) cae, vista desde nuestro fondo, a nues
 | `pipe` | `y ≤ -3` | zaga rival, cualquier `x` |
 | `z1` | — | zaguero derecho rival; solo se elige por selector, no tiene tercio propio en la red |
 
-La situación se **deriva** de dónde se coloca al atacante en el campo rival; no se declara a mano
-y no se persiste una posición exacta — solo la situación ya resuelta (ver
-`docs/decisiones/0020-via-de-ataque-sin-posicion-persistida.md`, que sigue vigente bajo el nombre
-nuevo). **Los seis puestos de defensa son genéricos** (1..6, la zona física del campo propio),
+La situación **se elige**, no se deriva de dónde cae la ficha "A" (spec 075, sustituye en este
+punto a la ADR 0020 y a la 0033): el selector de pestañas es la única vía para cambiar de
+situación. Arrastrar la ficha "A" por el campo rival nunca cambia la situación activa — se mueve
+libre por todo el campo rival, y el punto exacto se guarda dentro de la variante que ya estaba
+activa (`VarianteDefensa.marcadorAtacante`, ADR 0047), aunque visualmente caiga en el tercio de
+otra situación: un atacante que arma por zona 3 puede rematar hacia 2 o hacia 4 sin que eso
+cambie contra qué está organizada la defensa. **Los seis puestos de defensa son genéricos** (1..6,
+la zona física del campo propio),
 nunca jugadores concretos ni posiciones rotacionales: la etiqueta que se pinta en cada uno se
 deriva de la línea, no del rol de ningún jugador — `C/O`, `R1/R2` y `C1/C2` en la red; `C/O`,
 `R1/R2` y `L` en zaga. **Sigue sin existir la validación de posición** (spec 021, sin cambios): no
@@ -207,8 +211,9 @@ sombra se abre en cono desde la red hacia el fondo: cuanto más cerca de la red 
 más campo tapa el mismo bloqueo; cuanto más atrás (una pipe, por ejemplo), menos. Se recorta
 siempre a las líneas del campo propio; si cae por completo fuera, no hay nada que dibujar.
 
-Se puede retocar arrastrándola a mano, y solo ese retoque se guarda — nunca la posición del
-atacante (§3, la vía/situación sigue siendo lo único persistido de dónde ataca el rival).
+Se puede retocar arrastrándola a mano, y ese retoque se guarda (ADR 0033) — igual que se guarda,
+aparte, el punto exacto del atacante dentro de su situación (§3, ADR 0047), aunque ninguno de los
+dos cambia nunca a qué situación pertenece la variante.
 
 ---
 

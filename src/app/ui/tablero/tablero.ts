@@ -46,7 +46,6 @@ import { CuentasAdmin } from '../acceso/cuentas-admin';
 import { ExportarSistemasAdmin } from '../acceso/exportar-sistemas-admin';
 import { jugadoresEnPista, ORDEN_ROTACIONES } from '../../domain/rotacion';
 import { validarFormacion } from '../../domain/validacion';
-import { situacionMasCercana } from '../../domain/defensa';
 import { puestosQueBloquean } from '../../domain/sistema-defensa';
 import { sombraDeBloqueo } from '../../domain/sombra-bloqueo';
 import { celdaDe, celdasDeTrazo } from '../../domain/rejilla';
@@ -94,8 +93,9 @@ function puestoDeId(ocupanteId: string): PuestoDefensa | null {
 const LIMITE_X: readonly [number, number] = [0, 9];
 const LIMITE_Y: readonly [number, number] = [0, 9];
 
-// La ficha del atacante solo se mueve dentro del campo rival (spec 038, continúa la 021): ahí es
-// de donde `situacionMasCercana` deriva la situación, y no tiene sentido soltarla fuera de él.
+// La ficha del atacante solo se mueve dentro del campo rival (spec 038, continúa la 021): fuera
+// de él no tiene sentido — se mueve libre por todo este rectángulo sin cambiar de situación
+// (spec 075).
 const LIMITE_X_RIVAL: readonly [number, number] = [0, 9];
 const LIMITE_Y_RIVAL: readonly [number, number] = [-4, 0];
 
@@ -821,8 +821,9 @@ export class Tablero {
   /**
    * Arrastre de la ficha del atacante "A" (spec 038, continúa la 021): mucho más simple que
    * `iniciarArrastre` porque no hay tap-vs-drag que distinguir (la ficha no se selecciona) ni
-   * puesto que colocar — solo un fantasma que sigue al puntero y, al soltar, deriva la
-   * situación del punto de caída.
+   * puesto que colocar — solo un fantasma que sigue al puntero. Se mueve libre por todo el campo
+   * rival (spec 075): nunca cambia la situación activa, solo el punto dentro de ella. Cambiar de
+   * situación de verdad sigue siendo cosa del selector de pestañas (`seleccionarSituacion`).
    */
   protected onAgarrarRival(evento: PointerEvent): void {
     evento.preventDefault();
@@ -839,8 +840,7 @@ export class Tablero {
       this.arrastre.update((actual) =>
         actual ? { ...actual, clientX: e.clientX, clientY: e.clientY } : actual,
       );
-      // La sombra se recalcula en vivo desde el punto bajo el puntero (spec 040, E3); la ficha
-      // solo encaja en su punto canónico al soltar, nunca se persiste una posición libre.
+      // La sombra se recalcula en vivo desde el punto bajo el puntero (spec 040, E3).
       this.arrastreAtacante.set(acotarPuntoRival(this.pistaCmp().puntoDesde(e)));
     };
 
@@ -856,9 +856,8 @@ export class Tablero {
       const punto = acotarPuntoRival(this.pistaCmp().puntoDesde(e));
       this.arrastre.set(null);
       this.arrastreAtacante.set(null);
-      // spec 072, E1/E7: la situación deriva de dónde se suelta (sin cambios, docs/decisiones/
-      // 0020); el punto exacto se guarda aparte, dentro de la variante que resulte.
-      this.store.seleccionarSituacion(situacionMasCercana(punto, this.store.casoActivo()));
+      // spec 075: el punto se guarda dentro de la variante activa, sea cual sea el tercio del
+      // campo rival donde caiga — la situación nunca cambia por arrastrar (ver docstring).
       this.store.moverAtacante(punto);
     };
 

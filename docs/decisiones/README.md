@@ -61,3 +61,4 @@ Formato de cada fichero: contexto, decisión, consecuencias. Corto. Lo important
 | [0045](0045-datos-de-prueba-en-desarrollo.md) | Una segunda semilla, destructiva y solo de desarrollo, siembra un catálogo de prueba variado y la cuenta demo | Aceptada |
 | [0046](0046-orden-de-rotacion-de-juego-sin-ajuste.md) | El orden de rotación de juego (R1, R6, R5, R4, R3, R2) es fijo en toda la app; se retira el ajuste | Aceptada |
 | [0047](0047-el-punto-del-atacante-rival-se-persiste-dentro-de-su-tercio.md) | El punto exacto del atacante rival se persiste, sin dejar de ser la situación quien identifica la variante | Aceptada |
+| [0048](0048-arrastrar-al-atacante-nunca-cambia-la-situacion.md) | Arrastrar al atacante rival nunca cambia la situación activa; cambiarla es cosa exclusiva del selector de pestañas | Aceptada |
