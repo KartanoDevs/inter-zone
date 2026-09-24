@@ -180,23 +180,6 @@ describe('guardarVarianteDefensa', () => {
 
     expect(resultado.defensas?.[0].marcadorAtacante).toEqual({ x: 7.2, y: -0.8 });
   });
-
-  it('E1 (spec 073): guarda el punto exacto donde se suelta el central rival', () => {
-    const sistema = sistemaDefensaVacio(plantillaEstandar());
-
-    const resultado = guardarVarianteDefensa(
-      sistema,
-      'delantero',
-      'inicial',
-      0,
-      formacionSeisPuestos(),
-      undefined,
-      undefined,
-      { x: 3.5, y: -2.0 },
-    )!;
-
-    expect(resultado.defensas?.[0].marcadorCentral).toEqual({ x: 3.5, y: -2.0 });
-  });
 });
 
 describe('puestosQueBloquean', () => {

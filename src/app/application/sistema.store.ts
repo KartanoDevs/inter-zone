@@ -146,10 +146,6 @@ export class SistemaStore {
    * `desplazamientoSombraEdicion`, cargado desde `VarianteDefensa.marcadorAtacante` al cambiar
    * de contexto. `null` mientras no se haya soltado nunca fuera del punto canónico. */
   readonly marcadorAtacanteEdicion = signal<Punto | null>(null);
-  /** Punto en edición de la ficha del central rival (spec 073): mismo criterio que
-   * `marcadorAtacanteEdicion`, cargado desde `VarianteDefensa.marcadorCentral`. Sin punto por
-   * defecto — `null` hasta que el entrenador lo arrastra la primera vez en esa variante. */
-  readonly marcadorCentralEdicion = signal<Punto | null>(null);
   readonly cambioPendiente = signal<CambioPendiente | null>(null);
   readonly jugadorSeleccionadoId = signal<string | null>(null);
   readonly validacionDesactivada = signal(false);
@@ -962,7 +958,6 @@ export class SistemaStore {
             this.borrador() as FormacionDefensa,
             this.desplazamientoSombraEdicion() ?? undefined,
             this.marcadorAtacanteEdicion() ?? undefined,
-            this.marcadorCentralEdicion() ?? undefined,
           )
         : guardarFormacion(
             sistema,
@@ -980,7 +975,6 @@ export class SistemaStore {
         this.varianteDefensaActiva()?.desplazamientoSombra ?? null,
       );
       this.marcadorAtacanteEdicion.set(this.varianteDefensaActiva()?.marcadorAtacante ?? null);
-      this.marcadorCentralEdicion.set(this.varianteDefensaActiva()?.marcadorCentral ?? null);
     }
   }
 
@@ -1004,7 +998,6 @@ export class SistemaStore {
       this.varianteDefensaActiva()?.desplazamientoSombra ?? null,
     );
     this.marcadorAtacanteEdicion.set(this.varianteDefensaActiva()?.marcadorAtacante ?? null);
-    this.marcadorCentralEdicion.set(this.varianteDefensaActiva()?.marcadorCentral ?? null);
     // spec 045, E6: si "mover bloqueo" deja de tener sentido (0 bloqueadores tras el cambio de
     // contexto), se apaga — y no se reactiva sola si más tarde vuelven a existir bloqueadores.
     if (this.accionArrastre() === 'mover' && !this.puedeMoverBloqueo()) {
@@ -1021,19 +1014,9 @@ export class SistemaStore {
   /** Fija el punto de la ficha "A" del atacante en edición (spec 072, E1): se llama al soltarla
    * dentro de su tercio, y el valor final se persiste al guardar — mismo criterio que
    * `desplazarSombra`. Soltarla fuera del tercio activo no pasa por aquí: cambia de variante
-   * (`seleccionarSituacion`), que ya recarga este punto desde la variante nueva. `null` lo quita
-   * de la edición (spec 074, E4): vuelve al banquillo rival, sin persistirse hasta que se guarde
-   * de nuevo. */
-  moverAtacante(punto: Punto | null): void {
+   * (`seleccionarSituacion`), que ya recarga este punto desde la variante nueva. */
+  moverAtacante(punto: Punto): void {
     this.marcadorAtacanteEdicion.set(punto);
-  }
-
-  /** Fija el punto de la ficha del central rival en edición (spec 073, E1): mismo criterio que
-   * `moverAtacante`, pero sin ningún efecto sobre `situacionActiva` — el central rival no deriva
-   * ninguna situación, es puramente una referencia visual. `null` lo quita de la edición
-   * (spec 074, E4). */
-  moverCentral(punto: Punto | null): void {
-    this.marcadorCentralEdicion.set(punto);
   }
 
   /** Descarta el retoque y vuelve a la sombra calculada (spec 040, E13). El desplazamiento

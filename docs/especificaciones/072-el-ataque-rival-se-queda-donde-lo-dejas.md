@@ -145,6 +145,10 @@ el tipo genérico, y añadirlo sin que un escenario lo pidiera habría sido cód
 `MarcadorRival`; añade su propio campo suelto `marcadorCentral?: Punto`, mismo patrón. Si en el
 futuro aparece un cuarto marcador rival, ahí sí compensará generalizar — no antes.
 
+*(Nota posterior: la 073 y la 074 se revirtieron por completo tras probarse en `develop` —
+`marcadorCentral` ya no existe en el código. Este párrafo describe la decisión de diseño tomada
+en su momento, no el estado actual.)*
+
 **E6 (acotado al campo rival) y E11 (leyenda sin cambios):** no generaron test nuevo porque ya
 estaban garantizados por construcción — `acotarPuntoRival` (sin cambios) se aplica antes de
 llamar tanto a `seleccionarSituacion` como a `moverAtacante`, y `ENTRADAS_LEYENDA_DEFENSA` no se

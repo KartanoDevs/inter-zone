@@ -1,6 +1,6 @@
 # 073 — El central enemigo entra en el diagrama
 
-**Estado:** Completada
+**Estado:** Descartada
 **Paso de la hoja de ruta:** 7 (sistemas de defensa)
 
 **Depende de:** spec 072 (el punto del atacante se persiste), completada e implementada antes de
@@ -129,6 +129,14 @@ etiqueta `CeR` y el nombre "Central rival" (mismo patrón que `CR` para el coloc
 "R" al identificador del central propio, `Ce`).
 
 ## Al cerrar
+
+**Descartada tras probarla en `develop`.** Se implementó, se desplegó, y el entrenador decidió
+que el central rival no aportaba lo que esperaba de esta mejora — solo necesitaba poder mover al
+atacante rival (spec 072), no una segunda ficha de referencia. Se revirtió por completo: modelo,
+store, UI y esquema de base de datos (columnas `central_x`/`central_y`, eliminadas con la
+migración `20260924140000_revierte_punto_central_rival`, sin tocar ni borrar la migración
+original que las creó). La spec 072 y su ADR (0047) siguen intactas. Lo que sigue debajo describe
+cómo se implementó en su momento; se conserva como registro, no como estado actual del código.
 
 **Sin desviaciones respecto a lo especificado.** El campo suelto `marcadorCentral?: Punto` en
 `VarianteDefensa` replicó literalmente el patrón fijado por la spec 072 (mismo criterio de

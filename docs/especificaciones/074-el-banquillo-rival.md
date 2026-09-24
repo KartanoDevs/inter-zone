@@ -1,6 +1,6 @@
 # 074 — El banquillo rival
 
-**Estado:** Completada
+**Estado:** Descartada
 **Paso de la hoja de ruta:** 7 (sistemas de defensa)
 
 **Depende de:** specs 072 (marcador del atacante) y 073 (marcador del central rival),
@@ -103,7 +103,15 @@ diseñar ninguna interacción nueva.
 
 ## Al cerrar
 
-**Una desviación real respecto a lo previsto:** `moverAtacante`/`moverCentral` (specs 072/073)
+**Descartada tras probarla en `develop`.** Se implementó, se desplegó, y el entrenador decidió
+no mantener ni el central rival (spec 073, revertida también) ni el banquillo rival. Se revirtió
+por completo: `pendientesChipsRivales`, la sección "Rival" del panel, y el comportamiento de
+`moverAtacante`/`moverCentral` con `null`. `moverAtacante` volvió a aceptar solo `Punto` (spec
+072, como estaba antes de esta spec) — soltar la ficha "A" fuera del SVG vuelve a comportarse
+como antes de la 074: se acota igual que dentro del campo, sin desaparecer. Lo que sigue debajo
+describe cómo se implementó en su momento; se conserva como registro, no como estado actual.
+
+**Una desviación real respecto a lo previsto (en su momento):** `moverAtacante`/`moverCentral` (specs 072/073)
 solo aceptaban `Punto`, nunca `null`. E4 exigía poder borrar el marcador en edición sin pasar por
 `guardar()`, así que ambas firmas se ampliaron a `Punto | null` — un cambio pequeño pero real en
 dos funciones ya cerradas en specs anteriores. No rompió ningún test existente porque el

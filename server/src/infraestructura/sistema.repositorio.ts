@@ -121,8 +121,6 @@ interface FilaColocacionDefensaCruda {
   readonly sombra_dy: number | null;
   readonly atacante_x: number | null;
   readonly atacante_y: number | null;
-  readonly central_x: number | null;
-  readonly central_y: number | null;
   readonly puesto: number;
   readonly x: number;
   readonly y: number;
@@ -139,7 +137,7 @@ async function colocacionesDefensaDe(
   return prisma.$queryRaw<FilaColocacionDefensaCruda[]>`
     SELECT fd.id AS formacion_id, fd.caso, fd.situacion, fd.bloqueadores,
            fd.explicacion AS variante_explicacion, fd.sombra_dx, fd.sombra_dy,
-           fd.atacante_x, fd.atacante_y, fd.central_x, fd.central_y,
+           fd.atacante_x, fd.atacante_y,
            cd.puesto, cd.x, cd.y, cd.explicacion, cd.celdas, cd.celdas_finta
     FROM colocacion_defensa cd
     JOIN formacion_defensa fd ON fd.id = cd.formacion_id
@@ -175,8 +173,6 @@ function ensamblarDefensas(
       sombra_dy: number | null;
       atacante_x: number | null;
       atacante_y: number | null;
-      central_x: number | null;
-      central_y: number | null;
       colocaciones: ColocacionDefensa[];
     }
   >();
@@ -192,8 +188,6 @@ function ensamblarDefensas(
         sombra_dy: c.sombra_dy,
         atacante_x: c.atacante_x,
         atacante_y: c.atacante_y,
-        central_x: c.central_x,
-        central_y: c.central_y,
         colocaciones: [],
       };
       porVariante.set(c.formacion_id, entrada);
@@ -224,9 +218,6 @@ function ensamblarDefensas(
       : {}),
     ...(v.atacante_x !== null && v.atacante_y !== null
       ? { marcadorAtacante: { x: v.atacante_x, y: v.atacante_y } }
-      : {}),
-    ...(v.central_x !== null && v.central_y !== null
-      ? { marcadorCentral: { x: v.central_x, y: v.central_y } }
       : {}),
   }));
 }
@@ -404,8 +395,6 @@ async function escribirDefensas(tx: Transaccion, sistema: Sistema): Promise<void
         sombra_dy: variante.desplazamientoSombra?.y ?? null,
         atacante_x: variante.marcadorAtacante?.x ?? null,
         atacante_y: variante.marcadorAtacante?.y ?? null,
-        central_x: variante.marcadorCentral?.x ?? null,
-        central_y: variante.marcadorCentral?.y ?? null,
       },
     });
     for (const colocacion of variante.formacion) {

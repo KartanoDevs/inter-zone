@@ -34,7 +34,6 @@ export function guardarVarianteDefensa(
   formacion: FormacionDefensa,
   desplazamientoSombra?: Punto,
   marcadorAtacante?: Punto,
-  marcadorCentral?: Punto,
 ): Sistema | null {
   if (situacion === 'inicial' && bloqueadores !== 0) {
     return null;
@@ -54,7 +53,6 @@ export function guardarVarianteDefensa(
       formacion,
       ...(desplazamientoSombra ? { desplazamientoSombra } : {}),
       ...(marcadorAtacante ? { marcadorAtacante } : {}),
-      ...(marcadorCentral ? { marcadorCentral } : {}),
     },
   ];
   return { ...sistema, defensas };

@@ -150,12 +150,6 @@ export interface VarianteDefensa {
    * nunca decide a qué variante pertenece (ver `docs/decisiones/`, sustituye parcialmente a la
    * 0020/0033). */
   readonly marcadorAtacante?: Punto;
-  /** Punto donde se coloca la ficha del central rival dentro de esta variante (spec 073): una
-   * referencia visual para armar la defensa, nunca un bloqueador ni un dato que afecte al
-   * cálculo de la sombra (`sombraDeBloqueo` no lo recibe). Sin punto por defecto — no hay
-   * ninguna regla de voleibol de la que derivarlo (spec 073, "Fuera de alcance"); ausente hasta
-   * que el entrenador lo arrastra por primera vez. */
-  readonly marcadorCentral?: Punto;
 }
 
 /** Un sistema con nombre y tipo, ligado a una plantilla, con hasta seis formaciones (una por Rn). */
