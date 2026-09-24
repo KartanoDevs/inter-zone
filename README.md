@@ -13,14 +13,40 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-estricto-3178C6">
   <img alt="Node" src="https://img.shields.io/badge/Node-%E2%89%A5%2022-339933">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-520%20passing-brightgreen">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-560%20passing-brightgreen">
   <img alt="Metodología" src="https://img.shields.io/badge/m%C3%A9todo-SDD%20%2B%20TDD-8957e5">
 </p>
 
 ---
 
+## 0. Entrega del TFM
+
+| Requisito | Dónde |
+|---|---|
+| Aplicación desplegada | **https://dev.cvinterzone.duckdns.org** |
+| Usuario de prueba | `admin@cvinter.com` / `12345678` (rol **admin**) |
+| Código fuente | https://github.com/KartanoDevs/inter-zone |
+| Slides | *(enlace pendiente de publicar)* |
+| Vídeo | *(enlace pendiente de publicar)* |
+
+> [!IMPORTANT]
+> El acceso de prueba apunta al **entorno de desarrollo**, no a producción: producción guarda
+> datos reales de entrenadores, y desarrollo se siembra a propósito con un catálogo de prueba
+> y credenciales públicas para que el tribunal pueda entrar sin pedir nada a nadie
+> ([ADR 0045](docs/decisiones/0045-datos-de-prueba-en-desarrollo.md)).
+
+Con esa cuenta el rol es **admin**, así que da acceso a las siete ventanas de la aplicación:
+**Editor** (pizarra de recepción y defensa), **Teoría** (solo consulta), **Examen** (con
+medallas), **Cuenta** (perfil propio), **Lista blanca**, **Cuentas** y **Exportar sistemas**.
+El catálogo de prueba tiene sistemas validados en los dos equipos (masculino y femenino), tanto
+de recepción como de defensa, para poder recorrer toda la funcionalidad sin crear nada desde
+cero.
+
+---
+
 ## Índice
 
+- [0. Entrega del TFM](#0-entrega-del-tfm)
 - [1. Descripción general del proyecto](#1-descripción-general-del-proyecto)
 - [2. Stack tecnológico](#2-stack-tecnológico)
 - [3. Arquitectura](#3-arquitectura)
@@ -108,15 +134,20 @@ está descrito en [`docs/`](docs/) y resumido en las secciones 7 y 8.
 
 | Tecnología | Uso |
 |---|---|
-| **PostgreSQL 18** | Persistencia de equipos, jugadores, sistemas, formaciones, cuentas, sesiones y medallas. 11 tablas. |
+| **PostgreSQL 18** | Persistencia de equipos, jugadores, sistemas, formaciones, cuentas, sesiones y medallas. 13 tablas. |
 
 ### Calidad y tooling
 
 | Tecnología | Uso |
 |---|---|
-| **Vitest 4** | 520 tests de dominio, aplicación e infraestructura (suite completa < 2 s); suite de integración del servidor aparte, contra un PostgreSQL real. |
+| **Vitest 4** | 560 tests de dominio, aplicación e infraestructura (suite completa < 2 s); suite de integración del servidor aparte, contra un PostgreSQL real. |
 | **Prettier 3** | Formato normalizado en todo `src/` y `server/src/`, con un *hook* `pre-commit` que rechaza el commit si algo no está formateado. |
 | **graphify** | Grafo de conocimiento del repositorio (`graphify-out/`) para navegación y revisión de arquitectura. |
+
+> [!NOTE]
+> El repositorio también incluye `.agents/` (asistentes de IA usados durante el desarrollo:
+> Claude Code y sus *skills*). No es código del proyecto — es parte de cómo se ha construido,
+> coherente con el enfoque de proceso (SDD + TDD + ADR) que describe este README.
 
 ### Despliegue
 
@@ -155,7 +186,7 @@ Arquitectura hexagonal. **Las flechas de dependencia apuntan siempre hacia dentr
 > desde que hay backend.
 
 Detalle completo en [`docs/arquitectura.md`](docs/arquitectura.md); el porqué de cada decisión,
-en [`docs/decisiones/`](docs/decisiones/) (44 ADR, *append-only*).
+en [`docs/decisiones/`](docs/decisiones/) (47 ADR, *append-only*).
 
 ---
 
@@ -299,9 +330,10 @@ inter-zone/
 │   ├── application/            # Stores con signals. Sin Angular, sin TestBed.
 │   ├── infrastructure/         # Adaptadores HTTP (en uso) + localStorage para ajustes.
 │   ├── ui/                     # Componentes standalone (app-*), OnPush, zoneless.
-│   │   ├── tablero/  pista/  rotaciones/  panel/  sistemas/
+│   │   ├── tablero/  pista/  rotaciones/  panel/  sistemas/  examen/  ajustes/  instalacion/
 │   │   ├── teoria/             #   pestaña de solo consulta
-│   │   └── acceso/             #   entrar, perfil, vitrina de medallas, lista blanca
+│   │   └── acceso/             #   entrar, perfil, vitrina de medallas, lista blanca,
+│   │                           #   cuentas, exportar sistemas
 │   └── maqueta/                # Boceto congelado. No se renderiza ni se borra.
 │
 ├── server/                     # Proyecto Node aparte (package.json y node_modules propios).
@@ -316,8 +348,8 @@ inter-zone/
 ├── docs/                       # SDD: dominio, arquitectura, modelo de datos, ADR, specs.
 │   ├── dominio.md              #   la fuente de verdad: reglas del voleibol
 │   ├── arquitectura.md
-│   ├── decisiones/             #   44 ADR, append-only
-│   └── especificaciones/       #   63 specs (numeradas hasta la 067), una por entrega
+│   ├── decisiones/             #   47 ADR, append-only
+│   └── especificaciones/       #   74 specs (numeradas hasta la 074), una por entrega
 │
 ├── docker-compose.prod.yml  ·  Dockerfile.web  ·  nginx.conf  ·  deploy.sh
 └── public/                     # manifest PWA, iconos, service worker, medallas
@@ -342,6 +374,9 @@ Los tests viven **junto al fichero que prueban**, nunca en una carpeta paralela.
 - **Seis fichas arrastrables** con captura de puntero sobre el `<svg>`; banquillo con los
   jugadores sin colocar; selección de jugador por toque.
 - Navegación **R1–R6**, donde `Rn` significa *«el colocador ocupa Pn»*.
+- **Ajuste fino por pulsación larga**: en móvil, mantener el dedo sobre una ficha ya colocada
+  activa un modo de arrastre de precisión, para corregir medio metro sin que el tamaño del
+  dedo tape la zona exacta.
 
 ### Validación de la falta de posición (recepción)
 
@@ -367,6 +402,11 @@ Los tests viven **junto al fichero que prueban**, nunca en una carpeta paralela.
   red, nunca se declara jugador a jugador.
 - **Sombra del bloqueo**: la superficie que la pared de bloqueadores esconde al atacante, en
   polígonos, recalculada al mover al atacante o a un bloqueador y retocable a mano.
+- **Campo rival editable**: el atacante y el central rival se arrastran y se guardan dentro de
+  su tercio de pista, igual que cualquier ficha propia — antes eran puntos fijos de referencia.
+- **Banquillo rival**: un marcador (atacante o central) que no tiene punto en la variante activa
+  se guarda en un banquillo, del mismo modo que el banquillo propio (spec 042) resuelve el caso
+  para los seis puestos de defensa, en vez de desaparecer de la interfaz.
 
 ### Zonas de responsabilidad
 
@@ -396,7 +436,8 @@ explicaciones exactamente como en el editor, sin poder tocar nada.
 - Nota de 0 a 10 que decae con la distancia al modelo; **insignia** (bronce / plata / oro) si la
   nota llega a 7 sin faltas.
 - La ventana **Cuenta** tiene una vitrina de medallas: una pieza por sistema de recepción, con el
-  desglose por puesto y el recuento de sistemas dominados.
+  desglose por puesto y el recuento de sistemas dominados. La vitrina solo cuenta los sistemas
+  **validados**: un sistema en borrador no aparece como pendiente de examinar.
 
 ### Cuentas, roles y lista blanca
 
@@ -409,6 +450,8 @@ explicaciones exactamente como en el editor, sin poder tocar nada.
   con ella), salvo que sea la última cuenta admin del sistema.
 - La ventana **Cuenta**: correo y rol de solo lectura, nombre/apodo, posición favorita y dorsal
   (opcionales), y cambio de contraseña exigiendo acertar la actual.
+- El admin **exporta e importa el catálogo de sistemas en JSON** desde su propia ventana, para
+  copia de seguridad manual o para mover sistemas entre entornos.
 
 ### Persistencia y errores
 
@@ -456,13 +499,15 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 |---|---|
 | [`docs/dominio.md`](docs/dominio.md) | Las reglas del voleibol y el vocabulario del proyecto. **La fuente de verdad.** |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Capas, dependencias permitidas, estructura de carpetas — incluye `server/`. |
-| [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md) | El esquema de PostgreSQL: las 11 tablas y las ampliaciones previstas. |
+| [`docs/modelo-de-datos.md`](docs/modelo-de-datos.md) | El esquema de PostgreSQL: las 13 tablas y las ampliaciones previstas. |
 | [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md) | Cómo se trabaja aquí: el ciclo SDD + TDD. |
 | [`docs/05_Copias_de_Seguridad.md`](docs/05_Copias_de_Seguridad.md) | Qué se guarda, cómo comprobarlo, cómo restaurar. |
-| [`docs/decisiones/`](docs/decisiones/) | 44 ADR: cada decisión estructural y su motivo. Solo se añade. |
-| [`docs/especificaciones/`](docs/especificaciones/) | 63 specs (numeradas hasta la 067), una por porción de trabajo. Se cierran al terminarse. |
+| [`docs/decisiones/`](docs/decisiones/) | 47 ADR: cada decisión estructural y su motivo. Solo se añade. |
+| [`docs/especificaciones/`](docs/especificaciones/) | 74 specs (numeradas hasta la 074, con huecos reservados 014-016 y 036), una por porción de trabajo. Se cierran al terminarse. |
 | [`server/README.md`](server/README.md) | Arranque del backend, rutas de la API, estructura de `server/`. |
 | [`CLAUDE.md`](CLAUDE.md) | Contexto e invariantes para asistentes de IA. |
+| [`docs/tfm/guion-slides.md`](docs/tfm/guion-slides.md) | Contenido diapositiva a diapositiva para las slides del TFM. |
+| [`docs/tfm/guion-video.md`](docs/tfm/guion-video.md) | Guion bloque a bloque para grabar el vídeo de explicación del TFM. |
 
 ---
 
@@ -470,10 +515,10 @@ Detalle en [`docs/flujo-de-trabajo.md`](docs/flujo-de-trabajo.md).
 
 | | |
 |---|---|
-| Specs escritas | 63 (numeradas hasta la 067; huecos reservados 014–016) |
-| ADR registradas | 44 |
-| Tests | 520 (dominio · aplicación · infraestructura) + integración de servidor |
-| Tablas construidas | 11 |
+| Specs escritas | 74 (numeradas hasta la 074; huecos reservados 014–016, 036) |
+| ADR registradas | 47 |
+| Tests | 560 (dominio · aplicación · infraestructura) + integración de servidor |
+| Tablas construidas | 13 |
 | Adaptador de persistencia en uso | `HttpSistemaRepository` |
 | Autenticación | lista blanca + contraseña + sesión |
 

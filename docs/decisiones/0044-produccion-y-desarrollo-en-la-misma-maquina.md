@@ -91,3 +91,10 @@ detrás del mismo Nginx Proxy Manager:
 - **Restaurar producción en desarrollo** para probar con datos realistas: se descarta por
   exponer cuentas y datos reales de entrenadores en un entorno abierto a cualquiera. Si algún
   día hace falta, es una operación manual y puntual, no el estado por defecto del entorno.
+
+## Errata
+
+La tabla del Contexto escribe la URL de desarrollo como `devcvinterzone.duckdns.org` (sin
+punto). La URL real, la que usan `README.md` y `.env.desarrollo.example`, es
+`dev.cvinterzone.duckdns.org`. No se corrige la tabla porque este registro es *append-only*;
+queda anotado aquí para quien busque la URL y no la encuentre.
