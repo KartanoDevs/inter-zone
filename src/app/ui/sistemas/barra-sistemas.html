@@ -7,17 +7,14 @@
       {{ activo.tipo === 'defensa' ? 'Defensa' : 'Recepción' }}
     </span>
   }
-  <select
-    class="app-barra-sistemas__select"
-    aria-label="Sistema"
-    [value]="sistemaActivoId()"
-    (change)="onElegir($event)"
-  >
+  <select class="app-barra-sistemas__select" aria-label="Sistema" (change)="onElegir($event)">
     @if (sistemas().length === 0) {
       <option value="" disabled selected>Sin sistemas todavía</option>
     }
     @for (sistema of sistemas(); track sistema.id) {
-      <option [value]="sistema.id">{{ sistema.nombre }}</option>
+      <option [value]="sistema.id" [selected]="sistema.id === sistemaActivoId()">
+        {{ sistema.nombre }}
+      </option>
     }
   </select>
   <svg class="app-barra-sistemas__flecha" viewBox="0 0 24 24" aria-hidden="true">
